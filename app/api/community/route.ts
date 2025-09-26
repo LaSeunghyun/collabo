@@ -14,12 +14,12 @@ export async function GET(request: NextRequest) {
     const posts = await prisma.post.findMany({
       where: projectId ? { projectId } : undefined,
       include: {
-        _count: { select: { likes: true, comments: true } }
+        _count: { select: { postLikes: true, comments: true } }
       },
       orderBy:
         sort === 'popular'
           ? {
-              likes: {
+              postLikes: {
                 _count: 'desc'
               }
             }
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
         id: post.id,
         title: post.title,
         content: post.content,
-        likes: post._count.likes,
+        likes: post._count.postLikes,
         comments: post._count.comments,
         projectId: post.projectId ?? undefined,
         createdAt: post.createdAt.toISOString(),
