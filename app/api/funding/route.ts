@@ -1,4 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  FundingStatus,
+  PaymentProvider,
+  ProjectStatus,
+  type Prisma,
+  type Funding
+} from '@prisma/client';
 import Stripe from 'stripe';
 
 import prisma from '@/lib/prisma';
@@ -39,6 +46,52 @@ function buildError(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
 }
 
+function normaliseCurrency(currency?: string | null) {
+  if (!currency) {
+    return 'KRW';
+  }
+
+  return currency.toUpperCase();
+}
+
+function ensureIntegerAmount(amount?: number | null) {
+  if (typeof amount !== 'number' || !Number.isFinite(amount)) {
+    return null;
+  }
+
+  const rounded = Math.round(amount);
+  if (rounded <= 0) {
+    return null;
+  }
+
+  return rounded;
+}
+
+function pickStripeIntentSnapshot(
+  intent: Stripe.PaymentIntent | Stripe.Checkout.Session
+): Prisma.InputJsonValue {
+  if ('object' in intent && intent.object === 'payment_intent') {
+    const paymentIntent = intent as Stripe.PaymentIntent;
+    return {
+      id: paymentIntent.id,
+      status: paymentIntent.status,
+      amount: paymentIntent.amount,
+      amountReceived: paymentIntent.amount_received,
+      currency: paymentIntent.currency,
+      metadata: paymentIntent.metadata ?? {}
+    };
+  }
+
+  const session = intent as Stripe.Checkout.Session;
+  return {
+    id: session.id,
+    status: session.payment_status,
+    amount: session.amount_total,
+    currency: session.currency,
+    metadata: session.metadata ?? {}
+  };
+}
+
 async function resolveUserId({
   receiptEmail,
   customerName,
@@ -66,45 +119,137 @@ async function resolveUserId({
   return user.id;
 }
 
-async function recordFunding({
+async function upsertPaymentTransaction(
+  tx: Prisma.TransactionClient,
+  fundingId: string,
+  externalId: string,
+  amount: number,
+  currency: string,
+  rawPayload?: Prisma.InputJsonValue
+) {
+  await tx.paymentTransaction.upsert({
+    where: { fundingId },
+    update: {
+      provider: PaymentProvider.STRIPE,
+      externalId,
+      status: FundingStatus.SUCCEEDED,
+      amount,
+      currency,
+      rawPayload
+    },
+    create: {
+      fundingId,
+      provider: PaymentProvider.STRIPE,
+      externalId,
+      status: FundingStatus.SUCCEEDED,
+      amount,
+      currency,
+      rawPayload
+    }
+  });
+}
+
+async function recordSuccessfulFunding({
   projectId,
   userId,
   amount,
-  paymentReference
+  currency,
+  paymentIntentId,
+  snapshot
 }: {
   projectId: string;
   userId: string;
   amount: number;
-  paymentReference: string;
+  currency: string;
+  paymentIntentId: string;
+  snapshot: Prisma.InputJsonValue;
 }) {
-  const existing = await prisma.funding.findUnique({ where: { paymentReference } });
-  if (existing) {
-    return existing;
-  }
+  return prisma.$transaction(async (tx) => {
+    const existing = await tx.funding.findUnique({
+      where: { paymentIntentId },
+      include: { transaction: true }
+    });
 
-  const funding = await prisma.$transaction(async (tx) => {
-    const created = await tx.funding.create({
+    if (existing) {
+      const needsUpdate =
+        existing.paymentStatus !== FundingStatus.SUCCEEDED ||
+        existing.amount !== amount ||
+        existing.currency !== currency;
+
+      let funding: Funding;
+
+      if (needsUpdate) {
+        const delta = amount - existing.amount;
+        funding = await tx.funding.update({
+          where: { id: existing.id },
+          data: {
+            amount,
+            currency,
+            paymentStatus: FundingStatus.SUCCEEDED
+          },
+          include: { transaction: true }
+        });
+
+        if (delta !== 0) {
+          await tx.project.update({
+            where: { id: projectId },
+            data: { currentAmount: { increment: delta } }
+          });
+        }
+      } else {
+        funding = existing;
+      }
+
+      await upsertPaymentTransaction(
+        tx,
+        funding.id,
+        paymentIntentId,
+        amount,
+        currency,
+        snapshot
+      );
+
+      return (
+        await tx.funding.findUnique({
+          where: { id: funding.id },
+          include: { transaction: true }
+        })
+      )!;
+    }
+
+    const funding = await tx.funding.create({
       data: {
         projectId,
         userId,
         amount,
-        paymentReference
-      }
+        currency,
+        paymentIntentId,
+        paymentStatus: FundingStatus.SUCCEEDED
+      },
+      include: { transaction: true }
     });
 
     await tx.project.update({
       where: { id: projectId },
-      data: {
-        currentAmount: {
-          increment: amount
-        }
-      }
+      data: { currentAmount: { increment: amount } }
     });
 
-    return created;
-  });
+    await upsertPaymentTransaction(
+      tx,
+      funding.id,
+      paymentIntentId,
+      amount,
+      currency,
+      snapshot
+    );
 
-  return funding;
+    return (
+      await tx.funding.findUnique({
+        where: { id: funding.id },
+        include: { transaction: true }
+      })
+    )!;
+  });
 }
 
 export async function POST(request: NextRequest) {
@@ -138,6 +283,15 @@ export async function POST(request: NextRequest) {
     return buildError('해당 프로젝트를 찾을 수 없습니다.', 404);
   }
 
+  const fundingEligibleStatuses = new Set<ProjectStatus>([
+    ProjectStatus.LIVE,
+    ProjectStatus.EXECUTING
+  ]);
+
+  if (!fundingEligibleStatuses.has(project.status)) {
+    return buildError('현재 상태에서는 결제를 진행할 수 없습니다.', 409);
+  }
+
   let stripe: Stripe;
   try {
     stripe = createStripeClient();
@@ -149,13 +303,17 @@ export async function POST(request: NextRequest) {
   if (paymentIntentId || checkoutSessionId) {
     try {
       if (paymentIntentId) {
-        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId, {
+          expand: ['latest_charge']
+        });
 
         if (paymentIntent.status !== 'succeeded') {
           return buildError(`결제 상태가 완료되지 않았습니다. (현재 상태: ${paymentIntent.status})`, 409);
         }
 
-        const amountReceived = paymentIntent.amount_received ?? paymentIntent.amount ?? 0;
+        const amountReceived = ensureIntegerAmount(
+          paymentIntent.amount_received ?? paymentIntent.amount
+        );
         if (!amountReceived) {
           return buildError('결제 금액을 확인할 수 없습니다.', 422);
         }
@@ -164,14 +322,19 @@ export async function POST(request: NextRequest) {
           receiptEmail,
           customerName,
           stripeEmailFallback:
-            paymentIntent.receipt_email ?? paymentIntent.charges.data[0]?.billing_details.email ?? undefined
+            paymentIntent.receipt_email ??
+            (typeof paymentIntent.latest_charge !== 'string'
+              ? paymentIntent.latest_charge?.billing_details?.email ?? undefined
+              : undefined)
         });
 
-        const funding = await recordFunding({
+        const funding = await recordSuccessfulFunding({
           projectId,
           userId,
           amount: amountReceived,
-          paymentReference: paymentIntent.id
+          currency: normaliseCurrency(paymentIntent.currency),
+          paymentIntentId: paymentIntent.id,
+          snapshot: pickStripeIntentSnapshot(paymentIntent)
         });
 
         return NextResponse.json({
@@ -189,7 +352,7 @@ export async function POST(request: NextRequest) {
           return buildError(`체크아웃이 완료되지 않았습니다. (현재 상태: ${session.payment_status})`, 409);
         }
 
-        const amountPaid = session.amount_total;
+        const amountPaid = ensureIntegerAmount(session.amount_total);
         if (!amountPaid) {
           return buildError('결제 금액을 확인할 수 없습니다.', 422);
         }
@@ -206,11 +369,13 @@ export async function POST(request: NextRequest) {
             session.customer_details?.email ?? session.customer_email ?? undefined
         });
 
-        const funding = await recordFunding({
+        const funding = await recordSuccessfulFunding({
           projectId,
           userId,
           amount: amountPaid,
-          paymentReference: paymentIntentReference
+          currency: normaliseCurrency(session.currency),
+          paymentIntentId: paymentIntentReference,
+          snapshot: pickStripeIntentSnapshot(session)
         });
 
         return NextResponse.json({
@@ -229,8 +394,8 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Creation path
-  if (!amount || Number.isNaN(amount) || amount <= 0) {
+  const normalisedAmount = ensureIntegerAmount(amount);
+  if (!normalisedAmount) {
     return buildError('결제 금액이 올바르지 않습니다.');
   }
 
@@ -248,7 +413,7 @@ export async function POST(request: NextRequest) {
             quantity: 1,
             price_data: {
               currency,
-              unit_amount: amount,
+              unit_amount: normalisedAmount,
               product_data: {
                 name: project.title,
                 description: `Collab Funding – ${project.title}`
@@ -272,7 +437,7 @@ export async function POST(request: NextRequest) {
     }
 
     const paymentIntent = await stripe.paymentIntents.create({
-      amount,
+      amount: normalisedAmount,
       currency,
       automatic_payment_methods: { enabled: true },
       metadata: { projectId },

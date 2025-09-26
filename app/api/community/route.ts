@@ -64,7 +64,13 @@ export async function POST(request: NextRequest) {
       data: {
         title,
         content,
-        projectId,
+        ...(projectId
+          ? {
+              project: {
+                connect: { id: projectId }
+              }
+            }
+          : {}),
         author: {
           connect: { id: authorId }
         }
