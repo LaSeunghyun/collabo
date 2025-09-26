@@ -1,4 +1,7 @@
 {
+  "common": {
+    "loading": "Loading..."
+  },
   "navigation": {
     "home": "Home",
     "explore": "Explore",
@@ -16,6 +19,7 @@
     "logout": "Log out",
     "search": "Search",
     "favorite": "Favorite",
+    "viewMore": "View more",
     "viewAll": "View all",
     "fundNow": "Fund now",
     "requestQuote": "Request quote"
@@ -27,10 +31,26 @@
     "closingSoon": "Closing soon",
     "themes": "Themes",
     "categoryFilter": "Category filters",
-    "tagFilter": "Tags"
+    "tagFilter": "Tags",
+    "store": {
+      "title": "Store",
+      "items": {
+        "product1": { "title": "Limited tour hoodie" },
+        "product2": { "title": "Premium online class pass" },
+        "product3": { "title": "Artist-signed LP" }
+      }
+    },
+    "liveAma": {
+      "tag": "Live AMA",
+      "title": "This week's live class",
+      "description": "Join an intimate AMA session with the artist. Reserve now to secure the early-bird perks.",
+      "cta": "Reserve a spot"
+    }
   },
   "projects": {
     "title": "Projects",
+    "overviewTitle": "All projects",
+    "overviewDescription": "Use category, sort and tag filters to explore collaborative experiences built by artists and fans.",
     "filters": "Filters",
     "category": "Category",
     "status": "Status",
@@ -49,5 +69,23 @@
     "title": "Partner matching",
     "submit": "Submit partner",
     "review": "Review status"
+  },
+  "help": {
+    "title": "Help & FAQ",
+    "description": "Answers to the most common questions when using the service.",
+    "faqs": {
+      "fundingProcess": {
+        "question": "How does funding work?",
+        "answer": "Projects open → fans support → once the goal is reached we settle the payment and deliver rewards. You can rehearse the flow with Stripe test payments."
+      },
+      "partnerReview": {
+        "question": "How long does partner review take?",
+        "answer": "It takes 3–5 business days after submission and we will notify you via email."
+      },
+      "settlementReport": {
+        "question": "Where can I find settlement reports?",
+        "answer": "Go to the Settlement tab on the project detail page to access the reports."
+      }
+    }
   }
 }
