@@ -8,6 +8,7 @@ Next.js 14 기반으로 재구성한 콜라보리움 아티스트 팬 협업 플
 - 아티스트 KPI 대시보드, 파트너 추천 및 등록 폼, 커뮤니티 게시판
 - Prisma 스키마, NextAuth 인증, Stripe 결제/정산 API 스텁, i18next 다국어 지원
 - Zustand 기반 전역 상태, React Query 데이터 패칭, Jest + RTL 컴포넌트 테스트
+- **Funding-Settlement 통합**: 펀딩 성공 시 자동 정산 생성 및 데이터 일관성 보장
 
 ## 번역 키 구조
 - `common.loading`: 공용 로딩 메시지
@@ -28,6 +29,19 @@ npm run dev
 ```bash
 npm test
 ```
+
+### Funding-Settlement 통합 기능
+이 플랫폼은 펀딩과 정산 서비스 간의 데이터 일관성을 보장하는 통합 시스템을 제공합니다:
+
+- **자동 정산 생성**: 프로젝트가 목표 금액을 달성하면 자동으로 정산이 생성됩니다
+- **데이터 일관성 검증**: 펀딩 금액과 프로젝트 currentAmount 간의 일치성을 자동으로 검증하고 수정합니다
+- **에러 처리**: 통합된 에러 처리 시스템으로 안정성을 보장합니다
+- **트랜잭션 관리**: 데이터베이스 트랜잭션을 통한 원자성 보장
+
+관련 파일:
+- `lib/server/funding-settlement.ts`: 통합 유틸리티 함수
+- `lib/server/error-handling.ts`: 공통 에러 처리
+- `__tests__/funding-settlement-integration.test.ts`: 통합 테스트
 
 ### Prisma 데이터 모델 스냅샷
 - `Funding` → `PaymentTransaction` 연결로 PG 응답/수수료를 저장합니다.

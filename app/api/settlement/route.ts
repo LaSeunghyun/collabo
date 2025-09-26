@@ -12,6 +12,8 @@ import { z } from 'zod';
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import prisma from '@/lib/prisma';
 import { calculateSettlementBreakdown } from '@/lib/server/settlements';
+import { validateFundingSettlementConsistency } from '@/lib/server/funding-settlement';
+import { buildApiError, handleFundingSettlementError, withErrorHandling } from '@/lib/server/error-handling';
 
 const requestSchema = z.object({
   projectId: z.string().min(1, 'projectId는 필수입니다.'),
@@ -21,7 +23,7 @@ const requestSchema = z.object({
 });
 
 function buildError(message: string, status = 400) {
-  return NextResponse.json({ error: message }, { status });
+  return buildApiError(message, status);
 }
 
 export async function GET(request: NextRequest) {
@@ -124,6 +126,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(existingPending);
   }
 
+  // 펀딩 데이터 일관성 검증
+  try {
+    const consistencyCheck = await validateFundingSettlementConsistency(projectId);
+    if (!consistencyCheck.isValid) {
+      console.warn('펀딩-정산 데이터 일관성 문제:', consistencyCheck.issues);
+      // 경고만 로그하고 계속 진행 (데이터 복구는 별도 처리)
+    }
+  } catch (error) {
+    console.warn('펀딩-정산 일관성 검증 실패:', error);
+  }
+
   const fundings = await prisma.funding.findMany({
     where: { projectId, paymentStatus: FundingStatus.SUCCEEDED },
     select: { amount: true, transaction: { select: { gatewayFee: true } } }
@@ -136,6 +149,21 @@ export async function POST(request: NextRequest) {
 
   if (totalRaised < project.targetAmount) {
     return buildError('목표 금액이 아직 달성되지 않았습니다.', 409);
+  }
+
+  // 프로젝트 currentAmount와 실제 펀딩 금액 일치 확인
+  const projectCurrentAmount = await prisma.project.findUnique({
+    where: { id: projectId },
+    select: { currentAmount: true }
+  });
+
+  if (projectCurrentAmount && projectCurrentAmount.currentAmount !== totalRaised) {
+    console.warn(`프로젝트 currentAmount(${projectCurrentAmount.currentAmount})와 실제 펀딩 금액(${totalRaised})이 일치하지 않습니다.`);
+    // 데이터 일관성을 위해 currentAmount 업데이트
+    await prisma.project.update({
+      where: { id: projectId },
+      data: { currentAmount: totalRaised }
+    });
   }
 
   const inferredGatewayFees = fundings.reduce(

@@ -9,6 +9,8 @@ import {
 import Stripe from 'stripe';
 
 import prisma from '@/lib/prisma';
+import { createSettlementIfTargetReached, safeUpdateFundingData } from '@/lib/server/funding-settlement';
+import { buildApiError, handleFundingSettlementError, withErrorHandling } from '@/lib/server/error-handling';
 
 interface FundingCreatePayload {
   projectId: string;
@@ -43,7 +45,7 @@ function createStripeClient() {
 }
 
 function buildError(message: string, status = 400) {
-  return NextResponse.json({ error: message }, { status });
+  return buildApiError(message, status);
 }
 
 function normaliseCurrency(currency?: string | null) {
@@ -325,10 +327,23 @@ export async function POST(request: NextRequest) {
           snapshot: pickStripeIntentSnapshot(paymentIntent)
         });
 
-        return NextResponse.json({
-          status: 'recorded',
-          funding
-        });
+        // 정산 자동 생성 시도
+        try {
+          const settlement = await createSettlementIfTargetReached(projectId);
+          return NextResponse.json({
+            status: 'recorded',
+            funding,
+            settlement: settlement ? { id: settlement.id, status: settlement.payoutStatus } : null
+          });
+        } catch (settlementError) {
+          console.warn('정산 자동 생성 실패:', settlementError);
+          return NextResponse.json({
+            status: 'recorded',
+            funding,
+            settlement: null,
+            warning: '펀딩은 성공했지만 정산 생성에 실패했습니다.'
+          });
+        }
       }
 
       if (checkoutSessionId) {
@@ -366,10 +381,23 @@ export async function POST(request: NextRequest) {
           snapshot: pickStripeIntentSnapshot(session)
         });
 
-        return NextResponse.json({
-          status: 'recorded',
-          funding
-        });
+        // 정산 자동 생성 시도
+        try {
+          const settlement = await createSettlementIfTargetReached(projectId);
+          return NextResponse.json({
+            status: 'recorded',
+            funding,
+            settlement: settlement ? { id: settlement.id, status: settlement.payoutStatus } : null
+          });
+        } catch (settlementError) {
+          console.warn('정산 자동 생성 실패:', settlementError);
+          return NextResponse.json({
+            status: 'recorded',
+            funding,
+            settlement: null,
+            warning: '펀딩은 성공했지만 정산 생성에 실패했습니다.'
+          });
+        }
       }
     } catch (error) {
       if (error instanceof Error && error.message.includes('구매자 이메일')) {
