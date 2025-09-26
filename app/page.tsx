@@ -5,7 +5,8 @@ import { CategoryFilter } from '@/components/sections/category-filter';
 import { ProjectCard } from '@/components/shared/project-card';
 import { SectionHeader } from '@/components/shared/section-header';
 import { StoreCard } from '@/components/shared/store-card';
-import { demoProjects } from '@/lib/data/projects';
+import type { ProjectSummary } from '@/lib/api/projects';
+import { listProjects } from '@/lib/services/projects';
 
 const storeItems = [
   {
@@ -30,7 +31,33 @@ const storeItems = [
   }
 ];
 
-export default function HomePage() {
+function renderProjectGrid(projects: ProjectSummary[]) {
+  if (projects.length === 0) {
+    return (
+      <p className="rounded-3xl border border-white/10 bg-white/5 p-6 text-sm text-white/60">
+        아직 공개된 프로젝트가 없습니다. 새로운 협업이 시작되면 가장 먼저 알려드릴게요.
+      </p>
+    );
+  }
+
+  return projects.map((project) => <ProjectCard key={project.id} project={project} />);
+}
+
+export default async function HomePage() {
+  let projects: ProjectSummary[] = [];
+  let projectError = false;
+
+  try {
+    projects = await listProjects();
+  } catch (error) {
+    projectError = true;
+    console.error('Failed to load projects', error);
+  }
+
+  const trendingProjects = projects.slice(0, 6);
+  const closingSoonProjects = [...projects].sort((a, b) => a.remainingDays - b.remainingDays).slice(0, 6);
+  const themedProjects = projects.slice(0, 6);
+
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-16 px-4 pb-20">
       <section className="pt-4 lg:pt-0">
@@ -41,9 +68,7 @@ export default function HomePage() {
         <div className="space-y-6">
           <SectionHeader title="실시간 인기" href="/projects" />
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {demoProjects.map((project) => (
-              <ProjectCard key={project.id} project={project} />
-            ))}
+            {renderProjectGrid(trendingProjects)}
           </div>
         </div>
         <div className="space-y-4 rounded-3xl border border-white/10 bg-white/5 p-6">
@@ -52,7 +77,10 @@ export default function HomePage() {
           <p className="text-sm text-white/60">
             아티스트와 직접 소통하는 원더월 스타일 AMA 세션. 지금 예약하면 얼리버드 혜택을 드립니다.
           </p>
-          <Link href="/projects/1" className="inline-flex w-fit rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
+          <Link
+            href="/projects/1"
+            className="inline-flex w-fit rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+          >
             참가 신청
           </Link>
         </div>
@@ -60,24 +88,32 @@ export default function HomePage() {
 
       <CategoryFilter />
 
+      {projectError ? (
+        <div className="rounded-3xl border border-red-500/40 bg-red-500/10 p-6 text-sm text-red-200">
+          프로젝트 데이터를 불러오는 중 문제가 발생했습니다. 잠시 후 다시 확인해 주세요.
+        </div>
+      ) : null}
+
       <section>
         <SectionHeader title="마감 임박" href="/projects?sort=closing" />
         <div className="flex gap-6 overflow-x-auto pb-4">
-          {demoProjects.map((project) => (
-            <div key={project.id} className="min-w-[280px] max-w-xs flex-1">
-              <ProjectCard project={project} />
-            </div>
-          ))}
+          {closingSoonProjects.length === 0 ? (
+            <p className="min-w-full rounded-3xl border border-white/10 bg-white/5 p-6 text-sm text-white/60">
+              준비 중인 프로젝트가 곧 업데이트됩니다.
+            </p>
+          ) : (
+            closingSoonProjects.map((project) => (
+              <div key={project.id} className="min-w-[280px] max-w-xs flex-1">
+                <ProjectCard project={project} />
+              </div>
+            ))
+          )}
         </div>
       </section>
 
       <section>
         <SectionHeader title="테마별 추천" href="/projects?theme=1" />
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {demoProjects.map((project) => (
-            <ProjectCard key={`theme-${project.id}`} project={project} />
-          ))}
-        </div>
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">{renderProjectGrid(themedProjects)}</div>
       </section>
 
       <section>

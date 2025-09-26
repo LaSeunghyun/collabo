@@ -1,40 +1,28 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
-import { demoProjects } from '@/lib/data/projects';
+import { getProjectSummaryById } from '@/lib/services/projects';
 
 export async function GET(
-  _request: NextRequest,
+  _request: Request,
   { params }: { params: { id: string } }
 ) {
-  const project = demoProjects.find((item) => item.id === params.id);
-  if (!project) {
-    return NextResponse.json({ message: 'Project not found' }, { status: 404 });
-  }
+  try {
+    const project = await getProjectSummaryById(params.id);
+    if (!project) {
+      return NextResponse.json({ message: 'Project not found' }, { status: 404 });
+    }
 
-  return NextResponse.json(project);
+    return NextResponse.json(project);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ message }, { status: 500 });
+  }
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const body = await request.json();
-  const project = demoProjects.find((item) => item.id === params.id);
-  if (!project) {
-    return NextResponse.json({ message: 'Project not found' }, { status: 404 });
-  }
-
-  return NextResponse.json({ ...project, ...body });
+export async function PATCH() {
+  return NextResponse.json({ message: 'Not implemented' }, { status: 501 });
 }
 
-export async function DELETE(
-  _request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const project = demoProjects.find((item) => item.id === params.id);
-  if (!project) {
-    return NextResponse.json({ message: 'Project not found' }, { status: 404 });
-  }
-
-  return NextResponse.json({ message: 'Deleted' });
+export async function DELETE() {
+  return NextResponse.json({ message: 'Not implemented' }, { status: 501 });
 }

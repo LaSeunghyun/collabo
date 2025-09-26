@@ -1,13 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
-import { demoProjects } from '@/lib/data/projects';
+import { listProjects } from '@/lib/services/projects';
 
 export async function GET() {
-  return NextResponse.json(demoProjects);
+  try {
+    const projects = await listProjects();
+    return NextResponse.json(projects);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ message }, { status: 500 });
+  }
 }
 
-export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const project = { ...body, id: crypto.randomUUID() };
-  return NextResponse.json(project, { status: 201 });
+export async function POST() {
+  return NextResponse.json({ message: 'Not implemented' }, { status: 501 });
 }

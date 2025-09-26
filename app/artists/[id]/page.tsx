@@ -1,10 +1,21 @@
 import Image from 'next/image';
 
 import { ProjectCard } from '@/components/shared/project-card';
-import { demoProjects } from '@/lib/data/projects';
+import type { ProjectSummary } from '@/lib/api/projects';
+import { listProjects, listProjectsByOwner } from '@/lib/services/projects';
 
-export default function ArtistProfilePage({ params }: { params: { id: string } }) {
-  const artistProjects = demoProjects;
+export default async function ArtistProfilePage({ params }: { params: { id: string } }) {
+  let artistProjects: ProjectSummary[] = [];
+
+  try {
+    artistProjects = await listProjectsByOwner(params.id);
+
+    if (artistProjects.length === 0) {
+      artistProjects = await listProjects();
+    }
+  } catch (error) {
+    console.error('Failed to load artist projects', error);
+  }
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-12 px-4 pb-20">
@@ -45,9 +56,13 @@ export default function ArtistProfilePage({ params }: { params: { id: string } }
       <section>
         <h2 className="text-xl font-semibold text-white">진행한 프로젝트</h2>
         <div className="mt-6 grid gap-6 md:grid-cols-2">
-          {artistProjects.map((project) => (
-            <ProjectCard key={project.id} project={project} />
-          ))}
+          {artistProjects.length === 0 ? (
+            <p className="rounded-3xl border border-white/10 bg-white/5 p-6 text-sm text-white/60">
+              아직 공개된 프로젝트가 없습니다. 새로운 협업이 등록되면 알려드릴게요.
+            </p>
+          ) : (
+            artistProjects.map((project) => <ProjectCard key={project.id} project={project} />)
+          )}
         </div>
       </section>
 
