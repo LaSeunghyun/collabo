@@ -43,7 +43,14 @@
     "writePlaceholder": "커뮤니티에 이야기를 공유하세요",
     "sortRecent": "최신순",
     "sortPopular": "인기순",
-    "post": "게시하기"
+    "post": "게시하기",
+    "titlePlaceholder": "제목을 입력하세요",
+    "contentPlaceholder": "커뮤니티에 이야기를 공유하세요",
+    "commentPlaceholder": "응원의 댓글을 남겨보세요",
+    "commentsLabel": "댓글",
+    "anonymous": "익명",
+    "emptyComments": "첫 번째 댓글을 남겨보세요.",
+    "commentSubmit": "댓글 달기"
   },
   "partners": {
     "title": "파트너 매칭",

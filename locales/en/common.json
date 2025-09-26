@@ -43,7 +43,14 @@
     "writePlaceholder": "Share something with the community",
     "sortRecent": "Recent",
     "sortPopular": "Popular",
-    "post": "Post"
+    "post": "Post",
+    "titlePlaceholder": "Give your post a title",
+    "contentPlaceholder": "Share something with the community",
+    "commentPlaceholder": "Join the conversation",
+    "commentsLabel": "Comments",
+    "anonymous": "Anonymous",
+    "emptyComments": "Be the first to respond.",
+    "commentSubmit": "Add comment"
   },
   "partners": {
     "title": "Partner matching",
