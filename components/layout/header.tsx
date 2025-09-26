@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, Search, Bell, User } from 'lucide-react';
+import { signIn, signOut, useSession } from 'next-auth/react';
 import { useTranslation } from 'react-i18next';
 
 import { useUIStore } from '@/lib/stores/use-ui-store';
@@ -19,6 +20,18 @@ export function Header() {
   const pathname = usePathname();
   const toggleMobileNav = useUIStore((state) => state.toggleMobileNav);
   const { t } = useTranslation();
+  const { data: session, status } = useSession();
+
+  const role = session?.user?.role ? String(session.user.role).toUpperCase() : null;
+  const roleLabels: Record<string, string> = {
+    CREATOR: '크리에이터',
+    PARTICIPANT: '참여자',
+    PARTNER: '파트너',
+    ADMIN: '관리자'
+  };
+
+  const canLaunchProject = role === 'CREATOR' || role === 'ADMIN';
+  const canManagePartners = role === 'PARTNER' || role === 'ADMIN';
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-neutral-950/80 backdrop-blur">
@@ -65,7 +78,33 @@ export function Header() {
           <button type="button" aria-label="Notifications" className="hidden lg:inline-flex">
             <Bell className="h-5 w-5" />
           </button>
-          <button type="button" aria-label="Account" className="hidden rounded-full border border-white/10 p-1.5 lg:inline-flex">
+          {role ? (
+            <span className="hidden items-center rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-white/80 lg:inline-flex">
+              {roleLabels[role] ?? role}
+            </span>
+          ) : null}
+          {canLaunchProject ? (
+            <Link
+              href="/projects/new"
+              className="hidden rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90 lg:inline-flex"
+            >
+              {t('navigation.launch')}
+            </Link>
+          ) : null}
+          {canManagePartners ? (
+            <Link
+              href="/partners"
+              className="hidden rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white/80 transition hover:text-white lg:inline-flex"
+            >
+              파트너 허브
+            </Link>
+          ) : null}
+          <button
+            type="button"
+            aria-label="Account"
+            className="hidden rounded-full border border-white/10 p-1.5 transition hover:border-white/30 lg:inline-flex"
+            onClick={() => (status === 'authenticated' ? signOut({ callbackUrl: '/' }) : signIn())}
+          >
             <User className="h-5 w-5" />
           </button>
         </div>

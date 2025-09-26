@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { UserRole } from '@prisma/client';
+
 import prisma from '@/lib/prisma';
 
 import {
@@ -77,7 +79,7 @@ export async function POST(
         data: {
           name: authorName,
           email: safeEmail,
-          role: 'fan'
+          role: UserRole.PARTICIPANT
         }
       });
       authorId = user.id;
