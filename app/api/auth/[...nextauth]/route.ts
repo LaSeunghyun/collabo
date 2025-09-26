@@ -7,6 +7,8 @@ import KakaoProvider from 'next-auth/providers/kakao';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import { compare } from 'bcryptjs';
 
+import { UserRole } from '@prisma/client';
+
 import prisma from '@/lib/prisma';
 
 const requiredOAuthEnvVars = [
@@ -58,15 +60,15 @@ const handler = NextAuth({
           }
         });
 
-        if (!user || !user.password) {
+        if (!user || !user.passwordHash) {
           return null;
         }
 
         let passwordMatches = false;
-        if (user.password.startsWith('$2')) {
-          passwordMatches = await compare(credentials.password, user.password);
+        if (user.passwordHash.startsWith('$2')) {
+          passwordMatches = await compare(credentials.password, user.passwordHash);
         } else {
-          passwordMatches = safeCompare(user.password, credentials.password);
+          passwordMatches = safeCompare(user.passwordHash, credentials.password);
         }
 
         if (!passwordMatches) {
@@ -96,7 +98,7 @@ const handler = NextAuth({
         if (token.sub) {
           session.user.id = token.sub;
         }
-        session.user.role = (token.role as string) ?? session.user.role ?? 'fan';
+        session.user.role = (token.role as string) ?? session.user.role ?? UserRole.PARTICIPANT;
       }
 
       return session;
