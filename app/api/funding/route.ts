@@ -94,12 +94,12 @@ async function recordFunding({
       }
     });
 
-      await tx.project.update({
-        where: { id: projectId },
-        data: {
-          currentAmount: {
-            increment: amount
-          }
+    await tx.project.update({
+      where: { id: projectId },
+      data: {
+        currentAmount: {
+          increment: amount
+        }
       }
     });
 
