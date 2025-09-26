@@ -1,12 +1,10 @@
-export interface SettlementRecord {
-  id: string;
-  projectId: string;
-  totalAmount: number;
+import { Settlement } from '@/types/prisma';
+
+export type SettlementRecord = Omit<Settlement, 'distributionBreakdown' | 'notes' | 'payouts' | 'updatedAt'> & {
   distributed: boolean;
-  creatorShare: number;
+  totalAmount: number;
   platformShare: number;
-  createdAt: string;
-}
+};
 
 export const fetchSettlement = async (projectId: string): Promise<SettlementRecord[]> => {
   const res = await fetch(`/api/settlement?projectId=${projectId}`);

@@ -1,15 +1,7 @@
-import { PartnerType } from '@prisma/client';
+import { PartnerType, PARTNER_TYPE_VALUES, PARTNER_TYPE_LABELS } from '@/types/prisma';
 import { z } from 'zod';
 
-export const PARTNER_TYPE_VALUES = Object.values(PartnerType);
-
-export const PARTNER_TYPE_LABELS: Record<PartnerType, string> = {
-  [PartnerType.STUDIO]: '스튜디오',
-  [PartnerType.VENUE]: '공연장',
-  [PartnerType.PRODUCTION]: '제작 스튜디오',
-  [PartnerType.MERCHANDISE]: '머천다이즈',
-  [PartnerType.OTHER]: '기타'
-};
+export { PartnerType, PARTNER_TYPE_VALUES, PARTNER_TYPE_LABELS };
 
 const serviceTagSchema = z.string().trim().min(1).max(80);
 

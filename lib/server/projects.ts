@@ -1,9 +1,8 @@
 import { revalidatePath } from 'next/cache';
-import { Prisma, ProjectStatus, UserRole } from '@prisma/client';
+import { Prisma, ProjectStatus, UserRole, ProjectSummary } from '@/types/prisma';
 import { ZodError } from 'zod';
 
 import type { SessionUser } from '@/lib/auth/session';
-import type { ProjectSummary } from '@/lib/api/projects';
 import { prisma } from '@/lib/prisma';
 import {
   createProjectSchema,

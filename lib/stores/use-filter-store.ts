@@ -1,12 +1,14 @@
 import { create } from 'zustand';
 
+export type SortOption = 'popular' | 'closing' | 'newest';
+
 interface FilterState {
   category: string | null;
   tags: string[];
-  sort: 'popular' | 'closing' | 'newest';
+  sort: SortOption;
   setCategory: (category: string | null) => void;
   toggleTag: (tag: string) => void;
-  setSort: (sort: 'popular' | 'closing' | 'newest') => void;
+  setSort: (sort: SortOption) => void;
 }
 
 export const useFilterStore = create<FilterState>((set) => ({

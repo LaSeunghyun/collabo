@@ -1,5 +1,7 @@
-import { ProjectStatus } from '@prisma/client';
+import { ProjectStatus, PROJECT_STATUS_VALUES, PROJECT_STATUS_LABELS } from '@/types/prisma';
 import { z } from 'zod';
+
+export { ProjectStatus, PROJECT_STATUS_VALUES, PROJECT_STATUS_LABELS };
 
 const currencySchema = z
   .string()

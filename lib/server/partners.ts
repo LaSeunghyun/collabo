@@ -1,5 +1,5 @@
 import { revalidatePath } from 'next/cache';
-import { PartnerType, Prisma, UserRole } from '@prisma/client';
+import { PartnerType, Prisma, UserRole, PartnerSummary } from '@/types/prisma';
 import { ZodError } from 'zod';
 
 import type { SessionUser } from '@/lib/auth/session';
@@ -97,28 +97,7 @@ type PartnerWithRelations = Prisma.PartnerGetPayload<{
   };
 }>;
 
-export interface PartnerSummary {
-  id: string;
-  name: string;
-  type: PartnerType;
-  verified: boolean;
-  rating: number | null;
-  description: string | null;
-  services: string[];
-  pricingModel: string | null;
-  location: string | null;
-  availability: Prisma.JsonValue | null;
-  portfolioUrl: string | null;
-  contactInfo: string;
-  matchCount: number;
-  owner: {
-    id: string;
-    name: string | null;
-    avatarUrl: string | null;
-  };
-  createdAt: string;
-  updatedAt: string;
-}
+// PartnerSummary는 이제 @/types/prisma에서 import됨
 
 const toPartnerSummary = (partner: PartnerWithRelations): PartnerSummary => {
   const services = Array.isArray(partner.services)

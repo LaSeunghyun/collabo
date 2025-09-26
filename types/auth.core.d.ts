@@ -1,8 +1,10 @@
+import { UserRole } from '@/types/prisma';
+
 export {};
 
 declare global {
   namespace CollaboriumAuth {
-    type Role = import('@prisma/client').UserRole | string;
+    type Role = UserRole;
     type Permission = string;
   }
 }

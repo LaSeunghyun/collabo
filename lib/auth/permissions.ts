@@ -1,8 +1,8 @@
-import type { UserRole } from '@prisma/client';
+import { UserRole, USER_ROLE_VALUES, USER_ROLE_LABELS } from '@/types/prisma';
 
-export const USER_ROLE_VALUES = ['CREATOR', 'PARTICIPANT', 'PARTNER', 'ADMIN'] as const;
+export { UserRole, USER_ROLE_VALUES, USER_ROLE_LABELS };
 
-export type AppUserRole = (typeof USER_ROLE_VALUES)[number];
+export type AppUserRole = UserRole;
 
 const DEFAULT_SESSION_PERMISSION = 'session:read';
 
