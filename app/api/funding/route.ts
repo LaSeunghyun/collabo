@@ -9,8 +9,8 @@ import {
 import Stripe from 'stripe';
 
 import prisma from '@/lib/prisma';
-import { createSettlementIfTargetReached, safeUpdateFundingData } from '@/lib/server/funding-settlement';
-import { buildApiError, handleFundingSettlementError, withErrorHandling } from '@/lib/server/error-handling';
+import { createSettlementIfTargetReached } from '@/lib/server/funding-settlement';
+import { buildApiError } from '@/lib/server/error-handling';
 
 interface FundingCreatePayload {
   projectId: string;
@@ -92,52 +92,6 @@ function pickStripeIntentSnapshot(intent: Stripe.PaymentIntent | Stripe.Checkout
   };
 }
 
-function normaliseCurrency(currency?: string | null) {
-  if (!currency) {
-    return 'KRW';
-  }
-
-  return currency.toUpperCase();
-}
-
-function ensureIntegerAmount(amount?: number | null) {
-  if (typeof amount !== 'number' || !Number.isFinite(amount)) {
-    return null;
-  }
-
-  const rounded = Math.round(amount);
-  if (rounded <= 0) {
-    return null;
-  }
-
-  return rounded;
-}
-
-function pickStripeIntentSnapshot(
-  intent: Stripe.PaymentIntent | Stripe.Checkout.Session
-): Prisma.InputJsonValue {
-  if ('object' in intent && intent.object === 'payment_intent') {
-    const paymentIntent = intent as Stripe.PaymentIntent;
-    return {
-      id: paymentIntent.id,
-      status: paymentIntent.status,
-      amount: paymentIntent.amount,
-      amountReceived: paymentIntent.amount_received,
-      currency: paymentIntent.currency,
-      metadata: paymentIntent.metadata ?? {}
-    };
-  }
-
-  const session = intent as Stripe.Checkout.Session;
-  return {
-    id: session.id,
-    status: session.payment_status,
-    amount: session.amount_total,
-    currency: session.currency,
-    metadata: session.metadata ?? {}
-  };
-}
-
 async function resolveUserId({
   receiptEmail,
   customerName,
@@ -171,11 +125,7 @@ async function upsertPaymentTransaction(
   externalId: string,
   amount: number,
   currency: string,
-<<<<<<< HEAD
   rawPayload?: unknown
-=======
-  rawPayload?: Prisma.InputJsonValue
->>>>>>> codex/design-feature-level-logic-for-platform-c52td5
 ) {
   await tx.paymentTransaction.upsert({
     where: { fundingId },
@@ -185,11 +135,7 @@ async function upsertPaymentTransaction(
       status: FundingStatus.SUCCEEDED,
       amount,
       currency,
-<<<<<<< HEAD
       rawPayload: rawPayload as any
-=======
-      rawPayload
->>>>>>> codex/design-feature-level-logic-for-platform-c52td5
     },
     create: {
       fundingId,
@@ -198,11 +144,7 @@ async function upsertPaymentTransaction(
       status: FundingStatus.SUCCEEDED,
       amount,
       currency,
-<<<<<<< HEAD
       rawPayload: rawPayload as any
-=======
-      rawPayload
->>>>>>> codex/design-feature-level-logic-for-platform-c52td5
     }
   });
 }
@@ -220,11 +162,7 @@ async function recordSuccessfulFunding({
   amount: number;
   currency: string;
   paymentIntentId: string;
-<<<<<<< HEAD
   snapshot: unknown;
-=======
-  snapshot: Prisma.InputJsonValue;
->>>>>>> codex/design-feature-level-logic-for-platform-c52td5
 }) {
   return prisma.$transaction(async (tx) => {
     const existing = await tx.funding.findUnique({
@@ -345,16 +283,7 @@ export async function POST(request: NextRequest) {
     return buildError('해당 프로젝트를 찾을 수 없습니다.', 404);
   }
 
-<<<<<<< HEAD
   if (![ProjectStatus.LIVE, ProjectStatus.EXECUTING].includes(project.status as any)) {
-=======
-  const fundingEligibleStatuses = new Set<ProjectStatus>([
-    ProjectStatus.LIVE,
-    ProjectStatus.EXECUTING
-  ]);
-
-  if (!fundingEligibleStatuses.has(project.status)) {
->>>>>>> codex/design-feature-level-logic-for-platform-c52td5
     return buildError('현재 상태에서는 결제를 진행할 수 없습니다.', 409);
   }
 
@@ -369,9 +298,7 @@ export async function POST(request: NextRequest) {
   if (paymentIntentId || checkoutSessionId) {
     try {
       if (paymentIntentId) {
-        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId, {
-          expand: ['latest_charge']
-        });
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
         if (paymentIntent.status !== 'succeeded') {
           return buildError(`결제 상태가 완료되지 않았습니다. (현재 상태: ${paymentIntent.status})`, 409);
@@ -388,14 +315,7 @@ export async function POST(request: NextRequest) {
           receiptEmail,
           customerName,
           stripeEmailFallback:
-<<<<<<< HEAD
             paymentIntent.receipt_email ?? undefined
-=======
-            paymentIntent.receipt_email ??
-            (typeof paymentIntent.latest_charge !== 'string'
-              ? paymentIntent.latest_charge?.billing_details?.email ?? undefined
-              : undefined)
->>>>>>> codex/design-feature-level-logic-for-platform-c52td5
         });
 
         const funding = await recordSuccessfulFunding({

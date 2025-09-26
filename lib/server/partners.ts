@@ -50,32 +50,32 @@ const sanitizeAvailability = (
 
   const slots = Array.isArray(slotsValue)
     ? slotsValue
-        .map((slot) => {
-          if (!slot || typeof slot !== 'object') {
-            return null;
-          }
+      .map((slot) => {
+        if (!slot || typeof slot !== 'object') {
+          return null;
+        }
 
-          const dayValue = (slot as { day?: unknown }).day;
-          const startValue = (slot as { start?: unknown }).start;
-          const endValue = (slot as { end?: unknown }).end;
-          const noteValue = (slot as { note?: unknown }).note;
+        const dayValue = (slot as { day?: unknown }).day;
+        const startValue = (slot as { start?: unknown }).start;
+        const endValue = (slot as { end?: unknown }).end;
+        const noteValue = (slot as { note?: unknown }).note;
 
-          const day = typeof dayValue === 'string' ? dayValue.trim() : null;
-          const start = typeof startValue === 'string' ? startValue.trim() : null;
-          const end = typeof endValue === 'string' ? endValue.trim() : null;
-          const note = typeof noteValue === 'string' ? noteValue.trim() : null;
+        const day = typeof dayValue === 'string' ? dayValue.trim() : null;
+        const start = typeof startValue === 'string' ? startValue.trim() : null;
+        const end = typeof endValue === 'string' ? endValue.trim() : null;
+        const note = typeof noteValue === 'string' ? noteValue.trim() : null;
 
-          if (!day || !start || !end) {
-            return null;
-          }
+        if (!day || !start || !end) {
+          return null;
+        }
 
-          const payload: Prisma.JsonObject = note
-            ? { day, start, end, note }
-            : { day, start, end };
+        const payload: Prisma.JsonObject = note
+          ? { day, start, end, note }
+          : { day, start, end };
 
-          return payload;
-        })
-        .filter((slot): slot is Prisma.JsonObject => Boolean(slot))
+        return payload;
+      })
+      .filter((slot): slot is Prisma.JsonObject => Boolean(slot))
     : [];
 
   if (!timezone && slots.length === 0) {
@@ -122,7 +122,7 @@ export interface PartnerSummary {
 
 const toPartnerSummary = (partner: PartnerWithRelations): PartnerSummary => {
   const services = Array.isArray(partner.services)
-    ? partner.services.filter((item): item is string => typeof item === 'string')
+    ? partner.services.filter((item: unknown): item is string => typeof item === 'string')
     : [];
 
   const availability = (partner.availability ?? null) as Prisma.JsonValue | null;
@@ -409,7 +409,7 @@ export const createPartnerProfile = async (payload: unknown, sessionUser: Sessio
     throw new PartnerProfileExistsError();
   }
 
-  const partner = await prisma.$transaction(async (tx) => {
+  const partner = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const created = await tx.partner.create({ data: buildCreateData(input, ownerId) });
 
     if (owner.role !== UserRole.ADMIN && owner.role !== UserRole.PARTNER) {

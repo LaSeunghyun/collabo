@@ -12,18 +12,26 @@ import prisma from '@/lib/prisma';
 import { AUTH_V3_ENABLED } from './flags';
 import { deriveEffectivePermissions } from './permissions';
 
-const requiredOAuthEnvVars = [
-  { key: 'GOOGLE_CLIENT_ID', provider: 'Google' },
-  { key: 'GOOGLE_CLIENT_SECRET', provider: 'Google' },
-  { key: 'KAKAO_CLIENT_ID', provider: 'Kakao' },
-  { key: 'KAKAO_CLIENT_SECRET', provider: 'Kakao' }
-];
+// Skip OAuth validation during build time
+const isBuildTime = process.env.NODE_ENV === 'production' && process.env.NEXT_PHASE === 'phase-production-build';
 
-for (const { key, provider } of requiredOAuthEnvVars) {
-  if (!process.env[key]) {
-    throw new Error(
-      `${provider} OAuth configuration is missing the required environment variable "${key}".`
-    );
+if (!isBuildTime) {
+  const requiredOAuthEnvVars = [
+    { key: 'GOOGLE_CLIENT_ID', provider: 'Google' },
+    { key: 'GOOGLE_CLIENT_SECRET', provider: 'Google' },
+    { key: 'KAKAO_CLIENT_ID', provider: 'Kakao' },
+    { key: 'KAKAO_CLIENT_SECRET', provider: 'Kakao' }
+  ];
+
+  // Only validate OAuth env vars in production or when explicitly enabled
+  if (process.env.NODE_ENV === 'production' || process.env.VALIDATE_OAUTH === 'true') {
+    for (const { key, provider } of requiredOAuthEnvVars) {
+      if (!process.env[key]) {
+        throw new Error(
+          `${provider} OAuth configuration is missing the required environment variable "${key}".`
+        );
+      }
+    }
   }
 }
 
@@ -134,7 +142,7 @@ export const authOptions: NextAuthOptions = {
           token.role = dbUser.role;
           token.permissions = deriveEffectivePermissions(
             dbUser.role,
-            dbUser.permissions.map((entry) => entry.permission.key)
+            dbUser.permissions.map((entry: { permission: { key: string } }) => entry.permission.key)
           );
         } else if (!token.permissions) {
           token.permissions = [];

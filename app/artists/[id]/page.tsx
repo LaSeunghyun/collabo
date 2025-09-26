@@ -2,6 +2,7 @@ import Image from 'next/image';
 
 import { ProjectCard } from '@/components/shared/project-card';
 import { getProjectSummaries } from '@/lib/server/projects';
+import type { ProjectSummary } from '@/lib/api/projects';
 
 export default async function ArtistProfilePage({ params }: { params: { id: string } }) {
   const artistProjects = await getProjectSummaries({ ownerId: params.id });
@@ -50,7 +51,7 @@ export default async function ArtistProfilePage({ params }: { params: { id: stri
               아직 진행한 프로젝트가 없습니다.
             </div>
           ) : (
-            artistProjects.map((project) => <ProjectCard key={project.id} project={project} />)
+            artistProjects.map((project: ProjectSummary) => <ProjectCard key={project.id} project={project} />)
           )}
         </div>
       </section>

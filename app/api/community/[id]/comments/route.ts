@@ -36,7 +36,7 @@ export async function GET(
       orderBy: { createdAt: 'asc' }
     });
 
-    return NextResponse.json(comments.map((comment) => formatComment(comment)));
+    return NextResponse.json(comments.map((comment: { id: string; postId: string; content: string; createdAt: Date; author?: { name: string | null } | null }) => formatComment(comment)));
   } catch (error) {
     console.error('Failed to load comments from database, using demo data.', error);
     return NextResponse.json(getDemoCommunityComments(params.id));
