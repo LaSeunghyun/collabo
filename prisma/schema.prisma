@@ -7,69 +7,238 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  CREATOR
+  PARTICIPANT
+  PARTNER
+  ADMIN
+}
+
+enum ProjectStatus {
+  DRAFT
+  REVIEWING
+  LIVE
+  SUCCESSFUL
+  FAILED
+  EXECUTING
+  COMPLETED
+}
+
+enum FundingStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum SettlementPayoutStatus {
+  PENDING
+  IN_PROGRESS
+  PAID
+}
+
+enum PartnerType {
+  STUDIO
+  VENUE
+  PRODUCTION
+  MERCHANDISE
+  OTHER
+}
+
+enum PartnerMatchStatus {
+  REQUESTED
+  ACCEPTED
+  DECLINED
+  CANCELLED
+  COMPLETED
+}
+
+enum ProductType {
+  PHYSICAL
+  DIGITAL
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  REFUNDED
+  CANCELLED
+}
+
+enum PostType {
+  UPDATE
+  DISCUSSION
+  AMA
+}
+
+enum NotificationType {
+  FUNDING_SUCCESS
+  NEW_COMMENT
+  PROJECT_MILESTONE
+  PARTNER_REQUEST
+  SETTLEMENT_PAID
+  SYSTEM
+}
+
 model User {
-  id        String   @id @default(cuid())
-  name      String
-  email     String   @unique
-  role      String   @default("fan")
-  password  String?
-  image     String?
-  createdAt DateTime @default(now())
-  projects  Project[] @relation("OwnerProjects")
-  fundings  Funding[]
-  posts     Post[]
-  comments  Comment[]
-  likes     Like[]
+  id             String                @id @default(cuid())
+  name           String
+  email          String                @unique
+  role           UserRole              @default(PARTICIPANT)
+  passwordHash   String?
+  avatarUrl      String?
+  language       String                @default("ko")
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  projects       Project[]             @relation("OwnerProjects")
+  collaborations ProjectCollaborator[]
+  fundings       Funding[]
+  posts          Post[]
+  comments       Comment[]
+  likes          Like[]
+  notifications  Notification[]
+  partner        Partner?
+  orders         Order[]
+  wallet         Wallet?
+  auditLogs      AuditLog[]
+  permissions    UserPermission[]
 }
 
 model Project {
-  id            String      @id @default(cuid())
-  title         String
-  description   String
-  category      String
-  targetAmount  Int
-  currentAmount Int      @default(0)
-  status        String   @default("draft")
-  thumbnail     String?
-  owner         User      @relation("OwnerProjects", fields: [ownerId], references: [id])
-  ownerId       String
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  fundings      Funding[]
-  settlements   Settlement[]
-  posts         Post[]
+  id             String                @id @default(cuid())
+  title          String
+  description    String
+  category       String
+  targetAmount   Int
+  currentAmount  Int                   @default(0)
+  currency       String                @default("KRW")
+  status         ProjectStatus         @default(DRAFT)
+  startDate      DateTime?
+  endDate        DateTime?
+  rewardTiers    Json?
+  milestones     Json?
+  thumbnail      String?
+  owner          User                  @relation("OwnerProjects", fields: [ownerId], references: [id])
+  ownerId        String
+  collaborators  ProjectCollaborator[]
+  fundings       Funding[]
+  settlements    Settlement[]
+  partnerMatches PartnerMatch[]
+  products       Product[]
+  posts          Post[]
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
 }
 
-model Funding {
+model ProjectCollaborator {
   id        String   @id @default(cuid())
   project   Project  @relation(fields: [projectId], references: [id])
   projectId String
   user      User     @relation(fields: [userId], references: [id])
   userId    String
-  amount    Int
-  paymentReference String? @unique
+  role      String?
+  share     Int?
   createdAt DateTime @default(now())
+
+  @@unique([projectId, userId])
+}
+
+model Funding {
+  id              String        @id @default(cuid())
+  project         Project       @relation(fields: [projectId], references: [id])
+  projectId       String
+  user            User          @relation(fields: [userId], references: [id])
+  userId          String
+  amount          Int
+  currency        String        @default("KRW")
+  paymentIntentId String?       @unique
+  paymentStatus   FundingStatus @default(PENDING)
+  rewardTier      Json?
+  metadata        Json?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  refundedAt      DateTime?
 }
 
 model Settlement {
-  id          String   @id @default(cuid())
-  project     Project  @relation(fields: [projectId], references: [id])
-  projectId   String
-  totalAmount Int
-  distributed Boolean  @default(false)
-  creatorShare Int
-  platformShare Int
-  createdAt   DateTime @default(now())
+  id                    String                 @id @default(cuid())
+  project               Project                @relation(fields: [projectId], references: [id])
+  projectId             String
+  totalRaised           Int
+  platformFee           Int
+  creatorShare          Int
+  partnerShare          Int                    @default(0)
+  payoutStatus          SettlementPayoutStatus @default(PENDING)
+  distributionBreakdown Json?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
 }
 
 model Partner {
-  id          String   @id @default(cuid())
-  name        String
-  type        String
-  description String?
-  contactInfo String
-  status      String   @default("review")
-  createdAt   DateTime @default(now())
+  id           String         @id @default(cuid())
+  user         User           @relation(fields: [userId], references: [id])
+  userId       String         @unique
+  type         PartnerType
+  name         String
+  description  String?
+  services     Json?
+  pricingModel String?
+  rating       Float?
+  contactInfo  String
+  verified     Boolean        @default(false)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  matches      PartnerMatch[]
+}
+
+model PartnerMatch {
+  id              String             @id @default(cuid())
+  project         Project            @relation(fields: [projectId], references: [id])
+  projectId       String
+  partner         Partner            @relation(fields: [partnerId], references: [id])
+  partnerId       String
+  status          PartnerMatchStatus @default(REQUESTED)
+  quote           Int?
+  settlementShare Float?
+  contractUrl     String?
+  notes           Json?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+}
+
+model Product {
+  id        String      @id @default(cuid())
+  project   Project     @relation(fields: [projectId], references: [id])
+  projectId String
+  name      String
+  type      ProductType
+  price     Int
+  currency  String      @default("KRW")
+  inventory Int?
+  images    String[]    @default([])
+  metadata  Json?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  orders    Order[]
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  user          User        @relation(fields: [userId], references: [id])
+  userId        String
+  product       Product     @relation(fields: [productId], references: [id])
+  productId     String
+  quantity      Int         @default(1)
+  totalPrice    Int
+  currency      String      @default("KRW")
+  orderStatus   OrderStatus @default(PENDING)
+  shippingInfo  Json?
+  transactionId String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 }
 
 model Post {
@@ -80,19 +249,25 @@ model Post {
   authorId  String
   title     String
   content   String
+  type      PostType  @default(UPDATE)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   likes     Like[]
   comments  Comment[]
-  createdAt DateTime  @default(now())
 }
 
 model Comment {
-  id        String   @id @default(cuid())
-  post      Post     @relation(fields: [postId], references: [id])
-  postId    String
-  author    User     @relation(fields: [authorId], references: [id])
-  authorId  String
-  content   String
-  createdAt DateTime @default(now())
+  id              String    @id @default(cuid())
+  post            Post      @relation(fields: [postId], references: [id])
+  postId          String
+  author          User      @relation(fields: [authorId], references: [id])
+  authorId        String
+  content         String
+  parent          Comment?  @relation("CommentReplies", fields: [parentCommentId], references: [id])
+  parentCommentId String?
+  replies         Comment[] @relation("CommentReplies")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 }
 
 model Like {
@@ -102,4 +277,54 @@ model Like {
   user      User     @relation(fields: [userId], references: [id])
   userId    String
   createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  user      User             @relation(fields: [userId], references: [id])
+  userId    String
+  type      NotificationType
+  payload   Json
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+}
+
+model Wallet {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String   @unique
+  balance   Int      @default(0)
+  currency  String   @default("KRW")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    String?
+  entity    String
+  entityId  String
+  action    String
+  data      Json?
+  createdAt DateTime @default(now())
+}
+
+model Permission {
+  id          String           @id @default(cuid())
+  key         String           @unique
+  description String?
+  users       UserPermission[]
+  createdAt   DateTime         @default(now())
+}
+
+model UserPermission {
+  id           String     @id @default(cuid())
+  user         User       @relation(fields: [userId], references: [id])
+  userId       String
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  permissionId String
+  assignedAt   DateTime   @default(now())
+
+  @@unique([userId, permissionId])
 }

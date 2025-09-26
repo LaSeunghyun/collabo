@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { UserRole } from '@prisma/client';
 
+import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import { getProjectSummaries } from '@/lib/server/projects';
 
 export async function GET() {
@@ -13,6 +15,17 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  try {
+    await requireApiUser({ roles: [UserRole.CREATOR, UserRole.ADMIN] });
+  } catch (error) {
+    const response = handleAuthorizationError(error);
+    if (response) {
+      return response;
+    }
+
+    throw error;
+  }
+
   const body = await request.json();
   return NextResponse.json(body, { status: 201 });
 }

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { UserRole } from '@prisma/client';
 
+import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import prisma from '@/lib/prisma';
 
 function buildError(message: string, status = 400) {
@@ -7,6 +9,17 @@ function buildError(message: string, status = 400) {
 }
 
 export async function GET(request: NextRequest) {
+  try {
+    await requireApiUser({ roles: [UserRole.CREATOR, UserRole.ADMIN, UserRole.PARTNER] });
+  } catch (error) {
+    const response = handleAuthorizationError(error);
+    if (response) {
+      return response;
+    }
+
+    throw error;
+  }
+
   const { searchParams } = new URL(request.url);
   const projectId = searchParams.get('projectId');
 
@@ -23,6 +36,17 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  try {
+    await requireApiUser({ roles: [UserRole.ADMIN], permissions: ['settlement:manage'] });
+  } catch (error) {
+    const response = handleAuthorizationError(error);
+    if (response) {
+      return response;
+    }
+
+    throw error;
+  }
+
   let body: { projectId?: string; creatorRatio?: number };
 
   try {
