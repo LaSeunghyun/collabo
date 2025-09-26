@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { UserRole } from '@prisma/client';
+import { UserRole } from '@/types/prisma';
 
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 import {
   addDemoCommunityComment,

@@ -13,7 +13,7 @@ import {
   UserRole,
   PrismaClient,
   type Prisma
-} from '@prisma/client';
+} from '@/types/prisma';
 
 const prisma = new PrismaClient();
 

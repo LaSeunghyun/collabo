@@ -6,11 +6,11 @@ import {
   SettlementPayoutStatus,
   SettlementStakeholderType,
   UserRole
-} from '@prisma/client';
+} from '@/types/prisma';
 import { z } from 'zod';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { calculateSettlementBreakdown } from '@/lib/server/settlements';
 import { validateFundingSettlementConsistency } from '@/lib/server/funding-settlement';
 import { buildApiError } from '@/lib/server/error-handling';
@@ -167,25 +167,25 @@ export async function POST(request: NextRequest) {
   }
 
   const inferredGatewayFees = fundings.reduce(
-    (acc, funding) => acc + (funding.transaction?.gatewayFee ?? 0),
+    (acc: number, funding: { transaction: { gatewayFee: number } }) => acc + (funding.transaction?.gatewayFee ?? 0),
     0
   );
 
   const partnerShares = project.partnerMatches
-    .filter((match) => typeof match.settlementShare === 'number')
-    .map((match) => ({
+    .filter((match: { settlementShare: number }) => typeof match.settlementShare === 'number')
+    .map((match: { partnerId: string; settlementShare: number }) => ({
       stakeholderId: match.partnerId,
       share: normaliseShare(match.settlementShare ?? 0)
     }))
-    .filter((entry) => entry.share > 0);
+    .filter((entry: { share: number }) => entry.share > 0);
 
   const collaboratorShares = project.collaborators
-    .filter((collab) => typeof collab.share === 'number')
-    .map((collab) => ({
+    .filter((collab: { share: number }) => typeof collab.share === 'number')
+    .map((collab: { userId: string; share: number }) => ({
       stakeholderId: collab.userId,
       share: normaliseShare(collab.share ?? 0, true)
     }))
-    .filter((entry) => entry.share > 0);
+    .filter((entry: { share: number }) => entry.share > 0);
 
   let breakdown;
   try {
@@ -201,7 +201,7 @@ export async function POST(request: NextRequest) {
     return buildError(message, 422);
   }
 
-  const settlement = await prisma.$transaction(async (tx) => {
+  const settlement = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const created = await tx.settlement.create({
       data: {
         projectId,

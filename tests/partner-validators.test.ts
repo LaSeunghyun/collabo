@@ -1,4 +1,4 @@
-import { PartnerType } from '@prisma/client';
+import { PartnerType } from '@/types/prisma';
 
 import { createPartnerSchema, updatePartnerSchema } from '@/lib/validators/partners';
 

@@ -1,6 +1,6 @@
 import { getServerSession } from 'next-auth';
 import type { Session } from 'next-auth';
-import { UserRole } from '@prisma/client';
+import { UserRole } from '@/types/prisma';
 
 import { authOptions } from './options';
 import { hasAllPermissions, normalizeRole } from './permissions';

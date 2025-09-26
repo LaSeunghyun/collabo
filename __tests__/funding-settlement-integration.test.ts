@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@/types/prisma';
 import { createSettlementIfTargetReached, validateFundingSettlementConsistency } from '../lib/server/funding-settlement';
 
 const prisma = new PrismaClient();

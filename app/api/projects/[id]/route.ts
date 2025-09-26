@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { UserRole } from '@prisma/client';
+import { UserRole } from '@/types/prisma';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import {

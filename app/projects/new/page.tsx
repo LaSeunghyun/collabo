@@ -1,4 +1,4 @@
-import { UserRole } from '@prisma/client';
+import { UserRole } from '@/types/prisma';
 
 import { requireUser } from '@/lib/auth/guards';
 import { ROLE_LABELS } from '@/lib/auth/permissions';

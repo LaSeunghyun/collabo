@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { NextRequest } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@/types/prisma';
 import { POST as fundingPOST } from '../../app/api/funding/route';
 import { POST as settlementPOST } from '../../app/api/settlement/route';
 

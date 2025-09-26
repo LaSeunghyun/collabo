@@ -5,10 +5,10 @@ import {
   ProjectStatus,
   type Prisma,
   type Funding
-} from '@prisma/client';
+} from '@/types/prisma';
 import Stripe from 'stripe';
 
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { createSettlementIfTargetReached } from '@/lib/server/funding-settlement';
 import { buildApiError } from '@/lib/server/error-handling';
 

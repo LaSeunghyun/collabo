@@ -1,4 +1,4 @@
-import { UserRole } from '@prisma/client';
+import { UserRole } from '@/types/prisma';
 
 import { PartnerForm } from '@/components/forms/partner-form';
 import { requireUser } from '@/lib/auth/guards';
