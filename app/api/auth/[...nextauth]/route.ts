@@ -1,9 +1,42 @@
+import { timingSafeEqual } from 'crypto';
+
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 import KakaoProvider from 'next-auth/providers/kakao';
+import { PrismaAdapter } from '@next-auth/prisma-adapter';
+import { compare } from 'bcryptjs';
+
+import prisma from '@/lib/prisma';
+
+const requiredOAuthEnvVars = [
+  { key: 'GOOGLE_CLIENT_ID', provider: 'Google' },
+  { key: 'GOOGLE_CLIENT_SECRET', provider: 'Google' },
+  { key: 'KAKAO_CLIENT_ID', provider: 'Kakao' },
+  { key: 'KAKAO_CLIENT_SECRET', provider: 'Kakao' }
+];
+
+for (const { key, provider } of requiredOAuthEnvVars) {
+  if (!process.env[key]) {
+    throw new Error(
+      `${provider} OAuth configuration is missing the required environment variable "${key}".`
+    );
+  }
+}
+
+const safeCompare = (a: string, b: string) => {
+  const bufferA = Buffer.from(a);
+  const bufferB = Buffer.from(b);
+
+  if (bufferA.length !== bufferB.length) {
+    return false;
+  }
+
+  return timingSafeEqual(bufferA, bufferB);
+};
 
 const handler = NextAuth({
+  adapter: PrismaAdapter(prisma),
   session: {
     strategy: 'jwt'
   },
@@ -19,34 +52,72 @@ const handler = NextAuth({
           return null;
         }
 
+        const user = await prisma.user.findUnique({
+          where: {
+            email: credentials.email
+          }
+        });
+
+        if (!user || !user.password) {
+          return null;
+        }
+
+        let passwordMatches = false;
+        if (user.password.startsWith('$2')) {
+          passwordMatches = await compare(credentials.password, user.password);
+        } else {
+          passwordMatches = safeCompare(user.password, credentials.password);
+        }
+
+        if (!passwordMatches) {
+          return null;
+        }
+
         return {
-          id: 'demo-user',
-          name: 'Collabo Fan',
-          email: credentials.email,
-          role: 'fan'
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role
         };
       }
     }),
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID ?? 'placeholder',
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? 'placeholder'
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!
     }),
     KakaoProvider({
-      clientId: process.env.KAKAO_CLIENT_ID ?? 'placeholder',
-      clientSecret: process.env.KAKAO_CLIENT_SECRET ?? 'placeholder'
+      clientId: process.env.KAKAO_CLIENT_ID!,
+      clientSecret: process.env.KAKAO_CLIENT_SECRET!
     })
   ],
   callbacks: {
     async session({ session, token }) {
       if (session.user) {
-        session.user.role = (token.role as string) ?? 'fan';
+        if (token.sub) {
+          session.user.id = token.sub;
+        }
+        session.user.role = (token.role as string) ?? session.user.role ?? 'fan';
       }
+
       return session;
     },
-    async jwt({ token }) {
-      if (!token.role) {
-        token.role = 'fan';
+    async jwt({ token, user, trigger }) {
+      if (user) {
+        token.role = user.role;
       }
+
+      const shouldSyncRole = Boolean(token.email && (!token.role || trigger === 'update'));
+
+      if (shouldSyncRole) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: token.email as string }
+        });
+
+        if (dbUser) {
+          token.role = dbUser.role;
+        }
+      }
+
       return token;
     }
   }
