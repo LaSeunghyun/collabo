@@ -12,7 +12,8 @@ const project = {
   participants: 100,
   remainingDays: 5,
   targetAmount: 1000,
-  currentAmount: 500
+  currentAmount: 500,
+  createdAt: new Date('2024-01-01T00:00:00Z').toISOString()
 };
 
 describe('ProjectCard', () => {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
+  Prisma,
   FundingStatus,
   PartnerMatchStatus,
   ProjectStatus,
@@ -11,7 +12,10 @@ import { z } from 'zod';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import prisma from '@/lib/prisma';
-import { calculateSettlementBreakdown } from '@/lib/server/settlements';
+import {
+  calculateSettlementBreakdown,
+  type SettlementBreakdown
+} from '@/lib/server/settlements';
 import { validateFundingSettlementConsistency } from '@/lib/server/funding-settlement';
 import { buildApiError, handleFundingSettlementError, withErrorHandling } from '@/lib/server/error-handling';
 
@@ -126,6 +130,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(existingPending);
   }
 
+<<<<<<< HEAD
   // 펀딩 데이터 일관성 검증
   try {
     const consistencyCheck = await validateFundingSettlementConsistency(projectId);
@@ -137,6 +142,8 @@ export async function POST(request: NextRequest) {
     console.warn('펀딩-정산 일관성 검증 실패:', error);
   }
 
+=======
+>>>>>>> codex/design-feature-level-logic-for-platform-c52td5
   const fundings = await prisma.funding.findMany({
     where: { projectId, paymentStatus: FundingStatus.SUCCEEDED },
     select: { amount: true, transaction: { select: { gatewayFee: true } } }
@@ -151,6 +158,7 @@ export async function POST(request: NextRequest) {
     return buildError('목표 금액이 아직 달성되지 않았습니다.', 409);
   }
 
+<<<<<<< HEAD
   // 프로젝트 currentAmount와 실제 펀딩 금액 일치 확인
   const projectCurrentAmount = await prisma.project.findUnique({
     where: { id: projectId },
@@ -201,6 +209,45 @@ export async function POST(request: NextRequest) {
     return buildError(message, 422);
   }
 
+=======
+  const inferredGatewayFees = fundings.reduce(
+    (acc, funding) => acc + (funding.transaction?.gatewayFee ?? 0),
+    0
+  );
+
+  const partnerShares = project.partnerMatches
+    .filter((match) => typeof match.settlementShare === 'number')
+    .map((match) => ({
+      stakeholderId: match.partnerId,
+      share: normaliseShare(match.settlementShare ?? 0)
+    }))
+    .filter((entry) => entry.share > 0);
+
+  const collaboratorShares = project.collaborators
+    .filter((collab) => typeof collab.share === 'number')
+    .map((collab) => ({
+      stakeholderId: collab.userId,
+      share: normaliseShare(collab.share ?? 0, true)
+    }))
+    .filter((entry) => entry.share > 0);
+
+  let breakdown: SettlementBreakdown;
+  try {
+    breakdown = calculateSettlementBreakdown({
+      totalRaised,
+      platformFeeRate,
+      gatewayFees: gatewayFeeOverride ?? inferredGatewayFees,
+      partnerShares,
+      collaboratorShares
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '정산 계산에 실패했습니다.';
+    return buildError(message, 422);
+  }
+
+  const distributionJson = JSON.parse(JSON.stringify(breakdown)) as Prisma.InputJsonValue;
+
+>>>>>>> codex/design-feature-level-logic-for-platform-c52td5
   const settlement = await prisma.$transaction(async (tx) => {
     const created = await tx.settlement.create({
       data: {
@@ -213,8 +260,16 @@ export async function POST(request: NextRequest) {
         gatewayFees: breakdown.gatewayFees,
         netAmount: breakdown.netAmount,
         payoutStatus: SettlementPayoutStatus.PENDING,
+<<<<<<< HEAD
         distributionBreakdown: breakdown as any,
         notes: notes ?? null
+=======
+        distributionBreakdown: distributionJson,
+        notes:
+          notes !== undefined
+            ? ((notes ?? Prisma.JsonNull) as Prisma.InputJsonValue | Prisma.JsonNullValueInput)
+            : Prisma.JsonNull
+>>>>>>> codex/design-feature-level-logic-for-platform-c52td5
       }
     });
 

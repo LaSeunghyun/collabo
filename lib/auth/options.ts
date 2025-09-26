@@ -151,7 +151,7 @@ export const authOptions: NextAuthOptions = {
           session.user.id = token.sub;
         }
 
-        if (token.role) {
+        if (typeof token.role === 'string') {
           session.user.role = token.role;
         }
 

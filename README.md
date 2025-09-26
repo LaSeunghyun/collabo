@@ -31,6 +31,7 @@ npm test
 ```
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 ### Funding-Settlement 통합 기능
 이 플랫폼은 펀딩과 정산 서비스 간의 데이터 일관성을 보장하는 통합 시스템을 제공합니다:
 
@@ -46,6 +47,8 @@ npm test
 
 =======
 >>>>>>> codex/design-feature-level-logic-for-platform-sxnxyg
+=======
+>>>>>>> codex/design-feature-level-logic-for-platform-c52td5
 ### Prisma 데이터 모델 스냅샷
 - `Funding` → `PaymentTransaction` 연결로 PG 응답/수수료를 저장합니다.
 - `Settlement`는 `SettlementPayout`을 통해 크리에이터·파트너·협업자별 분배 및 상태를 추적합니다.

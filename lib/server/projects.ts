@@ -1,5 +1,5 @@
 import { revalidatePath } from 'next/cache';
-import { ProjectStatus, UserRole } from '@prisma/client';
+import { Prisma, ProjectStatus, UserRole } from '@prisma/client';
 import { ZodError } from 'zod';
 
 import type { SessionUser } from '@/lib/auth/session';
@@ -104,8 +104,39 @@ export const getProjectSummaryById = async (id: string) => {
   return toProjectSummary(project);
 };
 
-const buildProjectData = (input: CreateProjectInput | UpdateProjectInput) => {
-  const data: Record<string, unknown> = {};
+const toJsonInput = (
+  value: unknown
+): Prisma.InputJsonValue | Prisma.JsonNullValueInput => {
+  if (value === undefined || value === null) {
+    return Prisma.JsonNull;
+  }
+
+  return value as Prisma.InputJsonValue;
+};
+
+const buildProjectCreateData = (
+  input: CreateProjectInput,
+  ownerId: string
+): Prisma.ProjectUncheckedCreateInput => ({
+  title: input.title,
+  description: input.description,
+  category: input.category,
+  targetAmount: input.targetAmount,
+  currency: input.currency,
+  startDate: input.startDate ?? null,
+  endDate: input.endDate ?? null,
+  rewardTiers: toJsonInput(input.rewardTiers),
+  milestones: toJsonInput(input.milestones),
+  thumbnail: input.thumbnail ? input.thumbnail : null,
+  status: ProjectStatus.DRAFT,
+  ownerId,
+  currentAmount: 0
+});
+
+const buildProjectUpdateData = (
+  input: UpdateProjectInput
+): Prisma.ProjectUncheckedUpdateInput => {
+  const data: Prisma.ProjectUncheckedUpdateInput = {};
 
   if (input.title !== undefined) {
     data.title = input.title;
@@ -128,26 +159,26 @@ const buildProjectData = (input: CreateProjectInput | UpdateProjectInput) => {
   }
 
   if (input.startDate !== undefined) {
-    data.startDate = input.startDate;
+    data.startDate = input.startDate ?? null;
   }
 
   if (input.endDate !== undefined) {
-    data.endDate = input.endDate;
+    data.endDate = input.endDate ?? null;
   }
 
   if (input.rewardTiers !== undefined) {
-    data.rewardTiers = input.rewardTiers ?? null;
+    data.rewardTiers = toJsonInput(input.rewardTiers);
   }
 
   if (input.milestones !== undefined) {
-    data.milestones = input.milestones ?? null;
+    data.milestones = toJsonInput(input.milestones);
   }
 
   if (input.thumbnail !== undefined) {
     data.thumbnail = input.thumbnail ? input.thumbnail : null;
   }
 
-  if ('status' in input && input.status !== undefined) {
+  if (input.status !== undefined) {
     data.status = input.status;
   }
 
@@ -190,16 +221,12 @@ const assertProjectOwnership = (projectOwnerId: string, user: SessionUser) => {
 
 export const createProject = async (rawInput: unknown, user: SessionUser) => {
   const input = parseCreateInput(rawInput);
-  const data = buildProjectData(input);
   const ownerId = user.role === UserRole.ADMIN && input.ownerId ? input.ownerId : user.id;
 
+  const createData = buildProjectCreateData(input, ownerId);
+
   const project = await prisma.project.create({
-    data: {
-      ...data,
-      status: ProjectStatus.DRAFT,
-      ownerId,
-      currentAmount: 0
-    }
+    data: createData
   });
 
   await prisma.auditLog.create({
@@ -208,7 +235,7 @@ export const createProject = async (rawInput: unknown, user: SessionUser) => {
       entity: 'Project',
       entityId: project.id,
       action: 'PROJECT_CREATED',
-      data
+      data: JSON.parse(JSON.stringify(createData)) as Prisma.InputJsonValue
     }
   });
 
@@ -231,7 +258,7 @@ export const updateProject = async (id: string, rawInput: unknown, user: Session
 
   assertProjectOwnership(project.ownerId, user);
 
-  const data = buildProjectData(input);
+  const data = buildProjectUpdateData(input);
 
   if (Object.keys(data).length === 0) {
     return getProjectSummaryById(id);
@@ -248,7 +275,7 @@ export const updateProject = async (id: string, rawInput: unknown, user: Session
       entity: 'Project',
       entityId: id,
       action: 'PROJECT_UPDATED',
-      data
+      data: JSON.parse(JSON.stringify(data)) as Prisma.InputJsonValue
     }
   });
 

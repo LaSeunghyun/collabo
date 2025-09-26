@@ -79,7 +79,7 @@ export function PartnerForm() {
     try {
       const body = await res.json();
       setErrorMessage(typeof body?.message === 'string' ? body.message : null);
-    } catch (error) {
+    } catch {
       setErrorMessage(null);
     }
   };

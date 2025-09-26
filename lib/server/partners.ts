@@ -33,7 +33,9 @@ const sanitizeTags = (value?: string[] | null) => {
   return unique.length ? unique : null;
 };
 
-const sanitizeAvailability = (value: Record<string, unknown> | null | undefined) => {
+const sanitizeAvailability = (
+  value: unknown
+): Prisma.InputJsonValue | null => {
   if (!value || typeof value !== 'object') {
     return null;
   }
@@ -67,19 +69,25 @@ const sanitizeAvailability = (value: Record<string, unknown> | null | undefined)
             return null;
           }
 
-          return note ? { day, start, end, note } : { day, start, end };
+          const payload: Prisma.JsonObject = note
+            ? { day, start, end, note }
+            : { day, start, end };
+
+          return payload;
         })
-        .filter(Boolean)
+        .filter((slot): slot is Prisma.JsonObject => Boolean(slot))
     : [];
 
-  if (!timezone && !slots.length) {
+  if (!timezone && slots.length === 0) {
     return null;
   }
 
-  return {
+  const payload: Prisma.JsonObject = {
     ...(timezone ? { timezone } : {}),
     ...(slots.length ? { slots } : {})
-  } as Record<string, unknown>;
+  };
+
+  return payload;
 };
 
 type PartnerWithRelations = Prisma.PartnerGetPayload<{
@@ -99,7 +107,7 @@ export interface PartnerSummary {
   services: string[];
   pricingModel: string | null;
   location: string | null;
-  availability: Record<string, unknown> | null;
+  availability: Prisma.JsonValue | null;
   portfolioUrl: string | null;
   contactInfo: string;
   matchCount: number;
@@ -117,8 +125,7 @@ const toPartnerSummary = (partner: PartnerWithRelations): PartnerSummary => {
     ? partner.services.filter((item): item is string => typeof item === 'string')
     : [];
 
-  const availability =
-    partner.availability && typeof partner.availability === 'object' ? partner.availability : null;
+  const availability = (partner.availability ?? null) as Prisma.JsonValue | null;
 
   return {
     id: partner.id,
@@ -302,7 +309,7 @@ const buildCreateData = (input: CreatePartnerInput, ownerId: string): Prisma.Par
   const services = sanitizeTags(input.services ?? null);
   const pricingModel = sanitizeText(input.pricingModel);
   const location = sanitizeText(input.location);
-  const availability = sanitizeAvailability(input.availability as Record<string, unknown> | undefined);
+  const availability = sanitizeAvailability(input.availability);
   const portfolioUrl = sanitizeText(input.portfolioUrl);
 
   return {
@@ -359,7 +366,7 @@ const buildUpdateData = (
   }
 
   if (input.availability !== undefined) {
-    const availability = sanitizeAvailability(input.availability as Record<string, unknown> | undefined);
+    const availability = sanitizeAvailability(input.availability);
     data.availability = availability ?? Prisma.JsonNull;
   }
 

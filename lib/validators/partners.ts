@@ -26,7 +26,7 @@ export const partnerAvailabilitySchema = z
     slots: z.array(availabilitySlotSchema).max(32).optional()
   })
   .refine(
-    (value) => {
+    (value: z.infer<typeof partnerAvailabilitySchema>) => {
       if (!value) {
         return true;
       }
@@ -43,8 +43,8 @@ export const partnerAvailabilitySchema = z
 const servicesArraySchema = z
   .array(serviceTagSchema)
   .max(12)
-  .transform((items) => {
-    const cleaned = items.map((item) => item.trim()).filter(Boolean);
+  .transform((items: string[]) => {
+    const cleaned = items.map((item: string) => item.trim()).filter(Boolean);
     return Array.from(new Set(cleaned));
   });
 
@@ -76,7 +76,7 @@ export const updatePartnerSchema = z
     verified: z.boolean().optional(),
     rating: z.number().min(0).max(5).optional()
   })
-  .refine((value) => Object.keys(value).length > 0, {
+  .refine((value: z.infer<typeof updatePartnerSchema>) => Object.keys(value).length > 0, {
     message: '업데이트할 필드를 한 가지 이상 포함해야 합니다.'
   });
 
