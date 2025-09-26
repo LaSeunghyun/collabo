@@ -1,14 +1,15 @@
 import { timingSafeEqual } from 'crypto';
 
-import NextAuth from 'next-auth';
+import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 import KakaoProvider from 'next-auth/providers/kakao';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import { compare } from 'bcryptjs';
-import { UserRole } from '@prisma/client';
 
 import prisma from '@/lib/prisma';
+
+import { deriveEffectivePermissions } from './permissions';
 
 const requiredOAuthEnvVars = [
   { key: 'GOOGLE_CLIENT_ID', provider: 'Google' },
@@ -36,7 +37,24 @@ const safeCompare = (a: string, b: string) => {
   return timingSafeEqual(bufferA, bufferB);
 };
 
-const handler = NextAuth({
+const fetchUserWithPermissions = async (identifier: { id?: string; email?: string }) => {
+  if (!identifier.id && !identifier.email) {
+    return null;
+  }
+
+  return prisma.user.findUnique({
+    where: identifier.id ? { id: identifier.id } : { email: identifier.email! },
+    include: {
+      permissions: {
+        include: {
+          permission: true
+        }
+      }
+    }
+  });
+};
+
+export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   session: {
     strategy: 'jwt'
@@ -92,36 +110,54 @@ const handler = NextAuth({
     })
   ],
   callbacks: {
+    async jwt({ token, user, trigger }) {
+      const identifier = {
+        id: (user as { id?: string })?.id ?? (token.sub as string | undefined),
+        email: (user?.email as string | undefined) ?? (token.email as string | undefined)
+      };
+
+      if (user && 'role' in user && user.role) {
+        token.role = user.role;
+      }
+
+      const shouldRefresh =
+        Boolean(user) ||
+        !token.role ||
+        !token.permissions ||
+        trigger === 'update';
+
+      if (shouldRefresh) {
+        const dbUser = await fetchUserWithPermissions(identifier);
+
+        if (dbUser) {
+          token.role = dbUser.role;
+          token.permissions = deriveEffectivePermissions(
+            dbUser.role,
+            dbUser.permissions.map((entry) => entry.permission.key)
+          );
+        } else if (!token.permissions) {
+          token.permissions = [];
+        }
+      }
+
+      return token;
+    },
     async session({ session, token }) {
       if (session.user) {
         if (token.sub) {
           session.user.id = token.sub;
         }
-        session.user.role = (token.role as string) ?? session.user.role ?? UserRole.PARTICIPANT;
+
+        if (token.role) {
+          session.user.role = token.role;
+        }
+
+        session.user.permissions = Array.isArray(token.permissions)
+          ? (token.permissions as string[])
+          : [];
       }
 
       return session;
-    },
-    async jwt({ token, user, trigger }) {
-      if (user) {
-        token.role = user.role;
-      }
-
-      const shouldSyncRole = Boolean(token.email && (!token.role || trigger === 'update'));
-
-      if (shouldSyncRole) {
-        const dbUser = await prisma.user.findUnique({
-          where: { email: token.email as string }
-        });
-
-        if (dbUser) {
-          token.role = dbUser.role;
-        }
-      }
-
-      return token;
     }
   }
-});
-
-export { handler as GET, handler as POST };
+};

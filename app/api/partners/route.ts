@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { UserRole } from '@prisma/client';
+
+import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 
 const partners = [
   {
@@ -22,6 +25,17 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  try {
+    await requireApiUser({ roles: [UserRole.PARTNER, UserRole.ADMIN], permissions: ['partner:manage'] });
+  } catch (error) {
+    const response = handleAuthorizationError(error);
+    if (response) {
+      return response;
+    }
+
+    throw error;
+  }
+
   const body = await request.json();
   return NextResponse.json({ ...body, id: crypto.randomUUID(), status: 'review' }, { status: 201 });
 }
