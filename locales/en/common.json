@@ -24,6 +24,9 @@
     "fundNow": "Fund now",
     "requestQuote": "Request quote"
   },
+  "sectionHeader": {
+    "viewMoreAria": "View more from the {{title}} section"
+  },
   "home": {
     "heroTitle": "Co-create immersive experiences with the artists you love",
     "heroSubtitle": "Discover trending projects, premium classes and live AMA events.",
@@ -44,7 +47,8 @@
       "tag": "Live AMA",
       "title": "This week's live class",
       "description": "Join an intimate AMA session with the artist. Reserve now to secure the early-bird perks.",
-      "cta": "Reserve a spot"
+      "cta": "Reserve a spot",
+      "ctaAria": "Reserve a spot for {{title}}"
     }
   },
   "projects": {
@@ -60,6 +64,8 @@
     "newest": "Newest"
   },
   "community": {
+    "title": "Community",
+    "description": "Connect with fellow backers in real time to share ideas and feedback.",
     "writePlaceholder": "Share something with the community",
     "sortRecent": "Recent",
     "sortPopular": "Popular",
@@ -87,5 +93,34 @@
         "answer": "Go to the Settlement tab on the project detail page to access the reports."
       }
     }
+  },
+  "footer": {
+    "brand": {
+      "name": "Collaborium",
+      "description": "A fan-made funding platform where artists and fans grow together."
+    },
+    "sections": {
+      "platform": {
+        "title": "Platform",
+        "links": {
+          "projects": "Projects",
+          "partners": "Partners",
+          "community": "Community"
+        }
+      },
+      "support": {
+        "title": "Support",
+        "links": {
+          "help": "Help center",
+          "partnerJoin": "Become a partner"
+        }
+      },
+      "contact": {
+        "title": "Contact",
+        "email": "contact@collaborium.kr",
+        "address": "Seongsu-ro, Seongdong-gu, Seoul"
+      }
+    },
+    "copyright": "© {{year}} Collaborium. All rights reserved."
   }
 }

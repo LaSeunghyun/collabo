@@ -60,7 +60,11 @@ export default function HomePage() {
           </h3>
           <p className="text-2xl font-semibold text-white">{t('home.liveAma.title')}</p>
           <p className="text-sm text-white/60">{t('home.liveAma.description')}</p>
-          <Link href="/projects/1" className="inline-flex w-fit rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
+          <Link
+            href="/projects/1"
+            className="inline-flex w-fit rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+            aria-label={t('home.liveAma.ctaAria', { title: t('home.liveAma.title') })}
+          >
             {t('home.liveAma.cta')}
           </Link>
         </div>
