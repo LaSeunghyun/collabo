@@ -1,0 +1,53 @@
+{
+  "navigation": {
+    "home": "홈",
+    "explore": "탐색",
+    "launch": "프로젝트 등록",
+    "community": "커뮤니티",
+    "profile": "내 정보",
+    "projects": "프로젝트",
+    "artists": "아티스트",
+    "partners": "파트너",
+    "help": "도움말",
+    "store": "스토어"
+  },
+  "actions": {
+    "login": "로그인",
+    "logout": "로그아웃",
+    "search": "검색",
+    "favorite": "즐겨찾기",
+    "viewAll": "전체 보기",
+    "fundNow": "지금 후원하기",
+    "requestQuote": "견적 요청"
+  },
+  "home": {
+    "heroTitle": "아티스트와 팬이 함께 만드는 새로운 경험",
+    "heroSubtitle": "실시간 인기 프로젝트와 프리미엄 클래스를 만나보세요.",
+    "livePopular": "실시간 인기",
+    "closingSoon": "마감 임박",
+    "themes": "테마별 추천",
+    "categoryFilter": "카테고리 필터",
+    "tagFilter": "태그"
+  },
+  "projects": {
+    "title": "프로젝트",
+    "filters": "필터",
+    "category": "카테고리",
+    "status": "상태",
+    "sort": "정렬",
+    "closing": "마감 임박",
+    "popular": "인기순",
+    "newest": "최신순"
+  },
+  "community": {
+    "writePlaceholder": "커뮤니티에 이야기를 공유하세요",
+    "sortRecent": "최신순",
+    "sortPopular": "인기순",
+    "post": "게시하기"
+  },
+  "partners": {
+    "title": "파트너 매칭",
+    "submit": "파트너 등록",
+    "review": "검수 상태"
+  }
+}

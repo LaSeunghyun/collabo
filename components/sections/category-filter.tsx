@@ -1,0 +1,69 @@
+'use client';
+
+import { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
+import { useFilterStore } from '@/lib/stores/use-filter-store';
+
+const categories = [
+  { id: 'music', label: 'Music', sub: ['K-pop', 'Indie', 'Live Session'] },
+  { id: 'performance', label: 'Performance', sub: ['Musical', 'Play', 'Dance'] },
+  { id: 'art', label: 'Art', sub: ['Media Art', 'Exhibition', 'Workshop'] },
+  { id: 'tech', label: 'Tech', sub: ['XR', 'Metaverse', 'AI Collab'] }
+];
+
+export function CategoryFilter() {
+  const { category, setCategory } = useFilterStore();
+  const [open, setOpen] = useState<string | null>(null);
+
+  const toggleCategory = (id: string) => {
+    setCategory(category === id ? null : id);
+  };
+
+  return (
+    <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+      <h3 className="text-sm font-semibold uppercase tracking-widest text-white/60">카테고리 탐색</h3>
+      <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+        {categories.map((item) => (
+          <div
+            key={item.id}
+            onMouseEnter={() => setOpen(item.id)}
+            onMouseLeave={() => setOpen(null)}
+            className={`group relative cursor-pointer rounded-2xl border border-white/10 px-4 py-3 transition ${
+              category === item.id ? 'bg-primary text-primary-foreground' : 'bg-neutral-950/60 hover:bg-white/10'
+            }`}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                toggleCategory(item.id);
+              }
+            }}
+          >
+            <div className="flex items-center justify-between text-sm font-medium">
+              <span>{item.label}</span>
+              <ChevronDown className="h-4 w-4 transition group-hover:rotate-180" />
+            </div>
+            {open === item.id ? (
+              <div className="absolute left-0 top-full z-20 mt-2 w-full rounded-2xl border border-white/10 bg-neutral-900/95 p-3 backdrop-blur">
+                <ul className="space-y-2 text-xs text-white/70">
+                  {item.sub.map((sub) => (
+                    <li key={sub} className="hover:text-white">
+                      {sub}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            <button
+              type="button"
+              aria-label={`${item.label} 선택`}
+              onClick={() => toggleCategory(item.id)}
+              className="absolute inset-0"
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
