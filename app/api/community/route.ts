@@ -19,10 +19,10 @@ export async function GET(request: NextRequest) {
       orderBy:
         sort === 'popular'
           ? {
-              likes: {
-                _count: 'desc'
-              }
+            likes: {
+              _count: 'desc'
             }
+          }
           : { createdAt: 'desc' }
     });
 
@@ -64,10 +64,8 @@ export async function POST(request: NextRequest) {
       data: {
         title,
         content,
-        projectId,
-        author: {
-          connect: { id: authorId }
-        }
+        ...(projectId && { projectId }),
+        authorId
       }
     });
 
