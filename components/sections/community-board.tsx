@@ -5,20 +5,20 @@ import { useQuery } from '@tanstack/react-query';
 import { Heart, MessageCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-import { demoCommunityPosts } from '@/lib/data/community';
+import { CommunityPost, demoCommunityPosts } from '@/lib/data/community';
 
 export function CommunityBoard({ projectId }: { projectId?: string }) {
   const { t } = useTranslation();
   const [sort, setSort] = useState<'recent' | 'popular'>('recent');
-  const { data: posts = [] } = useQuery({
+  const { data: posts = [] } = useQuery<CommunityPost[]>({
     queryKey: ['community', projectId],
     queryFn: async () => {
       const res = await fetch('/api/community');
       if (!res.ok) {
         return demoCommunityPosts;
       }
-      const json = await res.json();
-      return projectId ? json.filter((item: any) => item.projectId === projectId) : json;
+      const json = (await res.json()) as CommunityPost[];
+      return projectId ? json.filter((item) => item.projectId === projectId) : json;
     }
   });
 

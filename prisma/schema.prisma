@@ -47,6 +47,7 @@ model Funding {
   user      User     @relation(fields: [userId], references: [id])
   userId    String
   amount    Int
+  paymentReference String? @unique
   createdAt DateTime @default(now())
 }
 
@@ -56,6 +57,8 @@ model Settlement {
   projectId   String
   totalAmount Int
   distributed Boolean  @default(false)
+  creatorShare Int
+  platformShare Int
   createdAt   DateTime @default(now())
 }
 
