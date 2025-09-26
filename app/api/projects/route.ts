@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { UserRole } from '@prisma/client';
 
-import { getProjectSummaries } from '@/lib/server/projects';
+import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
+import { createProject, getProjectSummaries, ProjectValidationError } from '@/lib/server/projects';
 
 export async function GET() {
   try {
@@ -13,6 +15,37 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
-  return NextResponse.json(body, { status: 201 });
+  let user;
+
+  try {
+    user = await requireApiUser({ roles: [UserRole.CREATOR, UserRole.ADMIN] });
+  } catch (error) {
+    const response = handleAuthorizationError(error);
+    if (response) {
+      return response;
+    }
+
+    throw error;
+  }
+
+  try {
+    const body = await request.json();
+    const project = await createProject(body, user);
+
+    if (!project) {
+      return NextResponse.json({ message: '프로젝트 생성에 실패했습니다.' }, { status: 500 });
+    }
+
+    return NextResponse.json(project, { status: 201 });
+  } catch (error) {
+    if (error instanceof ProjectValidationError) {
+      return NextResponse.json(
+        { message: error.message, issues: error.issues },
+        { status: 400 }
+      );
+    }
+
+    console.error('Failed to create project', error);
+    return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+  }
 }
