@@ -1,0 +1,102 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  role      String   @default("fan")
+  password  String?
+  image     String?
+  createdAt DateTime @default(now())
+  projects  Project[] @relation("OwnerProjects")
+  fundings  Funding[]
+  posts     Post[]
+  comments  Comment[]
+  likes     Like[]
+}
+
+model Project {
+  id            String      @id @default(cuid())
+  title         String
+  description   String
+  category      String
+  targetAmount  Int
+  currentAmount Int      @default(0)
+  status        String   @default("draft")
+  thumbnail     String?
+  owner         User      @relation("OwnerProjects", fields: [ownerId], references: [id])
+  ownerId       String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  fundings      Funding[]
+  settlements   Settlement[]
+  posts         Post[]
+}
+
+model Funding {
+  id        String   @id @default(cuid())
+  project   Project  @relation(fields: [projectId], references: [id])
+  projectId String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  amount    Int
+  createdAt DateTime @default(now())
+}
+
+model Settlement {
+  id          String   @id @default(cuid())
+  project     Project  @relation(fields: [projectId], references: [id])
+  projectId   String
+  totalAmount Int
+  distributed Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model Partner {
+  id          String   @id @default(cuid())
+  name        String
+  type        String
+  description String?
+  contactInfo String
+  status      String   @default("review")
+  createdAt   DateTime @default(now())
+}
+
+model Post {
+  id        String    @id @default(cuid())
+  project   Project?  @relation(fields: [projectId], references: [id])
+  projectId String?
+  author    User      @relation(fields: [authorId], references: [id])
+  authorId  String
+  title     String
+  content   String
+  likes     Like[]
+  comments  Comment[]
+  createdAt DateTime  @default(now())
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  post      Post     @relation(fields: [postId], references: [id])
+  postId    String
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  String
+  content   String
+  createdAt DateTime @default(now())
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  post      Post     @relation(fields: [postId], references: [id])
+  postId    String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  createdAt DateTime @default(now())
+}

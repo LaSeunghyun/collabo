@@ -1,0 +1,53 @@
+{
+  "navigation": {
+    "home": "Home",
+    "explore": "Explore",
+    "launch": "Launch",
+    "community": "Community",
+    "profile": "Profile",
+    "projects": "Projects",
+    "artists": "Artists",
+    "partners": "Partners",
+    "help": "Help",
+    "store": "Store"
+  },
+  "actions": {
+    "login": "Log in",
+    "logout": "Log out",
+    "search": "Search",
+    "favorite": "Favorite",
+    "viewAll": "View all",
+    "fundNow": "Fund now",
+    "requestQuote": "Request quote"
+  },
+  "home": {
+    "heroTitle": "Co-create immersive experiences with the artists you love",
+    "heroSubtitle": "Discover trending projects, premium classes and live AMA events.",
+    "livePopular": "Live trending",
+    "closingSoon": "Closing soon",
+    "themes": "Themes",
+    "categoryFilter": "Category filters",
+    "tagFilter": "Tags"
+  },
+  "projects": {
+    "title": "Projects",
+    "filters": "Filters",
+    "category": "Category",
+    "status": "Status",
+    "sort": "Sort",
+    "closing": "Closing soon",
+    "popular": "Popular",
+    "newest": "Newest"
+  },
+  "community": {
+    "writePlaceholder": "Share something with the community",
+    "sortRecent": "Recent",
+    "sortPopular": "Popular",
+    "post": "Post"
+  },
+  "partners": {
+    "title": "Partner matching",
+    "submit": "Submit partner",
+    "review": "Review status"
+  }
+}
