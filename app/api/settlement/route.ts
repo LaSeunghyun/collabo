@@ -1,12 +1,22 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
-import prisma from '@/lib/prisma';
+import { jsonError } from '@/lib/api/responses';
+import { withPrisma } from '@/lib/api/withPrisma';
 
-function buildError(message: string, status = 400) {
-  return NextResponse.json({ error: message }, { status });
+class SettlementError extends Error {
+  status: number;
+
+  constructor(message: string, status = 400) {
+    super(message);
+    this.status = status;
+  }
 }
 
-export async function GET(request: NextRequest) {
+function buildError(message: string, status = 400) {
+  return jsonError(message, status);
+}
+
+export const GET = withPrisma(async ({ request, prisma }) => {
   const { searchParams } = new URL(request.url);
   const projectId = searchParams.get('projectId');
 
@@ -20,9 +30,9 @@ export async function GET(request: NextRequest) {
   });
 
   return NextResponse.json(settlements);
-}
+});
 
-export async function POST(request: NextRequest) {
+export const POST = withPrisma(async ({ request, prisma }) => {
   let body: { projectId?: string; creatorRatio?: number };
 
   try {
@@ -41,42 +51,113 @@ export async function POST(request: NextRequest) {
     return buildError('creatorRatio는 0과 1 사이의 숫자여야 합니다.');
   }
 
-  const project = await prisma.project.findUnique({ where: { id: projectId } });
-  if (!project) {
-    return buildError('해당 프로젝트를 찾을 수 없습니다.', 404);
-  }
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      const project = await tx.project.findUnique({ where: { id: projectId } });
+      if (!project) {
+        throw new SettlementError('해당 프로젝트를 찾을 수 없습니다.', 404);
+      }
 
-  const totals = await prisma.funding.aggregate({
-    where: { projectId },
-    _sum: { amount: true }
-  });
+      const totals = await tx.funding.aggregate({
+        where: { projectId },
+        _sum: { amount: true }
+      });
 
-  const totalAmount = totals._sum.amount ?? 0;
-  if (totalAmount < project.targetAmount) {
-    return buildError('목표 금액이 아직 달성되지 않았습니다.', 409);
-  }
+      const totalAmount = totals._sum.amount ?? 0;
+      if (totalAmount < project.targetAmount) {
+        throw new SettlementError('목표 금액이 아직 달성되지 않았습니다.', 409);
+      }
 
-  const pendingSettlement = await prisma.settlement.findFirst({
-    where: { projectId, distributed: false },
-    orderBy: { createdAt: 'desc' }
-  });
+      const pendingSettlement = await tx.settlement.findFirst({
+        where: { projectId, distributed: false },
+        orderBy: { createdAt: 'desc' }
+      });
 
-  if (pendingSettlement) {
-    return NextResponse.json(pendingSettlement);
-  }
+      if (pendingSettlement) {
+        return { settlement: pendingSettlement, created: false } as const;
+      }
 
-  const creatorShare = Math.round(totalAmount * creatorRatio);
-  const platformShare = totalAmount - creatorShare;
+      const creatorShare = Math.round(totalAmount * creatorRatio);
+      const platformShare = totalAmount - creatorShare;
 
-  const settlement = await prisma.settlement.create({
-    data: {
-      projectId,
-      totalAmount,
-      distributed: false,
-      creatorShare,
-      platformShare
+      const settlement = await tx.settlement.create({
+        data: {
+          projectId,
+          totalAmount,
+          distributed: false,
+          creatorShare,
+          platformShare
+        }
+      });
+
+      await tx.project.update({
+        where: { id: projectId },
+        data: { status: 'settlement_pending' }
+      });
+
+      return { settlement, created: true } as const;
+    });
+
+    return NextResponse.json(result.settlement, { status: result.created ? 201 : 200 });
+  } catch (error) {
+    if (error instanceof SettlementError) {
+      return buildError(error.message, error.status);
     }
-  });
 
-  return NextResponse.json(settlement, { status: 201 });
-}
+    const message = error instanceof Error ? error.message : '정산 처리 중 오류가 발생했습니다.';
+    return buildError(message, 500);
+  }
+});
+
+export const PATCH = withPrisma(async ({ request, prisma }) => {
+  let body: Record<string, unknown>;
+
+  try {
+    body = await request.json();
+  } catch {
+    return buildError('요청 본문을 확인할 수 없습니다.');
+  }
+
+  const settlementId = typeof body.settlementId === 'string' ? body.settlementId.trim() : '';
+  const distributed = body.distributed === undefined ? true : Boolean(body.distributed);
+
+  if (!settlementId) {
+    return buildError('정산 정보를 확인할 수 없습니다.');
+  }
+
+  try {
+    const updated = await prisma.$transaction(async (tx) => {
+      const settlement = await tx.settlement.findUnique({ where: { id: settlementId } });
+      if (!settlement) {
+        throw new SettlementError('정산 내역을 찾을 수 없습니다.', 404);
+      }
+
+      if (settlement.distributed === distributed) {
+        return settlement;
+      }
+
+      const nextStatus = distributed ? 'settled' : 'settlement_pending';
+
+      const result = await tx.settlement.update({
+        where: { id: settlementId },
+        data: { distributed }
+      });
+
+      await tx.project.update({
+        where: { id: settlement.projectId },
+        data: { status: nextStatus }
+      });
+
+      return result;
+    });
+
+    return NextResponse.json(updated);
+  } catch (error) {
+    if (error instanceof SettlementError) {
+      return buildError(error.message, error.status);
+    }
+
+    const message = error instanceof Error ? error.message : '정산 업데이트 중 오류가 발생했습니다.';
+    return buildError(message, 500);
+  }
+});

@@ -1,9 +1,9 @@
-import NextAuth from 'next-auth';
+import NextAuth, { type NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 import KakaoProvider from 'next-auth/providers/kakao';
 
-const handler = NextAuth({
+export const authOptions: NextAuthOptions = {
   session: {
     strategy: 'jwt'
   },
@@ -50,6 +50,8 @@ const handler = NextAuth({
       return token;
     }
   }
-});
+};
+
+const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };

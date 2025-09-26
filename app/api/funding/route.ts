@@ -1,7 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { PrismaClient } from '@prisma/client';
+import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
-import prisma from '@/lib/prisma';
+import { jsonError } from '@/lib/api/responses';
+import { withPrisma } from '@/lib/api/withPrisma';
 
 interface FundingCreatePayload {
   projectId: string;
@@ -35,18 +37,16 @@ function createStripeClient() {
   return new Stripe(secret, { apiVersion: stripeApiVersion });
 }
 
-function buildError(message: string, status = 400) {
-  return NextResponse.json({ error: message }, { status });
-}
-
 async function resolveUserId({
   receiptEmail,
   customerName,
-  stripeEmailFallback
+  stripeEmailFallback,
+  prisma
 }: {
   receiptEmail?: string;
   customerName?: string;
   stripeEmailFallback?: string;
+  prisma: PrismaClient;
 }) {
   const email = receiptEmail ?? stripeEmailFallback;
   if (!email) {
@@ -70,12 +70,14 @@ async function recordFunding({
   projectId,
   userId,
   amount,
-  paymentReference
+  paymentReference,
+  prisma
 }: {
   projectId: string;
   userId: string;
   amount: number;
   paymentReference: string;
+  prisma: PrismaClient;
 }) {
   const existing = await prisma.funding.findUnique({ where: { paymentReference } });
   if (existing) {
@@ -92,12 +94,12 @@ async function recordFunding({
       }
     });
 
-    await tx.project.update({
-      where: { id: projectId },
-      data: {
-        currentAmount: {
-          increment: amount
-        }
+      await tx.project.update({
+        where: { id: projectId },
+        data: {
+          currentAmount: {
+            increment: amount
+          }
       }
     });
 
@@ -107,13 +109,13 @@ async function recordFunding({
   return funding;
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withPrisma(async ({ request, prisma }) => {
   let payload: FundingRequestPayload;
 
   try {
     payload = await request.json();
   } catch {
-    return buildError('요청 본문을 확인할 수 없습니다.');
+    return jsonError('요청 본문을 확인할 수 없습니다.');
   }
 
   const {
@@ -130,19 +132,19 @@ export async function POST(request: NextRequest) {
   } = payload;
 
   if (!projectId) {
-    return buildError('프로젝트 정보가 누락되었습니다.');
+    return jsonError('프로젝트 정보가 누락되었습니다.');
   }
 
   const project = await prisma.project.findUnique({ where: { id: projectId } });
   if (!project) {
-    return buildError('해당 프로젝트를 찾을 수 없습니다.', 404);
+    return jsonError('해당 프로젝트를 찾을 수 없습니다.', 404);
   }
 
   let stripe: Stripe;
   try {
     stripe = createStripeClient();
   } catch (error) {
-    return buildError(error instanceof Error ? error.message : 'Stripe 구성이 잘못되었습니다.', 500);
+    return jsonError(error instanceof Error ? error.message : 'Stripe 구성이 잘못되었습니다.', 500);
   }
 
   // Verification path
@@ -152,26 +154,31 @@ export async function POST(request: NextRequest) {
         const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
         if (paymentIntent.status !== 'succeeded') {
-          return buildError(`결제 상태가 완료되지 않았습니다. (현재 상태: ${paymentIntent.status})`, 409);
+          return jsonError(
+            `결제 상태가 완료되지 않았습니다. (현재 상태: ${paymentIntent.status})`,
+            409
+          );
         }
 
         const amountReceived = paymentIntent.amount_received ?? paymentIntent.amount ?? 0;
         if (!amountReceived) {
-          return buildError('결제 금액을 확인할 수 없습니다.', 422);
+          return jsonError('결제 금액을 확인할 수 없습니다.', 422);
         }
 
         const userId = await resolveUserId({
           receiptEmail,
           customerName,
           stripeEmailFallback:
-            paymentIntent.receipt_email ?? paymentIntent.charges.data[0]?.billing_details.email ?? undefined
+            paymentIntent.receipt_email ?? paymentIntent.charges.data[0]?.billing_details.email ?? undefined,
+          prisma
         });
 
         const funding = await recordFunding({
           projectId,
           userId,
           amount: amountReceived,
-          paymentReference: paymentIntent.id
+          paymentReference: paymentIntent.id,
+          prisma
         });
 
         return NextResponse.json({
@@ -186,12 +193,15 @@ export async function POST(request: NextRequest) {
         });
 
         if (session.payment_status !== 'paid') {
-          return buildError(`체크아웃이 완료되지 않았습니다. (현재 상태: ${session.payment_status})`, 409);
+          return jsonError(
+            `체크아웃이 완료되지 않았습니다. (현재 상태: ${session.payment_status})`,
+            409
+          );
         }
 
         const amountPaid = session.amount_total;
         if (!amountPaid) {
-          return buildError('결제 금액을 확인할 수 없습니다.', 422);
+          return jsonError('결제 금액을 확인할 수 없습니다.', 422);
         }
 
         const paymentIntentReference =
@@ -203,14 +213,16 @@ export async function POST(request: NextRequest) {
           receiptEmail,
           customerName,
           stripeEmailFallback:
-            session.customer_details?.email ?? session.customer_email ?? undefined
+            session.customer_details?.email ?? session.customer_email ?? undefined,
+          prisma
         });
 
         const funding = await recordFunding({
           projectId,
           userId,
           amount: amountPaid,
-          paymentReference: paymentIntentReference
+          paymentReference: paymentIntentReference,
+          prisma
         });
 
         return NextResponse.json({
@@ -220,24 +232,24 @@ export async function POST(request: NextRequest) {
       }
     } catch (error) {
       if (error instanceof Error && error.message.includes('구매자 이메일')) {
-        return buildError(error.message, 422);
+        return jsonError(error.message, 422);
       }
 
       const message =
         error instanceof Error ? error.message : '결제 검증 중 오류가 발생했습니다.';
-      return buildError(message, 500);
+      return jsonError(message, 500);
     }
   }
 
   // Creation path
   if (!amount || Number.isNaN(amount) || amount <= 0) {
-    return buildError('결제 금액이 올바르지 않습니다.');
+    return jsonError('결제 금액이 올바르지 않습니다.');
   }
 
   try {
     if (mode === 'checkout') {
       if (!successUrl || !cancelUrl) {
-        return buildError('Checkout 세션에는 성공 및 취소 URL이 필요합니다.');
+        return jsonError('Checkout 세션에는 성공 및 취소 URL이 필요합니다.');
       }
 
       const session = await stripe.checkout.sessions.create({
@@ -287,6 +299,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : '결제 요청 처리에 실패했습니다.';
-    return buildError(message, 500);
+    return jsonError(message, 500);
   }
-}
+});
