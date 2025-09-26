@@ -133,7 +133,7 @@ async function upsertPaymentTransaction(
       status: FundingStatus.SUCCEEDED,
       amount,
       currency,
-      rawPayload
+      rawPayload: rawPayload as any
     },
     create: {
       fundingId,
@@ -142,7 +142,7 @@ async function upsertPaymentTransaction(
       status: FundingStatus.SUCCEEDED,
       amount,
       currency,
-      rawPayload
+      rawPayload: rawPayload as any
     }
   });
 }
@@ -281,7 +281,7 @@ export async function POST(request: NextRequest) {
     return buildError('해당 프로젝트를 찾을 수 없습니다.', 404);
   }
 
-  if (![ProjectStatus.LIVE, ProjectStatus.EXECUTING].includes(project.status)) {
+  if (![ProjectStatus.LIVE, ProjectStatus.EXECUTING].includes(project.status as any)) {
     return buildError('현재 상태에서는 결제를 진행할 수 없습니다.', 409);
   }
 
@@ -313,7 +313,7 @@ export async function POST(request: NextRequest) {
           receiptEmail,
           customerName,
           stripeEmailFallback:
-            paymentIntent.receipt_email ?? paymentIntent.charges.data[0]?.billing_details.email ?? undefined
+            paymentIntent.receipt_email ?? undefined
         });
 
         const funding = await recordSuccessfulFunding({

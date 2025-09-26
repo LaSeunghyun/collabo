@@ -185,7 +185,7 @@ export async function POST(request: NextRequest) {
         gatewayFees: breakdown.gatewayFees,
         netAmount: breakdown.netAmount,
         payoutStatus: SettlementPayoutStatus.PENDING,
-        distributionBreakdown: breakdown,
+        distributionBreakdown: breakdown as any,
         notes: notes ?? null
       }
     });
