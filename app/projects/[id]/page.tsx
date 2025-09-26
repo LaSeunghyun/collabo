@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 
+import { FundingDialog } from '@/components/funding/funding-dialog';
 import { ProjectDetailTabs } from '@/components/sections/project-detail-tabs';
 import { demoProjects } from '@/lib/data/projects';
 
@@ -43,12 +44,11 @@ export default function ProjectDetailPage({ params }: ProjectPageProps) {
               {project.currentAmount.toLocaleString()}₩ / {project.targetAmount.toLocaleString()}₩
             </p>
           </div>
-          <button
-            type="button"
-            className="w-full rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground"
-          >
-            후원하기
-          </button>
+          <FundingDialog
+            projectId={project.id}
+            projectTitle={project.title}
+            defaultAmount={Math.min(50000, Math.max(10000, project.targetAmount / 100))}
+          />
           <div className="rounded-2xl border border-white/10 bg-neutral-950/60 p-4">
             <p className="text-xs text-white/60">추천 파트너</p>
             <ul className="mt-2 space-y-3 text-sm text-white/70">

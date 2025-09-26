@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import * as TabsPrimitive from '@radix-ui/react-tabs';
 
 import { CommunityBoard } from '@/components/sections/community-board';
+import { fetchSettlement, SettlementRecord } from '@/lib/api/settlement';
 
 const tabItems = [
   { value: 'story', label: 'Story' },
@@ -13,8 +14,69 @@ const tabItems = [
   { value: 'settlement', label: 'Settlement' }
 ];
 
+const currencyFormatter = new Intl.NumberFormat('ko-KR', {
+  style: 'currency',
+  currency: 'KRW',
+  maximumFractionDigits: 0
+});
+
+const dateFormatter = new Intl.DateTimeFormat('ko-KR', {
+  dateStyle: 'medium',
+  timeStyle: 'short'
+});
+
 export function ProjectDetailTabs({ projectId }: { projectId: string }) {
   const [current, setCurrent] = useState('story');
+  const [settlements, setSettlements] = useState<SettlementRecord[]>([]);
+  const [settlementError, setSettlementError] = useState<string | null>(null);
+  const [isSettlementLoading, setIsSettlementLoading] = useState(false);
+
+  useEffect(() => {
+    if (current !== 'settlement') {
+      return;
+    }
+
+    let active = true;
+
+    const load = async (showLoading = false) => {
+      if (showLoading) {
+        setIsSettlementLoading(true);
+      }
+
+      try {
+        const data = await fetchSettlement(projectId);
+        if (!active) {
+          return;
+        }
+
+        setSettlements(data);
+        setSettlementError(null);
+      } catch (error) {
+        if (!active) {
+          return;
+        }
+
+        setSettlementError(error instanceof Error ? error.message : '정산 정보를 불러오지 못했습니다.');
+      } finally {
+        if (showLoading && active) {
+          setIsSettlementLoading(false);
+        }
+      }
+    };
+
+    void load(true);
+    const interval = window.setInterval(() => {
+      void load();
+    }, 10000);
+
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [current, projectId]);
+
+  const latestSettlement = useMemo(() => settlements.at(0) ?? null, [settlements]);
+  const settlementHistory = useMemo(() => settlements.slice(1), [settlements]);
 
   return (
     <TabsPrimitive.Root value={current} onValueChange={setCurrent} className="w-full">
@@ -67,12 +129,56 @@ export function ProjectDetailTabs({ projectId }: { projectId: string }) {
           </div>
         </TabsPrimitive.Content>
         <TabsPrimitive.Content value="settlement" className="space-y-4 text-sm text-white/70">
-          <p>목표 금액의 85% 달성 – 정산 준비 중입니다.</p>
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-            <p className="text-xs text-white/60">총 펀딩 금액</p>
-            <p className="text-lg font-semibold text-white">₩94,000,000</p>
-            <p className="mt-2 text-xs text-white/60">후원자 2,200명 · 예상 분배율 70% / 30%</p>
-          </div>
+          {isSettlementLoading ? (
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-4 text-xs text-white/60">
+              정산 데이터를 불러오는 중입니다...
+            </div>
+          ) : settlementError ? (
+            <div className="rounded-3xl border border-red-500/40 bg-red-500/10 p-4 text-xs text-red-200">
+              {settlementError}
+            </div>
+          ) : latestSettlement ? (
+            <div className="space-y-4">
+              <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs text-white/60">최신 정산 금액</p>
+                <p className="mt-2 text-lg font-semibold text-white">
+                  {currencyFormatter.format(latestSettlement.totalAmount)}
+                </p>
+                <p className="mt-2 text-xs text-white/60">
+                  제작자 {currencyFormatter.format(latestSettlement.creatorShare)} · 플랫폼{' '}
+                  {currencyFormatter.format(latestSettlement.platformShare)}
+                </p>
+                <p className="mt-2 text-xs text-white/50">
+                  {latestSettlement.distributed ? '분배 완료' : '분배 대기'} ·{' '}
+                  {dateFormatter.format(new Date(latestSettlement.createdAt))}
+                </p>
+              </div>
+
+              {settlementHistory.length ? (
+                <div className="space-y-3">
+                  <p className="text-xs font-medium uppercase tracking-[0.2em] text-white/60">정산 히스토리</p>
+                  <ul className="space-y-3 text-xs text-white/60">
+                    {settlementHistory.map((item) => (
+                      <li
+                        key={item.id}
+                        className="flex flex-col gap-1 rounded-2xl border border-white/5 bg-neutral-950/60 p-3 sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <span className="font-medium text-white/80">
+                          {currencyFormatter.format(item.totalAmount)}
+                        </span>
+                        <span>{dateFormatter.format(new Date(item.createdAt))}</span>
+                        <span className="text-white/40">{item.distributed ? '분배 완료' : '분배 준비'}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-4 text-xs text-white/60">
+              아직 정산 내역이 없습니다. 목표 금액을 달성하면 정산 리포트가 자동으로 갱신됩니다.
+            </div>
+          )}
         </TabsPrimitive.Content>
       </div>
     </TabsPrimitive.Root>
