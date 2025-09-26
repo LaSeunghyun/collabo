@@ -38,4 +38,9 @@ KAKAO_CLIENT_ID=placeholder
 KAKAO_CLIENT_SECRET=placeholder
 STRIPE_SECRET_KEY=sk_test
 STRIPE_PUBLISHABLE_KEY=pk_test
+AUTH_V3_ENABLED=false
 ```
+
+## 작업 가이드
+
+브랜치 전략과 코드 오너십 정책은 [CONTRIBUTING.md](./CONTRIBUTING.md)를 참고해주세요.

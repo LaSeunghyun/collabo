@@ -9,6 +9,7 @@ import { compare } from 'bcryptjs';
 
 import prisma from '@/lib/prisma';
 
+import { AUTH_V3_ENABLED } from './flags';
 import { deriveEffectivePermissions } from './permissions';
 
 const requiredOAuthEnvVars = [
@@ -126,7 +127,7 @@ export const authOptions: NextAuthOptions = {
         !token.permissions ||
         trigger === 'update';
 
-      if (shouldRefresh) {
+      if (AUTH_V3_ENABLED && shouldRefresh) {
         const dbUser = await fetchUserWithPermissions(identifier);
 
         if (dbUser) {
@@ -138,6 +139,8 @@ export const authOptions: NextAuthOptions = {
         } else if (!token.permissions) {
           token.permissions = [];
         }
+      } else if (!token.permissions) {
+        token.permissions = [];
       }
 
       return token;

@@ -1,0 +1,3 @@
+# Auth hotspot ownership
+/app/api/auth/[...nextauth]/route.ts @auth-core
+/types/auth.*.d.ts @types-core
