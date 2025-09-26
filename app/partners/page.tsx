@@ -3,18 +3,22 @@ import { UserRole } from '@prisma/client';
 import { PartnerForm } from '@/components/forms/partner-form';
 import { requireUser } from '@/lib/auth/guards';
 import { ROLE_LABELS } from '@/lib/auth/permissions';
+import { listPartners } from '@/lib/server/partners';
+import { PARTNER_TYPE_LABELS } from '@/lib/validators/partners';
 
-const partnerList = [
-  { id: 'studio-1', name: 'Studio Aurora', type: '스튜디오', status: '승인' },
-  { id: 'venue-1', name: 'Wonder Hall', type: '공연장', status: '검수 중' },
-  { id: 'production-1', name: 'MakeStar Production', type: '제작사', status: '승인' }
-];
+const statusBadge = (verified: boolean) =>
+  verified ? '승인' : '검수 중';
 
 export default async function PartnersPage() {
   const { user } = await requireUser({
     roles: [UserRole.PARTNER, UserRole.ADMIN],
-    permissions: ['partner:manage'],
     redirectTo: '/partners'
+  });
+
+  const recommended = await listPartners({
+    verified: true,
+    limit: 6,
+    excludeOwnerId: user.id
   });
 
   return (
@@ -30,22 +34,33 @@ export default async function PartnersPage() {
       <section className="grid gap-6 md:grid-cols-2">
         <div className="space-y-4">
           <h2 className="text-xl font-semibold text-white">추천 파트너</h2>
-          <ul className="space-y-3">
-            {partnerList.map((partner) => (
-              <li
-                key={partner.id}
-                className="flex items-center justify-between rounded-3xl border border-white/10 bg-white/5 p-5"
-              >
-                <div>
-                  <p className="text-sm font-semibold text-white">{partner.name}</p>
-                  <p className="text-xs text-white/60">{partner.type}</p>
-                </div>
-                <span className="rounded-full border border-white/20 px-3 py-1 text-xs text-white/60">
-                  {partner.status}
-                </span>
-              </li>
-            ))}
-          </ul>
+          {recommended.items.length ? (
+            <ul className="space-y-3">
+              {recommended.items.map((partner) => (
+                <li
+                  key={partner.id}
+                  className="flex items-center justify-between rounded-3xl border border-white/10 bg-white/5 p-5"
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-white">{partner.name}</p>
+                    <p className="text-xs text-white/60">
+                      {PARTNER_TYPE_LABELS[partner.type]} · 매칭 {partner.matchCount}건
+                    </p>
+                    {partner.location ? (
+                      <p className="mt-1 text-xs text-white/40">{partner.location}</p>
+                    ) : null}
+                  </div>
+                  <span className="rounded-full border border-white/20 px-3 py-1 text-xs text-white/60">
+                    {statusBadge(partner.verified)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="rounded-3xl border border-dashed border-white/10 bg-white/5 p-6 text-sm text-white/60">
+              아직 추천 파트너가 없습니다. 프로필을 충실하게 작성하면 큐레이션에 우선 반영됩니다.
+            </div>
+          )}
         </div>
         <div>
           <h2 className="text-xl font-semibold text-white">파트너 등록</h2>

@@ -105,7 +105,7 @@ export const getProjectSummaryById = async (id: string) => {
 };
 
 const buildProjectData = (input: CreateProjectInput | UpdateProjectInput) => {
-  const data: any = {};
+  const data: Record<string, unknown> = {};
 
   if (input.title !== undefined) {
     data.title = input.title;

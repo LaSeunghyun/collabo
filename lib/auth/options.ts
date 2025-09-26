@@ -152,7 +152,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         if (token.role) {
-          session.user.role = token.role as string;
+          session.user.role = token.role;
         }
 
         session.user.permissions = Array.isArray(token.permissions)
