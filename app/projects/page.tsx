@@ -1,12 +1,10 @@
 'use client';
 
-import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { CategoryFilter } from '@/components/sections/category-filter';
 import { ProjectFilterPanel } from '@/components/sections/project-filter-panel';
 import { SectionHeader } from '@/components/shared/section-header';
-import { demoProjects } from '@/lib/data/projects';
 
 export default function ProjectsPage() {
   const { t } = useTranslation();
@@ -17,9 +15,7 @@ export default function ProjectsPage() {
         <p className="max-w-2xl text-sm text-white/60">{t('projects.overviewDescription')}</p>
       </header>
       <CategoryFilter />
-      <Suspense fallback={<div>{t('common.loading')}</div>}>
-        <ProjectFilterPanel initialProjects={demoProjects} />
-      </Suspense>
+      <ProjectFilterPanel />
     </div>
   );
 }

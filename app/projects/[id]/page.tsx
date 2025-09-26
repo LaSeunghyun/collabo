@@ -3,14 +3,14 @@ import { notFound } from 'next/navigation';
 
 import { FundingDialog } from '@/components/funding/funding-dialog';
 import { ProjectDetailTabs } from '@/components/sections/project-detail-tabs';
-import { demoProjects } from '@/lib/data/projects';
+import { getProjectSummaryById } from '@/lib/server/projects';
 
 interface ProjectPageProps {
   params: { id: string };
 }
 
-export default function ProjectDetailPage({ params }: ProjectPageProps) {
-  const project = demoProjects.find((item) => item.id === params.id);
+export default async function ProjectDetailPage({ params }: ProjectPageProps) {
+  const project = await getProjectSummaryById(params.id);
   if (!project) {
     notFound();
   }
