@@ -2,7 +2,7 @@ import { ProjectStatus } from '@prisma/client';
 import { z } from 'zod';
 
 const currencySchema = z
-  .string({ required_error: '통화 코드는 필수입니다.' })
+  .string({ message: '통화 코드는 필수입니다.' })
   .trim()
   .min(3, '통화 코드는 3자리여야 합니다.')
   .max(3, '통화 코드는 3자리여야 합니다.')
@@ -17,22 +17,22 @@ const jsonLikeSchema = z.unknown().optional();
 const baseProjectSchema = z
   .object({
     title: z
-      .string({ required_error: '프로젝트 제목은 필수입니다.' })
+      .string({ message: '프로젝트 제목은 필수입니다.' })
       .trim()
       .min(1, '프로젝트 제목은 1자 이상이어야 합니다.')
       .max(120, '프로젝트 제목은 120자를 넘을 수 없습니다.'),
     description: z
-      .string({ required_error: '프로젝트 설명은 필수입니다.' })
+      .string({ message: '프로젝트 설명은 필수입니다.' })
       .trim()
       .min(1, '프로젝트 설명은 1자 이상이어야 합니다.'),
     category: z
-      .string({ required_error: '카테고리는 필수입니다.' })
+      .string({ message: '카테고리는 필수입니다.' })
       .trim()
       .min(1, '카테고리는 1자 이상이어야 합니다.')
       .max(60, '카테고리는 60자를 넘을 수 없습니다.'),
     targetAmount: z
       .coerce
-      .number({ required_error: '목표 금액은 필수입니다.' })
+      .number({ message: '목표 금액은 필수입니다.' })
       .int('목표 금액은 정수여야 합니다.')
       .positive('목표 금액은 0보다 커야 합니다.'),
     currency: currencySchema.optional().default('KRW'),

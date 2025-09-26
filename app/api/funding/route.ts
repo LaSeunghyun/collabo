@@ -77,7 +77,7 @@ async function recordFunding({
   amount: number;
   paymentReference: string;
 }) {
-  const existing = await prisma.funding.findUnique({ where: { paymentReference } });
+  const existing = await prisma.funding.findUnique({ where: { paymentIntentId: paymentReference } });
   if (existing) {
     return existing;
   }
@@ -88,7 +88,7 @@ async function recordFunding({
         projectId,
         userId,
         amount,
-        paymentReference
+        paymentIntentId: paymentReference
       }
     });
 
@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
           receiptEmail,
           customerName,
           stripeEmailFallback:
-            paymentIntent.receipt_email ?? paymentIntent.charges.data[0]?.billing_details.email ?? undefined
+            paymentIntent.receipt_email ?? undefined
         });
 
         const funding = await recordFunding({

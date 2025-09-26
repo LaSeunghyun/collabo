@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
   }
 
   const pendingSettlement = await prisma.settlement.findFirst({
-    where: { projectId, distributed: false },
+    where: { projectId, payoutStatus: 'PENDING' },
     orderBy: { createdAt: 'desc' }
   });
 
@@ -95,10 +95,10 @@ export async function POST(request: NextRequest) {
   const settlement = await prisma.settlement.create({
     data: {
       projectId,
-      totalAmount,
-      distributed: false,
+      totalRaised: totalAmount,
+      platformFee: platformShare,
       creatorShare,
-      platformShare
+      payoutStatus: 'PENDING'
     }
   });
 
