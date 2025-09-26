@@ -78,7 +78,8 @@ const handler = NextAuth({
           id: user.id,
           name: user.name,
           email: user.email,
-          role: user.role
+          role: user.role,
+          permissions: user.permissions || []
         };
       }
     }),
@@ -98,6 +99,7 @@ const handler = NextAuth({
           session.user.id = token.sub;
         }
         session.user.role = (token.role as string) ?? session.user.role ?? UserRole.PARTICIPANT;
+        session.user.permissions = (token.permissions as string[]) ?? session.user.permissions ?? [];
       }
 
       return session;
@@ -105,6 +107,7 @@ const handler = NextAuth({
     async jwt({ token, user, trigger }) {
       if (user) {
         token.role = user.role;
+        token.permissions = user.permissions;
       }
 
       const shouldSyncRole = Boolean(token.email && (!token.role || trigger === 'update'));
@@ -116,6 +119,7 @@ const handler = NextAuth({
 
         if (dbUser) {
           token.role = dbUser.role;
+          token.permissions = dbUser.permissions || [];
         }
       }
 
