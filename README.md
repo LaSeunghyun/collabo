@@ -80,4 +80,5 @@ AUTH_V3_ENABLED=false
 
 ## 작업 가이드
 
-브랜치 전략과 코드 오너십 정책은 [CONTRIBUTING.md](./CONTRIBUTING.md)를 참고해주세요.
+- 브랜치 전략과 코드 오너십 정책은 [CONTRIBUTING.md](./CONTRIBUTING.md)를 참고해주세요.
+- 제품/디자인/개발 공통 원칙은 [docs/ground-rules.md](./docs/ground-rules.md)에서 확인할 수 있습니다.
