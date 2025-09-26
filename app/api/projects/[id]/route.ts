@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { demoProjects } from '@/lib/data/projects';
+import { getProjectSummaryById } from '@/lib/server/projects';
 
 export async function GET(
   _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const project = demoProjects.find((item) => item.id === params.id);
+  const project = await getProjectSummaryById(params.id);
   if (!project) {
     return NextResponse.json({ message: 'Project not found' }, { status: 404 });
   }
@@ -19,7 +19,7 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   const body = await request.json();
-  const project = demoProjects.find((item) => item.id === params.id);
+  const project = await getProjectSummaryById(params.id);
   if (!project) {
     return NextResponse.json({ message: 'Project not found' }, { status: 404 });
   }
@@ -31,7 +31,7 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const project = demoProjects.find((item) => item.id === params.id);
+  const project = await getProjectSummaryById(params.id);
   if (!project) {
     return NextResponse.json({ message: 'Project not found' }, { status: 404 });
   }

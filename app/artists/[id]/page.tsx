@@ -1,10 +1,10 @@
 import Image from 'next/image';
 
 import { ProjectCard } from '@/components/shared/project-card';
-import { demoProjects } from '@/lib/data/projects';
+import { getProjectSummaries } from '@/lib/server/projects';
 
-export default function ArtistProfilePage({ params }: { params: { id: string } }) {
-  const artistProjects = demoProjects;
+export default async function ArtistProfilePage({ params }: { params: { id: string } }) {
+  const artistProjects = await getProjectSummaries({ ownerId: params.id });
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-12 px-4 pb-20">
@@ -45,9 +45,13 @@ export default function ArtistProfilePage({ params }: { params: { id: string } }
       <section>
         <h2 className="text-xl font-semibold text-white">진행한 프로젝트</h2>
         <div className="mt-6 grid gap-6 md:grid-cols-2">
-          {artistProjects.map((project) => (
-            <ProjectCard key={project.id} project={project} />
-          ))}
+          {artistProjects.length === 0 ? (
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-sm text-white/60">
+              아직 진행한 프로젝트가 없습니다.
+            </div>
+          ) : (
+            artistProjects.map((project) => <ProjectCard key={project.id} project={project} />)
+          )}
         </div>
       </section>
 
