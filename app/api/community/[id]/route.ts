@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { CommunityCategory } from '@prisma/client';
+
 import { prisma } from '@/lib/prisma';
 
 import { findDemoCommunityPost, updateDemoCommunityPost } from '@/lib/data/community';
@@ -12,6 +14,7 @@ export async function GET(
     const post = await prisma.post.findUnique({
       where: { id: params.id },
       include: {
+        author: { select: { id: true, name: true, avatarUrl: true } },
         _count: { select: { likes: true, comments: true } }
       }
     });
@@ -28,7 +31,15 @@ export async function GET(
       comments: post._count.comments,
       projectId: post.projectId ?? undefined,
       createdAt: post.createdAt.toISOString(),
-      liked: false
+      liked: false,
+      category: (post.category as CommunityCategory).toLowerCase(),
+      isPinned: post.isPinned,
+      isTrending: false,
+      author: {
+        id: post.author.id,
+        name: post.author.name,
+        avatarUrl: post.author.avatarUrl
+      }
     });
   } catch (error) {
     console.error('Failed to load post from database, using demo data.', error);
@@ -58,6 +69,7 @@ export async function PATCH(
     const post = await prisma.post.findUnique({
       where: { id: params.id },
       include: {
+        author: { select: { id: true, name: true, avatarUrl: true } },
         _count: { select: { likes: true, comments: true } }
       }
     });
@@ -74,7 +86,15 @@ export async function PATCH(
       comments: post._count.comments,
       projectId: post.projectId ?? undefined,
       createdAt: post.createdAt.toISOString(),
-      liked: shouldLike
+      liked: shouldLike,
+      category: (post.category as CommunityCategory).toLowerCase(),
+      isPinned: post.isPinned,
+      isTrending: false,
+      author: {
+        id: post.author.id,
+        name: post.author.name,
+        avatarUrl: post.author.avatarUrl
+      }
     });
   } catch (error) {
     console.error('Failed to update post likes in database, using demo data.', error);

@@ -1,0 +1,33 @@
+{
+  "filters": {
+    "all": "All",
+    "notice": "Notices",
+    "general": "General",
+    "collab": "Collaboration",
+    "support": "Support",
+    "showcase": "Showcase"
+  },
+  "searchPlaceholder": "Search posts or @mention people",
+  "sortTrending": "Trending",
+  "badges": {
+    "pinned": "Pinned",
+    "trending": "Trending"
+  },
+  "share": {
+    "label": "Share",
+    "copied": "Link copied to clipboard"
+  },
+  "mention": {
+    "title": "Mention someone",
+    "noResults": "No members found"
+  },
+  "pinned": {
+    "title": "Pinned posts"
+  },
+  "popular": {
+    "title": "Popular now"
+  },
+  "loadMore": "Load more",
+  "emptyStateTitle": "Start the first conversation",
+  "emptyStateDescription": "Share the first idea to get the discussion going."
+}
