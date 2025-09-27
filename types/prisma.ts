@@ -1,6 +1,7 @@
-// Prisma에서 생성된 타입들을 재export하여 공유 타입으로 사용
-export {
-  // Enums
+// Prisma에서 생성된 타입과 값을 가져와 공유 타입으로 사용
+import {
+  Prisma,
+  PrismaClient,
   UserRole,
   ProjectStatus,
   FundingStatus,
@@ -15,9 +16,10 @@ export {
   NotificationType,
   MilestoneStatus,
   ModerationTargetType,
-  ModerationStatus,
-  
-  // Models
+  ModerationStatus
+} from '@prisma/client';
+
+import type {
   User,
   Project,
   ProjectCollaborator,
@@ -43,11 +45,57 @@ export {
   OrderItem,
   UserFollow,
   CommentReaction,
-  ModerationReport,
-  
-  // Prisma namespace
-  Prisma
+  ModerationReport
 } from '@prisma/client';
+
+export {
+  Prisma,
+  PrismaClient,
+  UserRole,
+  ProjectStatus,
+  FundingStatus,
+  PaymentProvider,
+  SettlementPayoutStatus,
+  SettlementStakeholderType,
+  PartnerType,
+  PartnerMatchStatus,
+  ProductType,
+  OrderStatus,
+  PostType,
+  NotificationType,
+  MilestoneStatus,
+  ModerationTargetType,
+  ModerationStatus
+};
+
+export type {
+  User,
+  Project,
+  ProjectCollaborator,
+  Funding,
+  Settlement,
+  Partner,
+  PartnerMatch,
+  Product,
+  Order,
+  Post,
+  Comment,
+  PostLike,
+  Notification,
+  Wallet,
+  AuditLog,
+  Permission,
+  UserPermission,
+  PaymentTransaction,
+  SettlementPayout,
+  ProjectMilestone,
+  ProjectRewardTier,
+  ProjectRequirement,
+  OrderItem,
+  UserFollow,
+  CommentReaction,
+  ModerationReport
+};
 
 // 공통 타입 정의
 export type DatabaseId = string;
