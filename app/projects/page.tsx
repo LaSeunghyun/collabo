@@ -2,9 +2,9 @@
 
 import { useTranslation } from 'react-i18next';
 
-import { CategoryFilter } from '@/components/sections/category-filter';
-import { ProjectFilterPanel } from '@/components/sections/project-filter-panel';
-import { SectionHeader } from '@/components/shared/section-header';
+import { CategoryFilter } from '@/components/ui/sections/category-filter';
+import { ProjectFilterPanel } from '@/components/ui/sections/project-filter-panel';
+import { SectionHeader } from '@/components/ui/headers/section-header';
 
 export default function ProjectsPage() {
   const { t } = useTranslation();

@@ -5,11 +5,11 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
-import { HeroCarousel } from '@/components/sections/hero-carousel';
-import { CategoryFilter } from '@/components/sections/category-filter';
-import { ProjectCard } from '@/components/shared/project-card';
-import { SectionHeader } from '@/components/shared/section-header';
-import { StoreCard } from '@/components/shared/store-card';
+import { HeroCarousel } from '@/components/ui/sections/hero-carousel';
+import { CategoryFilter } from '@/components/ui/sections/category-filter';
+import { ProjectCard } from '@/components/ui/cards/project-card';
+import { SectionHeader } from '@/components/ui/headers/section-header';
+import { StoreCard } from '@/components/ui/cards/store-card';
 import type { ProjectSummary } from '@/lib/api/projects';
 import { fetchProjects } from '@/lib/api/projects';
 

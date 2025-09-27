@@ -1,8 +1,8 @@
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 
-import { FundingDialog } from '@/components/funding/funding-dialog';
-import { ProjectDetailTabs } from '@/components/sections/project-detail-tabs';
+import { FundingDialog } from '@/components/ui/dialogs/funding-dialog';
+import { ProjectDetailTabs } from '@/components/ui/sections/project-detail-tabs';
 import { getProjectSummaryById } from '@/lib/server/projects';
 
 interface ProjectPageProps {

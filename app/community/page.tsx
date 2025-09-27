@@ -2,7 +2,7 @@
 
 import { useTranslation } from 'react-i18next';
 
-import { CommunityBoard } from '@/components/sections/community-board';
+import { CommunityBoard } from '@/components/ui/sections/community-board';
 
 export default function CommunityPage() {
   const { t } = useTranslation();

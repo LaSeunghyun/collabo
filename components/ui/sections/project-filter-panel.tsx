@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
-import { ProjectCard } from '@/components/shared/project-card';
+import { ProjectCard } from '@/components/ui/cards/project-card';
 import { useFilterStore } from '@/lib/stores/use-filter-store';
 import type { ProjectSummary } from '@/lib/api/projects';
 import { fetchProjects } from '@/lib/api/projects';
