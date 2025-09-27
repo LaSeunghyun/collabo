@@ -5,7 +5,8 @@ import { UserRole } from '@/types/prisma';
 
 export async function POST(request: NextRequest) {
     try {
-        const { name, email, password, role = 'PARTICIPANT' } = await request.json();
+        const body = await request.json();
+        const { name, email, password } = body;
 
         // 입력 검증
         if (!name || !email || !password) {
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
                 name,
                 email,
                 passwordHash: hashedPassword,
-                role: role as UserRole,
+                role: UserRole.PARTICIPANT,
             },
             select: {
                 id: true,

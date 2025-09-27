@@ -88,7 +88,60 @@
     "commentErrorMessage": "댓글 등록에 실패했습니다. 다시 시도해주세요.",
     "commentSubmitting": "전송 중...",
     "commentSubmit": "댓글 남기기",
-    "defaultGuestName": "게스트"
+    "defaultGuestName": "게스트",
+    "commentLoginPrompt": "로그인 후 댓글을 남길 수 있습니다.",
+    "commentUserLabel": "{{name}} 님으로 댓글이 작성됩니다."
+  },
+  "artist": {
+    "actions": {
+      "follow": "팔로우",
+      "following": "팔로잉",
+      "processing": "처리 중...",
+      "editProfile": "프로필 편집"
+    },
+    "metrics": {
+      "followers": "팔로워",
+      "backers": "누적 후원자",
+      "projects": "프로젝트"
+    },
+    "tabs": {
+      "overview": "소개",
+      "projects": "프로젝트",
+      "updates": "업데이트",
+      "community": "커뮤니티",
+      "portfolio": "포트폴리오"
+    },
+    "profile": {
+      "avatarAlt": "{{name}} 프로필 사진",
+      "emptyBio": "아직 소개가 등록되지 않았습니다.",
+      "emptyBioDetailed": "아직 소개글이 없습니다. 팔로우하고 새 소식을 받아보세요.",
+      "joined": "가입 {{date}}"
+    },
+    "events": {
+      "title": "연결된 이벤트",
+      "manageCta": "이벤트 관리",
+      "empty": "아직 연결된 이벤트가 없습니다.",
+      "createCta": "이벤트 만들기",
+      "tbd": "일정 추후 공개",
+      "viewDetails": "상세 보기"
+    },
+    "links": {
+      "title": "외부 링크",
+      "manageCta": "링크 관리",
+      "empty": "공식 채널과 SNS, 굿즈 스토어를 연결해 팬들이 쉽게 찾을 수 있게 하세요.",
+      "addLink": "링크 추가"
+    },
+    "projects": {
+      "empty": "등록된 프로젝트가 없습니다."
+    },
+    "updates": {
+      "empty": "게시된 프로젝트 업데이트가 없습니다.",
+      "projectLabel": "{{title}} 업데이트"
+    },
+    "portfolio": {
+      "placeholder": "아티스트가 자료를 등록하면 포트폴리오가 표시됩니다.",
+      "editablePlaceholder": "케이스 스터디, 미디어 킷 등 포트폴리오 자료를 추가해보세요."
+    }
   },
   "partners": {
     "title": "파트너 매칭",

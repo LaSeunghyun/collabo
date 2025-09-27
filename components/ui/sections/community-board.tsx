@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import type { QueryKey } from '@tanstack/react-query';
 import {
   useMutation,
@@ -10,6 +10,7 @@ import {
 import { Heart, MessageCircle, SendHorizontal } from 'lucide-react';
 // import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { signIn, useSession } from 'next-auth/react';
 
 import type { CommunityComment, CommunityPost } from '@/lib/data/community';
 
@@ -19,18 +20,26 @@ interface PostFormValues {
 }
 
 interface CommentFormValues {
-  authorName: string;
   content: string;
 }
 
-function useCommunityPosts(projectId: string | undefined, sort: 'recent' | 'popular') {
+type CommunityPostFilters = {
+  projectId?: string;
+  authorId?: string;
+};
+
+function useCommunityPosts(filters: CommunityPostFilters, sort: 'recent' | 'popular') {
+  const { projectId, authorId } = filters;
   return useQuery<CommunityPost[]>({
-    queryKey: ['community', { projectId: projectId ?? null, sort }],
+    queryKey: ['community', { projectId: projectId ?? null, authorId: authorId ?? null, sort }],
     queryFn: async () => {
       const params = new URLSearchParams();
       params.set('sort', sort);
       if (projectId) {
         params.set('projectId', projectId);
+      }
+      if (authorId) {
+        params.set('authorId', authorId);
       }
 
       const res = await fetch(`/api/community?${params.toString()}`);
@@ -61,7 +70,7 @@ function useCommunityComments(postId: string) {
   });
 }
 
-export function CommunityBoard({ projectId }: { projectId?: string }) {
+export function CommunityBoard({ projectId, authorId, readOnly = false }: CommunityPostFilters & { readOnly?: boolean }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [sort, setSort] = useState<'recent' | 'popular'>('recent');
@@ -69,7 +78,7 @@ export function CommunityBoard({ projectId }: { projectId?: string }) {
     data: posts = [],
     isLoading,
     isError
-  } = useCommunityPosts(projectId, sort);
+  } = useCommunityPosts({ projectId, authorId }, sort);
 
   const [postForm, setPostForm] = useState<PostFormValues>({ title: '', content: '' });
 
@@ -78,7 +87,7 @@ export function CommunityBoard({ projectId }: { projectId?: string }) {
       const res = await fetch('/api/community', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...values, projectId })
+        body: JSON.stringify({ ...values, projectId, authorId })
       });
 
       if (!res.ok) {
@@ -169,50 +178,52 @@ export function CommunityBoard({ projectId }: { projectId?: string }) {
 
   return (
     <section className="space-y-8">
-      <form
-        onSubmit={handleCreatePost}
-        className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-xl shadow-black/20"
-      >
-        <div className="flex flex-col gap-4">
-          <div>
-            <label className="mb-2 block text-sm font-medium text-white/70" htmlFor="community-post-title">
-              {t('community.newPostTitleLabel')}
-            </label>
-            <input
-              id="community-post-title"
-              type="text"
-              placeholder={t('community.newPostTitlePlaceholder')}
-              className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
-              value={postForm.title}
-              onChange={(e) => setPostForm(prev => ({ ...prev, title: e.target.value }))}
-            />
+      {readOnly ? null : (
+        <form
+          onSubmit={handleCreatePost}
+          className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-xl shadow-black/20"
+        >
+          <div className="flex flex-col gap-4">
+            <div>
+              <label className="mb-2 block text-sm font-medium text-white/70" htmlFor="community-post-title">
+                {t('community.newPostTitleLabel')}
+              </label>
+              <input
+                id="community-post-title"
+                type="text"
+                placeholder={t('community.newPostTitlePlaceholder')}
+                className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                value={postForm.title}
+                onChange={(e) => setPostForm((prev) => ({ ...prev, title: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-white/70" htmlFor="community-post-content">
+                {t('community.newPostContentLabel')}
+              </label>
+              <textarea
+                id="community-post-content"
+                placeholder={t('community.writePlaceholder')}
+                className="min-h-[120px] w-full resize-y rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                value={postForm.content}
+                onChange={(e) => setPostForm((prev) => ({ ...prev, content: e.target.value }))}
+              />
+            </div>
+            <div className="flex items-center justify-end gap-3">
+              {createPostMutation.isError ? (
+                <p className="text-sm text-red-400">{t('community.postErrorMessage')}</p>
+              ) : null}
+              <button
+                type="submit"
+                disabled={createPostMutation.isPending}
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {createPostMutation.isPending ? t('common.loading') : t('community.post')}
+              </button>
+            </div>
           </div>
-          <div>
-            <label className="mb-2 block text-sm font-medium text-white/70" htmlFor="community-post-content">
-              {t('community.newPostContentLabel')}
-            </label>
-            <textarea
-              id="community-post-content"
-              placeholder={t('community.writePlaceholder')}
-              className="min-h-[120px] w-full resize-y rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
-              value={postForm.content}
-              onChange={(e) => setPostForm(prev => ({ ...prev, content: e.target.value }))}
-            />
-          </div>
-          <div className="flex items-center justify-end gap-3">
-            {createPostMutation.isError ? (
-              <p className="text-sm text-red-400">{t('community.postErrorMessage')}</p>
-            ) : null}
-            <button
-              type="submit"
-              disabled={createPostMutation.isPending}
-              className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {createPostMutation.isPending ? t('common.loading') : t('community.post')}
-            </button>
-          </div>
-        </div>
-      </form>
+        </form>
+      )}
 
       <div className="flex flex-wrap items-center gap-3">
         {sortButtons.map((option) => {
@@ -247,21 +258,28 @@ export function CommunityBoard({ projectId }: { projectId?: string }) {
   );
 }
 
-function CommunityPostCard({
-  post,
-  onToggleLike
-}: {
+export interface CommunityPostCardProps {
   post: CommunityPost;
   onToggleLike: (like: boolean) => void;
-}) {
+  children?: ReactNode;
+}
+
+export function CommunityPostCard({
+  post,
+  onToggleLike,
+  children
+}: CommunityPostCardProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const { data: session } = useSession();
+  const isAuthenticated = Boolean(session?.user);
+  const commentAuthorName = session?.user?.name ?? t('community.defaultGuestName');
   const {
     data: comments = [],
     isLoading,
     isError
   } = useCommunityComments(post.id);
-  const [commentForm, setCommentForm] = useState<CommentFormValues>({ authorName: '', content: '' });
+  const [commentForm, setCommentForm] = useState<CommentFormValues>({ content: '' });
 
   const addCommentMutation = useMutation<CommunityComment, Error, CommentFormValues>({
     mutationFn: async (values) => {
@@ -278,19 +296,26 @@ function CommunityPostCard({
       return (await res.json()) as CommunityComment;
     },
     onSuccess: () => {
-      setCommentForm({ authorName: '', content: '' });
+      setCommentForm({ content: '' });
       queryClient.invalidateQueries({ queryKey: ['community', 'comments', post.id] });
       queryClient.invalidateQueries({ queryKey: ['community'] });
     }
   });
 
-  const handleAddComment = () => {
-    if (!commentForm.content.trim()) {
+  const handleAddComment = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!isAuthenticated) {
       return;
     }
+
+    const trimmedContent = commentForm.content.trim();
+    if (!trimmedContent) {
+      return;
+    }
+
     addCommentMutation.mutate({
-      ...commentForm,
-      authorName: commentForm.authorName.trim() || t('community.defaultGuestName')
+      content: trimmedContent
     });
   };
 
@@ -321,6 +346,8 @@ function CommunityPostCard({
         </div>
       </header>
 
+      {children ? <div className="mt-4 space-y-3">{children}</div> : null}
+
       <section className="mt-6 space-y-4">
         <h4 className="text-sm font-semibold text-white/80">{t('community.commentsSectionTitle')}</h4>
         {isLoading ? (
@@ -349,37 +376,48 @@ function CommunityPostCard({
       </section>
 
       <form onSubmit={handleAddComment} className="mt-6 space-y-4">
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <input
-            type="text"
-            placeholder={t('community.commentAuthorPlaceholder')}
-            className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40 sm:w-48"
-            value={commentForm.authorName}
-            onChange={(e) => setCommentForm(prev => ({ ...prev, authorName: e.target.value }))}
+        {isAuthenticated ? (
+          <p className="rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-sm text-white/70">
+            {t('community.commentUserLabel', { name: commentAuthorName })}
+          </p>
+        ) : null}
+        <div className="flex flex-col gap-3">
+          <textarea
+            placeholder={t('community.commentPlaceholder')}
+            className="min-h-[80px] w-full resize-y rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+            value={commentForm.content}
+            onChange={(e) => setCommentForm({ content: e.target.value })}
+            disabled={!isAuthenticated || addCommentMutation.isPending}
           />
-          <div className="flex-1">
-            <textarea
-              placeholder={t('community.commentPlaceholder')}
-              className="min-h-[80px] w-full resize-y rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
-              value={commentForm.content}
-              onChange={(e) => setCommentForm(prev => ({ ...prev, content: e.target.value }))}
-            />
-          </div>
         </div>
-        <div className="flex items-center justify-end gap-3">
-          {addCommentMutation.isError ? (
-            <p className="text-sm text-red-400">{t('community.commentErrorMessage')}</p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          {!isAuthenticated ? (
+            <div className="flex flex-col items-start gap-2 rounded-2xl border border-dashed border-white/20 bg-black/10 px-4 py-3 text-left text-sm text-white/70 sm:flex-row sm:items-center">
+              <p>{t('community.commentLoginPrompt')}</p>
+              <button
+                type="button"
+                onClick={() => signIn()}
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition hover:bg-primary/90"
+              >
+                {t('actions.login')}
+              </button>
+            </div>
           ) : null}
-          <button
-            type="submit"
-            disabled={addCommentMutation.isPending}
-            className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <SendHorizontal className="h-4 w-4" aria-hidden="true" />
-            {addCommentMutation.isPending
-              ? t('community.commentSubmitting')
-              : t('community.commentSubmit')}
-          </button>
+          <div className="flex items-center justify-end gap-3">
+            {addCommentMutation.isError ? (
+              <p className="text-sm text-red-400">{t('community.commentErrorMessage')}</p>
+            ) : null}
+            <button
+              type="submit"
+              disabled={!isAuthenticated || addCommentMutation.isPending}
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <SendHorizontal className="h-4 w-4" aria-hidden="true" />
+              {addCommentMutation.isPending
+                ? t('community.commentSubmitting')
+                : t('community.commentSubmit')}
+            </button>
+          </div>
         </div>
       </form>
     </article>

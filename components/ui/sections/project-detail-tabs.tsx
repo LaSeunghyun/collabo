@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import * as TabsPrimitive from '@radix-ui/react-tabs';
 
 import { CommunityBoard } from '@/components/ui/sections/community-board';
+import { ProjectUpdatesBoard } from '@/components/ui/sections/project-updates-board';
 import { fetchSettlement, SettlementRecord } from '@/lib/api/settlement';
 
 const tabItems = [
@@ -25,7 +26,13 @@ const dateFormatter = new Intl.DateTimeFormat('ko-KR', {
   timeStyle: 'short'
 });
 
-export function ProjectDetailTabs({ projectId }: { projectId: string }) {
+export function ProjectDetailTabs({
+  projectId,
+  canManageUpdates = false
+}: {
+  projectId: string;
+  canManageUpdates?: boolean;
+}) {
   const [current, setCurrent] = useState('story');
   const [settlements, setSettlements] = useState<SettlementRecord[]>([]);
   const [settlementError, setSettlementError] = useState<string | null>(null);
@@ -101,12 +108,8 @@ export function ProjectDetailTabs({ projectId }: { projectId: string }) {
             프리미엄 티켓과 메타버스 중계, 한정판 굿즈까지 다양한 리워드를 제공하며, 글로벌 팬과의 실시간 인터랙션을 지원합니다.
           </p>
         </TabsPrimitive.Content>
-        <TabsPrimitive.Content value="updates" className="space-y-4 text-sm text-white/70">
-          <ul className="space-y-3">
-            <li>• 10월 3주차 – 사운드 체크 완료, 협력 스튜디오 확정</li>
-            <li>• 10월 2주차 – 팬아트 공모전 오픈</li>
-            <li>• 10월 1주차 – 티저 영상 공개</li>
-          </ul>
+        <TabsPrimitive.Content value="updates">
+          <ProjectUpdatesBoard projectId={projectId} canManageUpdates={canManageUpdates} />
         </TabsPrimitive.Content>
         <TabsPrimitive.Content value="community">
           <CommunityBoard projectId={projectId} />

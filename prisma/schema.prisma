@@ -89,6 +89,11 @@ enum PostType {
   AMA
 }
 
+enum PostVisibility {
+  PUBLIC
+  SUPPORTERS
+}
+
 enum NotificationType {
   FUNDING_SUCCESS
   NEW_COMMENT
@@ -96,6 +101,7 @@ enum NotificationType {
   PARTNER_REQUEST
   SETTLEMENT_PAID
   SYSTEM
+  ANNOUNCEMENT
 }
 
 enum MilestoneStatus {
@@ -118,34 +124,36 @@ enum ModerationStatus {
 }
 
 model User {
-  id               String                @id @default(cuid())
-  name             String
-  email            String                @unique
-  role             UserRole              @default(PARTICIPANT)
-  passwordHash     String?
-  avatarUrl        String?
-  language         String                @default("ko")
-  timezone         String?
-  bio              String?
-  socialLinks      Json?
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime              @updatedAt
-  projects         Project[]             @relation("OwnerProjects")
-  collaborations   ProjectCollaborator[]
-  fundings         Funding[]
-  posts            Post[]
-  comments         Comment[]
-  postLikes        PostLike[]
-  commentReactions CommentReaction[]
-  notifications    Notification[]
-  partner          Partner?
-  orders           Order[]
-  wallet           Wallet?
-  auditLogs        AuditLog[]
-  permissions      UserPermission[]
-  following        UserFollow[]          @relation("UserFollowing")
-  followers        UserFollow[]          @relation("UserFollowers")
-  filedReports     ModerationReport[]    @relation("ModerationReportReporter")
+  id                String                @id @default(cuid())
+  name              String
+  email             String                @unique
+  role              UserRole              @default(PARTICIPANT)
+  passwordHash      String?
+  avatarUrl         String?
+  language          String                @default("ko")
+  timezone          String?
+  bio               String?
+  socialLinks       Json?
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+  projects          Project[]             @relation("OwnerProjects")
+  collaborations    ProjectCollaborator[]
+  fundings          Funding[]
+  posts             Post[]
+  comments          Comment[]
+  postLikes         PostLike[]
+  commentReactions  CommentReaction[]
+  notifications     Notification[]
+  partner           Partner?
+  orders            Order[]
+  wallet            Wallet?
+  auditLogs         AuditLog[]
+  permissions       UserPermission[]
+  following         UserFollow[]          @relation("UserFollowing")
+  followers         UserFollow[]          @relation("UserFollowers")
+  filedReports      ModerationReport[]    @relation("ModerationReportReporter")
+  announcements     Announcement[]
+  announcementReads AnnouncementRead[]
 }
 
 model Project {
@@ -314,6 +322,10 @@ model Post {
   title       String
   content     String
   type        PostType   @default(UPDATE)
+  visibility  PostVisibility @default(PUBLIC)
+  attachments Json?
+  milestone   ProjectMilestone? @relation(fields: [milestoneId], references: [id])
+  milestoneId String?
   excerpt     String?
   tags        String[]   @default([])
   language    String     @default("ko")
@@ -363,6 +375,31 @@ model Notification {
   payload   Json
   read      Boolean          @default(false)
   createdAt DateTime         @default(now())
+}
+
+model Announcement {
+  id          String             @id @default(cuid())
+  title       String
+  content     String
+  category    String
+  isPinned    Boolean            @default(false)
+  publishedAt DateTime?
+  author      User               @relation(fields: [authorId], references: [id])
+  authorId    String
+  reads       AnnouncementRead[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+}
+
+model AnnouncementRead {
+  id             String       @id @default(cuid())
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  announcementId String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+  readAt         DateTime     @default(now())
+
+  @@unique([announcementId, userId])
 }
 
 model Wallet {
@@ -455,6 +492,7 @@ model ProjectMilestone {
   releasedAt    DateTime?
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
+  updates       Post[]
 }
 
 model ProjectRewardTier {

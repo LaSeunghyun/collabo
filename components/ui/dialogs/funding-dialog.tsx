@@ -5,6 +5,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { X } from 'lucide-react';
+import { signIn, useSession } from 'next-auth/react';
 
 interface FundingDialogProps {
   projectId: string;
@@ -30,15 +31,32 @@ export function FundingDialog({
   const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
   const stripePromise = useMemo(() => (publishableKey ? loadStripe(publishableKey) : null), [publishableKey]);
 
+  const { data: session, status } = useSession();
+  const isAuthenticated = status === 'authenticated';
+  const isLoadingSession = status === 'loading';
+
   const [open, setOpen] = useState(false);
   const [stage, setStage] = useState<FundingStage>('details');
   const [amount, setAmount] = useState(String(defaultAmount));
-  const [email, setEmail] = useState('');
-  const [customerName, setCustomerName] = useState('');
+  const [email, setEmail] = useState(() => session?.user?.email ?? '');
+  const [customerName, setCustomerName] = useState(() => session?.user?.name ?? '');
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [requiresAuth, setRequiresAuth] = useState(false);
+
+  useEffect(() => {
+    const sessionEmail = session?.user?.email;
+    if (sessionEmail) {
+      setEmail((current) => current || sessionEmail);
+    }
+
+    const sessionName = session?.user?.name;
+    if (sessionName) {
+      setCustomerName((current) => current || sessionName);
+    }
+  }, [session]);
 
   useEffect(() => {
     if (!open) {
@@ -47,13 +65,23 @@ export function FundingDialog({
       setErrorMessage(null);
       setStatusMessage(null);
       setAmount(String(defaultAmount));
-      setEmail('');
-      setCustomerName('');
+      setEmail(session?.user?.email ?? '');
+      setCustomerName(session?.user?.name ?? '');
+      setRequiresAuth(false);
     }
-  }, [open, defaultAmount]);
+  }, [open, defaultAmount, session]);
 
   const normalizedAmount = Number.parseInt(amount, 10) || 0;
   const amountIsValid = normalizedAmount >= minimumAmount;
+
+  const handleSignIn = () => {
+    const callbackUrl = typeof window !== 'undefined' ? window.location.href : undefined;
+    if (callbackUrl) {
+      void signIn(undefined, { callbackUrl });
+    } else {
+      void signIn();
+    }
+  };
 
   const handleDetailsSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -86,6 +114,12 @@ export function FundingDialog({
 
       const data = await response.json();
       if (!response.ok) {
+        if (response.status === 401) {
+          setRequiresAuth(true);
+          setErrorMessage('후원을 진행하려면 로그인이 필요합니다.');
+          return;
+        }
+
         throw new Error(data.error ?? '결제 준비 중 문제가 발생했습니다.');
       }
 
@@ -93,6 +127,7 @@ export function FundingDialog({
         throw new Error('결제 정보를 가져오지 못했습니다.');
       }
 
+      setRequiresAuth(false);
       setClientSecret(data.clientSecret as string);
       setStage('confirm');
     } catch (error) {
@@ -116,6 +151,10 @@ export function FundingDialog({
 
     const data = await response.json();
     if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error('로그인이 필요합니다. 다시 로그인해주세요.');
+      }
+
       throw new Error(data.error ?? '결제 검증에 실패했습니다.');
     }
 
@@ -124,6 +163,27 @@ export function FundingDialog({
   };
 
   const disabled = !publishableKey;
+
+  if (!isAuthenticated) {
+    return (
+      <button
+        type="button"
+        className="w-full rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/40"
+        onClick={() => {
+          if (!disabled && !isLoadingSession) {
+            handleSignIn();
+          }
+        }}
+        disabled={disabled || isLoadingSession}
+      >
+        {isLoadingSession
+          ? '로그인 상태 확인 중...'
+          : disabled
+            ? 'Stripe 키 미설정'
+            : '로그인 후 후원하기'}
+      </button>
+    );
+  }
 
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
@@ -159,6 +219,20 @@ export function FundingDialog({
             </div>
           ) : stage === 'details' ? (
             <form className="space-y-5" onSubmit={handleDetailsSubmit}>
+              {requiresAuth ? (
+                <div className="rounded-2xl border border-amber-400/40 bg-amber-400/10 p-4 text-xs text-amber-200">
+                  <p className="font-medium text-amber-100">로그인이 필요한 작업입니다.</p>
+                  <p className="mt-1 text-amber-200/80">보안을 위해 다시 로그인한 뒤 결제를 진행해주세요.</p>
+                  <button
+                    type="button"
+                    className="mt-3 inline-flex items-center justify-center rounded-full bg-amber-400 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-900 transition hover:bg-amber-300"
+                    onClick={handleSignIn}
+                  >
+                    로그인하러 가기
+                  </button>
+                </div>
+              ) : null}
+
               <div className="space-y-2">
                 <label htmlFor="funding-name" className="text-xs font-medium uppercase tracking-[0.2em] text-white/60">
                   후원자 이름

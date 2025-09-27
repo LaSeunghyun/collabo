@@ -1,0 +1,165 @@
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { NextRequest } from 'next/server';
+
+import { AuthorizationError, requireApiUser } from '@/lib/auth/guards';
+
+import { POST } from '@/app/api/announcements/route';
+import { DELETE, PATCH } from '@/app/api/announcements/[id]/route';
+
+jest.mock('@/lib/auth/guards', () => {
+  const actual = jest.requireActual('@/lib/auth/guards');
+  return {
+    ...actual,
+    requireApiUser: jest.fn()
+  };
+});
+
+jest.mock('@/lib/auth/session', () => ({
+  getServerAuthSession: jest.fn()
+}));
+
+jest.mock('@/lib/server/announcements', () => ({
+  getAnnouncements: jest.fn(),
+  createAnnouncement: jest.fn(),
+  getAnnouncementDetail: jest.fn(),
+  markAnnouncementAsRead: jest.fn(),
+  updateAnnouncement: jest.fn(),
+  deleteAnnouncement: jest.fn()
+}));
+
+describe('Announcements API authorization', () => {
+  const requireApiUserMock = requireApiUser as jest.MockedFunction<typeof requireApiUser>;
+  const { getServerAuthSession } = jest.requireMock('@/lib/auth/session');
+  const announcements = jest.requireMock('@/lib/server/announcements');
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    getServerAuthSession.mockResolvedValue({ user: { id: 'user-1', role: 'PARTICIPANT' } });
+  });
+
+  it('denies announcement creation for non-admin users', async () => {
+    requireApiUserMock.mockRejectedValueOnce(new AuthorizationError('권한이 없습니다.', 403));
+
+    const request = new NextRequest('http://localhost/api/announcements', {
+      method: 'POST',
+      body: JSON.stringify({ title: '테스트 공지', content: '본문' })
+    });
+
+    const response = await POST(request);
+    expect(response.status).toBe(403);
+    expect(announcements.createAnnouncement).not.toHaveBeenCalled();
+  });
+
+  it('allows admins to create announcements', async () => {
+    requireApiUserMock.mockResolvedValueOnce({
+      id: 'admin-1',
+      name: '관리자',
+      email: 'admin@example.com',
+      role: 'ADMIN',
+      permissions: []
+    });
+
+    const mockAnnouncement = {
+      id: 'announcement-1',
+      title: '테스트 공지',
+      content: '본문',
+      category: 'platform',
+      isPinned: false,
+      publishedAt: new Date().toISOString(),
+      author: { id: 'admin-1', name: '관리자', avatarUrl: null },
+      isRead: false,
+      isNew: true,
+      updatedAt: new Date().toISOString()
+    };
+
+    announcements.createAnnouncement.mockResolvedValueOnce(mockAnnouncement);
+
+    const request = new NextRequest('http://localhost/api/announcements', {
+      method: 'POST',
+      body: JSON.stringify({ title: '테스트 공지', content: '본문' })
+    });
+
+    const response = await POST(request);
+    const payload = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(payload).toEqual(mockAnnouncement);
+    expect(announcements.createAnnouncement).toHaveBeenCalledTimes(1);
+  });
+
+  it('marks announcements as read for authenticated users', async () => {
+    requireApiUserMock.mockResolvedValueOnce({
+      id: 'user-1',
+      name: '홍길동',
+      email: 'user@example.com',
+      role: 'PARTICIPANT',
+      permissions: []
+    });
+
+    announcements.getAnnouncementDetail.mockResolvedValueOnce({ id: 'announcement-1' });
+
+    const request = new NextRequest('http://localhost/api/announcements/announcement-1', {
+      method: 'PATCH',
+      body: JSON.stringify({ markAsRead: true })
+    });
+
+    const response = await PATCH(request, { params: { id: 'announcement-1' } });
+    expect(response.status).toBe(200);
+    expect(announcements.markAnnouncementAsRead).toHaveBeenCalledWith('announcement-1', 'user-1');
+  });
+
+  it('denies announcement updates for non-admin users', async () => {
+    requireApiUserMock.mockRejectedValueOnce(new AuthorizationError('권한이 없습니다.', 403));
+
+    const request = new NextRequest('http://localhost/api/announcements/announcement-1', {
+      method: 'PATCH',
+      body: JSON.stringify({ title: '수정', content: '내용' })
+    });
+
+    const response = await PATCH(request, { params: { id: 'announcement-1' } });
+
+    expect(response.status).toBe(403);
+    expect(announcements.updateAnnouncement).not.toHaveBeenCalled();
+  });
+
+  it('allows admins to update announcements', async () => {
+    requireApiUserMock.mockResolvedValueOnce({
+      id: 'admin-1',
+      name: '관리자',
+      email: 'admin@example.com',
+      role: 'ADMIN',
+      permissions: []
+    });
+
+    announcements.updateAnnouncement.mockResolvedValueOnce({ id: 'announcement-1', title: '수정', content: '내용' });
+
+    const request = new NextRequest('http://localhost/api/announcements/announcement-1', {
+      method: 'PATCH',
+      body: JSON.stringify({ title: '수정', content: '내용' })
+    });
+
+    const response = await PATCH(request, { params: { id: 'announcement-1' } });
+
+    expect(response.status).toBe(200);
+    expect(announcements.updateAnnouncement).toHaveBeenCalledWith('announcement-1', {
+      title: '수정',
+      content: '내용',
+      category: undefined,
+      isPinned: false,
+      publishedAt: undefined
+    });
+  });
+
+  it('requires admin permissions to delete announcements', async () => {
+    requireApiUserMock.mockRejectedValueOnce(new AuthorizationError('권한이 없습니다.', 403));
+
+    const request = new NextRequest('http://localhost/api/announcements/announcement-1', {
+      method: 'DELETE'
+    });
+
+    const response = await DELETE(request, { params: { id: 'announcement-1' } });
+
+    expect(response.status).toBe(403);
+    expect(announcements.deleteAnnouncement).not.toHaveBeenCalled();
+  });
+});
