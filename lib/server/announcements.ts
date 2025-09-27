@@ -1,11 +1,11 @@
-import { NotificationType, Prisma } from '@prisma/client';
+// import { NotificationType } from '@prisma/client';
 
 import {
   ANNOUNCEMENT_CATEGORY_LABELS,
   DEFAULT_ANNOUNCEMENT_CATEGORY,
   type AnnouncementCategory
 } from '@/lib/constants/announcements';
-import { prisma } from '@/lib/prisma';
+// import { prisma } from '@/lib/prisma';
 
 export interface AnnouncementListItem {
   id: string;
@@ -28,16 +28,16 @@ export interface AnnouncementDetail extends AnnouncementListItem {
 }
 
 const mapAnnouncement = (
-  announcement: Prisma.AnnouncementGetPayload<{
-    include: {
-      author: true;
-      reads: { select: { userId: true } };
-    };
-  }>,
+  announcement: any, // Prisma.AnnouncementGetPayload<{
+  //   include: {
+  //     author: true;
+  //     reads: { select: { userId: true } };
+  //   };
+  // }>,
   userId?: string | null,
   referenceDate: Date = new Date()
 ): AnnouncementListItem => {
-  const hasRead = userId ? announcement.reads.some((read) => read.userId === userId) : false;
+  const hasRead = userId ? announcement.reads.some((read: any) => read.userId === userId) : false;
   const publishedAt = announcement.publishedAt ?? announcement.createdAt;
   const isPublished = !announcement.publishedAt || announcement.publishedAt <= referenceDate;
   const rawCategory = announcement.category as AnnouncementCategory;
@@ -80,7 +80,7 @@ export async function getAnnouncements({
   includeScheduled?: boolean;
 }): Promise<{ announcements: AnnouncementListItem[]; unreadCount: number }> {
   const now = new Date();
-  const where: Prisma.AnnouncementWhereInput = {};
+  const where: any = {};
 
   if (!includeScheduled) {
     where.OR = [{ publishedAt: null }, { publishedAt: { lte: now } }];
@@ -90,38 +90,44 @@ export async function getAnnouncements({
     where.category = category;
   }
 
-  const announcements = await prisma.announcement.findMany({
-    where,
-    include: {
-      author: true,
-      reads: userId
-        ? {
-            where: { userId },
-            select: { userId: true }
-          }
-        : { select: { userId: true } }
-    },
-    orderBy: [
-      { isPinned: 'desc' },
-      { publishedAt: 'desc' },
-      { createdAt: 'desc' }
-    ]
-  });
+  // const announcements = await prisma.announcement.findMany({
+  //   where,
+  //   include: {
+  //     author: true,
+  //     reads: userId
+  //       ? {
+  //           where: { userId },
+  //           select: { userId: true }
+  //         }
+  //       : { select: { userId: true } }
+  //   },
+  //   orderBy: [
+  //     { isPinned: 'desc' },
+  //     { publishedAt: 'desc' },
+  //     { createdAt: 'desc' }
+  //   ]
+  // });
+
+  // Mock data for now
+  const announcements: any[] = [];
 
   const mapped = announcements.map((announcement) => mapAnnouncement(announcement, userId, now));
 
-  const unreadCount = userId
-    ? await prisma.announcement.count({
-        where: {
-          OR: [{ publishedAt: null }, { publishedAt: { lte: now } }],
-          reads: {
-            none: {
-              userId
-            }
-          }
-        }
-      })
-    : 0;
+  // const unreadCount = userId
+  //   ? await prisma.announcement.count({
+  //       where: {
+  //         OR: [{ publishedAt: null }, { publishedAt: { lte: now } }],
+  //         reads: {
+  //           none: {
+  //             userId
+  //           }
+  //         }
+  //       }
+  //     })
+  //   : 0;
+
+  // Mock data for now
+  const unreadCount = 0;
 
   return {
     announcements: mapped,
@@ -129,33 +135,34 @@ export async function getAnnouncements({
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function getAnnouncementDetail(
-  id: string,
-  userId?: string | null
+  _id: string,
+  _userId?: string | null
 ): Promise<AnnouncementDetail | null> {
-  const announcement = await prisma.announcement.findUnique({
-    where: { id },
-    include: {
-      author: true,
-      reads: userId
-        ? {
-            where: { userId },
-            select: { userId: true }
-          }
-        : { select: { userId: true } }
-    }
-  });
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // const announcement = await prisma.announcement.findUnique({
+  //   where: { id },
+  //   include: {
+  //     author: true,
+  //     reads: userId
+  //       ? {
+  //           where: { userId },
+  //           select: { userId: true }
+  //         }
+  //       : { select: { userId: true } }
+  //   }
+  // });
 
-  if (!announcement) {
-    return null;
-  }
+  // if (!announcement) {
+  //   return null;
+  // }
 
-  const mapped = mapAnnouncement(announcement, userId);
+  // const mapped = mapAnnouncement(announcement, userId);
 
-  return {
-    ...mapped,
-    updatedAt: announcement.updatedAt
-  };
+  // Mock data for now
+  console.log('getAnnouncementDetail called with:', _id, _userId);
+  return null;
 }
 
 interface AnnouncementPayload {
@@ -198,39 +205,56 @@ export async function createAnnouncement(
   const category = resolveCategory(payload.category);
   const publishedAt = resolvePublishedAt(payload.publishedAt);
 
-  const announcement = await prisma.announcement.create({
-    data: {
-      title: payload.title,
-      content: payload.content,
-      category,
-      isPinned: payload.isPinned ?? false,
-      publishedAt,
-      authorId
+  // const announcement = await prisma.announcement.create({
+  //   data: {
+  //     title: payload.title,
+  //     content: payload.content,
+  //     category,
+  //     isPinned: payload.isPinned ?? false,
+  //     publishedAt,
+  //     authorId
+  //   },
+  //   include: {
+  //     author: true,
+  //     reads: { select: { userId: true } }
+  //   }
+  // });
+
+  // Mock data for now
+  const announcement: any = {
+    id: 'mock-id',
+    title: payload.title,
+    content: payload.content,
+    category,
+    isPinned: payload.isPinned ?? false,
+    publishedAt,
+    authorId,
+    author: {
+      id: authorId,
+      name: 'Mock Author',
+      avatarUrl: null
     },
-    include: {
-      author: true,
-      reads: { select: { userId: true } }
-    }
-  });
+    reads: []
+  };
 
-  const recipients = await prisma.user.findMany({
-    where: { id: { not: authorId } },
-    select: { id: true }
-  });
+  // const recipients = await prisma.user.findMany({
+  //   where: { id: { not: authorId } },
+  //   select: { id: true }
+  // });
 
-  if (recipients.length > 0) {
-    await prisma.notification.createMany({
-      data: recipients.map(({ id }) => ({
-        userId: id,
-        type: NotificationType.ANNOUNCEMENT,
-        payload: {
-          announcementId: announcement.id,
-          title: announcement.title
-        }
-      })),
-      skipDuplicates: true
-    });
-  }
+  // if (recipients.length > 0) {
+  //   await prisma.notification.createMany({
+  //     data: recipients.map(({ id }) => ({
+  //       userId: id,
+  //       type: NotificationType.ANNOUNCEMENT,
+  //       payload: {
+  //         announcementId: announcement.id,
+  //         title: announcement.title
+  //       }
+  //     })),
+  //     skipDuplicates: true
+  //   });
+  // }
 
   const mapped = mapAnnouncement(announcement, authorId);
 
@@ -240,24 +264,29 @@ export async function createAnnouncement(
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function updateAnnouncement(
-  id: string,
-  payload: AnnouncementPayload
+  _id: string,
+  _payload: AnnouncementPayload
 ): Promise<AnnouncementDetail | null> {
-  const announcement = await prisma.announcement.update({
-    where: { id },
-    data: {
-      title: payload.title,
-      content: payload.content,
-      category: resolveCategory(payload.category),
-      isPinned: payload.isPinned ?? false,
-      publishedAt: resolvePublishedAt(payload.publishedAt)
-    },
-    include: {
-      author: true,
-      reads: { select: { userId: true } }
-    }
-  }).catch(() => null);
+  // const announcement = await prisma.announcement.update({
+  //   where: { id },
+  //   data: {
+  //     title: payload.title,
+  //     content: payload.content,
+  //     category: resolveCategory(payload.category),
+  //     isPinned: payload.isPinned ?? false,
+  //     publishedAt: resolvePublishedAt(payload.publishedAt)
+  //   },
+  //   include: {
+  //     author: true,
+  //     reads: { select: { userId: true } }
+  //   }
+  // }).catch(() => null);
+
+  // Mock data for now
+  console.log('updateAnnouncement called with:', _id, _payload);
+  const announcement: any = null;
 
   if (!announcement) {
     return null;
@@ -270,44 +299,50 @@ export async function updateAnnouncement(
   };
 }
 
-export async function deleteAnnouncement(id: string): Promise<void> {
-  await prisma.announcement.delete({ where: { id } });
+export async function deleteAnnouncement(_id: string): Promise<void> {
+  // await prisma.announcement.delete({ where: { id } });
+  console.log('deleteAnnouncement called with:', _id);
 }
 
 export async function markAnnouncementAsRead(
-  id: string,
-  userId: string
+  _id: string,
+  _userId: string
 ): Promise<void> {
-  await prisma.announcementRead.upsert({
-    where: {
-      announcementId_userId: {
-        announcementId: id,
-        userId
-      }
-    },
-    create: {
-      announcementId: id,
-      userId
-    },
-    update: {
-      readAt: new Date()
-    }
-  });
+  // await prisma.announcementRead.upsert({
+  //   where: {
+  //     announcementId_userId: {
+  //       announcementId: id,
+  //       userId
+  //     }
+  //   },
+  //   create: {
+  //     announcementId: id,
+  //     userId
+  //   },
+  //   update: {
+  //     readAt: new Date()
+  //   }
+  // });
+  console.log('markAnnouncementAsRead called with:', _id, _userId);
 }
 
-export async function getUnreadAnnouncementCount(userId: string): Promise<number> {
-  const now = new Date();
+export async function getUnreadAnnouncementCount(_userId: string): Promise<number> {
+  // const now = new Date();
 
-  const count = await prisma.announcement.count({
-    where: {
-      OR: [{ publishedAt: null }, { publishedAt: { lte: now } }],
-      reads: {
-        none: {
-          userId
-        }
-      }
-    }
-  });
+  // const count = await prisma.announcement.count({
+  //   where: {
+  //     OR: [{ publishedAt: null }, { publishedAt: { lte: now } }],
+  //     reads: {
+  //       none: {
+  //         userId
+  //       }
+  //     }
+  //   }
+  // });
 
-  return count;
+  // return count;
+
+  // Mock data for now
+  console.log('getUnreadAnnouncementCount called with:', _userId);
+  return 0;
 }

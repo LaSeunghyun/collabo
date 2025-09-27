@@ -13,7 +13,7 @@ import {
   ProductType,
   OrderStatus,
   PostType,
-  PostVisibility,
+  // PostVisibility, // 스키마에 없음
   NotificationType,
   MilestoneStatus,
   ModerationTargetType,
@@ -22,8 +22,8 @@ import {
 } from '@prisma/client';
 
 import type {
-  Announcement,
-  AnnouncementRead,
+  // Announcement, // 스키마에 없음
+  // AnnouncementRead, // 스키마에 없음
   User,
   Project,
   ProjectCollaborator,
@@ -58,8 +58,8 @@ export { PrismaClient, Prisma } from '@prisma/client';
 
 // 타입들은 별도로 export
 export type {
-  Announcement,
-  AnnouncementRead,
+  // Announcement, // 스키마에 없음
+  // AnnouncementRead, // 스키마에 없음
   User,
   Project,
   ProjectCollaborator,
@@ -101,7 +101,7 @@ export {
   ProductType,
   OrderStatus,
   PostType,
-  PostVisibility,
+  // PostVisibility, // 스키마에 없음
   NotificationType,
   MilestoneStatus,
   ModerationTargetType,
@@ -197,6 +197,9 @@ export const USER_ROLE_LABELS: Record<UserRole, string> = {
   [UserRole.ADMIN]: '관리자'
 };
 
+// ROLE_LABELS 별칭 (하위 호환성)
+export const ROLE_LABELS = USER_ROLE_LABELS;
+
 export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
   [ProjectStatus.DRAFT]: '초안',
   [ProjectStatus.REVIEWING]: '검토중',
@@ -245,5 +248,5 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   [NotificationType.PARTNER_REQUEST]: '파트너 요청',
   [NotificationType.SETTLEMENT_PAID]: '정산 완료',
   [NotificationType.SYSTEM]: '시스템 알림',
-  [NotificationType.ANNOUNCEMENT]: '공지 알림'
+  // [NotificationType.ANNOUNCEMENT]: '공지 알림' // 스키마에 없음
 };

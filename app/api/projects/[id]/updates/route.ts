@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   FundingStatus,
   NotificationType,
-  PostVisibility,
+  // PostVisibility, // 스키마에 없음
   UserRole
 } from '@/types/prisma';
 
@@ -122,10 +122,10 @@ export async function POST(
     const input = {
       title: String(body.title ?? ''),
       content: String(body.content ?? ''),
-      visibility:
-        typeof body.visibility === 'string' && body.visibility in PostVisibility
-          ? (body.visibility as PostVisibility)
-          : PostVisibility.PUBLIC,
+      // visibility:
+      //   typeof body.visibility === 'string' && ['PUBLIC', 'SUPPORTERS', 'PRIVATE'].includes(body.visibility)
+      //     ? (body.visibility as 'PUBLIC' | 'SUPPORTERS' | 'PRIVATE')
+      //     : 'PUBLIC',
       attachments: Array.isArray(body.attachments) ? body.attachments : undefined,
       milestoneId: hasMilestoneField
         ? body.milestoneId === null

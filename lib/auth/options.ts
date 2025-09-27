@@ -161,7 +161,7 @@ export const authOptions: NextAuthOptions = {
       }
 
       if (!Array.isArray(token.permissions)) {
-        token.permissions = deriveEffectivePermissions(token.role, []);
+        token.permissions = deriveEffectivePermissions(token.role as string, []);
       }
 
       return token;

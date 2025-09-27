@@ -33,7 +33,7 @@ export function PartnerRegistrationPanel() {
         if (payload?.message) {
           message = payload.message;
         }
-      } catch (error) {
+      } catch {
         // 응답 파싱 실패 시 기본 문구 유지
       }
 

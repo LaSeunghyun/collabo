@@ -6,7 +6,7 @@ import { getArtistProfile } from '@/lib/server/artists';
 
 export default async function ArtistProfilePage({ params }: { params: { id: string } }) {
   const session = await getServerAuthSession();
-  const profile = await getArtistProfile(params.id, session?.user ?? null);
+  const profile = await getArtistProfile(params.id, session?.user as any ?? null);
 
   if (!profile) {
     notFound();

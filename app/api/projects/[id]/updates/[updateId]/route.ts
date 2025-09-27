@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PostVisibility, UserRole } from '@/types/prisma';
+import { UserRole } from '@/types/prisma';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import {
@@ -41,10 +41,10 @@ export async function PATCH(
     const input = {
       title: body.title !== undefined ? String(body.title) : undefined,
       content: body.content !== undefined ? String(body.content) : undefined,
-      visibility:
-        typeof body.visibility === 'string' && body.visibility in PostVisibility
-          ? (body.visibility as PostVisibility)
-          : undefined,
+      // visibility:
+      //   typeof body.visibility === 'string' && ['PUBLIC', 'SUPPORTERS', 'PRIVATE'].includes(body.visibility)
+      //     ? (body.visibility as 'PUBLIC' | 'SUPPORTERS' | 'PRIVATE')
+      //     : undefined,
       attachments: Array.isArray(body.attachments) ? body.attachments : undefined,
       milestoneId: hasMilestoneField
         ? body.milestoneId === null

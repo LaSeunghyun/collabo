@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { CommunityCategory, PostType, Prisma } from '@prisma/client';
+import { CommunityCategory, PostType } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@/types/prisma';
 
 import {
   addDemoCommunityPost,
@@ -82,11 +82,11 @@ export async function GET(request: NextRequest) {
       ...(categoryParam ? { category: categoryParam } : {}),
       ...(searchTerm
         ? {
-            OR: [
-              { title: { contains: searchTerm, mode: 'insensitive' } },
-              { content: { contains: searchTerm, mode: 'insensitive' } }
-            ]
-          }
+          OR: [
+            { title: { contains: searchTerm, mode: 'insensitive' } },
+            { content: { contains: searchTerm, mode: 'insensitive' } }
+          ]
+        }
         : {})
     };
 
@@ -133,9 +133,9 @@ export async function GET(request: NextRequest) {
       take: limit + 1,
       ...(cursor
         ? {
-            cursor: { id: cursor },
-            skip: 1
-          }
+          cursor: { id: cursor },
+          skip: 1
+        }
         : {})
     });
 

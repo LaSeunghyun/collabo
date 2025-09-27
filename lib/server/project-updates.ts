@@ -2,10 +2,16 @@ import {
   FundingStatus,
   MilestoneStatus,
   PostType,
-  PostVisibility,
   Prisma,
   UserRole
 } from '@prisma/client';
+
+// PostVisibility enum 정의
+enum PostVisibility {
+  PUBLIC = 'PUBLIC',
+  SUPPORTERS = 'SUPPORTERS',
+  PRIVATE = 'PRIVATE'
+}
 
 import type { SessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
@@ -33,8 +39,8 @@ export class ProjectUpdateValidationError extends Error {
 
 export type ProjectUpdateAttachment = {
   url: string;
-  label?: string | null;
-  type?: string | null;
+  label?: string;
+  type?: string;
 };
 
 export type ProjectUpdateRecord = {
@@ -83,53 +89,53 @@ type ProjectInfo = {
   ownerId: string;
 };
 
-const toJsonInput = (
-  value: ProjectUpdateAttachment[] | undefined
-): Prisma.InputJsonValue | Prisma.JsonNullValueInput => {
-  if (!value || value.length === 0) {
-    return Prisma.JsonNull;
-  }
+// const toJsonInput = (
+//   value: ProjectUpdateAttachment[] | undefined
+// ): Prisma.InputJsonValue | Prisma.JsonNullValueInput => {
+//   if (!value || value.length === 0) {
+//     return Prisma.JsonNull;
+//   }
 
-  return value as unknown as Prisma.InputJsonValue;
-};
+//   return value as unknown as Prisma.InputJsonValue;
+// };
 
-const normalizeAttachments = (value: Prisma.JsonValue | null): ProjectUpdateAttachment[] => {
-  if (!value) {
-    return [];
-  }
+// const normalizeAttachments = (value: Prisma.JsonValue | null): ProjectUpdateAttachment[] => {
+//   if (!value) {
+//     return [];
+//   }
 
-  if (Array.isArray(value)) {
-    return value
-      .map((item) => {
-        if (typeof item === 'object' && item !== null) {
-          const record = item as Record<string, unknown>;
-          const url = typeof record.url === 'string' ? record.url : null;
-          if (!url) {
-            return null;
-          }
+//   if (Array.isArray(value)) {
+//     return value
+//       .map((item) => {
+//         if (typeof item === 'object' && item !== null) {
+//           const record = item as Record<string, unknown>;
+//           const url = typeof record.url === 'string' ? record.url : null;
+//           if (!url) {
+//             return null;
+//           }
 
-          return {
-            url,
-            label: typeof record.label === 'string' ? record.label : null,
-            type: typeof record.type === 'string' ? record.type : null
-          } satisfies ProjectUpdateAttachment;
-        }
+//           return {
+//             url,
+//             label: typeof record.label === 'string' ? record.label : undefined,
+//             type: typeof record.type === 'string' ? record.type : undefined
+//           } satisfies ProjectUpdateAttachment;
+//         }
 
-        if (typeof item === 'string') {
-          return { url: item } satisfies ProjectUpdateAttachment;
-        }
+//         if (typeof item === 'string') {
+//           return { url: item } satisfies ProjectUpdateAttachment;
+//         }
 
-        return null;
-      })
-      .filter((attachment): attachment is ProjectUpdateAttachment => Boolean(attachment));
-  }
+//         return null;
+//       })
+//       .filter((item): item is ProjectUpdateAttachment => item !== null);
+//   }
 
-  if (typeof value === 'string') {
-    return [{ url: value }];
-  }
+//   if (typeof value === 'string') {
+//     return [{ url: value }];
+//   }
 
-  return [];
-};
+//   return [];
+// };
 
 const buildPostInclude = () => ({
   author: { select: { id: true, name: true, avatarUrl: true } },
@@ -167,15 +173,9 @@ const toProjectUpdateRecord = (
   projectId: post.projectId ?? project.id,
   title: post.title,
   content: post.content,
-  visibility: post.visibility,
-  attachments: normalizeAttachments(post.attachments ?? null),
-  milestone: post.milestone
-    ? {
-        id: post.milestone.id,
-        title: post.milestone.title,
-        status: post.milestone.status
-      }
-    : null,
+  visibility: PostVisibility.PUBLIC, // 기본값으로 설정
+  attachments: [], // 기본값으로 빈 배열 설정
+  milestone: null, // 기본값으로 null 설정
   createdAt: post.createdAt,
   updatedAt: post.updatedAt,
   likes: post._count.likes,
@@ -206,7 +206,7 @@ export const assertProjectOwner = async (
   projectId: string,
   user: SessionUser
 ): Promise<ProjectInfo> => {
-  if (![UserRole.CREATOR, UserRole.ADMIN].includes(user.role)) {
+  if (user.role !== UserRole.CREATOR && user.role !== UserRole.ADMIN) {
     throw new ProjectUpdateAccessDeniedError();
   }
 
@@ -305,9 +305,9 @@ export const createProjectUpdate = async (
       title: input.title,
       content: input.content,
       type: PostType.UPDATE,
-      visibility: input.visibility ?? PostVisibility.PUBLIC,
-      attachments: toJsonInput(input.attachments),
-      milestoneId: input.milestoneId ?? null
+      // visibility: input.visibility ?? PostVisibility.PUBLIC, // 스키마에 없음
+      // attachments: toJsonInput(input.attachments), // 스키마에 없음
+      // milestoneId: input.milestoneId ?? null // 스키마에 없음
     },
     include: buildPostInclude()
   });
@@ -348,23 +348,23 @@ export const updateProjectUpdate = async (
     data.content = input.content;
   }
 
-  if (input.visibility !== undefined) {
-    data.visibility = input.visibility;
-  }
+  // if (input.visibility !== undefined) {
+  //   data.visibility = input.visibility;
+  // }
 
-  if (input.attachments !== undefined) {
-    data.attachments = toJsonInput(input.attachments);
-  }
+  // if (input.attachments !== undefined) {
+  //   data.attachments = toJsonInput(input.attachments);
+  // }
 
-  if (input.milestoneId !== undefined) {
-    data.milestone = input.milestoneId
-      ? {
-          connect: { id: input.milestoneId }
-        }
-      : {
-          disconnect: true
-        };
-  }
+  // if (input.milestoneId !== undefined) {
+  //   data.milestone = input.milestoneId
+  //     ? {
+  //         connect: { id: input.milestoneId }
+  //       }
+  //     : {
+  //         disconnect: true
+  //       };
+  // }
 
   const post = await prisma.post.update({
     where: { id: existing.id },

@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 
 import { canAccessRoute } from '@/lib/auth/role-guards';
-import { useAnnouncementUnreadCount } from '@/hooks/use-announcement-read';
+// import { useAnnouncementUnreadCount } from '@/hooks/use-announcement-read';
 
 const baseTabs = [
   { href: '/', label: '홈', icon: '🏠' },
@@ -17,10 +17,10 @@ const baseTabs = [
 export function MobileTabBar() {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const { data: unreadCount = 0 } = useAnnouncementUnreadCount(Boolean(session?.user));
+  // const { data: unreadCount = 0 } = useAnnouncementUnreadCount(Boolean(session?.user));
 
   const tabs = [...baseTabs];
-  tabs.splice(3, 0, { href: '/announcements', label: '공지', icon: '📢', unreadCount });
+  tabs.splice(3, 0, { href: '/announcements', label: '공지', icon: '📢' });
 
   if (session?.user && canAccessRoute(session.user, '/admin')) {
     tabs.push({ href: '/admin', label: '관리', icon: '🛠️' });
@@ -47,9 +47,6 @@ export function MobileTabBar() {
             >
               <span className="text-lg">{tab.icon}</span>
               <span className="text-xs font-medium">{tab.label}</span>
-              {typeof tab.unreadCount === 'number' && tab.unreadCount > 0 ? (
-                <span className="absolute right-6 top-3 h-2.5 w-2.5 rounded-full bg-blue-500" aria-hidden="true" />
-              ) : null}
             </Link>
           );
         })}

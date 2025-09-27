@@ -62,6 +62,8 @@ interface MentionUser {
 
 interface CommunityBoardProps {
   projectId?: string;
+  authorId?: string;
+  readOnly?: boolean;
   onMetaChange?: (meta: {
     pinned: CommunityPost[];
     popular: CommunityPost[];
@@ -148,7 +150,8 @@ function useCommunityComments(postId: string) {
   });
 }
 
-export function CommunityBoard({ projectId, onMetaChange }: CommunityBoardProps) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function CommunityBoard({ projectId, authorId: _authorId, readOnly: _readOnly, onMetaChange }: CommunityBoardProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [sort, setSort] = useState<(typeof SORT_OPTIONS)[number]>('recent');
@@ -336,11 +339,10 @@ export function CommunityBoard({ projectId, onMetaChange }: CommunityBoardProps)
                 <button
                   key={option}
                   type="button"
-                  className={`rounded-full px-4 py-2 text-sm transition ${
-                    isActive
-                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
-                      : 'bg-white/5 text-white/70 hover:bg-white/10'
-                  }`}
+                  className={`rounded-full px-4 py-2 text-sm transition ${isActive
+                    ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
+                    : 'bg-white/5 text-white/70 hover:bg-white/10'
+                    }`}
                   onClick={() => {
                     setSort(option);
                   }}
@@ -396,11 +398,10 @@ export function CommunityBoard({ projectId, onMetaChange }: CommunityBoardProps)
                   key={option}
                   type="button"
                   onClick={() => setCategory(option)}
-                  className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-widest transition ${
-                    isActive
-                      ? 'bg-primary text-primary-foreground shadow-primary/30'
-                      : 'bg-white/5 text-white/60 hover:bg-white/10'
-                  }`}
+                  className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-widest transition ${isActive
+                    ? 'bg-primary text-primary-foreground shadow-primary/30'
+                    : 'bg-white/5 text-white/60 hover:bg-white/10'
+                    }`}
                 >
                   {t(`community.filters.${option}`)}
                 </button>
@@ -647,11 +648,10 @@ function CommunityPostCard({
             type="button"
             onClick={() => onToggleLike(!isLiked)}
             aria-pressed={isLiked}
-            className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 transition ${
-              isLiked
-                ? 'border-primary bg-primary/10 text-primary'
-                : 'border-white/10 bg-white/5 hover:bg-white/10'
-            }`}
+            className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 transition ${isLiked
+              ? 'border-primary bg-primary/10 text-primary'
+              : 'border-white/10 bg-white/5 hover:bg-white/10'
+              }`}
           >
             <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
             <span>{t('community.likesLabel_other', { count: post.likes })}</span>
@@ -769,3 +769,5 @@ function CommunityPostCard({
     </article>
   );
 }
+
+export { CommunityPostCard };

@@ -93,7 +93,12 @@ export default withAuth(
 export const config = {
   matcher: [
     // 보호된 페이지들
-    ...ROLE_GUARDS.map((guard) => guard.matcher),
+    '/admin/:path*',
+    '/projects/new',
+    '/partners/:path*',
+    '/api/projects/:path*',
+    '/api/partners/:path*',
+    '/api/settlement/:path*',
     // 공개 페이지들 (인증 체크를 위해)
     '/',
     '/projects',
