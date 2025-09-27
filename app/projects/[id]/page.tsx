@@ -3,7 +3,9 @@ import { notFound } from 'next/navigation';
 
 import { FundingDialog } from '@/components/ui/dialogs/funding-dialog';
 import { ProjectDetailTabs } from '@/components/ui/sections/project-detail-tabs';
+import { getServerAuthSession } from '@/lib/auth/session';
 import { getProjectSummaryById } from '@/lib/server/projects';
+import { UserRole } from '@/types/prisma';
 
 interface ProjectPageProps {
   params: { id: string };
@@ -14,6 +16,12 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
   if (!project) {
     notFound();
   }
+
+  const session = await getServerAuthSession();
+  const viewerId = session?.user?.id ?? null;
+  const viewerRole = session?.user?.role ?? null;
+  const canManageUpdates =
+    (viewerId && viewerId === project.owner.id) || viewerRole === UserRole.ADMIN;
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-12 px-4 pb-20">
@@ -26,7 +34,7 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
           <div className="relative h-80 w-full overflow-hidden rounded-3xl border border-white/10">
             <Image src={project.thumbnail} alt={project.title} fill className="object-cover" />
           </div>
-          <ProjectDetailTabs projectId={project.id} />
+          <ProjectDetailTabs projectId={project.id} canManageUpdates={canManageUpdates} />
         </div>
         <aside className="space-y-6 rounded-3xl border border-white/10 bg-white/5 p-6">
           <div>
