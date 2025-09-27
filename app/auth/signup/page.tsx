@@ -74,9 +74,9 @@ export default function SignUpPage() {
                 const data = await response.json();
                 setError(data.error || '회원가입 중 오류가 발생했습니다.');
             }
-    } catch {
-      setError('회원가입 중 오류가 발생했습니다.');
-    } finally {
+        } catch {
+            setError('회원가입 중 오류가 발생했습니다.');
+        } finally {
             setIsLoading(false);
         }
     };
