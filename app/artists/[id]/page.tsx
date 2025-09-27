@@ -1,6 +1,6 @@
 import Image from 'next/image';
 
-import { ProjectCard } from '@/components/shared/project-card';
+import { ProjectCard } from '@/components/ui/cards/project-card';
 import { getProjectSummaries } from '@/lib/server/projects';
 import type { ProjectSummary } from '@/lib/api/projects';
 
