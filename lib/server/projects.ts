@@ -64,13 +64,24 @@ const toProjectSummary = (project: ProjectWithCounts): ProjectSummary => {
   return {
     id: project.id,
     title: project.title,
+    description: project.description,
     category: project.category,
     thumbnail: project.thumbnail ?? DEFAULT_THUMBNAIL,
     participants: project._count.fundings,
     remainingDays,
     targetAmount: project.targetAmount,
     currentAmount: project.currentAmount,
-    createdAt: project.createdAt.toISOString()
+    status: project.status as ProjectStatus,
+    createdAt: project.createdAt,
+    updatedAt: project.updatedAt,
+    owner: {
+      id: project.ownerId,
+      name: 'Unknown',
+      avatarUrl: null
+    },
+    _count: {
+      fundings: project._count.fundings
+    }
   };
 };
 

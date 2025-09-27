@@ -1,6 +1,6 @@
 import { ProjectSummary } from '@/types/prisma';
 
-export { ProjectSummary };
+export type { ProjectSummary };
 
 const resolveApiUrl = (path: string) => {
   if (typeof window === 'undefined') {

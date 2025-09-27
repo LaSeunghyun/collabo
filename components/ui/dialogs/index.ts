@@ -1,2 +1,2 @@
 // Dialog Components
-export { default as FundingDialog } from './funding-dialog';
+export { FundingDialog } from './funding-dialog';

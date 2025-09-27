@@ -71,17 +71,20 @@ const baseProjectSchema = z
 
 export const createProjectSchema = baseProjectSchema.omit({ status: true });
 
-export const updateProjectSchema = baseProjectSchema
-  .extend({
-    targetAmount: baseProjectSchema.shape.targetAmount.optional(),
-    title: baseProjectSchema.shape.title.optional(),
-    description: baseProjectSchema.shape.description.optional(),
-    category: baseProjectSchema.shape.category.optional(),
-    currency: currencySchema.optional(),
-    thumbnail: baseProjectSchema.shape.thumbnail,
-    status: z.nativeEnum(ProjectStatus).optional()
-  })
-  .partial();
+export const updateProjectSchema = z.object({
+  title: baseProjectSchema.shape.title.optional(),
+  description: baseProjectSchema.shape.description.optional(),
+  category: baseProjectSchema.shape.category.optional(),
+  targetAmount: baseProjectSchema.shape.targetAmount.optional(),
+  currency: currencySchema.optional(),
+  startDate: nullableDateSchema,
+  endDate: nullableDateSchema,
+  rewardTiers: jsonLikeSchema,
+  milestones: jsonLikeSchema,
+  thumbnail: baseProjectSchema.shape.thumbnail,
+  status: z.nativeEnum(ProjectStatus).optional(),
+  ownerId: z.string().cuid().optional()
+});
 
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;

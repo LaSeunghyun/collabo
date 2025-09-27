@@ -1,73 +1,10 @@
-// Prisma에서 생성된 타입과 값을 가져와 공유 타입으로 사용
-import {
-  Prisma,
-  PrismaClient,
-  UserRole,
-  ProjectStatus,
-  FundingStatus,
-  PaymentProvider,
-  SettlementPayoutStatus,
-  SettlementStakeholderType,
-  PartnerType,
-  PartnerMatchStatus,
-  ProductType,
-  OrderStatus,
-  PostType,
-  NotificationType,
-  MilestoneStatus,
-  ModerationTargetType,
-  ModerationStatus
-} from '@prisma/client';
+// Prisma Ground Rules에 따른 표준 import 패턴
+// @prisma/client에서 직접 import하여 re-export
 
-import type {
-  User,
-  Project,
-  ProjectCollaborator,
-  Funding,
-  Settlement,
-  Partner,
-  PartnerMatch,
-  Product,
-  Order,
-  Post,
-  Comment,
-  PostLike,
-  Notification,
-  Wallet,
-  AuditLog,
-  Permission,
-  UserPermission,
-  PaymentTransaction,
-  SettlementPayout,
-  ProjectMilestone,
-  ProjectRewardTier,
-  ProjectRequirement,
-  OrderItem,
-  UserFollow,
-  CommentReaction,
-  ModerationReport
-} from '@prisma/client';
+// Prisma namespace와 클라이언트를 직접 정의
+export { PrismaClient, Prisma } from '@prisma/client';
 
-export {
-  Prisma,
-  PrismaClient,
-  UserRole,
-  ProjectStatus,
-  FundingStatus,
-  PaymentProvider,
-  SettlementPayoutStatus,
-  SettlementStakeholderType,
-  PartnerType,
-  PartnerMatchStatus,
-  ProductType,
-  OrderStatus,
-  PostType,
-  NotificationType,
-  MilestoneStatus,
-  ModerationTargetType,
-  ModerationStatus
-};
-
+// 타입들은 별도로 export
 export type {
   User,
   Project,
@@ -95,63 +32,181 @@ export type {
   UserFollow,
   CommentReaction,
   ModerationReport
-};
+} from '@prisma/client';
+
+// Enum 정의 - 직접 정의하여 안정성 확보
+export enum UserRole {
+  CREATOR = 'CREATOR',
+  PARTICIPANT = 'PARTICIPANT',
+  PARTNER = 'PARTNER',
+  ADMIN = 'ADMIN'
+}
+
+export enum ProjectStatus {
+  DRAFT = 'DRAFT',
+  REVIEWING = 'REVIEWING',
+  LIVE = 'LIVE',
+  SUCCESSFUL = 'SUCCESSFUL',
+  FAILED = 'FAILED',
+  EXECUTING = 'EXECUTING',
+  COMPLETED = 'COMPLETED'
+}
+
+export enum FundingStatus {
+  PENDING = 'PENDING',
+  SUCCEEDED = 'SUCCEEDED',
+  FAILED = 'FAILED',
+  REFUNDED = 'REFUNDED',
+  CANCELLED = 'CANCELLED'
+}
+
+export enum PaymentProvider {
+  STRIPE = 'STRIPE',
+  TOSS = 'TOSS',
+  PAYPAL = 'PAYPAL',
+  MANUAL = 'MANUAL'
+}
+
+export enum SettlementPayoutStatus {
+  PENDING = 'PENDING',
+  IN_PROGRESS = 'IN_PROGRESS',
+  PAID = 'PAID'
+}
+
+export enum SettlementStakeholderType {
+  PLATFORM = 'PLATFORM',
+  CREATOR = 'CREATOR',
+  PARTNER = 'PARTNER',
+  COLLABORATOR = 'COLLABORATOR',
+  OTHER = 'OTHER'
+}
+
+export enum PartnerType {
+  STUDIO = 'STUDIO',
+  VENUE = 'VENUE',
+  PRODUCTION = 'PRODUCTION',
+  MERCHANDISE = 'MERCHANDISE',
+  OTHER = 'OTHER'
+}
+
+export enum PartnerMatchStatus {
+  REQUESTED = 'REQUESTED',
+  ACCEPTED = 'ACCEPTED',
+  DECLINED = 'DECLINED',
+  CANCELLED = 'CANCELLED',
+  COMPLETED = 'COMPLETED'
+}
+
+export enum ProductType {
+  PHYSICAL = 'PHYSICAL',
+  DIGITAL = 'DIGITAL'
+}
+
+export enum OrderStatus {
+  PENDING = 'PENDING',
+  PAID = 'PAID',
+  SHIPPED = 'SHIPPED',
+  DELIVERED = 'DELIVERED',
+  REFUNDED = 'REFUNDED',
+  CANCELLED = 'CANCELLED'
+}
+
+export enum PostType {
+  UPDATE = 'UPDATE',
+  DISCUSSION = 'DISCUSSION',
+  AMA = 'AMA'
+}
+
+export enum NotificationType {
+  FUNDING_SUCCESS = 'FUNDING_SUCCESS',
+  NEW_COMMENT = 'NEW_COMMENT',
+  PROJECT_MILESTONE = 'PROJECT_MILESTONE',
+  PARTNER_REQUEST = 'PARTNER_REQUEST',
+  SETTLEMENT_PAID = 'SETTLEMENT_PAID',
+  SYSTEM = 'SYSTEM'
+}
+
+export enum MilestoneStatus {
+  PLANNED = 'PLANNED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  RELEASED = 'RELEASED'
+}
+
+export enum ModerationTargetType {
+  POST = 'POST',
+  COMMENT = 'COMMENT'
+}
+
+export enum ModerationStatus {
+  PENDING = 'PENDING',
+  REVIEWING = 'REVIEWING',
+  ACTION_TAKEN = 'ACTION_TAKEN',
+  DISMISSED = 'DISMISSED'
+}
 
 // 공통 타입 정의
 export type DatabaseId = string;
 export type Timestamp = Date;
 
-// API 응답용 타입들
-export type ProjectSummary = Prisma.ProjectGetPayload<{
-  include: {
-    owner: {
-      select: {
-        id: true;
-        name: true;
-        avatarUrl: true;
-      };
-    };
-    _count: {
-      select: {
-        fundings: true;
-      };
-    };
+// API 응답용 타입들 - 간단한 타입 정의로 변경
+export type ProjectSummary = {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  thumbnail: string;
+  targetAmount: number;
+  currentAmount: number;
+  status: ProjectStatus;
+  createdAt: Date;
+  updatedAt: Date;
+  owner: {
+    id: string;
+    name: string;
+    avatarUrl: string | null;
   };
-}>;
+  _count: {
+    fundings: number;
+  };
+  participants: number;
+  remainingDays: number;
+};
 
-export type PostResponse = Prisma.PostGetPayload<{
-  select: {
-    id: true;
-    title: true;
-    content: true;
-    createdAt: true;
-    author: {
-      select: {
-        id: true;
-        name: true;
-        avatarUrl: true;
-      };
-    };
-    _count: {
-      select: {
-        likes: true;
-        comments: true;
-      };
-    };
+export type PostResponse = {
+  id: string;
+  title: string;
+  content: string;
+  createdAt: Date;
+  author: {
+    id: string;
+    name: string;
+    avatarUrl: string | null;
   };
-}>;
+  _count: {
+    likes: number;
+    comments: number;
+  };
+};
 
-export type PartnerSummary = Prisma.PartnerGetPayload<{
-  include: {
-    user: {
-      select: {
-        id: true;
-        name: true;
-        avatarUrl: true;
-      };
-    };
+export type PartnerSummary = {
+  id: string;
+  name: string;
+  description: string | null;
+  type: PartnerType;
+  contactInfo: string;
+  location: string | null;
+  portfolioUrl: string | null;
+  verified: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  user: {
+    id: string;
+    name: string;
+    avatarUrl: string | null;
   };
-}>;
+  matchCount: number;
+};
 
 // Enum 값 배열들
 export const USER_ROLE_VALUES = Object.values(UserRole);

@@ -3,9 +3,9 @@ import { ReactNode } from 'react';
 
 import './globals.css';
 
-import { Footer } from '@/components/layout/footer';
-import { Header } from '@/components/layout/header';
-import { MobileTabBar } from '@/components/layout/mobile-tab-bar';
+import { Footer } from '@/components/ui/layout/footer';
+import { Header } from '@/components/ui/layout/header';
+import { MobileTabBar } from '@/components/ui/layout/mobile-tab-bar';
 import { Providers } from '@/app/providers';
 
 export const metadata: Metadata = {

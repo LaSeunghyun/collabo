@@ -7,13 +7,24 @@ import { initI18n } from '@/lib/i18n';
 const project = {
   id: 'test',
   title: 'Test Project',
+  description: 'Test Description',
   category: 'music',
   thumbnail: 'https://example.com/thumb.jpg',
   participants: 100,
   remainingDays: 5,
   targetAmount: 1000,
   currentAmount: 500,
-  createdAt: new Date('2024-01-01T00:00:00Z').toISOString()
+  status: 'LIVE' as any,
+  createdAt: new Date('2024-01-01T00:00:00Z'),
+  updatedAt: new Date('2024-01-01T00:00:00Z'),
+  owner: {
+    id: 'owner-id',
+    name: 'Owner Name',
+    avatarUrl: null
+  },
+  _count: {
+    fundings: 100
+  }
 };
 
 describe('ProjectCard', () => {

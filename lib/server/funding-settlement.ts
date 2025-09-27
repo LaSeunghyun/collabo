@@ -1,4 +1,4 @@
-import { Prisma, FundingStatus, ProjectStatus, SettlementPayoutStatus } from '@/types/prisma';
+import { FundingStatus, SettlementPayoutStatus } from '@/types/prisma';
 import { prisma } from '@/lib/prisma';
 import { calculateSettlementBreakdown } from './settlements';
 

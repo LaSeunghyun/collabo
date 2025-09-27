@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json(
-      posts.map((post: { id: string; title: string; content: string; _count: { likes: number; comments: number }; projectId: string | undefined; createdAt: Date }) => ({
+      posts.map((post) => ({
         id: post.id,
         title: post.title,
         content: post.content,

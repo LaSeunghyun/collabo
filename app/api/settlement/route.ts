@@ -168,21 +168,21 @@ export async function POST(request: NextRequest) {
   }
 
   const inferredGatewayFees = fundings.reduce(
-    (acc: number, funding: { transaction: { gatewayFee: number } }) => acc + (funding.transaction?.gatewayFee ?? 0),
+    (acc: number, funding: { transaction: { gatewayFee: number | null } | null }) => acc + (funding.transaction?.gatewayFee ?? 0),
     0
   );
 
   const partnerShares = project.partnerMatches
-    .filter((match: { settlementShare: number }) => typeof match.settlementShare === 'number')
-    .map((match: { partnerId: string; settlementShare: number }) => ({
+    .filter((match: { settlementShare: number | null }) => typeof match.settlementShare === 'number')
+    .map((match: { partnerId: string; settlementShare: number | null }) => ({
       stakeholderId: match.partnerId,
       share: normaliseShare(match.settlementShare ?? 0)
     }))
     .filter((entry: { share: number }) => entry.share > 0);
 
   const collaboratorShares = project.collaborators
-    .filter((collab: { share: number }) => typeof collab.share === 'number')
-    .map((collab: { userId: string; share: number }) => ({
+    .filter((collab: { share: number | null }) => typeof collab.share === 'number')
+    .map((collab: { userId: string; share: number | null }) => ({
       stakeholderId: collab.userId,
       share: normaliseShare(collab.share ?? 0, true)
     }))
@@ -193,7 +193,7 @@ export async function POST(request: NextRequest) {
     breakdown = calculateSettlementBreakdown({
       totalRaised,
       platformFeeRate,
-      gatewayFees: gatewayFeeOverride ?? inferredGatewayFees,
+      gatewayFees: gatewayFeeOverride ?? (typeof inferredGatewayFees === 'number' ? inferredGatewayFees : 0),
       partnerShares,
       collaboratorShares
     });

@@ -22,13 +22,13 @@ export const ROLE_LABELS: Record<AppUserRole, string> = {
 
 export function normalizeRole(value: string | null | undefined): AppUserRole {
   if (!value) {
-    return 'PARTICIPANT';
+    return UserRole.PARTICIPANT;
   }
 
   const upperValue = value.toUpperCase();
   return USER_ROLE_VALUES.includes(upperValue as AppUserRole)
     ? (upperValue as AppUserRole)
-    : 'PARTICIPANT';
+    : UserRole.PARTICIPANT;
 }
 
 export function toPrismaRole(value: string | null | undefined): UserRole {
@@ -73,5 +73,5 @@ export function hasAllPermissions(
   return required.every((permission) => userPermissions.includes(permission));
 }
 
-export const CREATOR_ACCESS_ROLES: AppUserRole[] = ['CREATOR', 'ADMIN'];
-export const PARTNER_ACCESS_ROLES: AppUserRole[] = ['PARTNER', 'ADMIN'];
+export const CREATOR_ACCESS_ROLES: AppUserRole[] = [UserRole.CREATOR, UserRole.ADMIN];
+export const PARTNER_ACCESS_ROLES: AppUserRole[] = [UserRole.PARTNER, UserRole.ADMIN];

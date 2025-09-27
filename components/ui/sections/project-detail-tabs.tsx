@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import * as TabsPrimitive from '@radix-ui/react-tabs';
 
-import { CommunityBoard } from '@/components/sections/community-board';
+import { CommunityBoard } from '@/components/ui/sections/community-board';
 import { fetchSettlement, SettlementRecord } from '@/lib/api/settlement';
 
 const tabItems = [
@@ -85,9 +85,8 @@ export function ProjectDetailTabs({ projectId }: { projectId: string }) {
           <TabsPrimitive.Trigger
             key={tab.value}
             value={tab.value}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-              current === tab.value ? 'bg-primary text-primary-foreground' : 'text-white/70'
-            }`}
+            className={`rounded-full px-4 py-2 text-sm font-medium transition ${current === tab.value ? 'bg-primary text-primary-foreground' : 'text-white/70'
+              }`}
           >
             {tab.label}
           </TabsPrimitive.Trigger>

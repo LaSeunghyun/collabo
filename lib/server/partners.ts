@@ -100,33 +100,33 @@ type PartnerWithRelations = Prisma.PartnerGetPayload<{
 // PartnerSummary는 이제 @/types/prisma에서 import됨
 
 const toPartnerSummary = (partner: PartnerWithRelations): PartnerSummary => {
-  const services = Array.isArray(partner.services)
-    ? partner.services.filter((item: unknown): item is string => typeof item === 'string')
-    : [];
+  // const services = Array.isArray(partner.services)
+  //   ? partner.services.filter((item: unknown): item is string => typeof item === 'string')
+  //   : [];
 
-  const availability = (partner.availability ?? null) as Prisma.JsonValue | null;
+  // const availability = (partner.availability ?? null) as Prisma.JsonValue | null;
 
   return {
     id: partner.id,
     name: partner.name,
-    type: partner.type,
+    type: partner.type as PartnerType,
     verified: partner.verified,
-    rating: partner.rating ?? null,
+    // rating: partner.rating ?? null,
     description: partner.description ?? null,
-    services,
-    pricingModel: partner.pricingModel ?? null,
+    // services,
+    // pricingModel: partner.pricingModel ?? null,
     location: partner.location ?? null,
-    availability,
+    // availability,
     portfolioUrl: partner.portfolioUrl ?? null,
     contactInfo: partner.contactInfo,
     matchCount: partner._count.matches,
-    owner: {
+    user: {
       id: partner.user.id,
       name: partner.user.name ?? null,
       avatarUrl: partner.user.avatarUrl ?? null
     },
-    createdAt: partner.createdAt.toISOString(),
-    updatedAt: partner.updatedAt.toISOString()
+    createdAt: partner.createdAt,
+    updatedAt: partner.updatedAt
   };
 };
 

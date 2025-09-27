@@ -1,6 +1,6 @@
 import { UserRole } from '@/types/prisma';
 
-import { PartnerForm } from '@/components/forms/partner-form';
+import { PartnerForm } from '@/components/ui/forms/partner-form';
 import { requireUser } from '@/lib/auth/guards';
 import { ROLE_LABELS } from '@/lib/auth/permissions';
 import { listPartners } from '@/lib/server/partners';
@@ -68,7 +68,12 @@ export default async function PartnersPage() {
             협업 가능한 역량을 입력하면 프로젝트에 적합한 파트너로 추천됩니다.
           </p>
           <div className="mt-4 space-y-4">
-            <PartnerForm />
+            <PartnerForm 
+              onSubmit={(data) => {
+                console.log('Partner form submitted:', data);
+                // TODO: Implement partner creation logic
+              }}
+            />
             <div className="rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-4 text-sm text-emerald-100">
               <p className="font-medium text-emerald-200">권한 확인</p>
               <p className="mt-1 text-emerald-100/80">

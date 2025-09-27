@@ -105,7 +105,7 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           name: user.name,
           email: user.email,
-          role: user.role
+          role: user.role as any
         };
       }
     }),
@@ -160,7 +160,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         if (typeof token.role === 'string') {
-          session.user.role = token.role;
+          (session.user as any).role = token.role;
         }
 
         session.user.permissions = Array.isArray(token.permissions)

@@ -12,7 +12,7 @@ export async function GET(
     const post = await prisma.post.findUnique({
       where: { id: params.id },
       include: {
-        _count: { select: { postLikes: true, comments: true } }
+        _count: { select: { likes: true, comments: true } }
       }
     });
 
@@ -24,7 +24,7 @@ export async function GET(
       id: post.id,
       title: post.title,
       content: post.content,
-      likes: post._count.postLikes,
+      likes: post._count.likes,
       comments: post._count.comments,
       projectId: post.projectId ?? undefined,
       createdAt: post.createdAt.toISOString(),
@@ -58,7 +58,7 @@ export async function PATCH(
     const post = await prisma.post.findUnique({
       where: { id: params.id },
       include: {
-        _count: { select: { postLikes: true, comments: true } }
+        _count: { select: { likes: true, comments: true } }
       }
     });
 
@@ -70,7 +70,7 @@ export async function PATCH(
       id: post.id,
       title: post.title,
       content: post.content,
-      likes: post._count.postLikes,
+      likes: post._count.likes,
       comments: post._count.comments,
       projectId: post.projectId ?? undefined,
       createdAt: post.createdAt.toISOString(),

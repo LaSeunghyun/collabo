@@ -1,2 +1,2 @@
 // Header Components
-export { default as SectionHeader } from './section-header';
+export { SectionHeader } from './section-header';

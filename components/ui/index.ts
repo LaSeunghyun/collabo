@@ -2,11 +2,11 @@
 // 모든 UI 컴포넌트를 중앙에서 관리하고 export
 
 // Cards
-export { default as ProjectCard } from './cards/project-card';
-export { default as StoreCard } from './cards/store-card';
+export { ProjectCard } from './cards/project-card';
+export { StoreCard } from './cards/store-card';
 
 // Headers
-export { default as SectionHeader } from './headers/section-header';
+export { SectionHeader } from './headers/section-header';
 
 // Forms
 // export { default as PartnerForm } from './forms/partner-form';
@@ -17,11 +17,11 @@ export { default as SectionHeader } from './headers/section-header';
 // export { default as MobileTabBar } from './layout/mobile-tab-bar';
 
 // Sections
-export { default as CategoryFilter } from './sections/category-filter';
-export { default as CommunityBoard } from './sections/community-board';
-export { default as HeroCarousel } from './sections/hero-carousel';
-export { default as ProjectDetailTabs } from './sections/project-detail-tabs';
-export { default as ProjectFilterPanel } from './sections/project-filter-panel';
+export { CategoryFilter } from './sections/category-filter';
+export { CommunityBoard } from './sections/community-board';
+export { HeroCarousel } from './sections/hero-carousel';
+export { ProjectDetailTabs } from './sections/project-detail-tabs';
+export { ProjectFilterPanel } from './sections/project-filter-panel';
 
 // Dialogs
-export { default as FundingDialog } from './dialogs/funding-dialog';
+export { FundingDialog } from './dialogs/funding-dialog';
