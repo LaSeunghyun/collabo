@@ -15,25 +15,7 @@ import { deriveEffectivePermissions } from './permissions';
 // Skip OAuth validation during build time
 const isBuildTime = process.env.NODE_ENV === 'production' && process.env.NEXT_PHASE === 'phase-production-build';
 
-if (!isBuildTime) {
-  const requiredOAuthEnvVars = [
-    { key: 'GOOGLE_CLIENT_ID', provider: 'Google' },
-    { key: 'GOOGLE_CLIENT_SECRET', provider: 'Google' },
-    { key: 'KAKAO_CLIENT_ID', provider: 'Kakao' },
-    { key: 'KAKAO_CLIENT_SECRET', provider: 'Kakao' }
-  ];
-
-  // Only validate OAuth env vars in production or when explicitly enabled
-  if (process.env.NODE_ENV === 'production' || process.env.VALIDATE_OAUTH === 'true') {
-    for (const { key, provider } of requiredOAuthEnvVars) {
-      if (!process.env[key]) {
-        throw new Error(
-          `${provider} OAuth configuration is missing the required environment variable "${key}".`
-        );
-      }
-    }
-  }
-}
+// OAuth validation is now optional - providers are only added if env vars are present
 
 const safeCompare = (a: string, b: string) => {
   const bufferA = Buffer.from(a);
@@ -85,6 +67,11 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        // Skip database queries during build time
+        if (isBuildTime) {
+          return null;
+        }
+
         const user = await prisma.user.findUnique({
           where: {
             email: credentials.email
@@ -114,14 +101,19 @@ export const authOptions: NextAuthOptions = {
         };
       }
     }),
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!
-    }),
-    KakaoProvider({
-      clientId: process.env.KAKAO_CLIENT_ID!,
-      clientSecret: process.env.KAKAO_CLIENT_SECRET!
-    })
+    // OAuth providers are optional - only add if environment variables are set
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? [
+      GoogleProvider({
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET
+      })
+    ] : []),
+    ...(process.env.KAKAO_CLIENT_ID && process.env.KAKAO_CLIENT_SECRET ? [
+      KakaoProvider({
+        clientId: process.env.KAKAO_CLIENT_ID,
+        clientSecret: process.env.KAKAO_CLIENT_SECRET
+      })
+    ] : [])
   ],
   callbacks: {
     async jwt({ token, user, trigger }) {
