@@ -94,11 +94,50 @@ export default withAuth(
   },
   {
     callbacks: {
-      authorized: ({ token }) => Boolean(token)
+      authorized: ({ token, req }) => {
+        // 비회원도 접근 가능한 페이지들
+        const publicPaths = [
+          '/',
+          '/projects',
+          '/projects/[id]',
+          '/community',
+          '/help',
+          '/api/community',
+          '/api/projects',
+          '/api/projects/[id]'
+        ];
+
+        const isPublicPath = publicPaths.some(path => {
+          if (path.includes('[id]')) {
+            return req.nextUrl.pathname.match(new RegExp(path.replace('[id]', '[^/]+')));
+          }
+          return req.nextUrl.pathname === path || req.nextUrl.pathname.startsWith(path + '/');
+        });
+
+        // 공개 페이지는 토큰 없이도 접근 가능
+        if (isPublicPath) {
+          return true;
+        }
+
+        // 그 외 페이지는 토큰 필요
+        return Boolean(token);
+      }
     }
   }
 );
 
 export const config = {
-  matcher: ROLE_GUARDS.map((guard) => guard.matcher)
+  matcher: [
+    // 보호된 페이지들
+    ...ROLE_GUARDS.map((guard) => guard.matcher),
+    // 공개 페이지들 (인증 체크를 위해)
+    '/',
+    '/projects',
+    '/projects/(.*)',
+    '/community',
+    '/help',
+    '/api/community',
+    '/api/projects',
+    '/api/projects/(.*)'
+  ]
 };

@@ -52,6 +52,10 @@ const fetchUserWithPermissions = async (identifier: { id?: string; email?: strin
 
 export const authOptions: NextAuthOptions = {
   adapter: isBuildTime ? undefined : PrismaAdapter(prisma),
+  pages: {
+    signIn: '/auth/signin',
+    signUp: '/auth/signup',
+  },
   session: {
     strategy: 'jwt'
   },
