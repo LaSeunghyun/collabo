@@ -21,6 +21,8 @@ import {
 } from '@prisma/client';
 
 import type {
+  Announcement,
+  AnnouncementRead,
   User,
   Project,
   ProjectCollaborator,
@@ -54,6 +56,8 @@ export { PrismaClient, Prisma } from '@prisma/client';
 
 // 타입들은 별도로 export
 export type {
+  Announcement,
+  AnnouncementRead,
   User,
   Project,
   ProjectCollaborator,
@@ -237,5 +241,6 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   [NotificationType.PROJECT_MILESTONE]: '프로젝트 마일스톤',
   [NotificationType.PARTNER_REQUEST]: '파트너 요청',
   [NotificationType.SETTLEMENT_PAID]: '정산 완료',
-  [NotificationType.SYSTEM]: '시스템 알림'
+  [NotificationType.SYSTEM]: '시스템 알림',
+  [NotificationType.ANNOUNCEMENT]: '공지 알림'
 };
