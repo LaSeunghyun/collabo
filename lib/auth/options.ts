@@ -135,20 +135,33 @@ export const authOptions: NextAuthOptions = {
         !token.permissions ||
         trigger === 'update';
 
-      if (AUTH_V3_ENABLED && shouldRefresh) {
-        const dbUser = await fetchUserWithPermissions(identifier);
+      if (shouldRefresh) {
+        const existingPermissions = Array.isArray(token.permissions)
+          ? (token.permissions as string[])
+          : [];
 
-        if (dbUser) {
-          token.role = dbUser.role;
-          token.permissions = deriveEffectivePermissions(
-            dbUser.role,
-            dbUser.permissions.map((entry: { permission: { key: string } }) => entry.permission.key)
-          );
-        } else if (!token.permissions) {
-          token.permissions = [];
+        let resolvedRole =
+          (typeof token.role === 'string' && token.role) ||
+          ((user as { role?: string })?.role ?? undefined);
+        let explicitPermissions = existingPermissions;
+
+        if (AUTH_V3_ENABLED) {
+          const dbUser = await fetchUserWithPermissions(identifier);
+
+          if (dbUser) {
+            resolvedRole = dbUser.role;
+            explicitPermissions = dbUser.permissions.map(
+              (entry: { permission: { key: string } }) => entry.permission.key
+            );
+          }
         }
-      } else if (!token.permissions) {
-        token.permissions = [];
+
+        token.role = resolvedRole;
+        token.permissions = deriveEffectivePermissions(resolvedRole, explicitPermissions);
+      }
+
+      if (!Array.isArray(token.permissions)) {
+        token.permissions = deriveEffectivePermissions(token.role, []);
       }
 
       return token;
