@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import type { QueryKey } from '@tanstack/react-query';
 import {
   useMutation,
@@ -247,13 +247,17 @@ export function CommunityBoard({ projectId }: { projectId?: string }) {
   );
 }
 
-function CommunityPostCard({
-  post,
-  onToggleLike
-}: {
+export interface CommunityPostCardProps {
   post: CommunityPost;
   onToggleLike: (like: boolean) => void;
-}) {
+  children?: ReactNode;
+}
+
+export function CommunityPostCard({
+  post,
+  onToggleLike,
+  children
+}: CommunityPostCardProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { data: session } = useSession();
@@ -330,6 +334,8 @@ function CommunityPostCard({
           </span>
         </div>
       </header>
+
+      {children ? <div className="mt-4 space-y-3">{children}</div> : null}
 
       <section className="mt-6 space-y-4">
         <h4 className="text-sm font-semibold text-white/80">{t('community.commentsSectionTitle')}</h4>

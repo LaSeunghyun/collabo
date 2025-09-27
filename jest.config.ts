@@ -22,7 +22,7 @@ const config: Config = {
     {
       displayName: 'react',
       testEnvironment: 'jsdom',
-      testMatch: ['<rootDir>/tests/**/*.test.tsx'],
+      testMatch: ['<rootDir>/tests/**/*.test.tsx', '<rootDir>/__tests__/**/*.test.tsx'],
       setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
       moduleNameMapper: {
         '^@/(.*)$': '<rootDir>/$1',
