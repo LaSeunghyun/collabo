@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { UserRole } from '@/types/prisma';
-
 import { prisma } from '@/lib/prisma';
 
 import {
   addDemoCommunityComment,
   getDemoCommunityComments
 } from '@/lib/data/community';
+import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
+import type { SessionUser } from '@/lib/auth/session';
 
 function formatComment(comment: {
   id: string;
@@ -47,11 +47,21 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  let sessionUser: SessionUser;
+
+  try {
+    sessionUser = await requireApiUser({});
+  } catch (error) {
+    const response = handleAuthorizationError(error);
+    if (response) {
+      return response;
+    }
+
+    throw error;
+  }
+
   const body = await request.json();
   const content = body.content?.trim();
-  const authorName = body.authorName?.trim() || 'Guest';
-  const authorEmail = body.authorEmail?.trim();
-  let authorId = body.authorId ? String(body.authorId) : undefined;
 
   if (!content) {
     return NextResponse.json({ message: 'Content is required.' }, { status: 400 });
@@ -63,33 +73,11 @@ export async function POST(
       return NextResponse.json({ message: 'Post not found.' }, { status: 404 });
     }
 
-    if (authorId) {
-      const existing = await prisma.user.findUnique({ where: { id: authorId } });
-      if (!existing) {
-        authorId = undefined;
-      }
-    }
-
-    if (!authorId) {
-      const safeEmail =
-        authorEmail && authorEmail.includes('@')
-          ? authorEmail
-          : `guest-${crypto.randomUUID()}@example.com`;
-      const user = await prisma.user.create({
-        data: {
-          name: authorName,
-          email: safeEmail,
-          role: UserRole.PARTICIPANT
-        }
-      });
-      authorId = user.id;
-    }
-
     const comment = await prisma.comment.create({
       data: {
         content,
         postId: params.id,
-        authorId
+        authorId: sessionUser.id
       },
       include: { author: true }
     });
@@ -101,7 +89,7 @@ export async function POST(
       id: crypto.randomUUID(),
       postId: params.id,
       content,
-      authorName,
+      authorName: sessionUser.name ?? 'Guest',
       createdAt: new Date().toISOString()
     });
 

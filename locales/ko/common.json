@@ -88,7 +88,9 @@
     "commentErrorMessage": "댓글 등록에 실패했습니다. 다시 시도해주세요.",
     "commentSubmitting": "전송 중...",
     "commentSubmit": "댓글 남기기",
-    "defaultGuestName": "게스트"
+    "defaultGuestName": "게스트",
+    "commentLoginPrompt": "로그인 후 댓글을 남길 수 있습니다.",
+    "commentUserLabel": "{{name}} 님으로 댓글이 작성됩니다."
   },
   "partners": {
     "title": "파트너 매칭",
