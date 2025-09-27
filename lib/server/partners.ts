@@ -267,6 +267,16 @@ export const listPartners = async (params: ListPartnersParams = {}): Promise<Lis
   };
 };
 
+export const getPartnersAwaitingApproval = async (limit = 5) => {
+  const result = await listPartners({
+    limit,
+    verified: false,
+    includeUnverified: true
+  });
+
+  return result.items;
+};
+
 export const getPartnerById = async (id: string): Promise<PartnerSummary | null> => {
   const partner = await prisma.partner.findUnique({
     where: { id },

@@ -37,10 +37,22 @@ export class ProjectAccessDeniedError extends Error {
 
 export type ProjectSummaryOptions = {
   ownerId?: string;
+  statuses?: ProjectStatus[];
+  take?: number;
 };
 
 const fetchProjectsFromDb = async (options?: ProjectSummaryOptions) => {
-  const where = options?.ownerId ? { ownerId: options.ownerId } : undefined;
+  const where: Prisma.ProjectWhereInput = {};
+
+  if (options?.ownerId) {
+    where.ownerId = options.ownerId;
+  }
+
+  if (options?.statuses?.length) {
+    where.status = { in: options.statuses };
+  }
+
+  const take = options?.take && options.take > 0 ? options.take : undefined;
 
   return prisma.project.findMany({
     where,
@@ -49,7 +61,8 @@ const fetchProjectsFromDb = async (options?: ProjectSummaryOptions) => {
     },
     orderBy: {
       createdAt: 'desc'
-    }
+    },
+    ...(take ? { take } : {})
   });
 };
 
@@ -98,6 +111,9 @@ export const getProjectSummaries = async (options?: ProjectSummaryOptions) => {
   const projects = await fetchProjectsFromDb(options);
   return projects.map(toProjectSummary);
 };
+
+export const getProjectsPendingReview = async (limit = 5) =>
+  getProjectSummaries({ statuses: [ProjectStatus.REVIEWING], take: limit });
 
 export const getProjectSummaryById = async (id: string) => {
   const project = await prisma.project.findUnique({
