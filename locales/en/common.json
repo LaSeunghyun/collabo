@@ -88,7 +88,9 @@
     "commentErrorMessage": "We couldn’t send your comment. Please try again.",
     "commentSubmitting": "Sending...",
     "commentSubmit": "Comment",
-    "defaultGuestName": "Guest"
+    "defaultGuestName": "Guest",
+    "commentLoginPrompt": "Sign in to share your thoughts in the comments.",
+    "commentUserLabel": "Your comment will be posted as {{name}}."
   },
   "partners": {
     "title": "Partner matching",

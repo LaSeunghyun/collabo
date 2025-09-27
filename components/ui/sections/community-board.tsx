@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 import type { QueryKey } from '@tanstack/react-query';
 import {
   useMutation,
@@ -10,6 +10,7 @@ import {
 import { Heart, MessageCircle, SendHorizontal } from 'lucide-react';
 // import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { signIn, useSession } from 'next-auth/react';
 
 import type { CommunityComment, CommunityPost } from '@/lib/data/community';
 
@@ -19,7 +20,6 @@ interface PostFormValues {
 }
 
 interface CommentFormValues {
-  authorName: string;
   content: string;
 }
 
@@ -256,12 +256,15 @@ function CommunityPostCard({
 }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const { data: session } = useSession();
+  const isAuthenticated = Boolean(session?.user);
+  const commentAuthorName = session?.user?.name ?? t('community.defaultGuestName');
   const {
     data: comments = [],
     isLoading,
     isError
   } = useCommunityComments(post.id);
-  const [commentForm, setCommentForm] = useState<CommentFormValues>({ authorName: '', content: '' });
+  const [commentForm, setCommentForm] = useState<CommentFormValues>({ content: '' });
 
   const addCommentMutation = useMutation<CommunityComment, Error, CommentFormValues>({
     mutationFn: async (values) => {
@@ -278,19 +281,26 @@ function CommunityPostCard({
       return (await res.json()) as CommunityComment;
     },
     onSuccess: () => {
-      setCommentForm({ authorName: '', content: '' });
+      setCommentForm({ content: '' });
       queryClient.invalidateQueries({ queryKey: ['community', 'comments', post.id] });
       queryClient.invalidateQueries({ queryKey: ['community'] });
     }
   });
 
-  const handleAddComment = () => {
-    if (!commentForm.content.trim()) {
+  const handleAddComment = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!isAuthenticated) {
       return;
     }
+
+    const trimmedContent = commentForm.content.trim();
+    if (!trimmedContent) {
+      return;
+    }
+
     addCommentMutation.mutate({
-      ...commentForm,
-      authorName: commentForm.authorName.trim() || t('community.defaultGuestName')
+      content: trimmedContent
     });
   };
 
@@ -349,37 +359,48 @@ function CommunityPostCard({
       </section>
 
       <form onSubmit={handleAddComment} className="mt-6 space-y-4">
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <input
-            type="text"
-            placeholder={t('community.commentAuthorPlaceholder')}
-            className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40 sm:w-48"
-            value={commentForm.authorName}
-            onChange={(e) => setCommentForm(prev => ({ ...prev, authorName: e.target.value }))}
+        {isAuthenticated ? (
+          <p className="rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-sm text-white/70">
+            {t('community.commentUserLabel', { name: commentAuthorName })}
+          </p>
+        ) : null}
+        <div className="flex flex-col gap-3">
+          <textarea
+            placeholder={t('community.commentPlaceholder')}
+            className="min-h-[80px] w-full resize-y rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+            value={commentForm.content}
+            onChange={(e) => setCommentForm({ content: e.target.value })}
+            disabled={!isAuthenticated || addCommentMutation.isPending}
           />
-          <div className="flex-1">
-            <textarea
-              placeholder={t('community.commentPlaceholder')}
-              className="min-h-[80px] w-full resize-y rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
-              value={commentForm.content}
-              onChange={(e) => setCommentForm(prev => ({ ...prev, content: e.target.value }))}
-            />
-          </div>
         </div>
-        <div className="flex items-center justify-end gap-3">
-          {addCommentMutation.isError ? (
-            <p className="text-sm text-red-400">{t('community.commentErrorMessage')}</p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          {!isAuthenticated ? (
+            <div className="flex flex-col items-start gap-2 rounded-2xl border border-dashed border-white/20 bg-black/10 px-4 py-3 text-left text-sm text-white/70 sm:flex-row sm:items-center">
+              <p>{t('community.commentLoginPrompt')}</p>
+              <button
+                type="button"
+                onClick={() => signIn()}
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition hover:bg-primary/90"
+              >
+                {t('actions.login')}
+              </button>
+            </div>
           ) : null}
-          <button
-            type="submit"
-            disabled={addCommentMutation.isPending}
-            className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <SendHorizontal className="h-4 w-4" aria-hidden="true" />
-            {addCommentMutation.isPending
-              ? t('community.commentSubmitting')
-              : t('community.commentSubmit')}
-          </button>
+          <div className="flex items-center justify-end gap-3">
+            {addCommentMutation.isError ? (
+              <p className="text-sm text-red-400">{t('community.commentErrorMessage')}</p>
+            ) : null}
+            <button
+              type="submit"
+              disabled={!isAuthenticated || addCommentMutation.isPending}
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <SendHorizontal className="h-4 w-4" aria-hidden="true" />
+              {addCommentMutation.isPending
+                ? t('community.commentSubmitting')
+                : t('community.commentSubmit')}
+            </button>
+          </div>
         </div>
       </form>
     </article>
