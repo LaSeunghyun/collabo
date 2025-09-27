@@ -89,6 +89,14 @@ enum PostType {
   AMA
 }
 
+enum CommunityCategory {
+  GENERAL
+  NOTICE
+  COLLAB
+  SUPPORT
+  SHOWCASE
+}
+
 enum NotificationType {
   FUNDING_SUCCESS
   NEW_COMMENT
@@ -146,6 +154,8 @@ model User {
   following        UserFollow[]          @relation("UserFollowing")
   followers        UserFollow[]          @relation("UserFollowers")
   filedReports     ModerationReport[]    @relation("ModerationReportReporter")
+  blockedUsers     UserBlock[]           @relation("UserBlocker")
+  blockedBy        UserBlock[]           @relation("UserBlocked")
 }
 
 model Project {
@@ -316,6 +326,7 @@ model Post {
   type        PostType   @default(UPDATE)
   excerpt     String?
   tags        String[]   @default([])
+  category    CommunityCategory @default(GENERAL)
   language    String     @default("ko")
   scheduledAt DateTime?
   publishedAt DateTime?
@@ -537,4 +548,15 @@ model ModerationReport {
   notes      Json?
   createdAt  DateTime             @default(now())
   resolvedAt DateTime?
+}
+
+model UserBlock {
+  id             String @id @default(cuid())
+  blocker        User   @relation("UserBlocker", fields: [blockerId], references: [id])
+  blockerId      String
+  blocked        User   @relation("UserBlocked", fields: [blockedUserId], references: [id])
+  blockedUserId  String
+  createdAt      DateTime @default(now())
+
+  @@unique([blockerId, blockedUserId])
 }

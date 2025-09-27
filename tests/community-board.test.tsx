@@ -1,6 +1,7 @@
 import { I18nextProvider } from 'react-i18next';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 jest.mock('next-auth/react', () => ({
   useSession: jest.fn(),
@@ -15,41 +16,56 @@ describe('CommunityBoard comment permissions', () => {
   const originalFetch = global.fetch;
   const mockUseSession = useSession as unknown as jest.Mock;
 
-  const mockPosts = [
-    {
-      id: 'post-1',
-      title: '테스트 게시글',
-      content: '게시글 내용',
-      likes: 0,
-      comments: 0,
-      liked: false
+  const mockFeedResponse = {
+    posts: [
+      {
+        id: 'post-1',
+        title: '테스트 게시글',
+        content: '게시글 내용',
+        likes: 0,
+        comments: 0,
+        liked: false,
+        category: 'general',
+        isPinned: false,
+        isTrending: false
+      }
+    ],
+    pinned: [],
+    popular: [],
+    meta: {
+      nextCursor: null,
+      total: 1,
+      sort: 'recent',
+      category: null,
+      search: null
     }
-  ];
+  };
   const mockComments: any[] = [];
+
+  const jsonResponse = <T,>(payload: T) =>
+    Promise.resolve({
+      ok: true,
+      status: 200,
+      json: async () => payload
+    } as Response);
 
   const createFetchMock = () =>
     jest.fn((input: RequestInfo | URL) => {
       const isRequestObject = typeof Request !== 'undefined' && input instanceof Request;
       const url = typeof input === 'string' ? input : isRequestObject ? input.url : input.toString();
       const postsEndpoint = '/api/community?';
-      const commentsEndpoint = `/api/community/${mockPosts[0].id}/comments`;
+      const commentsEndpoint = `/api/community/${mockFeedResponse.posts[0].id}/comments`;
 
       if (url.includes(postsEndpoint)) {
-        return Promise.resolve(
-          new Response(JSON.stringify(mockPosts), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
-        );
+        return jsonResponse(mockFeedResponse);
       }
 
       if (url.includes(commentsEndpoint)) {
-        return Promise.resolve(
-          new Response(JSON.stringify(mockComments), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
-        );
+        return jsonResponse(mockComments);
+      }
+
+      if (url.includes('/api/users/search')) {
+        return jsonResponse([]);
       }
 
       return Promise.reject(new Error(`Unhandled fetch: ${url}`));
@@ -62,8 +78,6 @@ describe('CommunityBoard comment permissions', () => {
         mutations: { retry: false }
       }
     });
-    queryClient.setQueryData(['community', { projectId: null, sort: 'recent' }], mockPosts);
-    queryClient.setQueryData(['community', 'comments', mockPosts[0].id], mockComments);
     const i18n = initI18n();
 
     return render(
@@ -74,6 +88,20 @@ describe('CommunityBoard comment permissions', () => {
       </I18nextProvider>
     );
   };
+
+  beforeAll(() => {
+    class MockIntersectionObserver {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    }
+
+    Object.defineProperty(global, 'IntersectionObserver', {
+      writable: true,
+      configurable: true,
+      value: MockIntersectionObserver
+    });
+  });
 
   beforeEach(() => {
     const fetchMock = createFetchMock();
@@ -116,5 +144,21 @@ describe('CommunityBoard comment permissions', () => {
     expect(textarea).not.toBeDisabled();
     expect(screen.getByText('홍길동 님으로 댓글이 작성됩니다.')).toBeInTheDocument();
     expect(screen.queryByText('로그인 후 댓글을 남길 수 있습니다.')).not.toBeInTheDocument();
+  });
+
+  it('requests filtered posts when selecting a category chip', async () => {
+    mockUseSession.mockReturnValue({ data: null, status: 'unauthenticated' });
+
+    renderComponent();
+
+    await screen.findByText('테스트 게시글');
+    await userEvent.click(screen.getByRole('button', { name: '공지' }));
+
+    await waitFor(() => {
+      expect((global.fetch as jest.Mock).mock.calls.some(([request]) => {
+        const url = typeof request === 'string' ? request : request instanceof Request ? request.url : '';
+        return url.includes('/api/community?') && url.includes('category=notice');
+      })).toBe(true);
+    });
   });
 });

@@ -16,7 +16,8 @@ import {
   NotificationType,
   MilestoneStatus,
   ModerationTargetType,
-  ModerationStatus
+  ModerationStatus,
+  CommunityCategory
 } from '@prisma/client';
 
 import type {
@@ -45,7 +46,8 @@ import type {
   OrderItem,
   UserFollow,
   CommentReaction,
-  ModerationReport
+  ModerationReport,
+  UserBlock
 } from '@prisma/client';
 
 // Prisma namespace와 클라이언트를 직접 정의
@@ -97,7 +99,8 @@ export {
   NotificationType,
   MilestoneStatus,
   ModerationTargetType,
-  ModerationStatus
+  ModerationStatus,
+  CommunityCategory
 } from '@prisma/client';
 
 // 공통 타입 정의
