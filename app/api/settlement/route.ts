@@ -5,7 +5,8 @@ import {
   ProjectStatus,
   SettlementPayoutStatus,
   SettlementStakeholderType,
-  UserRole
+  UserRole,
+  Prisma
 } from '@/types/prisma';
 import { z } from 'zod';
 
