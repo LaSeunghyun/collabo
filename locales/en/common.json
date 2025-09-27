@@ -92,6 +92,57 @@
     "commentLoginPrompt": "Sign in to share your thoughts in the comments.",
     "commentUserLabel": "Your comment will be posted as {{name}}."
   },
+  "artist": {
+    "actions": {
+      "follow": "Follow",
+      "following": "Following",
+      "processing": "Updating...",
+      "editProfile": "Edit profile"
+    },
+    "metrics": {
+      "followers": "Followers",
+      "backers": "Total backers",
+      "projects": "Projects"
+    },
+    "tabs": {
+      "overview": "Overview",
+      "projects": "Projects",
+      "updates": "Updates",
+      "community": "Community",
+      "portfolio": "Portfolio"
+    },
+    "profile": {
+      "avatarAlt": "{{name}} profile photo",
+      "emptyBio": "The artist has not added a bio yet.",
+      "emptyBioDetailed": "This artist has not shared an introduction yet. Follow them to stay updated on upcoming projects and announcements.",
+      "joined": "Joined in {{date}}"
+    },
+    "events": {
+      "title": "Linked events",
+      "manageCta": "Manage events",
+      "empty": "No events are linked to this profile yet.",
+      "createCta": "Create an event",
+      "tbd": "Schedule to be announced",
+      "viewDetails": "View details"
+    },
+    "links": {
+      "title": "External links",
+      "manageCta": "Manage links",
+      "empty": "Add official channels, merch stores or socials to help fans discover you.",
+      "addLink": "Add link"
+    },
+    "projects": {
+      "empty": "There are no published projects yet."
+    },
+    "updates": {
+      "empty": "No project updates have been posted yet.",
+      "projectLabel": "Posted for {{title}}"
+    },
+    "portfolio": {
+      "placeholder": "Portfolio content will appear here once the artist shares it.",
+      "editablePlaceholder": "Upload case studies, media kits or past work to curate your public portfolio."
+    }
+  },
   "partners": {
     "title": "Partner matching",
     "submit": "Submit partner",

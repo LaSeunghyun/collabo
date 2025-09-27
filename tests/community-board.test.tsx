@@ -62,7 +62,7 @@ describe('CommunityBoard comment permissions', () => {
         mutations: { retry: false }
       }
     });
-    queryClient.setQueryData(['community', { projectId: null, sort: 'recent' }], mockPosts);
+    queryClient.setQueryData(['community', { projectId: null, authorId: null, sort: 'recent' }], mockPosts);
     queryClient.setQueryData(['community', 'comments', mockPosts[0].id], mockComments);
     const i18n = initI18n();
 
