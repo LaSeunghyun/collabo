@@ -4,14 +4,17 @@ import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 
 import { canAccessRoute } from '@/lib/auth/role-guards';
+import { useAnnouncementUnreadCount } from '@/hooks/use-announcement-read';
 
 export function Header() {
   const { data: session } = useSession();
+  const { data: unreadCount = 0 } = useAnnouncementUnreadCount(Boolean(session?.user));
 
   const navigationItems = [
     { href: '/projects', label: '프로젝트' },
     { href: '/partners', label: '파트너' },
-    { href: '/community', label: '커뮤니티' }
+    { href: '/community', label: '커뮤니티' },
+    { href: '/announcements', label: '공지사항', unreadCount }
   ];
 
   if (session?.user && canAccessRoute(session.user, '/admin')) {
@@ -27,11 +30,24 @@ export function Header() {
           </Link>
 
           <nav className="hidden md:flex items-center space-x-8">
-            {navigationItems.map((item) => (
-              <Link key={item.href} href={item.href} className="hover:text-neutral-300 transition-colors">
-                {item.label}
-              </Link>
-            ))}
+            {navigationItems.map((item) => {
+              const showBadge = typeof item.unreadCount === 'number' && item.unreadCount > 0;
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="relative hover:text-neutral-300 transition-colors"
+                >
+                  {item.label}
+                  {showBadge ? (
+                    <span className="absolute -right-3 -top-2 rounded-full bg-blue-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                      {item.unreadCount}
+                    </span>
+                  ) : null}
+                </Link>
+              );
+            })}
           </nav>
 
           <div className="flex items-center space-x-4">
