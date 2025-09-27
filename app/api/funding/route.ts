@@ -11,6 +11,7 @@ import Stripe from 'stripe';
 import { prisma } from '@/lib/prisma';
 import { createSettlementIfTargetReached } from '@/lib/server/funding-settlement';
 import { buildApiError } from '@/lib/server/error-handling';
+import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 
 interface FundingCreatePayload {
   projectId: string;
@@ -90,33 +91,6 @@ function pickStripeIntentSnapshot(intent: Stripe.PaymentIntent | Stripe.Checkout
     currency: session.currency,
     metadata: session.metadata ?? {}
   };
-}
-
-async function resolveUserId({
-  receiptEmail,
-  customerName,
-  stripeEmailFallback
-}: {
-  receiptEmail?: string;
-  customerName?: string;
-  stripeEmailFallback?: string;
-}) {
-  const email = receiptEmail ?? stripeEmailFallback;
-  if (!email) {
-    throw new Error('구매자 이메일 정보를 확인할 수 없습니다.');
-  }
-
-  const safeEmail = email.toLowerCase();
-  const nameFromEmail = safeEmail.split('@')[0] ?? 'Guest';
-  const name = customerName?.trim() || nameFromEmail || 'Guest';
-
-  const user = await prisma.user.upsert({
-    where: { email: safeEmail },
-    update: { name },
-    create: { email: safeEmail, name }
-  });
-
-  return user.id;
 }
 
 async function upsertPaymentTransaction(
@@ -253,6 +227,19 @@ async function recordSuccessfulFunding({
 }
 
 export async function POST(request: NextRequest) {
+  let sessionUser;
+
+  try {
+    sessionUser = await requireApiUser({});
+  } catch (error) {
+    const response = handleAuthorizationError(error);
+    if (response) {
+      return response;
+    }
+
+    throw error;
+  }
+
   let payload: FundingRequestPayload;
 
   try {
@@ -273,6 +260,21 @@ export async function POST(request: NextRequest) {
     cancelUrl,
     customerName
   } = payload;
+
+  const normalisedReceiptEmail =
+    typeof receiptEmail === 'string' && receiptEmail.trim().length > 0
+      ? receiptEmail.trim()
+      : sessionUser.email ?? undefined;
+
+  const normalisedCustomerName =
+    typeof customerName === 'string' && customerName.trim().length > 0
+      ? customerName.trim()
+      : sessionUser.name ?? undefined;
+
+  const baseMetadata: Record<string, string> = { projectId };
+  const metadata = normalisedCustomerName
+    ? { ...baseMetadata, customerName: normalisedCustomerName }
+    : baseMetadata;
 
   if (!projectId) {
     return buildError('프로젝트 정보가 누락되었습니다.');
@@ -311,16 +313,9 @@ export async function POST(request: NextRequest) {
           return buildError('결제 금액을 확인할 수 없습니다.', 422);
         }
 
-        const userId = await resolveUserId({
-          receiptEmail,
-          customerName,
-          stripeEmailFallback:
-            paymentIntent.receipt_email ?? undefined
-        });
-
         const funding = await recordSuccessfulFunding({
           projectId,
-          userId,
+          userId: sessionUser.id,
           amount: amountReceived,
           currency: normaliseCurrency(paymentIntent.currency),
           paymentIntentId: paymentIntent.id,
@@ -365,16 +360,9 @@ export async function POST(request: NextRequest) {
             ? session.payment_intent
             : session.payment_intent?.id ?? session.id;
 
-        const userId = await resolveUserId({
-          receiptEmail,
-          customerName,
-          stripeEmailFallback:
-            session.customer_details?.email ?? session.customer_email ?? undefined
-        });
-
         const funding = await recordSuccessfulFunding({
           projectId,
-          userId,
+          userId: sessionUser.id,
           amount: amountPaid,
           currency: normaliseCurrency(session.currency),
           paymentIntentId: paymentIntentReference,
@@ -400,10 +388,6 @@ export async function POST(request: NextRequest) {
         }
       }
     } catch (error) {
-      if (error instanceof Error && error.message.includes('구매자 이메일')) {
-        return buildError(error.message, 422);
-      }
-
       const message =
         error instanceof Error ? error.message : '결제 검증 중 오류가 발생했습니다.';
       return buildError(message, 500);
@@ -439,10 +423,8 @@ export async function POST(request: NextRequest) {
         ],
         success_url: successUrl,
         cancel_url: cancelUrl,
-        customer_email: receiptEmail,
-        metadata: {
-          projectId
-        }
+        customer_email: normalisedReceiptEmail,
+        metadata
       });
 
       return NextResponse.json({
@@ -456,8 +438,8 @@ export async function POST(request: NextRequest) {
       amount: normalisedAmount,
       currency,
       automatic_payment_methods: { enabled: true },
-      metadata: { projectId },
-      receipt_email: receiptEmail,
+      metadata,
+      receipt_email: normalisedReceiptEmail,
       description: `Collab Funding – ${project.title}`
     });
 
