@@ -10,14 +10,13 @@ export default function SignUpPage() {
         name: '',
         email: '',
         password: '',
-        confirmPassword: '',
-        role: 'PARTICIPANT' as 'PARTICIPANT' | 'CREATOR' | 'PARTNER'
+        confirmPassword: ''
     });
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const router = useRouter();
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData(prev => ({
             ...prev,
             [e.target.name]: e.target.value
@@ -53,7 +52,6 @@ export default function SignUpPage() {
                     name: formData.name,
                     email: formData.email,
                     password: formData.password,
-                    role: formData.role,
                 }),
             });
 
@@ -127,21 +125,11 @@ export default function SignUpPage() {
                             />
                         </div>
 
-                        <div>
-                            <label htmlFor="role" className="block text-sm font-medium text-gray-300">
-                                역할
-                            </label>
-                            <select
-                                id="role"
-                                name="role"
-                                value={formData.role}
-                                onChange={handleChange}
-                                className="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                            >
-                                <option value="PARTICIPANT">참여자</option>
-                                <option value="CREATOR">크리에이터</option>
-                                <option value="PARTNER">파트너</option>
-                            </select>
+                        <div className="rounded-lg border border-white/10 bg-white/5 p-4 text-sm text-purple-100">
+                            <p className="font-medium">역할은 가입 후 전용 신청 플로우에서 전환해요</p>
+                            <p className="mt-1 text-xs text-purple-200/80">
+                                신규 가입은 참여자 역할로 시작되며, 파트너 또는 크리에이터로 활동하려면 전용 신청 절차를 통해 승인 요청을 보내주세요. 신청이 승인되면 계정 역할이 자동으로 업데이트됩니다.
+                            </p>
                         </div>
 
                         <div>
