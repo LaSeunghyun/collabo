@@ -1,5 +1,52 @@
-// Prisma Ground Rules에 따른 표준 import 패턴
-// @prisma/client에서 직접 import하여 re-export
+// Prisma에서 생성된 타입과 값을 가져와 공유 타입으로 사용
+import {
+  Prisma,
+  PrismaClient,
+  UserRole,
+  ProjectStatus,
+  FundingStatus,
+  PaymentProvider,
+  SettlementPayoutStatus,
+  SettlementStakeholderType,
+  PartnerType,
+  PartnerMatchStatus,
+  ProductType,
+  OrderStatus,
+  PostType,
+  NotificationType,
+  MilestoneStatus,
+  ModerationTargetType,
+  ModerationStatus
+} from '@prisma/client';
+
+import type {
+  User,
+  Project,
+  ProjectCollaborator,
+  Funding,
+  Settlement,
+  Partner,
+  PartnerMatch,
+  Product,
+  Order,
+  Post,
+  Comment,
+  PostLike,
+  Notification,
+  Wallet,
+  AuditLog,
+  Permission,
+  UserPermission,
+  PaymentTransaction,
+  SettlementPayout,
+  ProjectMilestone,
+  ProjectRewardTier,
+  ProjectRequirement,
+  OrderItem,
+  UserFollow,
+  CommentReaction,
+  ModerationReport
+} from '@prisma/client';
 
 // Prisma namespace와 클라이언트를 직접 정의
 export { PrismaClient, Prisma } from '@prisma/client';
@@ -34,116 +81,24 @@ export type {
   ModerationReport
 } from '@prisma/client';
 
-// Enum 정의 - 직접 정의하여 안정성 확보
-export enum UserRole {
-  CREATOR = 'CREATOR',
-  PARTICIPANT = 'PARTICIPANT',
-  PARTNER = 'PARTNER',
-  ADMIN = 'ADMIN'
-}
-
-export enum ProjectStatus {
-  DRAFT = 'DRAFT',
-  REVIEWING = 'REVIEWING',
-  LIVE = 'LIVE',
-  SUCCESSFUL = 'SUCCESSFUL',
-  FAILED = 'FAILED',
-  EXECUTING = 'EXECUTING',
-  COMPLETED = 'COMPLETED'
-}
-
-export enum FundingStatus {
-  PENDING = 'PENDING',
-  SUCCEEDED = 'SUCCEEDED',
-  FAILED = 'FAILED',
-  REFUNDED = 'REFUNDED',
-  CANCELLED = 'CANCELLED'
-}
-
-export enum PaymentProvider {
-  STRIPE = 'STRIPE',
-  TOSS = 'TOSS',
-  PAYPAL = 'PAYPAL',
-  MANUAL = 'MANUAL'
-}
-
-export enum SettlementPayoutStatus {
-  PENDING = 'PENDING',
-  IN_PROGRESS = 'IN_PROGRESS',
-  PAID = 'PAID'
-}
-
-export enum SettlementStakeholderType {
-  PLATFORM = 'PLATFORM',
-  CREATOR = 'CREATOR',
-  PARTNER = 'PARTNER',
-  COLLABORATOR = 'COLLABORATOR',
-  OTHER = 'OTHER'
-}
-
-export enum PartnerType {
-  STUDIO = 'STUDIO',
-  VENUE = 'VENUE',
-  PRODUCTION = 'PRODUCTION',
-  MERCHANDISE = 'MERCHANDISE',
-  OTHER = 'OTHER'
-}
-
-export enum PartnerMatchStatus {
-  REQUESTED = 'REQUESTED',
-  ACCEPTED = 'ACCEPTED',
-  DECLINED = 'DECLINED',
-  CANCELLED = 'CANCELLED',
-  COMPLETED = 'COMPLETED'
-}
-
-export enum ProductType {
-  PHYSICAL = 'PHYSICAL',
-  DIGITAL = 'DIGITAL'
-}
-
-export enum OrderStatus {
-  PENDING = 'PENDING',
-  PAID = 'PAID',
-  SHIPPED = 'SHIPPED',
-  DELIVERED = 'DELIVERED',
-  REFUNDED = 'REFUNDED',
-  CANCELLED = 'CANCELLED'
-}
-
-export enum PostType {
-  UPDATE = 'UPDATE',
-  DISCUSSION = 'DISCUSSION',
-  AMA = 'AMA'
-}
-
-export enum NotificationType {
-  FUNDING_SUCCESS = 'FUNDING_SUCCESS',
-  NEW_COMMENT = 'NEW_COMMENT',
-  PROJECT_MILESTONE = 'PROJECT_MILESTONE',
-  PARTNER_REQUEST = 'PARTNER_REQUEST',
-  SETTLEMENT_PAID = 'SETTLEMENT_PAID',
-  SYSTEM = 'SYSTEM'
-}
-
-export enum MilestoneStatus {
-  PLANNED = 'PLANNED',
-  IN_PROGRESS = 'IN_PROGRESS',
-  COMPLETED = 'COMPLETED',
-  RELEASED = 'RELEASED'
-}
-
-export enum ModerationTargetType {
-  POST = 'POST',
-  COMMENT = 'COMMENT'
-}
-
-export enum ModerationStatus {
-  PENDING = 'PENDING',
-  REVIEWING = 'REVIEWING',
-  ACTION_TAKEN = 'ACTION_TAKEN',
-  DISMISSED = 'DISMISSED'
-}
+// Enum들을 re-export
+export {
+  UserRole,
+  ProjectStatus,
+  FundingStatus,
+  PaymentProvider,
+  SettlementPayoutStatus,
+  SettlementStakeholderType,
+  PartnerType,
+  PartnerMatchStatus,
+  ProductType,
+  OrderStatus,
+  PostType,
+  NotificationType,
+  MilestoneStatus,
+  ModerationTargetType,
+  ModerationStatus
+} from '@prisma/client';
 
 // 공통 타입 정의
 export type DatabaseId = string;

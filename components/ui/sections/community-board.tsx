@@ -8,7 +8,7 @@ import {
   useQueryClient
 } from '@tanstack/react-query';
 import { Heart, MessageCircle, SendHorizontal } from 'lucide-react';
-import { useForm } from 'react-hook-form';
+// import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 import type { CommunityComment, CommunityPost } from '@/lib/data/community';
@@ -71,9 +71,7 @@ export function CommunityBoard({ projectId }: { projectId?: string }) {
     isError
   } = useCommunityPosts(projectId, sort);
 
-  const postForm = useForm<PostFormValues>({
-    defaultValues: { title: '', content: '' }
-  });
+  const [postForm, setPostForm] = useState<PostFormValues>({ title: '', content: '' });
 
   const createPostMutation = useMutation<CommunityPost, Error, PostFormValues>({
     mutationFn: async (values) => {
@@ -90,7 +88,7 @@ export function CommunityBoard({ projectId }: { projectId?: string }) {
       return (await res.json()) as CommunityPost;
     },
     onSuccess: () => {
-      postForm.reset();
+      setPostForm({ title: '', content: '' });
       queryClient.invalidateQueries({ queryKey: ['community'] });
     }
   });
@@ -127,10 +125,10 @@ export function CommunityBoard({ projectId }: { projectId?: string }) {
         const updated = data.map((post) =>
           post.id === postId
             ? {
-                ...post,
-                liked: like,
-                likes: Math.max(0, post.likes + (like ? 1 : -1))
-              }
+              ...post,
+              liked: like,
+              likes: Math.max(0, post.likes + (like ? 1 : -1))
+            }
             : post
         );
         queryClient.setQueryData(key, updated);
@@ -154,12 +152,12 @@ export function CommunityBoard({ projectId }: { projectId?: string }) {
     }
   });
 
-  const handleCreatePost = postForm.handleSubmit((values) => {
-    if (!values.title.trim() || !values.content.trim()) {
+  const handleCreatePost = () => {
+    if (!postForm.title.trim() || !postForm.content.trim()) {
       return;
     }
-    createPostMutation.mutate(values);
-  });
+    createPostMutation.mutate(postForm);
+  };
 
   const sortButtons = useMemo(
     () => [
@@ -185,7 +183,8 @@ export function CommunityBoard({ projectId }: { projectId?: string }) {
               type="text"
               placeholder={t('community.newPostTitlePlaceholder')}
               className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
-              {...postForm.register('title', { required: true })}
+              value={postForm.title}
+              onChange={(e) => setPostForm(prev => ({ ...prev, title: e.target.value }))}
             />
           </div>
           <div>
@@ -196,7 +195,8 @@ export function CommunityBoard({ projectId }: { projectId?: string }) {
               id="community-post-content"
               placeholder={t('community.writePlaceholder')}
               className="min-h-[120px] w-full resize-y rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
-              {...postForm.register('content', { required: true })}
+              value={postForm.content}
+              onChange={(e) => setPostForm(prev => ({ ...prev, content: e.target.value }))}
             />
           </div>
           <div className="flex items-center justify-end gap-3">
@@ -221,9 +221,8 @@ export function CommunityBoard({ projectId }: { projectId?: string }) {
             <button
               key={option.id}
               type="button"
-              className={`rounded-full px-4 py-2 text-sm transition ${
-                isActive ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' : 'bg-white/5 text-white/70 hover:bg-white/10'
-              }`}
+              className={`rounded-full px-4 py-2 text-sm transition ${isActive ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' : 'bg-white/5 text-white/70 hover:bg-white/10'
+                }`}
               onClick={() => setSort(option.id)}
             >
               {option.label}
@@ -262,9 +261,7 @@ function CommunityPostCard({
     isLoading,
     isError
   } = useCommunityComments(post.id);
-  const commentForm = useForm<CommentFormValues>({
-    defaultValues: { authorName: '', content: '' }
-  });
+  const [commentForm, setCommentForm] = useState<CommentFormValues>({ authorName: '', content: '' });
 
   const addCommentMutation = useMutation<CommunityComment, Error, CommentFormValues>({
     mutationFn: async (values) => {
@@ -281,21 +278,21 @@ function CommunityPostCard({
       return (await res.json()) as CommunityComment;
     },
     onSuccess: () => {
-      commentForm.reset();
+      setCommentForm({ authorName: '', content: '' });
       queryClient.invalidateQueries({ queryKey: ['community', 'comments', post.id] });
       queryClient.invalidateQueries({ queryKey: ['community'] });
     }
   });
 
-  const handleAddComment = commentForm.handleSubmit((values) => {
-    if (!values.content.trim()) {
+  const handleAddComment = () => {
+    if (!commentForm.content.trim()) {
       return;
     }
     addCommentMutation.mutate({
-      ...values,
-      authorName: values.authorName.trim() || t('community.defaultGuestName')
+      ...commentForm,
+      authorName: commentForm.authorName.trim() || t('community.defaultGuestName')
     });
-  });
+  };
 
   const isLiked = post.liked ?? false;
 
@@ -311,9 +308,8 @@ function CommunityPostCard({
             type="button"
             onClick={() => onToggleLike(!isLiked)}
             aria-pressed={isLiked}
-            className={`inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 transition ${
-              isLiked ? 'bg-primary/20 text-primary' : 'bg-white/5 hover:bg-white/10'
-            }`}
+            className={`inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 transition ${isLiked ? 'bg-primary/20 text-primary' : 'bg-white/5 hover:bg-white/10'
+              }`}
           >
             <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} aria-hidden="true" />
             <span>{t('community.likesLabel', { count: post.likes })}</span>
@@ -358,13 +354,15 @@ function CommunityPostCard({
             type="text"
             placeholder={t('community.commentAuthorPlaceholder')}
             className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40 sm:w-48"
-            {...commentForm.register('authorName')}
+            value={commentForm.authorName}
+            onChange={(e) => setCommentForm(prev => ({ ...prev, authorName: e.target.value }))}
           />
           <div className="flex-1">
             <textarea
               placeholder={t('community.commentPlaceholder')}
               className="min-h-[80px] w-full resize-y rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
-              {...commentForm.register('content', { required: true })}
+              value={commentForm.content}
+              onChange={(e) => setCommentForm(prev => ({ ...prev, content: e.target.value }))}
             />
           </div>
         </div>
