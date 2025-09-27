@@ -51,6 +51,11 @@ const fetchUserWithPermissions = async (identifier: { id?: string; email?: strin
     return null;
   }
 
+  // Skip database queries during build time
+  if (isBuildTime) {
+    return null;
+  }
+
   return prisma.user.findUnique({
     where: identifier.id ? { id: identifier.id } : { email: identifier.email! },
     include: {
@@ -64,7 +69,7 @@ const fetchUserWithPermissions = async (identifier: { id?: string; email?: strin
 };
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  adapter: isBuildTime ? undefined : PrismaAdapter(prisma),
   session: {
     strategy: 'jwt'
   },
