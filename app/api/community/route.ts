@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@/types/prisma';
 
 import { addDemoCommunityPost, listDemoCommunityPosts } from '@/lib/data/community';
 
@@ -9,10 +10,21 @@ export async function GET(request: NextRequest) {
   const sortParam = searchParams.get('sort');
   const sort = sortParam === 'popular' ? 'popular' : 'recent';
   const projectId = searchParams.get('projectId') ?? undefined;
+  const authorId = searchParams.get('authorId') ?? undefined;
 
   try {
+    const where: Prisma.PostWhereInput = {};
+
+    if (projectId) {
+      where.projectId = projectId;
+    }
+
+    if (authorId) {
+      where.authorId = authorId;
+    }
+
     const posts = await prisma.post.findMany({
-      where: projectId ? { projectId } : undefined,
+      where,
       include: {
         _count: { select: { likes: true, comments: true } }
       },

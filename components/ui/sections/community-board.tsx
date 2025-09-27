@@ -23,14 +23,23 @@ interface CommentFormValues {
   content: string;
 }
 
-function useCommunityPosts(projectId: string | undefined, sort: 'recent' | 'popular') {
+type CommunityPostFilters = {
+  projectId?: string;
+  authorId?: string;
+};
+
+function useCommunityPosts(filters: CommunityPostFilters, sort: 'recent' | 'popular') {
+  const { projectId, authorId } = filters;
   return useQuery<CommunityPost[]>({
-    queryKey: ['community', { projectId: projectId ?? null, sort }],
+    queryKey: ['community', { projectId: projectId ?? null, authorId: authorId ?? null, sort }],
     queryFn: async () => {
       const params = new URLSearchParams();
       params.set('sort', sort);
       if (projectId) {
         params.set('projectId', projectId);
+      }
+      if (authorId) {
+        params.set('authorId', authorId);
       }
 
       const res = await fetch(`/api/community?${params.toString()}`);
@@ -61,7 +70,7 @@ function useCommunityComments(postId: string) {
   });
 }
 
-export function CommunityBoard({ projectId }: { projectId?: string }) {
+export function CommunityBoard({ projectId, authorId, readOnly = false }: CommunityPostFilters & { readOnly?: boolean }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [sort, setSort] = useState<'recent' | 'popular'>('recent');
@@ -69,7 +78,7 @@ export function CommunityBoard({ projectId }: { projectId?: string }) {
     data: posts = [],
     isLoading,
     isError
-  } = useCommunityPosts(projectId, sort);
+  } = useCommunityPosts({ projectId, authorId }, sort);
 
   const [postForm, setPostForm] = useState<PostFormValues>({ title: '', content: '' });
 
@@ -78,7 +87,7 @@ export function CommunityBoard({ projectId }: { projectId?: string }) {
       const res = await fetch('/api/community', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...values, projectId })
+        body: JSON.stringify({ ...values, projectId, authorId })
       });
 
       if (!res.ok) {
@@ -169,50 +178,52 @@ export function CommunityBoard({ projectId }: { projectId?: string }) {
 
   return (
     <section className="space-y-8">
-      <form
-        onSubmit={handleCreatePost}
-        className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-xl shadow-black/20"
-      >
-        <div className="flex flex-col gap-4">
-          <div>
-            <label className="mb-2 block text-sm font-medium text-white/70" htmlFor="community-post-title">
-              {t('community.newPostTitleLabel')}
-            </label>
-            <input
-              id="community-post-title"
-              type="text"
-              placeholder={t('community.newPostTitlePlaceholder')}
-              className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
-              value={postForm.title}
-              onChange={(e) => setPostForm(prev => ({ ...prev, title: e.target.value }))}
-            />
+      {readOnly ? null : (
+        <form
+          onSubmit={handleCreatePost}
+          className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-xl shadow-black/20"
+        >
+          <div className="flex flex-col gap-4">
+            <div>
+              <label className="mb-2 block text-sm font-medium text-white/70" htmlFor="community-post-title">
+                {t('community.newPostTitleLabel')}
+              </label>
+              <input
+                id="community-post-title"
+                type="text"
+                placeholder={t('community.newPostTitlePlaceholder')}
+                className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                value={postForm.title}
+                onChange={(e) => setPostForm((prev) => ({ ...prev, title: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-white/70" htmlFor="community-post-content">
+                {t('community.newPostContentLabel')}
+              </label>
+              <textarea
+                id="community-post-content"
+                placeholder={t('community.writePlaceholder')}
+                className="min-h-[120px] w-full resize-y rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                value={postForm.content}
+                onChange={(e) => setPostForm((prev) => ({ ...prev, content: e.target.value }))}
+              />
+            </div>
+            <div className="flex items-center justify-end gap-3">
+              {createPostMutation.isError ? (
+                <p className="text-sm text-red-400">{t('community.postErrorMessage')}</p>
+              ) : null}
+              <button
+                type="submit"
+                disabled={createPostMutation.isPending}
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {createPostMutation.isPending ? t('common.loading') : t('community.post')}
+              </button>
+            </div>
           </div>
-          <div>
-            <label className="mb-2 block text-sm font-medium text-white/70" htmlFor="community-post-content">
-              {t('community.newPostContentLabel')}
-            </label>
-            <textarea
-              id="community-post-content"
-              placeholder={t('community.writePlaceholder')}
-              className="min-h-[120px] w-full resize-y rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
-              value={postForm.content}
-              onChange={(e) => setPostForm(prev => ({ ...prev, content: e.target.value }))}
-            />
-          </div>
-          <div className="flex items-center justify-end gap-3">
-            {createPostMutation.isError ? (
-              <p className="text-sm text-red-400">{t('community.postErrorMessage')}</p>
-            ) : null}
-            <button
-              type="submit"
-              disabled={createPostMutation.isPending}
-              className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {createPostMutation.isPending ? t('common.loading') : t('community.post')}
-            </button>
-          </div>
-        </div>
-      </form>
+        </form>
+      )}
 
       <div className="flex flex-wrap items-center gap-3">
         {sortButtons.map((option) => {
