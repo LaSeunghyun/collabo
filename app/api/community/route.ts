@@ -48,12 +48,15 @@ export async function GET(request: NextRequest) {
     };
 
     // 기본 게시글 조회 (간단한 버전)
-    const posts = await prisma.post.findMany({
+    const postInclude = {
+      author: { select: { id: true, name: true, avatarUrl: true } },
+      _count: { select: { likes: true, comments: true } }
+    } as const;
+    type PostWithAuthor = Prisma.PostGetPayload<{ include: typeof postInclude }>;
+
+    const posts: PostWithAuthor[] = await prisma.post.findMany({
       where: baseWhere,
-      include: {
-        author: { select: { id: true, name: true, avatarUrl: true } },
-        _count: { select: { likes: true, comments: true } }
-      },
+      include: postInclude,
       orderBy: { createdAt: 'desc' },
       take: Math.min(limit, 20) // 최대 20개로 제한
     });
