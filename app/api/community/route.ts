@@ -112,26 +112,38 @@ export async function GET(request: NextRequest) {
       take: 5
     });
 
+    // 인기글 후보 조회 (좋아요가 1개 이상인 게시글만)
     const trendingCandidates = await prisma.post.findMany({
-      where: baseWhere,
+      where: {
+        ...baseWhere,
+        likes: {
+          some: {} // 좋아요가 1개 이상인 게시글만
+        }
+      },
       include: {
         author: { select: { id: true, name: true, avatarUrl: true } },
         _count: { select: { likes: true, comments: true } }
       },
       orderBy: [
+        { likes: { _count: 'desc' } }, // 좋아요 수 기준 내림차순
         { createdAt: 'desc' }
       ],
       take: 10
     });
 
+    // 좋아요가 있는 게시글 중 상위 5개를 인기글로 선정
     const trendingIds = new Set(trendingCandidates.slice(0, 5).map((post) => post.id));
 
     const orderBy: Prisma.PostOrderByWithRelationInput[] = [];
     if (sort === 'recent') {
       orderBy.push({ createdAt: 'desc' });
-    } else {
-      // For popular/trending, we'll sort by creation date for now
-      // TODO: Implement proper like-based sorting with aggregation
+    } else if (sort === 'popular') {
+      // 인기글 정렬: 좋아요 수 기준 내림차순, 그 다음 최신순
+      orderBy.push({ likes: { _count: 'desc' } });
+      orderBy.push({ createdAt: 'desc' });
+    } else if (sort === 'trending') {
+      // 트렌딩 정렬: 좋아요 수 기준 내림차순, 그 다음 최신순
+      orderBy.push({ likes: { _count: 'desc' } });
       orderBy.push({ createdAt: 'desc' });
     }
 
