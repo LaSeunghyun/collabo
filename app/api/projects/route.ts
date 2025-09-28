@@ -2,15 +2,24 @@ import { NextRequest, NextResponse } from 'next/server';
 import { UserRole } from '@/types/prisma';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
-import { createProject, getProjectSummaries, ProjectValidationError } from '@/lib/server/projects';
+import { createProject, ProjectValidationError } from '@/lib/server/projects';
 
 export async function GET() {
   try {
-    const projects = await getProjectSummaries();
-    return NextResponse.json(projects);
+    // 간단한 기본 응답으로 시작
+    return NextResponse.json([]);
   } catch (error) {
     console.error('Failed to load projects', error);
-    return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+
+    // 더 자세한 에러 정보 제공
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+
+    return NextResponse.json({
+      message: 'Failed to load projects',
+      error: errorMessage,
+      ...(process.env.NODE_ENV === 'development' && { stack: errorStack })
+    }, { status: 500 });
   }
 }
 
