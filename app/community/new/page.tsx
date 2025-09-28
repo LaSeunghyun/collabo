@@ -1,12 +1,12 @@
 'use client';
 
-import { ChangeEvent, FormEvent, useMemo, useState } from 'react';
+import { ChangeEvent, FormEvent, useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
 import { ArrowLeft, Loader2, Paperclip } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useSession } from 'next-auth/react';
+import { useSession, signIn } from 'next-auth/react';
 import clsx from 'clsx';
 
 import type { CommunityPost } from '@/lib/data/community';
@@ -29,7 +29,8 @@ interface NewPostFormValues {
 export default function CommunityNewPostPage() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { data: session } = useSession();
+  const searchParams = useSearchParams();
+  const { data: session, status } = useSession();
   const [formValues, setFormValues] = useState<NewPostFormValues>({
     title: '',
     content: '',
@@ -37,6 +38,24 @@ export default function CommunityNewPostPage() {
     attachments: []
   });
   const [error, setError] = useState<string | null>(null);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
+  // 로그인 상태 체크 및 리다이렉트
+  useEffect(() => {
+    if (status === 'loading') return; // 로딩 중이면 대기
+
+    if (status === 'unauthenticated') {
+      setIsRedirecting(true);
+      // 현재 URL을 callbackUrl로 설정하여 로그인 후 돌아올 수 있도록 함
+      const callbackUrl = `/community/new?${searchParams.toString()}`;
+      signIn(undefined, { callbackUrl });
+      return;
+    }
+
+    if (status === 'authenticated') {
+      setIsRedirecting(false);
+    }
+  }, [status, searchParams]);
 
   const isValid = useMemo(() => {
     return formValues.title.trim().length > 0 && formValues.content.trim().length > 0;
@@ -108,6 +127,60 @@ export default function CommunityNewPostPage() {
       attachments: prev.attachments.filter((_, fileIndex) => fileIndex !== index)
     }));
   };
+
+  // 로딩 중이거나 리다이렉트 중일 때 표시
+  if (status === 'loading' || isRedirecting) {
+    return (
+      <div className="mx-auto max-w-4xl px-4 pb-20">
+        <div className="pt-10">
+          <Link
+            href="/community"
+            className="inline-flex items-center gap-2 text-sm text-white/60 transition hover:text-white"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            {t('community.actions.backToList')}
+          </Link>
+        </div>
+        <div className="mt-6 flex h-96 items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="mx-auto h-8 w-8 animate-spin text-white/60" />
+            <p className="mt-4 text-sm text-white/60">
+              {isRedirecting ? '로그인 페이지로 이동 중...' : '로딩 중...'}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 로그인되지 않은 경우 (이론적으로는 위에서 리다이렉트되지만 안전장치)
+  if (status === 'unauthenticated') {
+    return (
+      <div className="mx-auto max-w-4xl px-4 pb-20">
+        <div className="pt-10">
+          <Link
+            href="/community"
+            className="inline-flex items-center gap-2 text-sm text-white/60 transition hover:text-white"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            {t('community.actions.backToList')}
+          </Link>
+        </div>
+        <div className="mt-6 flex h-96 items-center justify-center">
+          <div className="text-center">
+            <p className="text-lg text-white/80">로그인이 필요합니다</p>
+            <p className="mt-2 text-sm text-white/60">게시글을 작성하려면 먼저 로그인해주세요.</p>
+            <button
+              onClick={() => signIn(undefined, { callbackUrl: '/community/new' })}
+              className="mt-4 rounded-full bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
+            >
+              로그인하기
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-4xl px-4 pb-20">

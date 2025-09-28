@@ -119,7 +119,6 @@ export async function GET(request: NextRequest) {
         _count: { select: { likes: true, comments: true } }
       },
       orderBy: [
-        { likes: { _count: 'desc' } },
         { createdAt: 'desc' }
       ],
       take: 10
@@ -131,7 +130,8 @@ export async function GET(request: NextRequest) {
     if (sort === 'recent') {
       orderBy.push({ createdAt: 'desc' });
     } else {
-      orderBy.push({ likes: { _count: 'desc' } });
+      // For popular/trending, we'll sort by creation date for now
+      // TODO: Implement proper like-based sorting with aggregation
       orderBy.push({ createdAt: 'desc' });
     }
 

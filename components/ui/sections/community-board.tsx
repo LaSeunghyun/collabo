@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { InfiniteData, QueryKey } from '@tanstack/react-query';
 import { ArrowRight, Heart, MessageCircle, Search, Sparkles } from 'lucide-react';
@@ -120,6 +121,7 @@ function useCommunityFeed(params: {
 
 export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaChange }: CommunityBoardProps) {
   const { t } = useTranslation();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const { data: session } = useSession();
   const [sort, setSort] = useState<(typeof SORT_OPTIONS)[number]>('recent');
@@ -131,6 +133,17 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
     ? selectedCategories.filter((category) => category !== 'all')
     : selectedCategories;
   const categoriesForQuery = effectiveCategories.includes('all') ? ['all'] : effectiveCategories;
+
+  // 글쓰기 버튼 클릭 핸들러
+  const handleCreatePost = () => {
+    if (!session) {
+      // 로그인되지 않은 경우 로그인 페이지로 리다이렉트
+      signIn(undefined, { callbackUrl: '/community/new' });
+      return;
+    }
+    // 로그인된 경우 글쓰기 페이지로 이동
+    router.push('/community/new');
+  };
 
   const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useCommunityFeed({
     projectId,
@@ -293,13 +306,13 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
             </h2>
           </div>
           {!readOnly ? (
-            <Link
-              href="/community/new"
+            <button
+              onClick={handleCreatePost}
               className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
             >
               {t('community.actions.create')}
               <ArrowRight className="h-4 w-4" />
-            </Link>
+            </button>
           ) : null}
         </div>
 
@@ -409,13 +422,13 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
           </h3>
           <p className="mt-2 text-sm text-white/60">{t('community.emptyStateDescription')}</p>
           {!readOnly ? (
-            <Link
-              href="/community/new"
+            <button
+              onClick={handleCreatePost}
               className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
             >
               {t('community.actions.create')}
               <ArrowRight className="h-4 w-4" />
-            </Link>
+            </button>
           ) : null}
         </div>
       ) : null}
