@@ -70,6 +70,9 @@ export default withAuth(
           '/api/community',
           '/api/projects',
           '/api/partners',
+          '/api/hero-slides',
+          '/api/categories',
+          '/api/store',
           '/api/test-accounts'
         ];
 

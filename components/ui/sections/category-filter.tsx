@@ -2,22 +2,37 @@
 
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { useFilterStore } from '@/lib/stores/use-filter-store';
-
-const categories = [
-  { id: 'music', label: 'Music', sub: ['K-pop', 'Indie', 'Live Session'] },
-  { id: 'performance', label: 'Performance', sub: ['Musical', 'Play', 'Dance'] },
-  { id: 'art', label: 'Art', sub: ['Media Art', 'Exhibition', 'Workshop'] },
-  { id: 'tech', label: 'Tech', sub: ['XR', 'Metaverse', 'AI Collab'] }
-];
+import { fetchCategories } from '@/lib/api/categories';
+import type { Category } from '@/app/api/categories/route';
 
 export function CategoryFilter() {
   const { category, setCategory } = useFilterStore();
   const [open, setOpen] = useState<string | null>(null);
+  
+  const { data: categories = [], isLoading } = useQuery({
+    queryKey: ['categories'],
+    queryFn: fetchCategories,
+    staleTime: 1000 * 60 * 10 // 10분
+  });
 
   const toggleCategory = (id: string) => {
     setCategory(category === id ? null : id);
   };
+
+  if (isLoading) {
+    return (
+      <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+        <h3 className="text-sm font-semibold uppercase tracking-widest text-white/60">카테고리 탐색</h3>
+        <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="h-16 animate-pulse rounded-2xl bg-white/10" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
@@ -41,14 +56,17 @@ export function CategoryFilter() {
             }}
           >
             <div className="flex items-center justify-between text-sm font-medium">
-              <span>{item.label}</span>
+              <span className="flex items-center gap-2">
+                {item.icon && <span>{item.icon}</span>}
+                {item.label}
+              </span>
               <ChevronDown className="h-4 w-4 transition group-hover:rotate-180" />
             </div>
             {open === item.id ? (
               <div className="absolute left-0 top-full z-20 mt-2 w-full rounded-2xl border border-white/10 bg-neutral-900/95 p-3 backdrop-blur">
                 <ul className="space-y-2 text-xs text-white/70">
-                  {item.sub.map((sub) => (
-                    <li key={sub} className="hover:text-white">
+                  {item.subcategories.map((sub) => (
+                    <li key={sub} className="hover:text-white cursor-pointer">
                       {sub}
                     </li>
                   ))}

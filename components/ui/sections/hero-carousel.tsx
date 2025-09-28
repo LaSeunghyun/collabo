@@ -1,32 +1,31 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
-
-const slides = [
-  {
-    id: 'banner-1',
-    title: 'Wonderwall Live Class',
-    description: 'Top creators host masterclasses and AMAs every week.',
-    image: 'https://images.unsplash.com/photo-1507878866276-a947ef722fee'
-  },
-  {
-    id: 'banner-2',
-    title: 'Make your fandom goods',
-    description: 'Collaborate with studios to launch bespoke merch drops.',
-    image: 'https://images.unsplash.com/photo-1489515217757-5fd1be406fef'
-  },
-  {
-    id: 'banner-3',
-    title: 'Hybrid Concert Experience',
-    description: 'Immersive XR stage with real-time community voting.',
-    image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819'
-  }
-];
+import { useQuery } from '@tanstack/react-query';
+import { fetchHeroSlides } from '@/lib/api/hero-slides';
+import type { HeroSlide } from '@/app/api/hero-slides/route';
 
 export function HeroCarousel() {
   const [emblaRef] = useEmblaCarousel({ loop: true }, [Autoplay({ delay: 6000 })]);
+  
+  const { data: slides = [], isLoading } = useQuery({
+    queryKey: ['hero-slides'],
+    queryFn: fetchHeroSlides,
+    staleTime: 1000 * 60 * 5 // 5분
+  });
+
+  if (isLoading) {
+    return (
+      <div className="overflow-hidden rounded-[40px] border border-white/10 bg-white/10">
+        <div className="flex h-[240px] lg:h-[420px] items-center justify-center">
+          <div className="text-white/60">로딩 중...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="overflow-hidden rounded-[40px] border border-white/10 bg-white/10" ref={emblaRef}>
@@ -40,12 +39,21 @@ export function HeroCarousel() {
                 <span className="text-xs uppercase tracking-[0.2em] text-white/60">Featured</span>
                 <h2 className="text-2xl font-semibold lg:text-4xl">{slide.title}</h2>
                 <p className="text-sm text-white/70 lg:text-base">{slide.description}</p>
-                <button
-                  type="button"
-                  className="mt-2 inline-flex w-fit items-center rounded-full bg-white px-5 py-2 text-sm font-semibold text-neutral-900"
-                >
-                  자세히 보기
-                </button>
+                {slide.link ? (
+                  <Link
+                    href={slide.link}
+                    className="mt-2 inline-flex w-fit items-center rounded-full bg-white px-5 py-2 text-sm font-semibold text-neutral-900 hover:bg-white/90 transition-colors"
+                  >
+                    자세히 보기
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    className="mt-2 inline-flex w-fit items-center rounded-full bg-white px-5 py-2 text-sm font-semibold text-neutral-900 hover:bg-white/90 transition-colors"
+                  >
+                    자세히 보기
+                  </button>
+                )}
               </div>
             </div>
           </div>

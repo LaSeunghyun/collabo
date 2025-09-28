@@ -12,31 +12,17 @@ import { SectionHeader } from '@/components/ui/headers/section-header';
 import { StoreCard } from '@/components/ui/cards/store-card';
 import type { ProjectSummary } from '@/lib/api/projects';
 import { fetchProjects } from '@/lib/api/projects';
+import { fetchStoreItems } from '@/lib/api/store';
+import type { StoreItem } from '@/app/api/store/route';
 
 export default function HomePage() {
   const { t } = useTranslation();
-  const storeItems = [
-    {
-      id: 'product-1',
-      title: t('home.store.items.product1.title'),
-      price: 89000,
-      discount: 15,
-      image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab'
-    },
-    {
-      id: 'product-2',
-      title: t('home.store.items.product2.title'),
-      price: 129000,
-      image: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d'
-    },
-    {
-      id: 'product-3',
-      title: t('home.store.items.product3.title'),
-      price: 159000,
-      discount: 10,
-      image: 'https://images.unsplash.com/photo-1485579149621-3123dd979885'
-    }
-  ];
+  
+  const { data: storeItems = [], isLoading: storeLoading } = useQuery({
+    queryKey: ['store-items'],
+    queryFn: fetchStoreItems,
+    staleTime: 1000 * 60 * 5 // 5분
+  });
 
   const { data: projects = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['projects'],
@@ -205,14 +191,26 @@ export default function HomePage() {
       <section>
         <SectionHeader
           title={t('home.store.title')}
-          href="/projects?tab=store"
+          href="/store"
           ctaLabel={t('actions.viewMore') ?? undefined}
         />
-        <div className="grid gap-6 md:grid-cols-3">
-          {storeItems.map((item) => (
-            <StoreCard key={item.id} product={item} />
-          ))}
-        </div>
+        {storeLoading ? (
+          <div className="grid gap-6 md:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="h-64 animate-pulse rounded-3xl bg-white/10" />
+            ))}
+          </div>
+        ) : storeItems.length === 0 ? (
+          <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-sm text-white/60">
+            아직 판매 중인 상품이 없어요.
+          </div>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-3">
+            {storeItems.map((item) => (
+              <StoreCard key={item.id} product={item} />
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );
