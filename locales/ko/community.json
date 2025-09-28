@@ -29,5 +29,67 @@
   },
   "loadMore": "더 보기",
   "emptyStateTitle": "첫 대화를 시작해 보세요",
-  "emptyStateDescription": "아이디어를 공유하여 커뮤니티의 대화를 열어 보세요."
+  "emptyStateDescription": "아이디어를 공유하여 커뮤니티의 대화를 열어 보세요.",
+  "actions": {
+    "create": "새 글 작성",
+    "viewDetail": "자세히 보기",
+    "backToList": "목록으로 돌아가기",
+    "cancel": "취소"
+  },
+  "labels": {
+    "total": "전체 {{count}}건",
+    "selectedCategories": "선택한 카테고리 {{count}}개"
+  },
+  "hero": {
+    "tagline": "Collaboration Hub",
+    "title": "아티스트와 팬이 함께 만드는 커뮤니티",
+    "subtitle": "협업 아이디어를 공유하고 피드백을 주고받으며 프로젝트를 성장시키세요.",
+    "metrics": {
+      "posts": "누적 게시글",
+      "pinned": "고정 글",
+      "popular": "인기 글"
+    }
+  },
+  "newPost": {
+    "lead": "CREATE",
+    "title": "새로운 이야기를 남겨보세요",
+    "description": "카테고리를 선택하고 협업 제안, 후기, 아이디어를 자유롭게 공유할 수 있습니다.",
+    "categoryLabel": "카테고리",
+    "attachmentLabel": "첨부 파일",
+    "attachmentCta": "파일 업로드",
+    "attachmentHint": "이미지, PDF, ZIP 등 최대 10MB",
+    "attachmentRemove": "삭제",
+    "notice": "등록된 첨부 파일은 데모 환경에서만 보관됩니다.",
+    "submit": "게시글 등록",
+    "submitting": "등록 중..."
+  },
+  "validation": {
+    "required": "제목과 내용을 입력해주세요."
+  },
+  "detail": {
+    "errorTitle": "게시글을 불러오지 못했습니다.",
+    "errorDescription": "삭제되었거나 권한이 없는 게시글일 수 있습니다. 커뮤니티 목록으로 돌아가 다시 시도해주세요.",
+    "dislikeLabel": "비추천 {{count}}",
+    "report": "신고",
+    "writeComment": "댓글 작성",
+    "authorPosts": "작성글 보기",
+    "authorProfile": "프로필 이동",
+    "authorMessage": "메세지 보내기",
+    "authorPostsTitle": "{{name}}님의 다른 글",
+    "authorPostsError": "작성글을 불러오지 못했습니다.",
+    "messageTitle": "{{name}}님에게 메세지",
+    "reportTitle": "게시글 신고",
+    "reportDescription": "신고 사유를 포함해 플랫폼 운영팀에 전달됩니다.",
+    "reportCancel": "닫기",
+    "reportConfirm": "신고 제출",
+    "reportSubmitted": "신고 완료",
+    "reportSuccess": "신고가 접수되었습니다. 빠르게 확인하겠습니다."
+  },
+  "messages": {
+    "autoReply": "메세지를 확인하고 곧 답장드릴게요!",
+    "empty": "아직 대화가 시작되지 않았습니다.",
+    "me": "나",
+    "placeholder": "쪽지 내용을 입력하세요",
+    "send": "메세지 보내기"
+  }
 }

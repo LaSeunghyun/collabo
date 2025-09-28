@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 import { cache } from 'react';
-import { Prisma, PostType } from '@/types/prisma';
+import { Prisma, PostType, UserRole } from '@/types/prisma';
 
 import type { SessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
@@ -43,6 +43,15 @@ export interface ArtistProfile {
   events: ArtistEventSummary[];
   isFollowing: boolean;
   createdAt: string;
+}
+
+export interface ArtistDirectoryEntry {
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+  bio: string | null;
+  followerCount: number;
+  projectCount: number;
 }
 
 const parseSocialLinks = (links: Prisma.JsonValue | null): ArtistSocialLink[] => {
@@ -230,3 +239,62 @@ export const getArtistProfile = cache(async (artistId: string, viewer?: SessionU
 });
 
 export type GetArtistProfileResult = NonNullable<Awaited<ReturnType<typeof getArtistProfile>>>;
+
+export const listFeaturedArtists = cache(async (): Promise<ArtistDirectoryEntry[]> => {
+  try {
+    const artists = await prisma.user.findMany({
+      where: { role: UserRole.CREATOR },
+      select: {
+        id: true,
+        name: true,
+        avatarUrl: true,
+        bio: true,
+        _count: {
+          select: {
+            followers: true,
+            projects: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 12
+    });
+
+    return artists.map((artist) => ({
+      id: artist.id,
+      name: artist.name,
+      avatarUrl: artist.avatarUrl,
+      bio: artist.bio,
+      followerCount: artist._count.followers,
+      projectCount: artist._count.projects
+    } satisfies ArtistDirectoryEntry));
+  } catch (error) {
+    console.warn('Failed to fetch artist directory, returning demo list.', error);
+    return [
+      {
+        id: 'artist-1',
+        name: '콜라보 스타',
+        avatarUrl: null,
+        bio: '팬과 함께 새로운 무대를 기획하는 K-POP 그룹입니다.',
+        followerCount: 1280,
+        projectCount: 6
+      },
+      {
+        id: 'artist-2',
+        name: '비트메이커즈',
+        avatarUrl: null,
+        bio: 'AI 사운드와 라이브 밴드를 결합한 퍼포먼스를 선보입니다.',
+        followerCount: 940,
+        projectCount: 4
+      },
+      {
+        id: 'artist-3',
+        name: '스튜디오 리드',
+        avatarUrl: null,
+        bio: '아티스트 협업을 위한 XR 스테이지를 운영하는 크리에이터 팀.',
+        followerCount: 760,
+        projectCount: 5
+      }
+    ];
+  }
+});

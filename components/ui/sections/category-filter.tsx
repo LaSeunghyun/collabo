@@ -5,7 +5,6 @@ import { ChevronDown } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useFilterStore } from '@/lib/stores/use-filter-store';
 import { fetchCategories } from '@/lib/api/categories';
-import type { Category } from '@/app/api/categories/route';
 
 export function CategoryFilter() {
   const { category, setCategory } = useFilterStore();
