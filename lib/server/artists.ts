@@ -269,32 +269,7 @@ export const listFeaturedArtists = cache(async (): Promise<ArtistDirectoryEntry[
       projectCount: artist._count.projects
     } satisfies ArtistDirectoryEntry));
   } catch (error) {
-    console.warn('Failed to fetch artist directory, returning demo list.', error);
-    return [
-      {
-        id: 'artist-1',
-        name: '콜라보 스타',
-        avatarUrl: null,
-        bio: '팬과 함께 새로운 무대를 기획하는 K-POP 그룹입니다.',
-        followerCount: 1280,
-        projectCount: 6
-      },
-      {
-        id: 'artist-2',
-        name: '비트메이커즈',
-        avatarUrl: null,
-        bio: 'AI 사운드와 라이브 밴드를 결합한 퍼포먼스를 선보입니다.',
-        followerCount: 940,
-        projectCount: 4
-      },
-      {
-        id: 'artist-3',
-        name: '스튜디오 리드',
-        avatarUrl: null,
-        bio: '아티스트 협업을 위한 XR 스테이지를 운영하는 크리에이터 팀.',
-        followerCount: 760,
-        projectCount: 5
-      }
-    ];
+    console.error('Failed to fetch artist directory.', error);
+    return [];
   }
 });

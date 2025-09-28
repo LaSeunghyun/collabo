@@ -57,7 +57,14 @@ const fetchProjectsFromDb = async (options?: ProjectSummaryOptions) => {
   return prisma.project.findMany({
     where,
     include: {
-      _count: { select: { fundings: true } }
+      _count: { select: { fundings: true } },
+      owner: {
+        select: {
+          id: true,
+          name: true,
+          avatarUrl: true
+        }
+      }
     },
     orderBy: {
       createdAt: 'desc'
@@ -88,9 +95,9 @@ const toProjectSummary = (project: ProjectWithCounts): ProjectSummary => {
     createdAt: project.createdAt,
     updatedAt: project.updatedAt,
     owner: {
-      id: project.ownerId,
-      name: 'Unknown',
-      avatarUrl: null
+      id: project.owner.id,
+      name: project.owner.name,
+      avatarUrl: project.owner.avatarUrl
     },
     _count: {
       fundings: project._count.fundings
@@ -119,7 +126,14 @@ export const getProjectSummaryById = async (id: string) => {
   const project = await prisma.project.findUnique({
     where: { id },
     include: {
-      _count: { select: { fundings: true } }
+      _count: { select: { fundings: true } },
+      owner: {
+        select: {
+          id: true,
+          name: true,
+          avatarUrl: true
+        }
+      }
     }
   });
 
