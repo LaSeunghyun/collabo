@@ -59,27 +59,29 @@ export default withAuth(
   {
     callbacks: {
       authorized: ({ token, req }) => {
+        const pathname = req.nextUrl.pathname;
+
         // 비회원도 접근 가능한 페이지들
         const publicPaths = [
           '/',
           '/projects',
-          '/projects/[id]',
           '/community',
           '/help',
           '/api/community',
-          '/api/projects',
-          '/api/projects/[id]'
+          '/api/projects'
         ];
 
-        const isPublicPath = publicPaths.some(path => {
-          if (path.includes('[id]')) {
-            return req.nextUrl.pathname.match(new RegExp(path.replace('[id]', '[^/]+')));
-          }
-          return req.nextUrl.pathname === path || req.nextUrl.pathname.startsWith(path + '/');
-        });
+        // 정확한 경로 매칭
+        const isExactMatch = publicPaths.includes(pathname);
+
+        // 동적 경로 매칭
+        const isDynamicMatch =
+          pathname.match(/^\/projects\/[^/]+$/) || // /projects/[id]
+          pathname.match(/^\/api\/projects\/[^/]+$/) || // /api/projects/[id]
+          pathname.startsWith('/api/projects/'); // /api/projects/ 하위 모든 경로
 
         // 공개 페이지는 토큰 없이도 접근 가능
-        if (isPublicPath) {
+        if (isExactMatch || isDynamicMatch) {
           return true;
         }
 
