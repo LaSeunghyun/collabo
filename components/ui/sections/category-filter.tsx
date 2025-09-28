@@ -10,7 +10,7 @@ import type { Category } from '@/app/api/categories/route';
 export function CategoryFilter() {
   const { category, setCategory } = useFilterStore();
   const [open, setOpen] = useState<string | null>(null);
-  
+
   const { data: categories = [], isLoading } = useQuery({
     queryKey: ['categories'],
     queryFn: fetchCategories,
@@ -43,9 +43,8 @@ export function CategoryFilter() {
             key={item.id}
             onMouseEnter={() => setOpen(item.id)}
             onMouseLeave={() => setOpen(null)}
-            className={`group relative cursor-pointer rounded-2xl border border-white/10 px-4 py-3 transition ${
-              category === item.id ? 'bg-primary text-primary-foreground' : 'bg-neutral-950/60 hover:bg-white/10'
-            }`}
+            className={`group relative cursor-pointer rounded-2xl border border-white/10 px-4 py-3 transition ${category === item.id ? 'bg-primary text-primary-foreground' : 'bg-neutral-950/60 hover:bg-white/10'
+              }`}
             role="button"
             tabIndex={0}
             onKeyDown={(event) => {
