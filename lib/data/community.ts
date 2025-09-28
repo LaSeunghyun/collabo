@@ -16,6 +16,9 @@ export interface CommunityPost {
   liked?: boolean;
   isPinned?: boolean;
   isTrending?: boolean;
+  dislikes?: number;
+  reports?: number;
+  authorId?: string;
   author?: CommunityPostAuthor;
 }
 
@@ -35,8 +38,9 @@ export interface CommunityFeedResponse {
     nextCursor: string | null;
     total: number;
     sort: 'recent' | 'popular' | 'trending';
-    category?: string | null;
+    categories?: string[];
     search?: string | null;
+    authorId?: string | null;
   };
 }
 
@@ -44,6 +48,8 @@ export interface CommunityListParams {
   projectId?: string;
   sort?: 'recent' | 'popular' | 'trending';
   category?: string | null;
+  categories?: string[] | null;
+  authorId?: string | null;
   search?: string | null;
   cursor?: string | null;
   limit?: number;
@@ -59,7 +65,15 @@ export const demoCommunityPosts: CommunityPost[] = [
     category: 'notice',
     projectId: '1',
     createdAt: '2024-07-05T09:00:00.000Z',
-    isPinned: true
+    isPinned: true,
+    dislikes: 1,
+    reports: 0,
+    authorId: 'artist-1',
+    author: {
+      id: 'artist-1',
+      name: '콜라보 스타',
+      avatarUrl: null
+    }
   },
   {
     id: 'post-2',
@@ -69,7 +83,15 @@ export const demoCommunityPosts: CommunityPost[] = [
     comments: 4,
     category: 'general',
     projectId: '2',
-    createdAt: '2024-06-28T09:00:00.000Z'
+    createdAt: '2024-06-28T09:00:00.000Z',
+    dislikes: 0,
+    reports: 0,
+    authorId: 'artist-2',
+    author: {
+      id: 'artist-2',
+      name: '팬클럽 매니저',
+      avatarUrl: null
+    }
   },
   {
     id: 'post-3',
@@ -78,7 +100,15 @@ export const demoCommunityPosts: CommunityPost[] = [
     likes: 12,
     comments: 6,
     category: 'collab',
-    createdAt: '2024-07-10T12:00:00.000Z'
+    createdAt: '2024-07-10T12:00:00.000Z',
+    dislikes: 2,
+    reports: 1,
+    authorId: 'artist-3',
+    author: {
+      id: 'artist-3',
+      name: '스튜디오 리드',
+      avatarUrl: null
+    }
   }
 ];
 
@@ -120,6 +150,8 @@ export function listDemoCommunityPosts(params: CommunityListParams = {}): Commun
     projectId,
     sort = 'recent',
     category,
+    categories,
+    authorId,
     search,
     cursor,
     limit = 10
@@ -131,16 +163,26 @@ export function listDemoCommunityPosts(params: CommunityListParams = {}): Commun
     ? communityPostsStore.filter((post) => post.projectId === projectId)
     : [...communityPostsStore];
 
-  const filteredByCategory = category && category !== 'all'
-    ? filteredByProject.filter((post) => post.category === category)
+  const normalizedCategories = categories && categories.length > 0
+    ? categories.filter((item) => item && item !== 'all')
+    : category && category !== 'all'
+      ? [category]
+      : [];
+
+  const filteredByCategory = normalizedCategories.length
+    ? filteredByProject.filter((post) => normalizedCategories.includes(post.category))
     : filteredByProject;
 
+  const filteredByAuthor = authorId
+    ? filteredByCategory.filter((post) => post.authorId === authorId)
+    : filteredByCategory;
+
   const filteredBySearch = search
-    ? filteredByCategory.filter((post) =>
+    ? filteredByAuthor.filter((post) =>
         post.title.toLowerCase().includes(search.toLowerCase()) ||
         post.content.toLowerCase().includes(search.toLowerCase())
       )
-    : filteredByCategory;
+    : filteredByAuthor;
 
   const sorted = filteredBySearch.slice().sort((a, b) => {
     if (sort === 'popular' || sort === 'trending') {
@@ -183,8 +225,9 @@ export function listDemoCommunityPosts(params: CommunityListParams = {}): Commun
       nextCursor: hasNext ? items[items.length - 1]?.id ?? null : null,
       total: sorted.length,
       sort,
-      category: category ?? null,
-      search: search ?? null
+      categories: normalizedCategories.length ? normalizedCategories : ['all'],
+      search: search ?? null,
+      authorId: authorId ?? null
     }
   };
 }

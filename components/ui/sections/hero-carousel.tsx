@@ -6,7 +6,6 @@ import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
 import { useQuery } from '@tanstack/react-query';
 import { fetchHeroSlides } from '@/lib/api/hero-slides';
-import type { HeroSlide } from '@/app/api/hero-slides/route';
 
 export function HeroCarousel() {
   const [emblaRef] = useEmblaCarousel({ loop: true }, [Autoplay({ delay: 6000 })]);

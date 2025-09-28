@@ -12,6 +12,7 @@ export function Header() {
 
   const navigationItems = [
     { href: '/projects', label: '프로젝트' },
+    { href: '/artists', label: '아티스트' },
     { href: '/partners', label: '파트너' },
     { href: '/community', label: '커뮤니티' },
     { href: '/announcements', label: '공지사항', unreadCount }
