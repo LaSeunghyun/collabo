@@ -68,7 +68,8 @@ export default withAuth(
           '/community',
           '/help',
           '/api/community',
-          '/api/projects'
+          '/api/projects',
+          '/api/test-accounts'
         ];
 
         // 정확한 경로 매칭
