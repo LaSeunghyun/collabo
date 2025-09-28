@@ -2,15 +2,40 @@
 
 import { useSession, signOut } from 'next-auth/react';
 import { LogOut, User, Mail, Calendar } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
+import { useEffect, useState } from 'react';
+
+interface UserProfile {
+  createdAt?: string;
+  name?: string | null;
+  email?: string | null;
+}
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
-  const { t } = useTranslation();
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
 
   const handleLogout = () => {
     signOut({ callbackUrl: '/' });
   };
+
+  // 사용자 프로필 정보 가져오기
+  useEffect(() => {
+    if (session?.user?.id) {
+      setIsLoadingProfile(true);
+      fetch(`/api/users/${session.user.id}`)
+        .then(res => res.json())
+        .then(data => {
+          setUserProfile(data);
+        })
+        .catch(err => {
+          console.error('Failed to fetch user profile:', err);
+        })
+        .finally(() => {
+          setIsLoadingProfile(false);
+        });
+    }
+  }, [session?.user?.id]);
 
   if (status === 'loading') {
     return (
@@ -80,9 +105,11 @@ export default function ProfilePage() {
                 가입일
               </p>
               <p className="text-sm text-white/80">
-                {session?.user?.createdAt
-                  ? new Date(session.user.createdAt).toLocaleDateString('ko-KR')
-                  : '정보 없음'
+                {isLoadingProfile
+                  ? '로딩 중...'
+                  : userProfile?.createdAt
+                    ? new Date(userProfile.createdAt).toLocaleDateString('ko-KR')
+                    : '정보 없음'
                 }
               </p>
             </div>
