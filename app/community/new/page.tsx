@@ -1,6 +1,6 @@
 'use client';
 
-import { ChangeEvent, FormEvent, useMemo, useState, useEffect } from 'react';
+import { ChangeEvent, FormEvent, useMemo, useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
@@ -26,7 +26,7 @@ interface NewPostFormValues {
   attachments: File[];
 }
 
-export default function CommunityNewPostPage() {
+function CommunityNewPostForm() {
   const { t } = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -330,5 +330,31 @@ export default function CommunityNewPostPage() {
         </footer>
       </form>
     </div>
+  );
+}
+
+export default function CommunityNewPostPage() {
+  return (
+    <Suspense fallback={
+      <div className="mx-auto max-w-4xl px-4 pb-20">
+        <div className="pt-10">
+          <Link
+            href="/community"
+            className="inline-flex items-center gap-2 text-sm text-white/60 transition hover:text-white"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            커뮤니티로 돌아가기
+          </Link>
+        </div>
+        <div className="mt-6 flex h-96 items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="mx-auto h-8 w-8 animate-spin text-white/60" />
+            <p className="mt-4 text-sm text-white/60">로딩 중...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <CommunityNewPostForm />
+    </Suspense>
   );
 }
