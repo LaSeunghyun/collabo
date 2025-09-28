@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 import { cache } from 'react';
-import { Prisma, PostType } from '@/types/prisma';
+import { Prisma, PostType, UserRole } from '@/types/prisma';
 
 import type { SessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
@@ -43,6 +43,15 @@ export interface ArtistProfile {
   events: ArtistEventSummary[];
   isFollowing: boolean;
   createdAt: string;
+}
+
+export interface ArtistDirectoryEntry {
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+  bio: string | null;
+  followerCount: number;
+  projectCount: number;
 }
 
 const parseSocialLinks = (links: Prisma.JsonValue | null): ArtistSocialLink[] => {
@@ -230,3 +239,37 @@ export const getArtistProfile = cache(async (artistId: string, viewer?: SessionU
 });
 
 export type GetArtistProfileResult = NonNullable<Awaited<ReturnType<typeof getArtistProfile>>>;
+
+export const listFeaturedArtists = cache(async (): Promise<ArtistDirectoryEntry[]> => {
+  try {
+    const artists = await prisma.user.findMany({
+      where: { role: UserRole.CREATOR },
+      select: {
+        id: true,
+        name: true,
+        avatarUrl: true,
+        bio: true,
+        _count: {
+          select: {
+            followers: true,
+            projects: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 12
+    });
+
+    return artists.map((artist) => ({
+      id: artist.id,
+      name: artist.name,
+      avatarUrl: artist.avatarUrl,
+      bio: artist.bio,
+      followerCount: artist._count.followers,
+      projectCount: artist._count.projects
+    } satisfies ArtistDirectoryEntry));
+  } catch (error) {
+    console.error('Failed to fetch artist directory.', error);
+    return [];
+  }
+});

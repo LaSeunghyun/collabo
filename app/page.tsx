@@ -1,11 +1,12 @@
 'use client';
 
 import { useMemo } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
+import { Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-import { HeroCarousel } from '@/components/ui/sections/hero-carousel';
 import { CategoryFilter } from '@/components/ui/sections/category-filter';
 import { ProjectCard } from '@/components/ui/cards/project-card';
 import { SectionHeader } from '@/components/ui/headers/section-header';
@@ -13,15 +14,26 @@ import { StoreCard } from '@/components/ui/cards/store-card';
 import type { ProjectSummary } from '@/lib/api/projects';
 import { fetchProjects } from '@/lib/api/projects';
 import { fetchStoreItems } from '@/lib/api/store';
-import type { StoreItem } from '@/app/api/store/route';
+import type { CommunityFeedResponse } from '@/lib/data/community';
+
+interface ArtistListResponse {
+  artists: {
+    id: string;
+    name: string;
+    avatarUrl: string | null;
+    bio: string | null;
+    followerCount: number;
+    projectCount: number;
+  }[];
+}
 
 export default function HomePage() {
   const { t } = useTranslation();
-  
+
   const { data: storeItems = [], isLoading: storeLoading } = useQuery({
     queryKey: ['store-items'],
     queryFn: fetchStoreItems,
-    staleTime: 1000 * 60 * 5 // 5분
+    staleTime: 1000 * 60 * 5
   });
 
   const { data: projects = [], isLoading, isError, refetch } = useQuery({
@@ -30,16 +42,35 @@ export default function HomePage() {
     staleTime: 1000 * 60
   });
 
+  const { data: artistsResponse } = useQuery<ArtistListResponse>({
+    queryKey: ['artists', 'home'],
+    queryFn: async () => {
+      const res = await fetch('/api/artists?limit=4');
+      if (!res.ok) {
+        throw new Error('Failed to load artists');
+      }
+      return (await res.json()) as ArtistListResponse;
+    },
+    staleTime: 60_000
+  });
+
+  const { data: communityResponse } = useQuery<CommunityFeedResponse>({
+    queryKey: ['community', 'home'],
+    queryFn: async () => {
+      const res = await fetch('/api/community?sort=trending&limit=5');
+      if (!res.ok) {
+        throw new Error('Failed to load community');
+      }
+      return (await res.json()) as CommunityFeedResponse;
+    },
+    staleTime: 15_000
+  });
+
+  const artists = artistsResponse?.artists ?? [];
+  const communityPosts = communityResponse?.posts ?? [];
+
   const popularProjects = useMemo(() => {
     return [...projects].sort((a, b) => b.participants - a.participants).slice(0, 6);
-  }, [projects]);
-
-  const closingSoonProjects = useMemo(() => {
-    return [...projects].sort((a, b) => a.remainingDays - b.remainingDays).slice(0, 6);
-  }, [projects]);
-
-  const themedProjects = useMemo(() => {
-    return projects.slice(0, 6);
   }, [projects]);
 
   const ProjectSkeleton = ({ className = '' }: { className?: string }) => (
@@ -59,22 +90,12 @@ export default function HomePage() {
     </div>
   );
 
-  const renderProjects = (
-    items: ProjectSummary[],
-    options: {
-      layout: 'grid' | 'carousel';
-      skeletonCount: number;
-      wrapperClassName: string;
-      itemClassName?: string;
-    }
-  ) => {
+  const renderProjects = (items: ProjectSummary[]) => {
     if (isLoading) {
       return (
-        <div className={options.wrapperClassName}>
-          {Array.from({ length: options.skeletonCount }).map((_, index) => (
-            <div key={`skeleton-${index}`} className={options.itemClassName ?? ''}>
-              <ProjectSkeleton className="animate-pulse" />
-            </div>
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <ProjectSkeleton key={`skeleton-${index}`} className="animate-pulse" />
           ))}
         </div>
       );
@@ -83,13 +104,13 @@ export default function HomePage() {
     if (isError) {
       return (
         <div className="rounded-3xl border border-red-500/30 bg-red-500/10 p-6 text-sm text-red-100">
-          <p>{'프로젝트를 불러오지 못했어요.'}</p>
+          <p>{t('home.errors.projects')}</p>
           <button
             type="button"
             onClick={() => refetch()}
             className="mt-4 inline-flex items-center rounded-full border border-red-400/40 px-4 py-2 text-xs font-semibold text-red-100 transition hover:border-red-300/60 hover:text-red-50"
           >
-            다시 시도
+            {t('actions.viewMore')}
           </button>
         </div>
       );
@@ -98,27 +119,15 @@ export default function HomePage() {
     if (items.length === 0) {
       return (
         <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-sm text-white/60">
-          아직 표시할 프로젝트가 없어요.
-        </div>
-      );
-    }
-
-    if (options.layout === 'grid') {
-      return (
-        <div className={options.wrapperClassName}>
-          {items.map((project) => (
-            <ProjectCard key={project.id} project={project} />
-          ))}
+          {t('home.empty.projects')}
         </div>
       );
     }
 
     return (
-      <div className={options.wrapperClassName}>
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         {items.map((project) => (
-          <div key={project.id} className={options.itemClassName ?? ''}>
-            <ProjectCard project={project} />
-          </div>
+          <ProjectCard key={project.id} project={project} />
         ))}
       </div>
     );
@@ -126,22 +135,57 @@ export default function HomePage() {
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-16 px-4 pb-20">
-      <section className="pt-4 lg:pt-0">
-        <HeroCarousel />
+      <section className="pt-6">
+        <div className="grid gap-8 rounded-4xl border border-white/10 bg-gradient-to-br from-neutral-900 via-neutral-950 to-neutral-950 p-10 lg:grid-cols-[3fr_2fr] lg:items-center">
+          <div className="space-y-6">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-1 text-xs font-semibold uppercase tracking-[0.4em] text-white/60">
+              <Sparkles className="h-4 w-4" />
+              {t('home.hero.tagline')}
+            </span>
+            <h1 className="text-4xl font-semibold leading-tight text-white md:text-5xl">
+              {t('home.hero.title')}
+            </h1>
+            <p className="max-w-2xl text-base text-white/70">{t('home.hero.subtitle')}</p>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href="/artists"
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
+              >
+                {t('home.hero.ctaArtists')}
+              </Link>
+              <Link
+                href="/community"
+                className="inline-flex items-center gap-2 rounded-full border border-white/20 px-5 py-2 text-sm font-semibold text-white transition hover:border-white/40 hover:text-white"
+              >
+                {t('home.hero.ctaCommunity')}
+              </Link>
+            </div>
+          </div>
+          <div className="grid gap-4 rounded-3xl border border-white/10 bg-white/5 p-6 text-sm text-white/70">
+            <div className="flex items-center justify-between">
+              <span>{t('home.hero.metrics.projects')}</span>
+              <span className="text-2xl font-semibold text-white">{projects.length}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>{t('home.hero.metrics.community')}</span>
+              <span className="text-2xl font-semibold text-white">{communityPosts.length}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>{t('home.hero.metrics.artists')}</span>
+              <span className="text-2xl font-semibold text-white">{artists.length}</span>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[2fr_1fr]">
         <div className="space-y-6">
           <SectionHeader
-            title={t('home.livePopular')}
+            title={t('home.sections.spotlight')}
             href="/projects"
             ctaLabel={t('actions.viewMore') ?? undefined}
           />
-          {renderProjects(popularProjects, {
-            layout: 'grid',
-            skeletonCount: 6,
-            wrapperClassName: 'grid gap-6 md:grid-cols-2 xl:grid-cols-3'
-          })}
+          {renderProjects(popularProjects)}
         </div>
         <div className="space-y-4 rounded-3xl border border-white/10 bg-white/5 p-6">
           <h3 className="text-sm font-semibold uppercase tracking-[0.3em] text-white/60">
@@ -159,33 +203,99 @@ export default function HomePage() {
         </div>
       </section>
 
-      <CategoryFilter />
-
       <section>
         <SectionHeader
-          title={t('home.closingSoon')}
-          href="/projects?sort=closing"
+          title={t('home.sections.artistNetwork')}
+          href="/artists"
           ctaLabel={t('actions.viewMore') ?? undefined}
         />
-        {renderProjects(closingSoonProjects, {
-          layout: 'carousel',
-          skeletonCount: 4,
-          wrapperClassName: 'flex gap-6 overflow-x-auto pb-4',
-          itemClassName: 'min-w-[280px] max-w-xs flex-1'
-        })}
+        <div className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+          {artists.length === 0
+            ? Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="h-56 animate-pulse rounded-3xl border border-white/10 bg-white/5" />
+            ))
+            : artists.map((artist) => (
+              <Link
+                key={artist.id}
+                href={`/artists/${artist.id}`}
+                className="group flex flex-col gap-3 rounded-3xl border border-white/10 bg-white/5 p-5 transition hover:border-primary/40 hover:bg-white/10"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="relative h-14 w-14 overflow-hidden rounded-2xl border border-white/10 bg-neutral-900">
+                    {artist.avatarUrl ? (
+                      <Image src={artist.avatarUrl} alt={artist.name} fill className="object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-lg font-semibold text-white/70">
+                        {artist.name.slice(0, 2)}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-base font-semibold text-white group-hover:text-primary">{artist.name}</p>
+                    <p className="text-xs uppercase tracking-[0.3em] text-white/50">
+                      {t('artist.directory.projectCount', { count: artist.projectCount })}
+                    </p>
+                  </div>
+                </div>
+                <p className="flex-1 text-sm text-white/70 line-clamp-3">{artist.bio ?? t('artist.profile.emptyBioDetailed')}</p>
+                <div className="flex items-center justify-between text-xs text-white/60">
+                  <span>{t('artist.directory.followerCount', { count: artist.followerCount })}</span>
+                  <span className="rounded-full border border-white/10 px-3 py-1 text-white/70">
+                    {t('artist.directory.viewProfile')}
+                  </span>
+                </div>
+              </Link>
+            ))}
+        </div>
       </section>
 
       <section>
         <SectionHeader
-          title={t('home.themes')}
-          href="/projects?theme=1"
+          title={t('home.sections.communityPulse')}
+          href="/community"
           ctaLabel={t('actions.viewMore') ?? undefined}
         />
-        {renderProjects(themedProjects, {
-          layout: 'grid',
-          skeletonCount: 6,
-          wrapperClassName: 'grid gap-6 md:grid-cols-2 xl:grid-cols-3'
-        })}
+        <div className="mt-6 space-y-3">
+          {communityPosts.length === 0 ? (
+            <div className="rounded-3xl border border-dashed border-white/10 bg-white/5 p-10 text-center text-sm text-white/60">
+              {t('home.empty.community')}
+            </div>
+          ) : (
+            communityPosts.map((post) => (
+              <Link
+                key={post.id}
+                href={`/community/${post.id}`}
+                className="flex flex-col gap-3 rounded-3xl border border-white/10 bg-white/5 p-5 transition hover:border-primary/40 hover:bg-white/10"
+              >
+                <div className="flex items-center gap-3 text-xs uppercase tracking-[0.3em] text-white/50">
+                  <span className="rounded-full bg-white/10 px-3 py-1 text-white">
+                    {t(`community.filters.${post.category}`)}
+                  </span>
+                  {post.isTrending ? (
+                    <span className="rounded-full bg-primary/20 px-3 py-1 text-primary">
+                      {t('community.badges.trending')}
+                    </span>
+                  ) : null}
+                </div>
+                <h3 className="text-lg font-semibold text-white">{post.title}</h3>
+                <p className="text-sm text-white/70 line-clamp-2">{post.content}</p>
+                <div className="flex items-center justify-between text-xs text-white/50">
+                  <span>{post.author?.name ?? t('community.defaultGuestName')}</span>
+                  <span>{t('community.likesLabel_other', { count: post.likes })}</span>
+                </div>
+              </Link>
+            ))
+          )}
+        </div>
+      </section>
+
+      <section>
+        <SectionHeader
+          title={t('home.sections.resources')}
+          href="/partners"
+          ctaLabel={t('actions.viewMore') ?? undefined}
+        />
+        <CategoryFilter />
       </section>
 
       <section>
@@ -202,7 +312,7 @@ export default function HomePage() {
           </div>
         ) : storeItems.length === 0 ? (
           <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-sm text-white/60">
-            아직 판매 중인 상품이 없어요.
+            {t('home.empty.store')}
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-3">

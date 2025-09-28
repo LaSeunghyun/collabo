@@ -28,13 +28,37 @@
     "viewMoreAria": "{{title}} 섹션 더 보기"
   },
   "home": {
-    "heroTitle": "아티스트와 팬이 함께 만드는 새로운 경험",
-    "heroSubtitle": "실시간 인기 프로젝트와 프리미엄 클래스를 만나보세요.",
+    "hero": {
+      "tagline": "Co-create",
+      "title": "아티스트 협업과 커뮤니티가 만나는 곳",
+      "subtitle": "실시간으로 아이디어를 검증하고, 함께 프로젝트를 실행할 팀을 찾아보세요.",
+      "ctaArtists": "아티스트 살펴보기",
+      "ctaCommunity": "커뮤니티 둘러보기",
+      "metrics": {
+        "projects": "진행 중 프로젝트",
+        "community": "트렌딩 게시글",
+        "artists": "참여 아티스트"
+      }
+    },
     "livePopular": "실시간 인기",
     "closingSoon": "마감 임박",
     "themes": "테마별 추천",
     "categoryFilter": "카테고리 필터",
     "tagFilter": "태그",
+    "sections": {
+      "spotlight": "콜라보레이션 스포트라이트",
+      "artistNetwork": "아티스트 네트워크",
+      "communityPulse": "커뮤니티 펄스",
+      "resources": "협업 리소스"
+    },
+    "errors": {
+      "projects": "프로젝트를 불러오지 못했어요."
+    },
+    "empty": {
+      "projects": "아직 표시할 프로젝트가 없어요.",
+      "community": "아직 공유된 커뮤니티 글이 없습니다.",
+      "store": "아직 판매 중인 상품이 없어요."
+    },
     "store": {
       "title": "스토어",
       "items": {
@@ -64,8 +88,8 @@
     "newest": "최신순"
   },
   "community": {
-    "title": "커뮤니티",
-    "description": "프로젝트 후원자들과 실시간으로 소통하고, 아이디어와 피드백을 공유하세요.",
+    "title": "커뮤니티 허브",
+    "description": "아티스트 협업 아이디어를 나누고 실시간 피드백을 주고받는 공간입니다.",
     "writePlaceholder": "커뮤니티에 이야기를 공유하세요",
     "sortRecent": "최신순",
     "sortPopular": "인기순",
@@ -98,6 +122,19 @@
       "following": "팔로잉",
       "processing": "처리 중...",
       "editProfile": "프로필 편집"
+    },
+    "directory": {
+      "tagline": "Artist Network",
+      "title": "협업 아티스트 살펴보기",
+      "subtitle": "팬과 함께 프로젝트를 만드는 아티스트를 탐색하고 팔로우하세요.",
+      "countLabel": "등록 아티스트",
+      "countHint": "실시간 업데이트",
+      "error": "아티스트 목록을 불러오지 못했습니다.",
+      "empty": "아직 공개된 아티스트가 없습니다. 첫 협업을 제안해보세요.",
+      "projectCount": "프로젝트 {{count}}개",
+      "followerCount": "팔로워 {{count}}명",
+      "viewProfile": "프로필 보기",
+      "retry": "다시 시도"
     },
     "metrics": {
       "followers": "팔로워",

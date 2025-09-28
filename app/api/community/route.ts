@@ -3,13 +3,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { CommunityCategory, PostType } from '@prisma/client';
 import type { Prisma } from '@prisma/client';
 
+import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
+import { evaluateAuthorization } from '@/lib/auth/session';
+import type { SessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
 
-import {
-  addDemoCommunityPost,
-  listDemoCommunityPosts,
-  type CommunityFeedResponse
-} from '@/lib/data/community';
+import type { CommunityFeedResponse } from '@/lib/data/community';
 
 const parseCategory = (value: string | null): CommunityCategory | undefined => {
   if (!value) {
@@ -44,17 +43,20 @@ const serializePost = (
     author: { id: string; name: string; avatarUrl: string | null };
     _count: { likes: number; comments: number };
   },
-  trendingIds: Set<string>
+  trendingIds: Set<string>,
+  likedIds: Set<string>
 ) => ({
   id: post.id,
   title: post.title,
   content: post.content,
   likes: post._count.likes,
   comments: post._count.comments,
+  dislikes: 0,
+  reports: 0,
   category: post.category.toLowerCase(),
   projectId: post.projectId ?? undefined,
   createdAt: post.createdAt.toISOString(),
-  liked: false,
+  liked: likedIds.has(post.id),
   isPinned: post.isPinned,
   isTrending: trendingIds.has(post.id),
   author: {
@@ -69,17 +71,27 @@ export async function GET(request: NextRequest) {
   const sortParam = searchParams.get('sort');
   const sort = sortParam === 'popular' || sortParam === 'trending' ? sortParam : 'recent';
   const projectId = searchParams.get('projectId') ?? undefined;
-  const categoryParam = parseCategory(searchParams.get('category'));
+  const categoryValues = searchParams
+    .getAll('category')
+    .map((value) => parseCategory(value))
+    .filter((value): value is CommunityCategory => Boolean(value));
+  const uniqueCategories = Array.from(new Set(categoryValues));
+  const categoryParam = uniqueCategories.length ? uniqueCategories : undefined;
   const searchTerm = searchParams.get('search') ?? undefined;
   const cursor = searchParams.get('cursor') ?? undefined;
   const limitParam = Number.parseInt(searchParams.get('limit') ?? '10', 10);
   const limit = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(limitParam, 50) : 10;
+  const authorId = searchParams.get('authorId') ?? undefined;
 
   try {
+    const { user: viewer } = await evaluateAuthorization();
+    const viewerId = viewer?.id;
+
     const baseWhere: Prisma.PostWhereInput = {
       type: PostType.DISCUSSION,
       ...(projectId ? { projectId } : {}),
-      ...(categoryParam ? { category: categoryParam } : {}),
+      ...(categoryParam ? { category: { in: categoryParam } } : {}),
+      ...(authorId ? { authorId } : {}),
       ...(searchTerm
         ? {
           OR: [
@@ -144,32 +156,45 @@ export async function GET(request: NextRequest) {
 
     const total = await prisma.post.count({ where: { ...baseWhere, isPinned: false } });
 
+    const combinedPosts = [
+      ...sliced,
+      ...pinnedPosts,
+      ...trendingCandidates.slice(0, 5)
+    ];
+    const uniqueIds = Array.from(new Set(combinedPosts.map((post) => post.id)));
+    const likedIds = viewerId && uniqueIds.length
+      ? new Set(
+          (
+            await prisma.postLike.findMany({
+              where: { userId: viewerId, postId: { in: uniqueIds } },
+              select: { postId: true }
+            })
+          ).map((like) => like.postId)
+        )
+      : new Set<string>();
+
     const response: CommunityFeedResponse = {
-      posts: sliced.map((post) => serializePost(post, trendingIds)),
-      pinned: pinnedPosts.map((post) => serializePost(post, trendingIds)),
-      popular: trendingCandidates.slice(0, 5).map((post) => serializePost(post, trendingIds)),
+      posts: sliced.map((post) => serializePost(post, trendingIds, likedIds)),
+      pinned: pinnedPosts.map((post) => serializePost(post, trendingIds, likedIds)),
+      popular: trendingCandidates
+        .slice(0, 5)
+        .map((post) => serializePost(post, trendingIds, likedIds)),
       meta: {
         nextCursor: hasNext ? sliced[sliced.length - 1]?.id ?? null : null,
         total,
         sort: sort as 'recent' | 'popular' | 'trending',
-        category: categoryParam ? categoryParam.toLowerCase() : null,
-        search: searchTerm ?? null
+        categories: categoryParam?.length
+          ? categoryParam.map((category) => category.toLowerCase())
+          : ['all'],
+        search: searchTerm ?? null,
+        authorId: authorId ?? null
       }
     };
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Failed to fetch posts from database, using demo data instead.', error);
-    return NextResponse.json(
-      listDemoCommunityPosts({
-        projectId,
-        sort: sort as 'recent' | 'popular' | 'trending',
-        category: categoryParam ? categoryParam.toLowerCase() : undefined,
-        search: searchTerm ?? undefined,
-        cursor,
-        limit
-      })
-    );
+    console.error('Failed to fetch posts from database.', error);
+    return NextResponse.json({ message: 'Unable to load community posts.' }, { status: 500 });
   }
 }
 
@@ -178,34 +203,37 @@ export async function POST(request: NextRequest) {
   const title = body.title?.trim();
   const content = body.content?.trim();
   const projectId = body.projectId ? String(body.projectId) : undefined;
-  const authorId = body.authorId ? String(body.authorId) : undefined;
   const category = parseCategory(body.category ?? null) ?? CommunityCategory.GENERAL;
 
   if (!title || !content) {
     return NextResponse.json({ message: 'Title and content are required.' }, { status: 400 });
   }
 
+  let sessionUser: SessionUser;
+
   try {
-    if (!authorId) {
-      throw new Error('Missing authorId for persistent post creation.');
+    sessionUser = await requireApiUser({});
+  } catch (error) {
+    const response = handleAuthorizationError(error);
+    if (response) {
+      return response;
     }
 
+    throw error;
+  }
+
+  try {
     const post = await prisma.post.create({
       data: {
         title,
         content,
         type: PostType.DISCUSSION,
         category,
-        ...(projectId
-          ? {
-            project: {
-              connect: { id: projectId }
-            }
-          }
-          : {}),
-        author: {
-          connect: { id: authorId }
-        }
+        authorId: sessionUser.id,
+        projectId: projectId ?? undefined
+      },
+      include: {
+        author: { select: { id: true, name: true, avatarUrl: true } }
       }
     });
 
@@ -216,32 +244,24 @@ export async function POST(request: NextRequest) {
         content: post.content,
         likes: 0,
         comments: 0,
+        dislikes: 0,
+        reports: 0,
         projectId: post.projectId ?? undefined,
         createdAt: post.createdAt.toISOString(),
         liked: false,
         category: post.category.toLowerCase(),
         isPinned: post.isPinned,
-        isTrending: false
+        isTrending: false,
+        author: {
+          id: post.author.id,
+          name: post.author.name,
+          avatarUrl: post.author.avatarUrl
+        }
       },
       { status: 201 }
     );
   } catch (error) {
-    console.error('Failed to create post in database, falling back to demo store.', error);
-
-    const fallbackPost = addDemoCommunityPost({
-      id: crypto.randomUUID(),
-      title,
-      content,
-      likes: 0,
-      comments: 0,
-      projectId,
-      createdAt: new Date().toISOString(),
-      liked: false,
-      category: category.toLowerCase(),
-      isPinned: false,
-      isTrending: false
-    });
-
-    return NextResponse.json(fallbackPost, { status: 201 });
+    console.error('Failed to create post in database.', error);
+    return NextResponse.json({ message: 'Unable to create community post.' }, { status: 500 });
   }
 }

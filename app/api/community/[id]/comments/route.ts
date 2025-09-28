@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
-
-import {
-  addDemoCommunityComment,
-  getDemoCommunityComments
-} from '@/lib/data/community';
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import type { SessionUser } from '@/lib/auth/session';
 
@@ -38,8 +33,8 @@ export async function GET(
 
     return NextResponse.json(comments.map((comment: { id: string; postId: string; content: string; createdAt: Date; author?: { name: string | null } | null }) => formatComment(comment)));
   } catch (error) {
-    console.error('Failed to load comments from database, using demo data.', error);
-    return NextResponse.json(getDemoCommunityComments(params.id));
+    console.error('Failed to load comments from database.', error);
+    return NextResponse.json({ message: 'Unable to load comments.' }, { status: 500 });
   }
 }
 
@@ -84,15 +79,7 @@ export async function POST(
 
     return NextResponse.json(formatComment(comment), { status: 201 });
   } catch (error) {
-    console.error('Failed to create comment in database, using demo data.', error);
-    const fallbackComment = addDemoCommunityComment(params.id, {
-      id: crypto.randomUUID(),
-      postId: params.id,
-      content,
-      authorName: sessionUser.name ?? 'Guest',
-      createdAt: new Date().toISOString()
-    });
-
-    return NextResponse.json(fallbackComment, { status: 201 });
+    console.error('Failed to create comment in database.', error);
+    return NextResponse.json({ message: 'Unable to create comment.' }, { status: 500 });
   }
 }

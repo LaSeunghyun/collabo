@@ -28,13 +28,37 @@
     "viewMoreAria": "View more from the {{title}} section"
   },
   "home": {
-    "heroTitle": "Co-create immersive experiences with the artists you love",
-    "heroSubtitle": "Discover trending projects, premium classes and live AMA events.",
+    "hero": {
+      "tagline": "Co-create",
+      "title": "Where artist collaborations meet community",
+      "subtitle": "Validate ideas, gather fans, and launch the next project together.",
+      "ctaArtists": "Explore artists",
+      "ctaCommunity": "Visit community",
+      "metrics": {
+        "projects": "Active projects",
+        "community": "Trending posts",
+        "artists": "Artists involved"
+      }
+    },
     "livePopular": "Live trending",
     "closingSoon": "Closing soon",
     "themes": "Themes",
     "categoryFilter": "Category filters",
     "tagFilter": "Tags",
+    "sections": {
+      "spotlight": "Collaboration spotlight",
+      "artistNetwork": "Artist network",
+      "communityPulse": "Community pulse",
+      "resources": "Collaboration resources"
+    },
+    "errors": {
+      "projects": "We couldn’t load projects right now."
+    },
+    "empty": {
+      "projects": "There are no projects to show yet.",
+      "community": "No community posts yet — start the first conversation!",
+      "store": "There are no items for sale yet."
+    },
     "store": {
       "title": "Store",
       "items": {
@@ -64,8 +88,8 @@
     "newest": "Newest"
   },
   "community": {
-    "title": "Community",
-    "description": "Connect with fellow backers in real time to share ideas and feedback.",
+    "title": "Community hub",
+    "description": "A space to trade collaboration ideas and gather real-time feedback from fellow creatives.",
     "writePlaceholder": "Share something with the community",
     "sortRecent": "Recent",
     "sortPopular": "Popular",
@@ -98,6 +122,19 @@
       "following": "Following",
       "processing": "Updating...",
       "editProfile": "Edit profile"
+    },
+    "directory": {
+      "tagline": "Artist Network",
+      "title": "Discover collaboration-ready artists",
+      "subtitle": "Explore teams building with their fans and follow the artists you want to work with.",
+      "countLabel": "Featured artists",
+      "countHint": "Updated in real time",
+      "error": "We couldn't load the artist directory.",
+      "empty": "No artists are public yet. Be the first to launch a collaboration!",
+      "projectCount": "{{count}} projects",
+      "followerCount": "{{count}} followers",
+      "viewProfile": "View profile",
+      "retry": "Try again"
     },
     "metrics": {
       "followers": "Followers",
