@@ -10,6 +10,7 @@ import { canAccessRoute } from '@/lib/auth/role-guards';
 const baseTabs = [
   { href: '/', label: '홈', icon: '🏠' },
   { href: '/projects', label: '프로젝트', icon: '🎵' },
+  { href: '/artists', label: '아티스트', icon: '🎨' },
   { href: '/partners', label: '파트너', icon: '🤝' },
   { href: '/community', label: '커뮤니티', icon: '💬' }
 ];
@@ -20,7 +21,7 @@ export function MobileTabBar() {
   // const { data: unreadCount = 0 } = useAnnouncementUnreadCount(Boolean(session?.user));
 
   const tabs = [...baseTabs];
-  tabs.splice(3, 0, { href: '/announcements', label: '공지', icon: '📢' });
+  tabs.splice(4, 0, { href: '/announcements', label: '공지', icon: '📢' });
 
   if (session?.user && canAccessRoute(session.user, '/admin')) {
     tabs.push({ href: '/admin', label: '관리', icon: '🛠️' });

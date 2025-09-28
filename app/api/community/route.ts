@@ -51,6 +51,8 @@ const serializePost = (
   content: post.content,
   likes: post._count.likes,
   comments: post._count.comments,
+  dislikes: 0,
+  reports: 0,
   category: post.category.toLowerCase(),
   projectId: post.projectId ?? undefined,
   createdAt: post.createdAt.toISOString(),
@@ -69,17 +71,24 @@ export async function GET(request: NextRequest) {
   const sortParam = searchParams.get('sort');
   const sort = sortParam === 'popular' || sortParam === 'trending' ? sortParam : 'recent';
   const projectId = searchParams.get('projectId') ?? undefined;
-  const categoryParam = parseCategory(searchParams.get('category'));
+  const categoryValues = searchParams
+    .getAll('category')
+    .map((value) => parseCategory(value))
+    .filter((value): value is CommunityCategory => Boolean(value));
+  const uniqueCategories = Array.from(new Set(categoryValues));
+  const categoryParam = uniqueCategories.length ? uniqueCategories : undefined;
   const searchTerm = searchParams.get('search') ?? undefined;
   const cursor = searchParams.get('cursor') ?? undefined;
   const limitParam = Number.parseInt(searchParams.get('limit') ?? '10', 10);
   const limit = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(limitParam, 50) : 10;
+  const authorId = searchParams.get('authorId') ?? undefined;
 
   try {
     const baseWhere: Prisma.PostWhereInput = {
       type: PostType.DISCUSSION,
       ...(projectId ? { projectId } : {}),
-      ...(categoryParam ? { category: categoryParam } : {}),
+      ...(categoryParam ? { category: { in: categoryParam } } : {}),
+      ...(authorId ? { authorId } : {}),
       ...(searchTerm
         ? {
           OR: [
@@ -152,8 +161,11 @@ export async function GET(request: NextRequest) {
         nextCursor: hasNext ? sliced[sliced.length - 1]?.id ?? null : null,
         total,
         sort: sort as 'recent' | 'popular' | 'trending',
-        category: categoryParam ? categoryParam.toLowerCase() : null,
-        search: searchTerm ?? null
+        categories: categoryParam?.length
+          ? categoryParam.map((category) => category.toLowerCase())
+          : ['all'],
+        search: searchTerm ?? null,
+        authorId: authorId ?? null
       }
     };
 
@@ -164,7 +176,8 @@ export async function GET(request: NextRequest) {
       listDemoCommunityPosts({
         projectId,
         sort: sort as 'recent' | 'popular' | 'trending',
-        category: categoryParam ? categoryParam.toLowerCase() : undefined,
+        categories: categoryParam?.map((category) => category.toLowerCase()) ?? undefined,
+        authorId,
         search: searchTerm ?? undefined,
         cursor,
         limit

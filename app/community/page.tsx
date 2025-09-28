@@ -21,49 +21,37 @@ export default function CommunityPage() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pb-20">
-      <header className="pt-6">
-        <h1 className="text-3xl font-semibold text-white">{t('community.title')}</h1>
-        <p className="mt-2 text-sm text-white/60">{t('community.description')}</p>
-
-        {highlights.pinned.length ? (
-          <div className="mt-6 rounded-3xl border border-primary/20 bg-primary/10 p-6">
-            <h2 className="text-sm font-semibold uppercase tracking-widest text-primary">
-              {t('community.pinned.title')}
-            </h2>
-            <ul className="mt-3 space-y-2">
-              {highlights.pinned.map((post) => (
-                <li key={post.id} className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-semibold text-white">{post.title}</p>
-                    <p className="text-xs text-white/70">{post.content}</p>
-                  </div>
-                  <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/70">
-                    {t(`community.filters.${post.category}`)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-
-        {highlights.popular.length ? (
-          <div className="mt-4 rounded-3xl border border-white/10 bg-white/5 p-6">
-            <h3 className="text-sm font-semibold uppercase tracking-widest text-white/60">
-              {t('community.popular.title')}
-            </h3>
-            <div className="mt-3 grid gap-3 md:grid-cols-2">
-              {highlights.popular.slice(0, 4).map((post) => (
-                <div key={post.id} className="rounded-2xl border border-white/10 bg-neutral-950/60 p-4">
-                  <p className="text-sm font-semibold text-white">{post.title}</p>
-                  <p className="mt-1 text-xs text-white/60">
-                    {t('community.likesLabel_other', { count: post.likes })}
-                  </p>
-                </div>
-              ))}
+    <div className="mx-auto max-w-6xl px-4 pb-20">
+      <header className="pt-10">
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
+          <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+            <div className="space-y-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/50">
+                {t('community.hero.tagline')}
+              </p>
+              <h1 className="text-4xl font-semibold leading-tight text-white">
+                {t('community.hero.title')}
+              </h1>
+              <p className="text-base text-white/70">
+                {t('community.hero.subtitle')}
+              </p>
+            </div>
+            <div className="grid gap-4 rounded-3xl border border-white/10 bg-neutral-950/70 p-6 text-sm text-white/70">
+              <div className="flex items-center justify-between">
+                <span>{t('community.hero.metrics.posts')}</span>
+                <span className="text-2xl font-semibold text-white">{highlights.total}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>{t('community.hero.metrics.pinned')}</span>
+                <span className="text-lg font-semibold text-white">{highlights.pinned.length}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>{t('community.hero.metrics.popular')}</span>
+                <span className="text-lg font-semibold text-white">{highlights.popular.length}</span>
+              </div>
             </div>
           </div>
-        ) : null}
+        </div>
       </header>
       <section className="mt-10">
         <CommunityBoard onMetaChange={handleMetaChange} />

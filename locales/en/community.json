@@ -29,5 +29,67 @@
   },
   "loadMore": "Load more",
   "emptyStateTitle": "Start the first conversation",
-  "emptyStateDescription": "Share the first idea to get the discussion going."
+  "emptyStateDescription": "Share the first idea to get the discussion going.",
+  "actions": {
+    "create": "New post",
+    "viewDetail": "View details",
+    "backToList": "Back to list",
+    "cancel": "Cancel"
+  },
+  "labels": {
+    "total": "Total {{count}} posts",
+    "selectedCategories": "{{count}} categories selected"
+  },
+  "hero": {
+    "tagline": "Collaboration Hub",
+    "title": "A community built by artists and fans",
+    "subtitle": "Share collaboration ideas, gather feedback, and keep your projects moving forward.",
+    "metrics": {
+      "posts": "Posts",
+      "pinned": "Pinned",
+      "popular": "Popular"
+    }
+  },
+  "newPost": {
+    "lead": "CREATE",
+    "title": "Share something new",
+    "description": "Pick a category, add your collaboration idea or update, and attach any supporting files.",
+    "categoryLabel": "Category",
+    "attachmentLabel": "Attachments",
+    "attachmentCta": "Upload files",
+    "attachmentHint": "Images, PDF, ZIP up to 10MB",
+    "attachmentRemove": "Remove",
+    "notice": "Attachments are stored for demo purposes only.",
+    "submit": "Publish post",
+    "submitting": "Publishing..."
+  },
+  "validation": {
+    "required": "Please enter both a title and content."
+  },
+  "detail": {
+    "errorTitle": "We couldn't load this post.",
+    "errorDescription": "It may have been removed or you may not have access. Return to the community board and try again.",
+    "dislikeLabel": "Downvote {{count}}",
+    "report": "Report",
+    "writeComment": "Write a comment",
+    "authorPosts": "View author's posts",
+    "authorProfile": "Go to profile",
+    "authorMessage": "Send message",
+    "authorPostsTitle": "More from {{name}}",
+    "authorPostsError": "Failed to load other posts from this author.",
+    "messageTitle": "Message {{name}}",
+    "reportTitle": "Report post",
+    "reportDescription": "Your report will be reviewed by our moderation team.",
+    "reportCancel": "Close",
+    "reportConfirm": "Submit report",
+    "reportSubmitted": "Reported",
+    "reportSuccess": "Thanks for the report—we'll review it shortly."
+  },
+  "messages": {
+    "autoReply": "Thanks! I'll get back to you soon.",
+    "empty": "No messages yet.",
+    "me": "Me",
+    "placeholder": "Write a direct message",
+    "send": "Send message"
+  }
 }
