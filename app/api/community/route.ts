@@ -163,9 +163,9 @@ export async function POST(request: NextRequest) {
         isPinned: post.isPinned,
         isTrending: false,
         author: {
-          id: post.author.id,
-          name: post.author.name,
-          avatarUrl: post.author.avatarUrl
+          id: post.author?.id || '',
+          name: post.author?.name || '',
+          avatarUrl: post.author?.avatarUrl || null
         }
       },
       { status: 201 }
