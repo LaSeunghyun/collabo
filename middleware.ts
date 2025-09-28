@@ -69,6 +69,7 @@ export default withAuth(
           '/help',
           '/api/community',
           '/api/projects',
+          '/api/partners',
           '/api/test-accounts'
         ];
 
