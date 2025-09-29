@@ -16,16 +16,16 @@ export const ROLE_GUARDS: RoleGuard[] = [
     roles: [UserRole.ADMIN]
   },
   {
+    matcher: '/partners/dashboard/:path*',
+    pattern: /^\/partners\/dashboard(?:\/.*)?$/,
+    roles: [UserRole.PARTNER, UserRole.ADMIN],
+    permissions: ['partner:manage']
+  },
+  {
     matcher: '/projects/new',
     pattern: /^\/projects\/new$/,
     roles: [UserRole.CREATOR, UserRole.ADMIN],
     permissions: ['project:create']
-  },
-  {
-    matcher: '/partners/:path*',
-    pattern: /^\/partners(?:\/.*)?$/,
-    roles: [UserRole.PARTNER, UserRole.ADMIN],
-    permissions: ['partner:manage']
   },
   {
     matcher: '/api/partners/:path*',

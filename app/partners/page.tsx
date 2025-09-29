@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 import { UserRole } from '@/types/prisma';
 
 import { getServerAuthSession } from '@/lib/auth/session';
@@ -36,9 +38,26 @@ export default async function PartnersPage() {
         <h1 className="text-3xl font-semibold text-white">파트너 매칭</h1>
         <p className="mt-2 text-sm text-white/60">
           {isLoggedIn && user.name ? `${user.name}님, ` : ''}
-          스튜디오, 공연장, 제작사와 연결되어 프로젝트를 성공적으로 운영하세요. 
+          스튜디오, 공연장, 제작사와 연결되어 프로젝트를 성공적으로 운영하세요.
           {isPartner ? '파트너 등록 요청이 접수되면 운영팀 검수를 거쳐 승인 결과를 알림으로 안내합니다.' : '로그인하시면 맞춤형 파트너 추천을 받아보실 수 있습니다.'}
         </p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          {isPartner ? (
+            <Link
+              href="/partners/dashboard"
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition hover:bg-primary/90"
+            >
+              파트너 허브 바로가기
+            </Link>
+          ) : null}
+
+          <Link
+            href="/help"
+            className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-xs font-semibold text-white/70 transition hover:border-white/40 hover:text-white"
+          >
+            파트너 운영 가이드
+          </Link>
+        </div>
       </header>
 
       <section className="grid gap-6 md:grid-cols-2">
