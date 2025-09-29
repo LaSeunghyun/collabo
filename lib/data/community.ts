@@ -41,5 +41,6 @@ export interface CommunityFeedResponse {
     categories?: string[] | null;
     search?: string | null;
     authorId?: string | null;
+    projectId?: string | null;
   };
 }

@@ -1,11 +1,28 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 
-import { CommunityCategory } from '@prisma/client';
+import { CommunityCategory, ModerationTargetType } from '@prisma/client';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import { evaluateAuthorization } from '@/lib/auth/session';
 import type { SessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
+
+const DETAIL_CONFIG = {
+  trendingDays: 3,
+  trendingMinLikes: 5,
+  trendingMinComments: 3
+} as const;
+
+const toCategorySlug = (category: CommunityCategory | null | undefined) =>
+  String(category ?? CommunityCategory.GENERAL).toLowerCase();
+
+const isTrendingPost = (createdAt: Date, commentCount: number, likeCount: number) => {
+  const thresholdDate = new Date(Date.now() - DETAIL_CONFIG.trendingDays * 24 * 60 * 60 * 1000);
+  return (
+    createdAt >= thresholdDate &&
+    (commentCount >= DETAIL_CONFIG.trendingMinComments || likeCount >= DETAIL_CONFIG.trendingMinLikes)
+  );
+};
 
 const buildPostResponse = async (postId: string, viewerId?: string | null) => {
   const post = await prisma.post.findUnique({
@@ -28,6 +45,13 @@ const buildPostResponse = async (postId: string, viewerId?: string | null) => {
       )
     : false;
 
+  const reports = await prisma.moderationReport.count({
+    where: {
+      targetType: ModerationTargetType.POST,
+      targetId: post.id
+    }
+  });
+
   return {
     id: post.id,
     title: post.title,
@@ -35,13 +59,13 @@ const buildPostResponse = async (postId: string, viewerId?: string | null) => {
     likes: post._count.likes,
     comments: post._count.comments,
     dislikes: 0,
-    reports: 0,
+    reports,
     projectId: post.projectId ?? undefined,
     createdAt: post.createdAt.toISOString(),
     liked,
-    category: String(post.category ?? CommunityCategory.GENERAL).toLowerCase(),
+    category: toCategorySlug(post.category),
     isPinned: post.isPinned,
-    isTrending: false,
+    isTrending: isTrendingPost(post.createdAt, post._count.comments, post._count.likes),
     author: {
       id: post.author.id,
       name: post.author.name,
