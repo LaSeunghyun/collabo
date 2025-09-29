@@ -23,6 +23,10 @@ export function MobileTabBar() {
   const tabs = [...baseTabs];
   tabs.splice(4, 0, { href: '/announcements', label: '공지', icon: '📢' });
 
+  if (session?.user && canAccessRoute(session.user, '/partners/dashboard')) {
+    tabs.push({ href: '/partners/dashboard', label: '허브', icon: '🚀' });
+  }
+
   if (session?.user && canAccessRoute(session.user, '/admin')) {
     tabs.push({ href: '/admin', label: '관리', icon: '🛠️' });
   }

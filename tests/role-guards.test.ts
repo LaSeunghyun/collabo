@@ -28,5 +28,16 @@ describe('ROLE_GUARDS', () => {
   it('ignores guards for public routes', () => {
     expect(canAccessRoute(null, '/')).toBe(true);
     expect(canAccessRoute({ role: UserRole.PARTICIPANT, permissions: [] }, '/help')).toBe(true);
+    expect(findMatchingGuard('/partners')).toBeUndefined();
+    expect(canAccessRoute({ role: UserRole.PARTICIPANT, permissions: [] }, '/partners')).toBe(true);
+  });
+
+  it('requires partner permission for the partner dashboard', () => {
+    const partnerSubject = { role: UserRole.PARTNER, permissions: ['partner:manage'] };
+    const insufficientSubject = { role: UserRole.PARTNER, permissions: [] as string[] };
+
+    expect(findMatchingGuard('/partners/dashboard')).toBeDefined();
+    expect(canAccessRoute(partnerSubject, '/partners/dashboard')).toBe(true);
+    expect(canAccessRoute(insufficientSubject, '/partners/dashboard')).toBe(false);
   });
 });

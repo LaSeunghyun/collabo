@@ -18,6 +18,10 @@ export function Header() {
     { href: '/announcements', label: '공지사항', unreadCount }
   ];
 
+  if (session?.user && canAccessRoute(session.user, '/partners/dashboard')) {
+    navigationItems.push({ href: '/partners/dashboard', label: '파트너 허브' });
+  }
+
   if (session?.user && canAccessRoute(session.user, '/admin')) {
     navigationItems.push({ href: '/admin', label: '관리' });
   }

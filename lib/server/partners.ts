@@ -293,6 +293,24 @@ export const getPartnerById = async (id: string): Promise<PartnerSummary | null>
   return toPartnerSummary(partner);
 };
 
+export const getPartnerProfileForUser = async (
+  userId: string
+): Promise<PartnerSummary | null> => {
+  const partner = await prisma.partner.findUnique({
+    where: { userId },
+    include: {
+      user: { select: { id: true, name: true, avatarUrl: true, role: true } },
+      _count: { select: { matches: true } }
+    }
+  });
+
+  if (!partner) {
+    return null;
+  }
+
+  return toPartnerSummary(partner);
+};
+
 const buildCreateData = (input: CreatePartnerInput, ownerId: string): Prisma.PartnerCreateInput => {
   const description = sanitizeText(input.description);
   const services = sanitizeTags(input.services ?? null);
