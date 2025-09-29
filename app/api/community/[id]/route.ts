@@ -39,7 +39,7 @@ const buildPostResponse = async (postId: string, viewerId?: string | null) => {
     projectId: post.projectId ?? undefined,
     createdAt: post.createdAt.toISOString(),
     liked,
-    category: (post.category as CommunityCategory).toLowerCase(),
+    category: String(post.category ?? CommunityCategory.GENERAL).toLowerCase(),
     isPinned: post.isPinned,
     isTrending: false,
     author: {

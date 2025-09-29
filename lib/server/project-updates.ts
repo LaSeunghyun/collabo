@@ -6,12 +6,7 @@ import {
   UserRole
 } from '@prisma/client';
 
-// PostVisibility enum 정의
-enum PostVisibility {
-  PUBLIC = 'PUBLIC',
-  SUPPORTERS = 'SUPPORTERS',
-  PRIVATE = 'PRIVATE'
-}
+import { PostVisibility } from '@/types/prisma';
 
 import type { SessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
@@ -173,7 +168,7 @@ const toProjectUpdateRecord = (
   projectId: post.projectId ?? project.id,
   title: post.title,
   content: post.content,
-  visibility: PostVisibility.PUBLIC, // 기본값으로 설정
+  visibility: (post as { visibility?: PostVisibility | null }).visibility ?? PostVisibility.PUBLIC,
   attachments: [], // 기본값으로 빈 배열 설정
   milestone: null, // 기본값으로 null 설정
   createdAt: post.createdAt,

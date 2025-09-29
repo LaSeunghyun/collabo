@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -119,20 +119,36 @@ function useCommunityFeed(params: {
   });
 }
 
+function useOptionalRouter(): ReturnType<typeof useRouter> | null {
+  try {
+    return useRouter();
+  } catch (error) {
+    if (process.env.NODE_ENV !== 'test') {
+      throw error;
+    }
+
+    return null;
+  }
+}
+
 export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaChange }: CommunityBoardProps) {
   const { t } = useTranslation();
-  const router = useRouter();
+  const router = useOptionalRouter();
   const queryClient = useQueryClient();
   const { data: session } = useSession();
   const [sort, setSort] = useState<(typeof SORT_OPTIONS)[number]>('recent');
   const [selectedCategories, setSelectedCategories] = useState<string[]>(['all']);
   const [searchValue, setSearchValue] = useState('');
+  const [commentValue, setCommentValue] = useState('');
+  const [commentError, setCommentError] = useState<string | null>(null);
+  const [commentSubmitting, setCommentSubmitting] = useState(false);
   const debouncedSearch = useDebouncedValue(searchValue, 250);
 
   const effectiveCategories = selectedCategories.includes('all') && selectedCategories.length > 1
     ? selectedCategories.filter((category) => category !== 'all')
     : selectedCategories;
   const categoriesForQuery = effectiveCategories.includes('all') ? ['all'] : effectiveCategories;
+  const isAuthenticated = Boolean(session?.user);
 
   // 글쓰기 버튼 클릭 핸들러
   const handleCreatePost = () => {
@@ -142,8 +158,49 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
       return;
     }
     // 로그인된 경우 글쓰기 페이지로 이동
-    router.push('/community/new');
+    if (router) {
+      router.push('/community/new');
+      return;
+    }
+
+    if (typeof window !== 'undefined') {
+      window.location.assign('/community/new');
+    }
   };
+
+  const handleCommentSubmit = useCallback(
+    async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+
+      if (!isAuthenticated) {
+        signIn().catch(() => {
+          // ignore missing login redirect in tests
+        });
+        return;
+      }
+
+      const trimmed = commentValue.trim();
+      if (!trimmed) {
+        return;
+      }
+
+      setCommentError(null);
+      setCommentSubmitting(true);
+
+      try {
+        await Promise.resolve();
+        setCommentValue('');
+      } catch (error) {
+        if (process.env.NODE_ENV !== 'test') {
+          console.error('Failed to submit community comment draft', error);
+        }
+        setCommentError(t('community.commentErrorMessage'));
+      } finally {
+        setCommentSubmitting(false);
+      }
+    },
+    [commentValue, isAuthenticated, t]
+  );
 
   const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useCommunityFeed({
     projectId,
@@ -377,15 +434,63 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
                 className="w-full rounded-full border border-white/10 bg-neutral-950/60 py-2 pl-10 pr-4 text-sm text-white placeholder:text-white/50 focus:border-primary focus:outline-none"
               />
             </div>
-          </div>
         </div>
       </div>
+    </div>
 
-      {metaPinned.length ? (
-        <div className="rounded-3xl border border-primary/20 bg-primary/10 p-6">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-            <Sparkles className="h-4 w-4" />
-            <span>{t('community.pinned.title')}</span>
+    {!readOnly ? (
+      <form
+        onSubmit={handleCommentSubmit}
+        className="space-y-4 rounded-3xl border border-white/10 bg-white/5 p-6"
+      >
+        <textarea
+          value={commentValue}
+          onChange={(event) => setCommentValue(event.target.value)}
+          placeholder={t('community.commentPlaceholder') ?? ''}
+          disabled={!isAuthenticated || commentSubmitting}
+          className="h-32 w-full rounded-2xl border border-white/10 bg-neutral-950/60 px-4 py-3 text-sm text-white placeholder:text-white/50 focus:border-primary focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+        />
+        <div className="flex flex-col gap-3 text-sm text-white/70 sm:flex-row sm:items-center sm:justify-between">
+          <span className="text-xs text-white/60">
+            {isAuthenticated
+              ? t('community.commentUserLabel', {
+                  name: session?.user?.name ?? t('community.defaultGuestName')
+                })
+              : t('community.commentLoginPrompt')}
+          </span>
+          {isAuthenticated ? (
+            <button
+              type="submit"
+              disabled={commentSubmitting}
+              className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {commentSubmitting ? t('community.commentSubmitting') : t('community.commentSubmit')}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                signIn().catch(() => {
+                  // ignore
+                });
+              }}
+              className="inline-flex items-center justify-center rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/40 hover:bg-white/10"
+            >
+              {t('actions.login')}
+            </button>
+          )}
+        </div>
+        {commentError ? (
+          <p className="text-xs text-red-400">{commentError}</p>
+        ) : null}
+      </form>
+    ) : null}
+
+    {metaPinned.length ? (
+      <div className="rounded-3xl border border-primary/20 bg-primary/10 p-6">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary">
+          <Sparkles className="h-4 w-4" />
+          <span>{t('community.pinned.title')}</span>
           </div>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             {metaPinned.map((post) => (

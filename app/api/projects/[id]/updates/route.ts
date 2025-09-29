@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   FundingStatus,
   NotificationType,
-  // PostVisibility, // 스키마에 없음
+  POST_VISIBILITY_VALUES,
+  PostVisibility,
   UserRole
 } from '@/types/prisma';
 
@@ -119,13 +120,15 @@ export async function POST(
     const body = await request.json();
     const hasMilestoneField = Object.prototype.hasOwnProperty.call(body, 'milestoneId');
 
+    const rawVisibility =
+      typeof body.visibility === 'string' ? body.visibility.toUpperCase() : undefined;
+    const visibility =
+      POST_VISIBILITY_VALUES.find((value) => value === rawVisibility) ?? PostVisibility.PUBLIC;
+
     const input = {
       title: String(body.title ?? ''),
       content: String(body.content ?? ''),
-      // visibility:
-      //   typeof body.visibility === 'string' && ['PUBLIC', 'SUPPORTERS', 'PRIVATE'].includes(body.visibility)
-      //     ? (body.visibility as 'PUBLIC' | 'SUPPORTERS' | 'PRIVATE')
-      //     : 'PUBLIC',
+      visibility,
       attachments: Array.isArray(body.attachments) ? body.attachments : undefined,
       milestoneId: hasMilestoneField
         ? body.milestoneId === null

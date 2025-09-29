@@ -13,7 +13,6 @@ import {
   ProductType,
   OrderStatus,
   PostType,
-  // PostVisibility, // 스키마에 없음
   NotificationType,
   MilestoneStatus,
   ModerationTargetType,
@@ -52,6 +51,12 @@ import type {
   ModerationReport,
   UserBlock
 } from '@prisma/client';
+
+export enum PostVisibility {
+  PUBLIC = 'PUBLIC',
+  SUPPORTERS = 'SUPPORTERS',
+  PRIVATE = 'PRIVATE'
+}
 
 // Prisma namespace와 클라이언트를 직접 정의
 export { PrismaClient, Prisma } from '@prisma/client';
@@ -101,13 +106,14 @@ export {
   ProductType,
   OrderStatus,
   PostType,
-  // PostVisibility, // 스키마에 없음
   NotificationType,
   MilestoneStatus,
   ModerationTargetType,
   ModerationStatus,
   CommunityCategory
 } from '@prisma/client';
+
+export const POST_VISIBILITY_VALUES = Object.values(PostVisibility);
 
 // 공통 타입 정의
 export type DatabaseId = string;

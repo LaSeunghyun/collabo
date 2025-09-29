@@ -71,16 +71,16 @@ export async function GET(request: NextRequest) {
         comments: post._count.comments,
         dislikes: 0,
         reports: 0,
-        category: post.category.toLowerCase(),
+        category: String(post.category ?? CommunityCategory.GENERAL).toLowerCase(),
         projectId: post.projectId ?? undefined,
         createdAt: post.createdAt.toISOString(),
         liked: false,
         isPinned: post.isPinned,
         isTrending: false,
         author: {
-          id: post.author.id,
-          name: post.author.name,
-          avatarUrl: post.author.avatarUrl
+          id: post.author?.id || '',
+          name: post.author?.name || '',
+          avatarUrl: post.author?.avatarUrl || null
         }
       })),
       pinned: [],
@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
         projectId: post.projectId ?? undefined,
         createdAt: post.createdAt.toISOString(),
         liked: false,
-        category: post.category.toLowerCase(),
+        category: String(post.category ?? CommunityCategory.GENERAL).toLowerCase(),
         isPinned: post.isPinned,
         isTrending: false,
         author: {
