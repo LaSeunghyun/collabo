@@ -6,20 +6,38 @@ const globalForPrisma = globalThis as unknown as {
 
 // Vercel 서버리스 환경을 위한 Prisma Client 설정
 const createPrismaClient = () => {
-  // 데이터베이스 URL에 prepared statement 비활성화 옵션 추가
   const databaseUrl = process.env.DATABASE_URL;
-  const urlWithOptions = databaseUrl?.includes('?') 
-    ? `${databaseUrl}&prepared_statements=false&connection_limit=1`
-    : `${databaseUrl}?prepared_statements=false&connection_limit=1`;
+
+  if (!databaseUrl) {
+    throw new Error('DATABASE_URL is not set');
+  }
+
+  let datasourceUrl = databaseUrl;
+
+  try {
+    const url = new URL(databaseUrl);
+
+    if (!url.searchParams.has('pgbouncer')) {
+      url.searchParams.set('pgbouncer', 'true');
+    }
+
+    if (!url.searchParams.has('connection_limit')) {
+      url.searchParams.set('connection_limit', '1');
+    }
+
+    if (!url.searchParams.has('pool_timeout')) {
+      url.searchParams.set('pool_timeout', '0');
+    }
+
+    datasourceUrl = url.toString();
+  } catch (error) {
+    console.warn('Invalid DATABASE_URL format, falling back to raw value.', error);
+  }
 
   return new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
     errorFormat: 'pretty',
-    datasources: {
-      db: {
-        url: urlWithOptions
-      }
-    }
+    datasourceUrl
   });
 };
 
