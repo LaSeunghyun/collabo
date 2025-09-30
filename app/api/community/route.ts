@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 import { CommunityCategory, ModerationTargetType, PostType } from '@prisma/client';
 import type { Prisma } from '@prisma/client';
@@ -125,11 +125,11 @@ export async function GET(request: NextRequest) {
     const orderBy: Prisma.PostOrderByWithRelationInput[] = [];
 
     if (sort === 'popular') {
-      orderBy.push({ likes: { _count: 'desc' } });
+      orderBy.push({ _count: { likes: 'desc', comments: 'desc' } });
     }
 
     if (sort === 'trending') {
-      orderBy.push({ comments: { _count: 'desc' } });
+      orderBy.push({ _count: { likes: 'desc', comments: 'desc' } });
     }
 
     orderBy.push({ createdAt: 'desc' }, { id: 'desc' });
@@ -148,8 +148,8 @@ export async function GET(request: NextRequest) {
 
     const pinnedWhere: Prisma.PostWhereInput = { ...baseWhere, isPinned: true };
     const popularOrder: Prisma.PostOrderByWithRelationInput[] = [
-      { likes: { _count: 'desc' } },
-      { comments: { _count: 'desc' } },
+      { _count: { likes: 'desc' } },
+      { _count: { comments: 'desc' } },
       { createdAt: 'desc' }
     ];
     const trendingSince = new Date(Date.now() - FEED_CONFIG.trendingDays * 24 * 60 * 60 * 1000);
@@ -174,7 +174,7 @@ export async function GET(request: NextRequest) {
       prisma.post.findMany({
         where: trendingWhere,
         include: postInclude,
-        orderBy: [{ comments: { _count: 'desc' } }, { createdAt: 'desc' }, { id: 'desc' }],
+        orderBy: [{ _count: { likes: 'desc', comments: 'desc' } }, { createdAt: 'desc' }, { id: 'desc' }],
         take: FEED_CONFIG.trendingLimit
       })
     ]);
@@ -302,3 +302,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: 'Unable to create community post.' }, { status: 500 });
   }
 }
+

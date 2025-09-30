@@ -1,4 +1,4 @@
-﻿export type MockPrisma = ReturnType<typeof createPrismaMock>;
+export type MockPrisma = ReturnType<typeof createPrismaMock>;
 
 export const createPrismaMock = () => {
   const mock = {
@@ -80,7 +80,8 @@ export const createPrismaMock = () => {
       createMany: jest.fn()
     },
     moderationReport: {
-      findMany: jest.fn()
+      findMany: jest.fn(),
+      groupBy: jest.fn()
     },
     settlementAudit: {
       create: jest.fn()
@@ -104,3 +105,25 @@ export const createPrismaMock = () => {
 
   return mock;
 };
+
+const resetMocksRecursively = (input: unknown) => {
+  if (!input) {
+    return;
+  }
+
+  if (typeof input === 'function' && 'mockReset' in input && typeof (input as jest.Mock).mockReset === 'function') {
+    (input as jest.Mock).mockReset();
+    return;
+  }
+
+  if (typeof input === 'object') {
+    for (const value of Object.values(input as Record<string, unknown>)) {
+      resetMocksRecursively(value);
+    }
+  }
+};
+
+export const resetPrismaMock = (mock: MockPrisma) => {
+  resetMocksRecursively(mock);
+};
+
