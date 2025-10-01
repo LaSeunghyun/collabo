@@ -6,7 +6,9 @@ import { POST as blockPost } from '@/app/api/community/[id]/block/route';
 jest.mock('@/lib/prisma', () => {
   const prismaMocks = {
     moderationReportCreate: jest.fn(),
+    moderationReportFindFirst: jest.fn(),
     postFindUnique: jest.fn(),
+    userFindUnique: jest.fn(),
     userBlockUpsert: jest.fn()
   };
 
@@ -15,10 +17,14 @@ jest.mock('@/lib/prisma', () => {
   return {
     prisma: {
       moderationReport: {
-        create: (...args: unknown[]) => prismaMocks.moderationReportCreate(...args)
+        create: (...args: unknown[]) => prismaMocks.moderationReportCreate(...args),
+        findFirst: (...args: unknown[]) => prismaMocks.moderationReportFindFirst(...args)
       },
       post: {
         findUnique: (...args: unknown[]) => prismaMocks.postFindUnique(...args)
+      },
+      user: {
+        findUnique: (...args: unknown[]) => prismaMocks.userFindUnique(...args)
       },
       userBlock: {
         upsert: (...args: unknown[]) => prismaMocks.userBlockUpsert(...args)
@@ -29,17 +35,25 @@ jest.mock('@/lib/prisma', () => {
 
 const {
   moderationReportCreate: mockModerationReportCreate,
+  moderationReportFindFirst: mockModerationReportFindFirst,
   postFindUnique: mockPostFindUnique,
+  userFindUnique: mockUserFindUnique,
   userBlockUpsert: mockUserBlockUpsert
 } = (globalThis as unknown as { __prismaMocks: {
   moderationReportCreate: jest.Mock;
+  moderationReportFindFirst: jest.Mock;
   postFindUnique: jest.Mock;
+  userFindUnique: jest.Mock;
   userBlockUpsert: jest.Mock;
 }; }).__prismaMocks;
 
 describe('community moderation endpoints', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+
+    mockPostFindUnique.mockResolvedValue({ id: 'post-1' });
+    mockUserFindUnique.mockResolvedValue({ id: 'user-1' });
+    mockModerationReportFindFirst.mockResolvedValue(null);
   });
 
   describe('POST /api/community/[id]/report', () => {
@@ -55,6 +69,8 @@ describe('community moderation endpoints', () => {
     });
 
     it('creates a moderation report with the provided payload', async () => {
+      mockModerationReportFindFirst.mockResolvedValue(null);
+
       const request = new Request('http://localhost/api/community/post-1/report', {
         method: 'POST',
         body: JSON.stringify({ reporterId: 'user-1', reason: 'spam' }),

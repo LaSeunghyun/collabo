@@ -1,5 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { CommunityCategory, PostType } from '@prisma/client';
+﻿import { NextRequest, NextResponse } from 'next/server';
+
+import { CommunityCategory, ModerationTargetType, PostType } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import { evaluateAuthorization } from '@/lib/auth/session';
@@ -7,6 +9,17 @@ import type { SessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
 
 import type { CommunityFeedResponse } from '@/lib/data/community';
+
+const FEED_CONFIG = {
+  pinnedLimit: 5,
+  popularLimit: 5,
+  trendingLimit: 10,
+  trendingDays: 3,
+  trendingMinLikes: 5,
+  trendingMinComments: 3,
+  popularMinLikes: 5,
+  popularMinComments: 2
+} as const;
 
 const parseCategory = (value: string | null): CommunityCategory | undefined => {
   if (!value) {
@@ -29,6 +42,51 @@ const parseCategory = (value: string | null): CommunityCategory | undefined => {
   return undefined;
 };
 
+const toCategorySlug = (category: CommunityCategory | null | undefined) =>
+  String(category ?? CommunityCategory.GENERAL).toLowerCase();
+
+const postInclude = {
+  author: { select: { id: true, name: true, avatarUrl: true } },
+  _count: { select: { likes: true, comments: true } }
+} as const;
+
+type PostWithAuthor = Prisma.PostGetPayload<{ include: typeof postInclude }>;
+
+const mapPostToResponse = (
+  post: PostWithAuthor,
+  likedSet?: Set<string>,
+  reportMap?: Map<string, number>,
+  trendingIds?: Set<string>
+) => ({
+  id: post.id,
+  title: post.title,
+  content: post.content,
+  likes: post._count.likes,
+  comments: post._count.comments,
+  dislikes: 0,
+  reports: reportMap?.get(post.id) ?? 0,
+  category: toCategorySlug(post.category),
+  projectId: post.projectId ?? undefined,
+  createdAt: post.createdAt.toISOString(),
+  liked: likedSet?.has(post.id) ?? false,
+  isPinned: post.isPinned,
+  isTrending: trendingIds?.has(post.id) ?? false,
+  author: {
+    id: post.author?.id ?? '',
+    name: post.author?.name ?? '',
+    avatarUrl: post.author?.avatarUrl ?? null
+  }
+});
+
+const isTrendingCandidate = (post: PostWithAuthor) => {
+  const { trendingDays, trendingMinComments, trendingMinLikes } = FEED_CONFIG;
+  const thresholdDate = new Date(Date.now() - trendingDays * 24 * 60 * 60 * 1000);
+
+  return (
+    post.createdAt >= thresholdDate &&
+    (post._count.comments >= trendingMinComments || post._count.likes >= trendingMinLikes)
+  );
+};
 
 export async function GET(request: NextRequest) {
   try {
@@ -37,72 +95,131 @@ export async function GET(request: NextRequest) {
     const sort = sortParam === 'popular' || sortParam === 'trending' ? sortParam : 'recent';
     const limitParam = Number.parseInt(searchParams.get('limit') ?? '10', 10);
     const limit = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(limitParam, 50) : 10;
+    const cursor = searchParams.get('cursor');
+    const projectId = searchParams.get('projectId');
+    const authorId = searchParams.get('authorId');
+    const search = searchParams.get('search')?.trim() ?? '';
+    const categoryParams = searchParams.getAll('category');
+    const normalizedCategories = categoryParams
+      .map((value) => parseCategory(value))
+      .filter((value): value is CommunityCategory => Boolean(value));
 
-    // 인증 체크를 더 안전하게 처리
-    try {
-      await evaluateAuthorization();
-    } catch (authError) {
-      console.warn('Authorization check failed:', authError);
-      // 인증 실패해도 기본 데이터는 반환
+    const { user: viewer } = await evaluateAuthorization();
+    const viewerId = viewer?.id ?? null;
+
+    const baseWhere: Prisma.PostWhereInput = {
+      type: PostType.DISCUSSION,
+      ...(projectId ? { projectId } : {}),
+      ...(authorId ? { authorId } : {}),
+      ...(normalizedCategories.length ? { category: { in: normalizedCategories } } : {}),
+      ...(search
+        ? {
+            OR: [
+              { title: { contains: search, mode: 'insensitive' } },
+              { content: { contains: search, mode: 'insensitive' } }
+            ]
+          }
+        : {})
+    };
+
+    const orderBy: Prisma.PostOrderByWithRelationInput[] = [];
+
+    if (sort === 'popular') {
+      orderBy.push({ _count: { likes: 'desc', comments: 'desc' } });
+    } else if (sort === 'trending') {
+      orderBy.push({ createdAt: 'desc' });
+    } else {
+      orderBy.push({ createdAt: 'desc' });
     }
 
-    // 매우 간단한 쿼리로 시작
     const posts = await prisma.post.findMany({
-      where: {
-        type: PostType.DISCUSSION
-      },
-      include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            avatarUrl: true
-          }
-        },
-        _count: {
-          select: {
-            likes: true,
-            comments: true
-          }
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      },
-      take: Math.min(limit, 10) // 최대 10개로 제한
+      where: baseWhere,
+      include: postInclude,
+      orderBy,
+      take: limit,
+      ...(cursor ? { skip: 1, cursor: { id: cursor } } : {})
     });
 
-    // 기본 응답 구조 - 더 안전한 매핑
+    const nextCursor = posts.length === limit ? posts[posts.length - 1]?.id ?? null : null;
+
+    const [pinnedRaw, popularRaw, trendingRaw] = await Promise.all([
+      prisma.post.findMany({
+        where: { ...baseWhere, isPinned: true },
+        include: postInclude,
+        take: FEED_CONFIG.pinnedLimit,
+        orderBy: { updatedAt: 'desc' }
+      }),
+      prisma.post.findMany({
+        where: baseWhere,
+        include: postInclude,
+        orderBy: [{ _count: { likes: 'desc' } }, { _count: { comments: 'desc' } }],
+        take: FEED_CONFIG.popularLimit
+      }),
+      prisma.post.findMany({
+        where: baseWhere,
+        include: postInclude,
+        orderBy: { createdAt: 'desc' },
+        take: FEED_CONFIG.trendingLimit
+      })
+    ]);
+
+    const filteredPopularRaw = popularRaw.filter(
+      (post) =>
+        post._count.likes >= FEED_CONFIG.popularMinLikes ||
+        post._count.comments >= FEED_CONFIG.popularMinComments
+    );
+
+    const allPostIds = new Set<string>();
+    for (const collection of [posts, pinnedRaw, filteredPopularRaw, trendingRaw]) {
+      for (const post of collection) {
+        allPostIds.add(post.id);
+      }
+    }
+
+    let likedSet: Set<string> | undefined;
+    if (viewerId && allPostIds.size > 0) {
+      const liked = await prisma.postLike.findMany({
+        where: { userId: viewerId, postId: { in: Array.from(allPostIds) } },
+        select: { postId: true }
+      });
+      likedSet = new Set(liked.map((item) => item.postId));
+    }
+
+    let reportMap: Map<string, number> | undefined;
+    if (allPostIds.size > 0) {
+      const reportCounts = await prisma.moderationReport.groupBy({
+        by: ['targetId'],
+        where: {
+          targetType: ModerationTargetType.POST,
+          targetId: { in: Array.from(allPostIds) }
+        },
+        _count: { _all: true }
+      });
+      reportMap = new Map(
+        reportCounts.map((entry) => [entry.targetId, entry._count?._all ?? 0])
+      );
+    }
+
+    const filteredTrendingRaw = trendingRaw.filter((post) => isTrendingCandidate(post));
+    const trendingIds = new Set(filteredTrendingRaw.map((post) => post.id));
+
     const response: CommunityFeedResponse = {
-      posts: posts.map((post) => ({
-        id: post.id || '',
-        title: post.title || '',
-        content: post.content || '',
-        likes: post._count?.likes || 0,
-        comments: post._count?.comments || 0,
-        dislikes: 0,
-        reports: 0,
-        category: String(post.category ?? CommunityCategory.GENERAL).toLowerCase(),
-        projectId: post.projectId ?? undefined,
-        createdAt: post.createdAt?.toISOString() || new Date().toISOString(),
-        liked: false,
-        isPinned: post.isPinned || false,
-        isTrending: false,
-        author: {
-          id: post.author?.id || '',
-          name: post.author?.name || 'Unknown',
-          avatarUrl: post.author?.avatarUrl || null
-        }
-      })),
-      pinned: [],
-      popular: [],
+      posts: posts.map((post) => mapPostToResponse(post, likedSet, reportMap, trendingIds)),
+      pinned: pinnedRaw.map((post) => mapPostToResponse(post, likedSet, reportMap, trendingIds)),
+      popular:
+        filteredPopularRaw.length > 0
+          ? filteredPopularRaw.map((post) => mapPostToResponse(post, likedSet, reportMap, trendingIds))
+          : popularRaw.map((post) => mapPostToResponse(post, likedSet, reportMap, trendingIds)),
       meta: {
-        nextCursor: null,
-        total: posts.length,
+        nextCursor,
+        total: await prisma.post.count({ where: baseWhere }),
         sort: sort as 'recent' | 'popular' | 'trending',
-        categories: ['all'],
-        search: null,
-        authorId: null
+        categories: normalizedCategories.length
+          ? normalizedCategories.map((category) => toCategorySlug(category))
+          : ['all'],
+        search: search || null,
+        authorId: authorId ?? null,
+        projectId: projectId ?? null
       }
     };
 
@@ -110,7 +227,6 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Failed to fetch posts from database.', error);
 
-    // 더 자세한 에러 정보 제공
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const errorStack = error instanceof Error ? error.stack : undefined;
 
@@ -157,33 +273,14 @@ export async function POST(request: NextRequest) {
         projectId: projectId ?? undefined
       },
       include: {
-        author: { select: { id: true, name: true, avatarUrl: true } }
+        author: { select: { id: true, name: true, avatarUrl: true } },
+        _count: { select: { likes: true, comments: true } }
       }
     });
 
-    return NextResponse.json(
-      {
-        id: post.id,
-        title: post.title,
-        content: post.content,
-        likes: 0,
-        comments: 0,
-        dislikes: 0,
-        reports: 0,
-        projectId: post.projectId ?? undefined,
-        createdAt: post.createdAt.toISOString(),
-        liked: false,
-        category: String(post.category ?? CommunityCategory.GENERAL).toLowerCase(),
-        isPinned: post.isPinned,
-        isTrending: false,
-        author: {
-          id: post.author?.id || '',
-          name: post.author?.name || '',
-          avatarUrl: post.author?.avatarUrl || null
-        }
-      },
-      { status: 201 }
-    );
+    const created = mapPostToResponse(post);
+
+    return NextResponse.json(created, { status: 201 });
   } catch (error) {
     console.error('Failed to create post in database.', error);
     return NextResponse.json({ message: 'Unable to create community post.' }, { status: 500 });

@@ -57,19 +57,27 @@ export function Header() {
 
           <div className="flex items-center space-x-4">
             {session ? (
-              <Link 
-                href="/profile" 
+              <Link
+                href="/profile"
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors"
               >
                 프로필
               </Link>
             ) : (
-              <Link 
-                href="/api/auth/signin" 
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors"
-              >
-                로그인
-              </Link>
+              <>
+                <Link
+                  href="/auth/signin"
+                  className="text-neutral-300 hover:text-white transition-colors"
+                >
+                  로그인
+                </Link>
+                <Link
+                  href="/auth/signup"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors"
+                >
+                  회원가입
+                </Link>
+              </>
             )}
           </div>
         </div>

@@ -58,7 +58,7 @@ export async function POST(
     // 신고 생성
     const report = await prisma.moderationReport.create({
       data: {
-        reporterId: reporterId,
+        reporter: { connect: { id: reporterId } },
         targetType: ModerationTargetType.POST,
         targetId: params.id,
         reason: reason && reason.length > 0 ? reason : 'No reason provided'

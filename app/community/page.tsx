@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import Link from 'next/link';
 
 import { CommunityBoard } from '@/components/ui/sections/community-board';
 import type { CommunityPost } from '@/lib/data/community';
@@ -53,6 +54,16 @@ export default function CommunityPage() {
           </div>
         </div>
       </header>
+
+      <div className="mt-8 flex justify-end">
+        <Link
+          href="/community/new"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+        >
+          새 게시글 작성
+        </Link>
+      </div>
+
       <section className="mt-10">
         <CommunityBoard onMetaChange={handleMetaChange} />
       </section>
