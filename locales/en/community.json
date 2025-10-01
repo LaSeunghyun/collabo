@@ -82,8 +82,39 @@
     "reportDescription": "Your report will be reviewed by our moderation team.",
     "reportCancel": "Close",
     "reportConfirm": "Submit report",
+    "reportSubmitting": "Submitting...",
     "reportSubmitted": "Reported",
-    "reportSuccess": "Thanks for the report—we'll review it shortly."
+    "reportSuccess": "Thanks for the report - we'll review it shortly.",
+    "reportAuthRequired": "You need to sign in before you can submit a report.",
+    "reportReasonLabel": "Why are you reporting this post?",
+    "reportReasonDescription": "Select the category that best describes the issue.",
+    "reportReasonRequired": "Choose a reason to continue.",
+    "reportOtherRequired": "Please share a short explanation for this selection.",
+    "reportReasonOtherLabel": "Additional context",
+    "reportReasonOtherPlaceholder": "Share any details that will help the moderators (required for 'Something else').",
+    "reportError": "We couldn't submit your report. Please try again.",
+    "reportReasons": {
+      "spam": {
+        "title": "Spam or promotion",
+        "description": "Irrelevant advertising, phishing attempts, or repetitive posts."
+      },
+      "harassment": {
+        "title": "Harassment or hate",
+        "description": "Insults, slurs, or threats that target a person or group."
+      },
+      "misinformation": {
+        "title": "Misleading information",
+        "description": "Content that spreads false or deceptive claims."
+      },
+      "inappropriate": {
+        "title": "Inappropriate or sensitive content",
+        "description": "Explicit imagery, graphic violence, or otherwise unsafe material."
+      },
+      "other": {
+        "title": "Something else",
+        "description": "Tell us what feels off so we can take a closer look."
+      }
+    }
   },
   "messages": {
     "autoReply": "Thanks! I'll get back to you soon.",

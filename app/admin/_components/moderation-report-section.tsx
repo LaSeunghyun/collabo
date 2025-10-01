@@ -1,6 +1,6 @@
 ﻿import { ModerationStatus, ModerationTargetType } from '@/types/prisma';
 
-import { getOpenModerationReports } from '@/lib/server/moderation';
+import { getHandledModerationReportsByPost, getOpenModerationReports } from '@/lib/server/moderation';
 
 const statusLabels: Record<ModerationStatus, string> = {
   [ModerationStatus.PENDING]: 'Pending',
@@ -21,7 +21,10 @@ const dateFormatter = new Intl.DateTimeFormat('ko-KR', {
 
 export async function ModerationReportSection() {
   try {
-    const reports = await getOpenModerationReports();
+    const [reports, handledReports] = await Promise.all([
+      getOpenModerationReports(),
+      getHandledModerationReportsByPost()
+    ]);
 
     return (
       <section
@@ -71,6 +74,54 @@ export async function ModerationReportSection() {
             There are no moderation reports waiting for review.
           </p>
         )}
+
+        <div className="mt-8 border-t border-white/5 pt-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-white">Resolved Cases</h3>
+              <p className="mt-1 text-xs text-white/60">
+                Posts with completed moderation actions, sorted by total reports.
+              </p>
+            </div>
+          </div>
+
+          {handledReports.length > 0 ? (
+            <ul className="mt-4 space-y-3">
+              {handledReports.map((item) => {
+                const displayTitle = item.postTitle ?? `Post #${item.postId}`;
+                const authorLabel = item.postAuthor
+                  ? item.postAuthor.name ?? item.postAuthor.id
+                  : null;
+                const resolvedLabel = item.lastResolvedAt
+                  ? dateFormatter.format(item.lastResolvedAt)
+                  : 'Resolution date unavailable';
+
+                return (
+                  <li
+                    key={item.postId}
+                    className="flex items-start justify-between rounded-2xl border border-white/5 bg-white/[0.05] px-4 py-3"
+                  >
+                    <div className="pr-4">
+                      <p className="text-sm font-semibold text-white">{displayTitle}</p>
+                      <p className="mt-1 text-xs text-white/60">Reports: {item.totalReports}</p>
+                      {authorLabel ? (
+                        <p className="text-xs text-white/50">By {authorLabel}</p>
+                      ) : null}
+                      <p className="mt-1 text-xs text-white/50">Last resolved {resolvedLabel}</p>
+                    </div>
+                    <span className="shrink-0 rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-white/80">
+                      {statusLabels[item.latestStatus]}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="mt-4 rounded-2xl border border-dashed border-white/10 bg-white/5 px-4 py-4 text-center text-xs text-white/60">
+              There are no resolved reports yet.
+            </p>
+          )}
+        </div>
       </section>
     );
   } catch (error) {
