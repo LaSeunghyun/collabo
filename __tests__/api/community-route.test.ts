@@ -45,10 +45,10 @@ describe('Community feed API', () => {
     prismaMock.post.findMany
       .mockResolvedValueOnce([buildPost({ id: 'initial-1' })])
       .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([buildPost({ id: 'popular-1', _count: { likes: 6, comments: 3 } })])
-      .mockResolvedValueOnce([buildPost({ id: 'trending-1', createdAt: new Date() })]);
+      .mockResolvedValueOnce([buildPost({ id: 'popular-1', _count: { likes: 6, comments: 3 } })]);
 
     prismaMock.postLike.findMany.mockResolvedValue([]);
+    prismaMock.postDislike.findMany.mockResolvedValue([]);
     prismaMock.moderationReport.groupBy.mockResolvedValue([]);
     prismaMock.post.count.mockResolvedValue(1);
   };

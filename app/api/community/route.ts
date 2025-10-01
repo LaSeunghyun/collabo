@@ -106,8 +106,14 @@ export async function GET(request: NextRequest) {
       .map((value) => parseCategory(value))
       .filter((value): value is CommunityCategory => Boolean(value));
 
-    const { user: viewer } = await evaluateAuthorization();
-    const viewerId = viewer?.id ?? null;
+    let viewerId: string | null = null;
+    try {
+      const { user: viewer } = await evaluateAuthorization();
+      viewerId = viewer?.id ?? null;
+    } catch (authError) {
+      console.warn('Authorization check failed in community API:', authError);
+      // 인증 실패해도 기본 데이터는 반환
+    }
 
     const baseWhere: Prisma.PostWhereInput = {
       type: PostType.DISCUSSION,
@@ -116,35 +122,29 @@ export async function GET(request: NextRequest) {
       ...(normalizedCategories.length ? { category: { in: normalizedCategories } } : {}),
       ...(search
         ? {
-            OR: [
-              { title: { contains: search, mode: 'insensitive' } },
-              { content: { contains: search, mode: 'insensitive' } }
-            ]
-          }
+          OR: [
+            { title: { contains: search, mode: 'insensitive' } },
+            { content: { contains: search, mode: 'insensitive' } }
+          ]
+        }
         : {})
     };
 
-    const orderBy: Prisma.PostOrderByWithRelationInput[] = [];
+    const baseOrderBy: Prisma.PostOrderByWithRelationInput[] = [{ createdAt: 'desc' }];
 
-    if (sort === 'popular') {
-      orderBy.push({ likes: { _count: 'desc' } });
-      orderBy.push({ comments: { _count: 'desc' } });
-      orderBy.push({ createdAt: 'desc' });
-    } else {
-      orderBy.push({ createdAt: 'desc' });
-    }
+    const applyCursor = sort === 'recent' && cursor;
 
     const posts = await prisma.post.findMany({
       where: baseWhere,
       include: postInclude,
-      orderBy,
+      orderBy: baseOrderBy,
       take: limit,
-      ...(cursor ? { skip: 1, cursor: { id: cursor } } : {})
+      ...(applyCursor ? { skip: 1, cursor: { id: cursor } } : {})
     });
 
-    const nextCursor = posts.length === limit ? posts[posts.length - 1]?.id ?? null : null;
+    const popularityPoolSize = Math.max(limit * 3, FEED_CONFIG.popularLimit * 3, FEED_CONFIG.trendingLimit * 3);
 
-    const [pinnedRaw, popularRaw, trendingRaw] = await Promise.all([
+    const [pinnedRaw, popularityPool] = await Promise.all([
       prisma.post.findMany({
         where: { ...baseWhere, isPinned: true },
         include: postInclude,
@@ -154,29 +154,47 @@ export async function GET(request: NextRequest) {
       prisma.post.findMany({
         where: baseWhere,
         include: postInclude,
-        orderBy: [
-          { likes: { _count: 'desc' } },
-          { comments: { _count: 'desc' } },
-          { createdAt: 'desc' }
-        ],
-        take: FEED_CONFIG.popularLimit
-      }),
-      prisma.post.findMany({
-        where: baseWhere,
-        include: postInclude,
-        orderBy: { createdAt: 'desc' },
-        take: FEED_CONFIG.trendingLimit
+        orderBy: baseOrderBy,
+        take: popularityPoolSize
       })
     ]);
 
-    const filteredPopularRaw = popularRaw.filter(
-      (post) =>
-        (post._count.likes ?? 0) >= FEED_CONFIG.popularMinLikes ||
-        (post._count.comments ?? 0) >= FEED_CONFIG.popularMinComments
-    );
+    const popularityScore = (post: PostWithAuthor) => post._count.likes * 3 + post._count.comments * 2;
+
+    const popularSorted = [...popularityPool].sort((a, b) => {
+      const scoreDiff = popularityScore(b) - popularityScore(a);
+      if (scoreDiff !== 0) {
+        return scoreDiff;
+      }
+      return b.createdAt.getTime() - a.createdAt.getTime();
+    });
+
+    const popularRaw = popularSorted
+      .filter(
+        (post) =>
+          (post._count.likes ?? 0) >= FEED_CONFIG.popularMinLikes ||
+          (post._count.comments ?? 0) >= FEED_CONFIG.popularMinComments
+      )
+      .slice(0, FEED_CONFIG.popularLimit);
+
+    const trendingRaw = popularityPool
+      .filter(isTrendingCandidate)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, FEED_CONFIG.trendingLimit);
+
+    let feedPosts = posts;
+
+    if (sort === 'popular') {
+      feedPosts = popularSorted.slice(0, limit);
+    } else if (sort === 'trending') {
+      feedPosts = trendingRaw.slice(0, limit);
+    }
+
+    const nextCursor =
+      sort === 'recent' && feedPosts.length === limit ? feedPosts[feedPosts.length - 1]?.id ?? null : null;
 
     const allPostIds = new Set<string>();
-    for (const collection of [posts, pinnedRaw, filteredPopularRaw, trendingRaw]) {
+    for (const collection of [feedPosts, pinnedRaw, popularRaw, trendingRaw]) {
       for (const post of collection) {
         allPostIds.add(post.id);
       }
@@ -214,16 +232,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const filteredTrendingRaw = trendingRaw.filter((post) => isTrendingCandidate(post));
-    const trendingIds = new Set(filteredTrendingRaw.map((post) => post.id));
+    const trendingIds = new Set(trendingRaw.map((post) => post.id));
 
     const response: CommunityFeedResponse = {
-      posts: posts.map((post) => mapPostToResponse(post, likedSet, dislikedSet, reportMap, trendingIds)),
+      posts: feedPosts.map((post) => mapPostToResponse(post, likedSet, dislikedSet, reportMap, trendingIds)),
       pinned: pinnedRaw.map((post) => mapPostToResponse(post, likedSet, dislikedSet, reportMap, trendingIds)),
-      popular:
-        filteredPopularRaw.length > 0
-          ? filteredPopularRaw.map((post) => mapPostToResponse(post, likedSet, dislikedSet, reportMap, trendingIds))
-          : popularRaw.map((post) => mapPostToResponse(post, likedSet, dislikedSet, reportMap, trendingIds)),
+      popular: popularRaw.map((post) => mapPostToResponse(post, likedSet, dislikedSet, reportMap, trendingIds)),
       meta: {
         nextCursor,
         total: await prisma.post.count({ where: baseWhere }),
@@ -239,7 +253,12 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Failed to fetch posts from database.', error);
+    console.error('Failed to fetch posts from database:', error);
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined
+    });
 
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const errorStack = error instanceof Error ? error.stack : undefined;
