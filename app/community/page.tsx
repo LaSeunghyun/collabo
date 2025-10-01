@@ -2,7 +2,6 @@
 
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import Link from 'next/link';
 
 import { CommunityBoard } from '@/components/ui/sections/community-board';
 import type { CommunityPost } from '@/lib/data/community';
