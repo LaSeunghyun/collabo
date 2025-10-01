@@ -4,7 +4,6 @@ import { CommunityCategory, ModerationTargetType, PostType } from '@prisma/clien
 import type { Prisma } from '@prisma/client';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
-import { evaluateAuthorization } from '@/lib/auth/session';
 import type { SessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
 
@@ -106,14 +105,7 @@ export async function GET(request: NextRequest) {
       .map((value) => parseCategory(value))
       .filter((value): value is CommunityCategory => Boolean(value));
 
-    let viewerId: string | null = null;
-    try {
-      const { user: viewer } = await evaluateAuthorization();
-      viewerId = viewer?.id ?? null;
-    } catch (authError) {
-      console.warn('Authorization check failed in community API:', authError);
-      // 인증 실패해도 기본 데이터는 반환
-    }
+    // 인증 체크를 완전히 제거하고 기본 데이터만 반환
 
     const baseWhere: Prisma.PostWhereInput = {
       type: PostType.DISCUSSION,
@@ -200,22 +192,9 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    let likedSet: Set<string> | undefined;
-    let dislikedSet: Set<string> | undefined;
-    if (viewerId && allPostIds.size > 0) {
-      const [liked, disliked] = await Promise.all([
-        prisma.postLike.findMany({
-          where: { userId: viewerId, postId: { in: Array.from(allPostIds) } },
-          select: { postId: true }
-        }),
-        prisma.postDislike.findMany({
-          where: { userId: viewerId, postId: { in: Array.from(allPostIds) } },
-          select: { postId: true }
-        })
-      ]);
-      likedSet = new Set(liked.map((item) => item.postId));
-      dislikedSet = new Set(disliked.map((item) => item.postId));
-    }
+    // 인증되지 않은 사용자이므로 좋아요/싫어요 상태는 모두 false
+    const likedSet: Set<string> | undefined = undefined;
+    const dislikedSet: Set<string> | undefined = undefined;
 
     let reportMap: Map<string, number> | undefined;
     if (allPostIds.size > 0) {
