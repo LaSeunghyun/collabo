@@ -1,7 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { signIn, getSession } from 'next-auth/react';
+import { SESSION_PERSISTENCE_KEY, SESSION_PERSISTENCE_SEED } from '@/lib/auth/session-persistence';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -28,6 +29,10 @@ export default function SignInPage() {
                 setError('이메일 또는 비밀번호가 올바르지 않습니다.');
             } else {
                 // 로그인 성공 시 이전 페이지로 리다이렉트
+                if (typeof window !== 'undefined') {
+                    window.sessionStorage.setItem(SESSION_PERSISTENCE_KEY, SESSION_PERSISTENCE_SEED);
+                }
+
                 const session = await getSession();
                 if (session) {
                     router.push('/');

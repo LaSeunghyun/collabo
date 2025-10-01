@@ -171,7 +171,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
       const res = await fetch(`/api/community/${updateId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: like ? 'like' : 'unlike', liked: like })
+        body: JSON.stringify({ action: like ? 'like' : 'unlike' })
       });
 
       if (!res.ok) {

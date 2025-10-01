@@ -163,21 +163,24 @@ const fetchArtistUpdates = async (artistId: string): Promise<ArtistProjectUpdate
 };
 
 const fetchArtistStats = async (artistId: string) => {
-  const [followerCount, projectCount, uniqueBackers] = await Promise.all([
-    prisma.userFollow.count({ where: { followingId: artistId } }),
-    prisma.project.count({ where: { ownerId: artistId } }),
-    prisma.funding.groupBy({
-      by: ['userId'],
-      where: { project: { ownerId: artistId } }
-    })
-  ]);
+    const [followerCount, projectCount, distinctBackers] = await Promise.all([
+      prisma.userFollow.count({ where: { followingId: artistId } }),
+      prisma.project.count({ where: { ownerId: artistId } }),
+      prisma.funding.findMany({
+        where: { project: { ownerId: artistId } },
+        distinct: ['userId'],
+        select: { userId: true }
+      })
+    ]);
 
-  return {
-    followerCount,
-    projectCount,
-    totalBackers: uniqueBackers.length
+    const normalizedBackers = Array.isArray(distinctBackers) ? distinctBackers : [];
+
+    return {
+      followerCount,
+      projectCount,
+      totalBackers: normalizedBackers.length
+    };
   };
-};
 
 const fetchIsFollowing = async (artistId: string, viewer?: SessionUser | null) => {
   if (!viewer?.id || viewer.id === artistId) {

@@ -45,14 +45,18 @@ export default function CommunityPostDetailPage() {
   const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const isAuthenticated = Boolean(session?.user);
+
+  // 세션 상태 디버깅
+  useEffect(() => {
+    console.log('Session status:', { status, session, isAuthenticated });
+  }, [status, session, isAuthenticated]);
 
   const { data: post, isLoading, isError } = useCommunityPost(postId);
   const { data: comments = [], isLoading: commentsLoading } = useCommunityComments(postId);
 
-  const [dislikeActive, setDislikeActive] = useState(false);
-  const [dislikeCount, setDislikeCount] = useState(0);
+  // 싫어요 상태는 서버에서 관리하므로 로컬 상태 제거
   const [reportOpen, setReportOpen] = useState(false);
   const [reportStatus, setReportStatus] = useState<'idle' | 'submitted'>('idle');
   const [reportReasonKey, setReportReasonKey] = useState<string | null>(null);
@@ -78,7 +82,7 @@ export default function CommunityPostDetailPage() {
       const res = await fetch(`/api/community/${postId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: like ? 'like' : 'unlike', liked: like })
+        body: JSON.stringify({ action: like ? 'like' : 'unlike' })
       });
       if (!res.ok) {
         const payload = await res.json().catch(() => null);
@@ -98,6 +102,35 @@ export default function CommunityPostDetailPage() {
     onError: (error: unknown) => {
       const message =
         error instanceof Error ? error.message : t('community.detail.likeError');
+      setLikeError(message);
+    }
+  });
+
+  const toggleDislikeMutation = useMutation({
+    mutationFn: async (dislike: boolean) => {
+      const res = await fetch(`/api/community/${postId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: dislike ? 'dislike' : 'undislike' })
+      });
+      if (!res.ok) {
+        const payload = await res.json().catch(() => null);
+        const message =
+          (payload && (payload.error ?? payload.message)) ?? t('community.detail.dislikeError');
+        throw new Error(message);
+      }
+      return (await res.json()) as CommunityPost;
+    },
+    onSuccess: (updated) => {
+      queryClient.setQueryData<CommunityPost>(['community', 'detail', postId], updated);
+      setLikeError(null);
+    },
+    onMutate: () => {
+      setLikeError(null);
+    },
+    onError: (error: unknown) => {
+      const message =
+        error instanceof Error ? error.message : t('community.detail.dislikeError');
       setLikeError(message);
     }
   });
@@ -184,6 +217,8 @@ export default function CommunityPostDetailPage() {
         return t('community.detail.reportPostNotFound');
       case 'User not found.':
         return t('community.detail.reportUserNotFound');
+      case 'Reporter is required.':
+        return t('community.detail.reportAuthRequired');
       default:
         return message;
     }
@@ -191,16 +226,23 @@ export default function CommunityPostDetailPage() {
 
   const reportMutation = useMutation({
     mutationFn: async ({ reporterId, reason }: { reporterId: string; reason: string }) => {
+      console.log('Sending report request:', { reporterId, reason, postId });
+
       const res = await fetch(`/api/community/${postId}/report`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reporterId, reason })
       });
 
+      console.log('Report response status:', res.status);
+
       if (!res.ok) {
         const payload = await res.json().catch(() => null);
+        console.log('Report error payload:', payload);
         const message = resolveReportErrorMessage(payload?.message);
-        throw new Error(message);
+        const error = new Error(message);
+        (error as any).details = payload?.details;
+        throw error;
       }
 
       return res.json() as Promise<{ id: string }>;
@@ -216,7 +258,12 @@ export default function CommunityPostDetailPage() {
         error instanceof Error
           ? resolveReportErrorMessage(error.message)
           : t('community.detail.reportError');
-      setReportError(message);
+
+      // 에러 상세 정보가 있으면 함께 표시
+      const errorDetails = (error as any)?.details;
+      const fullMessage = errorDetails ? `${message} (${errorDetails})` : message;
+
+      setReportError(fullMessage);
     }
   });
 
@@ -226,9 +273,23 @@ export default function CommunityPostDetailPage() {
       return;
     }
 
+    console.log('Report submit attempt:', {
+      isAuthenticated,
+      userId: session?.user?.id,
+      session: session
+    });
+
     if (!isAuthenticated || !session?.user?.id) {
+      console.log('Authentication check failed:', { isAuthenticated, userId: session?.user?.id });
       setReportError(t('community.detail.reportAuthRequired'));
       redirectToSignIn();
+      return;
+    }
+
+    // 사용자 ID 유효성 검사
+    if (typeof session.user.id !== 'string' || session.user.id.trim() === '') {
+      console.log('Invalid user ID:', session.user.id);
+      setReportError(t('community.detail.reportUserNotFound'));
       return;
     }
 
@@ -277,11 +338,7 @@ export default function CommunityPostDetailPage() {
     }, 800);
   };
 
-  useEffect(() => {
-    if (typeof post?.dislikes === 'number') {
-      setDislikeCount(post.dislikes);
-    }
-  }, [post?.dislikes]);
+  // 싫어요 상태는 서버에서 관리하므로 로컬 useEffect 제거
 
   useEffect(() => {
     if (!reportOpen) {
@@ -386,21 +443,22 @@ export default function CommunityPostDetailPage() {
           <button
             type="button"
             onClick={() => {
-              setDislikeActive((prev) => {
-                const next = !prev;
-                setDislikeCount((count) => (next ? count + 1 : Math.max(0, count - 1)));
-                return next;
-              });
+              if (!isAuthenticated) {
+                redirectToSignIn();
+                return;
+              }
+              toggleDislikeMutation.mutate(!post.disliked);
             }}
             className={clsx(
-              'inline-flex items-center gap-2 rounded-full border px-4 py-2 transition',
-              dislikeActive
+              'inline-flex items-center gap-2 rounded-full border px-4 py-2 transition disabled:cursor-not-allowed disabled:opacity-60',
+              post.disliked
                 ? 'border-white/20 bg-white/20 text-white'
                 : 'border-white/10 bg-white/5 text-white/80 hover:border-white/30 hover:bg-white/10'
             )}
+            disabled={toggleDislikeMutation.isPending}
           >
             <MinusCircle className="h-4 w-4" />
-            <span>{t('community.detail.dislikeLabel', { count: dislikeCount })}</span>
+            <span>{t('community.detail.dislikeLabel', { count: post.dislikes })}</span>
           </button>
           <button
             type="button"

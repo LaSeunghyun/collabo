@@ -144,6 +144,7 @@ model User {
   posts            Post[]
   comments         Comment[]
   postLikes        PostLike[]
+  postDislikes     PostDislike[]
   commentReactions CommentReaction[]
   notifications    Notification[]
   partner          Partner?
@@ -334,6 +335,7 @@ model Post {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   likes       PostLike[]
+  dislikes    PostDislike[]
   comments    Comment[]
 }
 
@@ -356,6 +358,17 @@ model Comment {
 }
 
 model PostLike {
+  id        String   @id @default(cuid())
+  post      Post     @relation(fields: [postId], references: [id])
+  postId    String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId])
+}
+
+model PostDislike {
   id        String   @id @default(cuid())
   post      Post     @relation(fields: [postId], references: [id])
   postId    String

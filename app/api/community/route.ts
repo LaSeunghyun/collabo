@@ -47,7 +47,7 @@ const toCategorySlug = (category: CommunityCategory | null | undefined) =>
 
 const postInclude = {
   author: { select: { id: true, name: true, avatarUrl: true } },
-  _count: { select: { likes: true, comments: true } }
+  _count: { select: { likes: true, dislikes: true, comments: true } }
 } as const;
 
 type PostWithAuthor = Prisma.PostGetPayload<{ include: typeof postInclude }>;
@@ -55,6 +55,7 @@ type PostWithAuthor = Prisma.PostGetPayload<{ include: typeof postInclude }>;
 const mapPostToResponse = (
   post: PostWithAuthor,
   likedSet?: Set<string>,
+  dislikedSet?: Set<string>,
   reportMap?: Map<string, number>,
   trendingIds?: Set<string>
 ) => ({
@@ -63,12 +64,13 @@ const mapPostToResponse = (
   content: post.content,
   likes: post._count.likes,
   comments: post._count.comments,
-  dislikes: 0,
+  dislikes: post._count.dislikes,
   reports: reportMap?.get(post.id) ?? 0,
   category: toCategorySlug(post.category),
   projectId: post.projectId ?? undefined,
   createdAt: post.createdAt.toISOString(),
   liked: likedSet?.has(post.id) ?? false,
+  disliked: dislikedSet?.has(post.id) ?? false,
   isPinned: post.isPinned,
   isTrending: trendingIds?.has(post.id) ?? false,
   author: {
@@ -181,12 +183,20 @@ export async function GET(request: NextRequest) {
     }
 
     let likedSet: Set<string> | undefined;
+    let dislikedSet: Set<string> | undefined;
     if (viewerId && allPostIds.size > 0) {
-      const liked = await prisma.postLike.findMany({
-        where: { userId: viewerId, postId: { in: Array.from(allPostIds) } },
-        select: { postId: true }
-      });
+      const [liked, disliked] = await Promise.all([
+        prisma.postLike.findMany({
+          where: { userId: viewerId, postId: { in: Array.from(allPostIds) } },
+          select: { postId: true }
+        }),
+        prisma.postDislike.findMany({
+          where: { userId: viewerId, postId: { in: Array.from(allPostIds) } },
+          select: { postId: true }
+        })
+      ]);
       likedSet = new Set(liked.map((item) => item.postId));
+      dislikedSet = new Set(disliked.map((item) => item.postId));
     }
 
     let reportMap: Map<string, number> | undefined;
@@ -208,12 +218,12 @@ export async function GET(request: NextRequest) {
     const trendingIds = new Set(filteredTrendingRaw.map((post) => post.id));
 
     const response: CommunityFeedResponse = {
-      posts: posts.map((post) => mapPostToResponse(post, likedSet, reportMap, trendingIds)),
-      pinned: pinnedRaw.map((post) => mapPostToResponse(post, likedSet, reportMap, trendingIds)),
+      posts: posts.map((post) => mapPostToResponse(post, likedSet, dislikedSet, reportMap, trendingIds)),
+      pinned: pinnedRaw.map((post) => mapPostToResponse(post, likedSet, dislikedSet, reportMap, trendingIds)),
       popular:
         filteredPopularRaw.length > 0
-          ? filteredPopularRaw.map((post) => mapPostToResponse(post, likedSet, reportMap, trendingIds))
-          : popularRaw.map((post) => mapPostToResponse(post, likedSet, reportMap, trendingIds)),
+          ? filteredPopularRaw.map((post) => mapPostToResponse(post, likedSet, dislikedSet, reportMap, trendingIds))
+          : popularRaw.map((post) => mapPostToResponse(post, likedSet, dislikedSet, reportMap, trendingIds)),
       meta: {
         nextCursor,
         total: await prisma.post.count({ where: baseWhere }),

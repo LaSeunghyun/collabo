@@ -14,6 +14,7 @@ export interface CommunityPost {
   projectId?: string;
   createdAt?: string;
   liked?: boolean;
+  disliked?: boolean;
   isPinned?: boolean;
   isTrending?: boolean;
   author?: CommunityPostAuthor;

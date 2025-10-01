@@ -13,8 +13,11 @@ export async function POST(
     const reporterId = typeof body.reporterId === 'string' ? body.reporterId : undefined;
     const reason = typeof body.reason === 'string' ? body.reason.trim() : undefined;
 
+    console.log('Report request:', { reporterId, reason, postId: params.id });
+
     // 기본 유효성 검사
     if (!reporterId) {
+      console.log('Missing reporterId in request body');
       return NextResponse.json({ message: 'Reporter is required.' }, { status: 400 });
     }
 
@@ -38,8 +41,14 @@ export async function POST(
       select: { id: true }
     });
 
+    console.log('User lookup result:', { reporterId, userFound: !!user });
+
     if (!user) {
-      return NextResponse.json({ message: 'User not found.' }, { status: 404 });
+      console.log('User not found in database:', reporterId);
+      return NextResponse.json({
+        message: 'User not found.',
+        details: `User with ID ${reporterId} does not exist in the database`
+      }, { status: 404 });
     }
 
     // 중복 신고 확인
@@ -75,15 +84,33 @@ export async function POST(
     );
   } catch (error) {
     console.error('Failed to create moderation report:', error);
-    
+
+    // Prisma 오류 처리
+    if (error && typeof error === 'object' && 'code' in error) {
+      const prismaError = error as any;
+      console.log('Prisma error:', { code: prismaError.code, message: prismaError.message });
+
+      if (prismaError.code === 'P2002') {
+        return NextResponse.json({ message: 'Report already submitted.' }, { status: 409 });
+      }
+      if (prismaError.code === 'P2003') {
+        return NextResponse.json({
+          message: 'User not found.',
+          details: 'Foreign key constraint failed - user does not exist'
+        }, { status: 404 });
+      }
+    }
+
     // 더 자세한 에러 정보 제공
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
+    console.log('General error:', { errorMessage, error });
+
     return NextResponse.json(
-      { 
+      {
         message: 'Unable to submit report.',
-        error: errorMessage
-      }, 
+        error: errorMessage,
+        details: error instanceof Error ? error.stack : undefined
+      },
       { status: 500 }
     );
   }

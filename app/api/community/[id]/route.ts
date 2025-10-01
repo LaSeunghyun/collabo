@@ -30,7 +30,7 @@ const buildPostResponse = async (postId: string, viewerId?: string | null) => {
       where: { id: postId },
       include: {
         author: { select: { id: true, name: true, avatarUrl: true } },
-        _count: { select: { likes: true, comments: true } }
+        _count: { select: { likes: true, dislikes: true, comments: true } }
       }
     });
 
@@ -38,17 +38,25 @@ const buildPostResponse = async (postId: string, viewerId?: string | null) => {
       return null;
     }
 
-    // 안전한 liked 체크
+    // 안전한 liked/disliked 체크
     let liked = false;
+    let disliked = false;
     if (viewerId) {
       try {
-        const likeRecord = await prisma.postLike.findUnique({
-          where: { postId_userId: { postId, userId: viewerId } }
-        });
+        const [likeRecord, dislikeRecord] = await Promise.all([
+          prisma.postLike.findUnique({
+            where: { postId_userId: { postId, userId: viewerId } }
+          }),
+          prisma.postDislike.findUnique({
+            where: { postId_userId: { postId, userId: viewerId } }
+          })
+        ]);
         liked = Boolean(likeRecord);
-      } catch (likeError) {
-        console.warn('Failed to check like status:', likeError);
+        disliked = Boolean(dislikeRecord);
+      } catch (error) {
+        console.warn('Failed to check like/dislike status:', error);
         liked = false;
+        disliked = false;
       }
     }
 
@@ -71,12 +79,13 @@ const buildPostResponse = async (postId: string, viewerId?: string | null) => {
       title: post.title || '',
       content: post.content || '',
       likes: post._count?.likes || 0,
+      dislikes: post._count?.dislikes || 0,
       comments: post._count?.comments || 0,
-      dislikes: 0,
       reports,
       projectId: post.projectId ?? undefined,
       createdAt: post.createdAt?.toISOString() || new Date().toISOString(),
       liked,
+      disliked,
       category: toCategorySlug(post.category),
       isPinned: post.isPinned || false,
       isTrending: isTrendingPost(post.createdAt, post._count?.comments || 0, post._count?.likes || 0),
@@ -135,13 +144,7 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   const body = await request.json();
-  const likeValue: unknown = body.like ?? body.liked ?? body.action;
-  const shouldLike =
-    typeof likeValue === 'string'
-      ? likeValue === 'like'
-      : typeof likeValue === 'boolean'
-        ? likeValue
-        : body.action === 'like';
+  const action = body.action; // 'like', 'dislike', 'unlike', 'undislike'
 
   let sessionUser: SessionUser;
 
@@ -163,7 +166,17 @@ export async function PATCH(
       return NextResponse.json({ message: 'Post not found' }, { status: 404 });
     }
 
-    if (shouldLike) {
+    // 좋아요와 싫어요를 상호 배타적으로 처리
+    if (action === 'like') {
+      // 싫어요가 있다면 먼저 제거
+      await prisma.postDislike.deleteMany({
+        where: {
+          postId: params.id,
+          userId: sessionUser.id
+        }
+      });
+      
+      // 좋아요 추가
       await prisma.postLike.upsert({
         where: {
           postId_userId: {
@@ -177,8 +190,40 @@ export async function PATCH(
         },
         update: {}
       });
-    } else {
+    } else if (action === 'dislike') {
+      // 좋아요가 있다면 먼저 제거
       await prisma.postLike.deleteMany({
+        where: {
+          postId: params.id,
+          userId: sessionUser.id
+        }
+      });
+      
+      // 싫어요 추가
+      await prisma.postDislike.upsert({
+        where: {
+          postId_userId: {
+            postId: params.id,
+            userId: sessionUser.id
+          }
+        },
+        create: {
+          postId: params.id,
+          userId: sessionUser.id
+        },
+        update: {}
+      });
+    } else if (action === 'unlike') {
+      // 좋아요 제거
+      await prisma.postLike.deleteMany({
+        where: {
+          postId: params.id,
+          userId: sessionUser.id
+        }
+      });
+    } else if (action === 'undislike') {
+      // 싫어요 제거
+      await prisma.postDislike.deleteMany({
         where: {
           postId: params.id,
           userId: sessionUser.id
@@ -194,7 +239,7 @@ export async function PATCH(
 
     return NextResponse.json(updated);
   } catch (error) {
-    console.error('Failed to update post likes.', error);
-    return NextResponse.json({ message: 'Unable to update like state.' }, { status: 500 });
+    console.error('Failed to update post likes/dislikes.', error);
+    return NextResponse.json({ message: 'Unable to update like/dislike state.' }, { status: 500 });
   }
 }

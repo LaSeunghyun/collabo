@@ -88,7 +88,7 @@ export const getHandledModerationReportsByPost = async (limit = 8) => {
 
   const targetIds = grouped.map((group) => group.targetId);
 
-  const [posts, latestReports] = await Promise.all([
+  const [posts, orderedReports] = await Promise.all([
     prisma.post.findMany({
       where: { id: { in: targetIds } },
       select: {
@@ -108,8 +108,8 @@ export const getHandledModerationReportsByPost = async (limit = 8) => {
         status: { notIn: ACTIVE_REVIEW_STATUSES },
         targetId: { in: targetIds }
       },
-      distinct: ['targetId'],
       orderBy: [
+        { targetId: 'asc' },
         { resolvedAt: 'desc' },
         { createdAt: 'desc' }
       ],
@@ -123,7 +123,13 @@ export const getHandledModerationReportsByPost = async (limit = 8) => {
   ]);
 
   const postLookup = new Map(posts.map((post) => [post.id, post]));
-  const latestLookup = new Map(latestReports.map((report) => [report.targetId, report]));
+  const latestLookup = new Map<string, (typeof orderedReports)[number]>();
+
+  for (const report of orderedReports) {
+    if (!latestLookup.has(report.targetId)) {
+      latestLookup.set(report.targetId, report);
+    }
+  }
 
   return grouped.map((group) => {
     const post = postLookup.get(group.targetId);

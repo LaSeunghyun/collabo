@@ -64,7 +64,7 @@ describe('artist domain service', () => {
       getProjectSummaries.mockResolvedValue([{ id: 'project-1', title: 'Project' }]);
       mockPrisma.userFollow.count.mockResolvedValue(12);
       mockPrisma.project.count.mockResolvedValue(3);
-      mockPrisma.funding.groupBy.mockResolvedValue([{ userId: 'backer-1' }, { userId: 'backer-2' }]);
+      mockPrisma.funding.findMany.mockResolvedValue([{ userId: 'backer-1' }, { userId: 'backer-2' }]);
       mockPrisma.post.findMany.mockResolvedValue([
         {
           id: 'post-1',

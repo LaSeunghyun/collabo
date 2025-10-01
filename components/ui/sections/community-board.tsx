@@ -221,7 +221,7 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
       const res = await fetch(`/api/community/${postId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: like ? 'like' : 'unlike', liked: like })
+        body: JSON.stringify({ action: like ? 'like' : 'unlike' })
       });
 
       if (!res.ok) {
