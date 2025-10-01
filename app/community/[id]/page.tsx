@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Flag, Heart, Loader2, MessageCircle, MinusCircle, UserCircle2, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useSession } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 import clsx from 'clsx';
 
 import type { CommunityComment, CommunityFeedResponse, CommunityPost } from '@/lib/data/community';
@@ -58,6 +58,7 @@ export default function CommunityPostDetailPage() {
   const [reportReasonKey, setReportReasonKey] = useState<string | null>(null);
   const [reportCustomReason, setReportCustomReason] = useState('');
   const [reportError, setReportError] = useState<string | null>(null);
+  const [likeError, setLikeError] = useState<string | null>(null);
   const [authorMenuOpen, setAuthorMenuOpen] = useState(false);
   const [showAuthorPosts, setShowAuthorPosts] = useState(false);
   const [showMessageModal, setShowMessageModal] = useState(false);
@@ -67,6 +68,11 @@ export default function CommunityPostDetailPage() {
   const commentInputRef = useRef<HTMLTextAreaElement | null>(null);
   const [commentValue, setCommentValue] = useState('');
 
+  const redirectToSignIn = () => {
+    const callbackUrl = typeof window !== 'undefined' ? window.location.href : undefined;
+    void signIn(undefined, { callbackUrl });
+  };
+
   const toggleLikeMutation = useMutation({
     mutationFn: async (like: boolean) => {
       const res = await fetch(`/api/community/${postId}`, {
@@ -75,12 +81,24 @@ export default function CommunityPostDetailPage() {
         body: JSON.stringify({ action: like ? 'like' : 'unlike', liked: like })
       });
       if (!res.ok) {
-        throw new Error('Failed to toggle like');
+        const payload = await res.json().catch(() => null);
+        const message =
+          (payload && (payload.error ?? payload.message)) ?? t('community.detail.likeError');
+        throw new Error(message);
       }
       return (await res.json()) as CommunityPost;
     },
     onSuccess: (updated) => {
       queryClient.setQueryData<CommunityPost>(['community', 'detail', postId], updated);
+      setLikeError(null);
+    },
+    onMutate: () => {
+      setLikeError(null);
+    },
+    onError: (error: unknown) => {
+      const message =
+        error instanceof Error ? error.message : t('community.detail.likeError');
+      setLikeError(message);
     }
   });
 
@@ -154,6 +172,23 @@ export default function CommunityPostDetailPage() {
     Boolean(selectedReportReason) &&
     (!isOtherReportReason || trimmedCustomReportReason.length > 0);
 
+  const resolveReportErrorMessage = (message: string | null | undefined) => {
+    if (!message) {
+      return t('community.detail.reportError');
+    }
+
+    switch (message) {
+      case 'Report already submitted.':
+        return t('community.detail.reportDuplicate');
+      case 'Post not found.':
+        return t('community.detail.reportPostNotFound');
+      case 'User not found.':
+        return t('community.detail.reportUserNotFound');
+      default:
+        return message;
+    }
+  };
+
   const reportMutation = useMutation({
     mutationFn: async ({ reporterId, reason }: { reporterId: string; reason: string }) => {
       const res = await fetch(`/api/community/${postId}/report`, {
@@ -164,7 +199,7 @@ export default function CommunityPostDetailPage() {
 
       if (!res.ok) {
         const payload = await res.json().catch(() => null);
-        const message = payload?.message ?? 'Failed to submit report';
+        const message = resolveReportErrorMessage(payload?.message);
         throw new Error(message);
       }
 
@@ -177,7 +212,11 @@ export default function CommunityPostDetailPage() {
     },
     onError: (error) => {
       console.error('Failed to submit report', error);
-      setReportError(t('community.detail.reportError'));
+      const message =
+        error instanceof Error
+          ? resolveReportErrorMessage(error.message)
+          : t('community.detail.reportError');
+      setReportError(message);
     }
   });
 
@@ -189,6 +228,7 @@ export default function CommunityPostDetailPage() {
 
     if (!isAuthenticated || !session?.user?.id) {
       setReportError(t('community.detail.reportAuthRequired'));
+      redirectToSignIn();
       return;
     }
 
@@ -327,17 +367,18 @@ export default function CommunityPostDetailPage() {
             type="button"
             onClick={() => {
               if (!isAuthenticated) {
-                router.push('/api/auth/signin');
+                redirectToSignIn();
                 return;
               }
               toggleLikeMutation.mutate(!post.liked);
             }}
             className={clsx(
-              'inline-flex items-center gap-2 rounded-full border px-4 py-2 transition',
+              'inline-flex items-center gap-2 rounded-full border px-4 py-2 transition disabled:cursor-not-allowed disabled:opacity-60',
               post.liked
                 ? 'border-primary/60 bg-primary/20 text-primary'
                 : 'border-white/10 bg-white/5 text-white/80 hover:border-white/30 hover:bg-white/10'
             )}
+            disabled={toggleLikeMutation.isPending}
           >
             <Heart className={clsx('h-4 w-4', post.liked ? 'fill-current' : undefined)} />
             <span>{likeLabel}</span>
@@ -370,6 +411,7 @@ export default function CommunityPostDetailPage() {
             <span>{t('community.detail.report')}</span>
           </button>
         </div>
+        {likeError ? <p className="text-xs text-red-400">{likeError}</p> : null}
       </article>
 
       <section className="mt-8 space-y-6 rounded-3xl border border-white/10 bg-white/5 p-8">
@@ -409,7 +451,7 @@ export default function CommunityPostDetailPage() {
           onSubmit={(event) => {
             event.preventDefault();
             if (!isAuthenticated) {
-              router.push('/api/auth/signin');
+              redirectToSignIn();
               return;
             }
             const trimmed = commentValue.trim();

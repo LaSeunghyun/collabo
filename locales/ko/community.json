@@ -93,6 +93,10 @@
     "reportReasonOtherLabel": "추가 설명",
     "reportReasonOtherPlaceholder": "'기타'를 선택했다면 위반 내용을 짧게 적어 주세요.",
     "reportError": "신고를 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+    "reportDuplicate": "이미 이 글을 신고했습니다.",
+    "reportPostNotFound": "해당 글을 더 이상 찾을 수 없습니다.",
+    "reportUserNotFound": "신고를 진행하려면 계정 정보를 다시 확인해 주세요.",
+    "likeError": "좋아요를 반영하지 못했습니다. 잠시 후 다시 시도해 주세요.",
     "reportReasons": {
       "spam": {
         "title": "스팸/홍보성 콘텐츠",

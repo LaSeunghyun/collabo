@@ -93,6 +93,10 @@
     "reportReasonOtherLabel": "Additional context",
     "reportReasonOtherPlaceholder": "Share any details that will help the moderators (required for 'Something else').",
     "reportError": "We couldn't submit your report. Please try again.",
+    "reportDuplicate": "You've already reported this post.",
+    "reportPostNotFound": "This post is no longer available.",
+    "reportUserNotFound": "We couldn't verify your account for this report.",
+    "likeError": "We couldn't update your like. Please try again.",
     "reportReasons": {
       "spam": {
         "title": "Spam or promotion",

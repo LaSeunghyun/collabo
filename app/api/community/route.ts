@@ -125,8 +125,8 @@ export async function GET(request: NextRequest) {
     const orderBy: Prisma.PostOrderByWithRelationInput[] = [];
 
     if (sort === 'popular') {
-      orderBy.push({ createdAt: 'desc' });
-    } else if (sort === 'trending') {
+      orderBy.push({ likes: { _count: 'desc' } });
+      orderBy.push({ comments: { _count: 'desc' } });
       orderBy.push({ createdAt: 'desc' });
     } else {
       orderBy.push({ createdAt: 'desc' });
@@ -152,7 +152,11 @@ export async function GET(request: NextRequest) {
       prisma.post.findMany({
         where: baseWhere,
         include: postInclude,
-        orderBy: { createdAt: 'desc' },
+        orderBy: [
+          { likes: { _count: 'desc' } },
+          { comments: { _count: 'desc' } },
+          { createdAt: 'desc' }
+        ],
         take: FEED_CONFIG.popularLimit
       }),
       prisma.post.findMany({
