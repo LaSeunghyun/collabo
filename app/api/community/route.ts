@@ -5,6 +5,7 @@ import type { Prisma } from '@prisma/client';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import type { SessionUser } from '@/lib/auth/session';
+import { evaluateAuthorization } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
 
 import type { CommunityFeedResponse } from '@/lib/data/community';
@@ -105,7 +106,7 @@ export async function GET(request: NextRequest) {
       .map((value) => parseCategory(value))
       .filter((value): value is CommunityCategory => Boolean(value));
 
-    // 인증 체크를 완전히 제거하고 기본 데이터만 반환
+    const { user: viewer } = await evaluateAuthorization();
 
     const baseWhere: Prisma.PostWhereInput = {
       type: PostType.DISCUSSION,
@@ -192,9 +193,28 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 인증되지 않은 사용자이므로 좋아요/싫어요 상태는 모두 false
-    const likedSet: Set<string> | undefined = undefined;
-    const dislikedSet: Set<string> | undefined = undefined;
+    let likedSet: Set<string> | undefined;
+    let dislikedSet: Set<string> | undefined;
+
+    if (viewer && allPostIds.size > 0) {
+      const [likes, dislikes] = await Promise.all([
+        prisma.postLike.findMany({
+          where: {
+            userId: viewer.id,
+            postId: { in: Array.from(allPostIds) }
+          }
+        }),
+        prisma.postDislike.findMany({
+          where: {
+            userId: viewer.id,
+            postId: { in: Array.from(allPostIds) }
+          }
+        })
+      ]);
+
+      likedSet = new Set(likes.map((entry) => entry.postId));
+      dislikedSet = new Set(dislikes.map((entry) => entry.postId));
+    }
 
     let reportMap: Map<string, number> | undefined;
     if (allPostIds.size > 0) {

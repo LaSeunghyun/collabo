@@ -1,9 +1,12 @@
+import { headers } from 'next/headers';
 import { getServerSession } from 'next-auth';
 import type { Session } from 'next-auth';
+import { prisma } from '@/lib/prisma';
 import { UserRole } from '@/types/prisma';
 
+import { verifyAccessToken } from './access-token';
 import { authOptions } from './options';
-import { hasAllPermissions, normalizeRole } from './permissions';
+import { deriveEffectivePermissions, hasAllPermissions, normalizeRole } from './permissions';
 
 export interface SessionUser {
   id: string;
@@ -34,9 +37,111 @@ export interface AuthorizationResult {
   user: SessionUser | null;
 }
 
+const evaluateBearerToken = async (
+  requirements: GuardRequirement
+): Promise<AuthorizationResult | null> => {
+  const authorization = headers().get('authorization');
+
+  if (!authorization?.startsWith('Bearer ')) {
+    return null;
+  }
+
+  const token = authorization.slice(7).trim();
+
+  if (!token) {
+    return {
+      status: AuthorizationStatus.UNAUTHENTICATED,
+      session: null,
+      user: null
+    };
+  }
+
+  try {
+    const verified = await verifyAccessToken(token);
+
+    const session = await prisma.authSession.findUnique({
+      where: { id: verified.sessionId },
+      include: {
+        user: {
+          include: {
+            permissions: {
+              include: {
+                permission: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!session || session.revokedAt) {
+      return {
+        status: AuthorizationStatus.UNAUTHENTICATED,
+        session: null,
+        user: null
+      };
+    }
+
+    if (session.absoluteExpiresAt <= new Date()) {
+      return {
+        status: AuthorizationStatus.UNAUTHENTICATED,
+        session: null,
+        user: null
+      };
+    }
+
+    const explicitPermissions = session.user.permissions.map(
+      (entry) => entry.permission.key
+    );
+    const role = session.user.role as UserRole;
+    const permissions = deriveEffectivePermissions(role, explicitPermissions);
+
+    if (requirements.roles && !requirements.roles.includes(role)) {
+      return {
+        status: AuthorizationStatus.FORBIDDEN,
+        session: null,
+        user: null
+      };
+    }
+
+    if (requirements.permissions && !hasAllPermissions(permissions, requirements.permissions)) {
+      return {
+        status: AuthorizationStatus.FORBIDDEN,
+        session: null,
+        user: null
+      };
+    }
+
+    return {
+      status: AuthorizationStatus.AUTHORIZED,
+      session: null,
+      user: {
+        id: session.userId,
+        name: session.user.name,
+        email: session.user.email,
+        role,
+        permissions
+      }
+    };
+  } catch (error) {
+    console.warn('Bearer 토큰 검증 실패', error);
+    return {
+      status: AuthorizationStatus.UNAUTHENTICATED,
+      session: null,
+      user: null
+    };
+  }
+};
+
 export const evaluateAuthorization = async (
   requirements: GuardRequirement = {}
 ): Promise<AuthorizationResult> => {
+  const bearerResult = await evaluateBearerToken(requirements);
+
+  if (bearerResult) {
+    return bearerResult;
+  }
+
   const session = await getServerAuthSession();
 
   if (!session?.user?.id) {
