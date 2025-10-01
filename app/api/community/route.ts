@@ -86,7 +86,7 @@ const isTrendingCandidate = (post: PostWithAuthor) => {
 
   return (
     post.createdAt >= thresholdDate &&
-    (post._count.comments >= trendingMinComments || post._count.likes >= trendingMinLikes)
+    ((post._count.comments ?? 0) >= trendingMinComments || (post._count.likes ?? 0) >= trendingMinLikes)
   );
 };
 
@@ -171,8 +171,8 @@ export async function GET(request: NextRequest) {
 
     const filteredPopularRaw = popularRaw.filter(
       (post) =>
-        post._count.likes >= FEED_CONFIG.popularMinLikes ||
-        post._count.comments >= FEED_CONFIG.popularMinComments
+        (post._count.likes ?? 0) >= FEED_CONFIG.popularMinLikes ||
+        (post._count.comments ?? 0) >= FEED_CONFIG.popularMinComments
     );
 
     const allPostIds = new Set<string>();
