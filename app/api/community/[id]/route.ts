@@ -25,53 +25,71 @@ const isTrendingPost = (createdAt: Date, commentCount: number, likeCount: number
 };
 
 const buildPostResponse = async (postId: string, viewerId?: string | null) => {
-  const post = await prisma.post.findUnique({
-    where: { id: postId },
-    include: {
-      author: { select: { id: true, name: true, avatarUrl: true } },
-      _count: { select: { likes: true, comments: true } }
-    }
-  });
+  try {
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+      include: {
+        author: { select: { id: true, name: true, avatarUrl: true } },
+        _count: { select: { likes: true, comments: true } }
+      }
+    });
 
-  if (!post) {
+    if (!post) {
+      return null;
+    }
+
+    // 안전한 liked 체크
+    let liked = false;
+    if (viewerId) {
+      try {
+        const likeRecord = await prisma.postLike.findUnique({
+          where: { postId_userId: { postId, userId: viewerId } }
+        });
+        liked = Boolean(likeRecord);
+      } catch (likeError) {
+        console.warn('Failed to check like status:', likeError);
+        liked = false;
+      }
+    }
+
+    // 안전한 reports 카운트
+    let reports = 0;
+    try {
+      reports = await prisma.moderationReport.count({
+        where: {
+          targetType: ModerationTargetType.POST,
+          targetId: post.id
+        }
+      });
+    } catch (reportError) {
+      console.warn('Failed to count reports:', reportError);
+      reports = 0;
+    }
+
+    return {
+      id: post.id || '',
+      title: post.title || '',
+      content: post.content || '',
+      likes: post._count?.likes || 0,
+      comments: post._count?.comments || 0,
+      dislikes: 0,
+      reports,
+      projectId: post.projectId ?? undefined,
+      createdAt: post.createdAt?.toISOString() || new Date().toISOString(),
+      liked,
+      category: toCategorySlug(post.category),
+      isPinned: post.isPinned || false,
+      isTrending: isTrendingPost(post.createdAt, post._count?.comments || 0, post._count?.likes || 0),
+      author: {
+        id: post.author?.id || '',
+        name: post.author?.name || 'Unknown',
+        avatarUrl: post.author?.avatarUrl || null
+      }
+    };
+  } catch (error) {
+    console.error('Failed to build post response:', error);
     return null;
   }
-
-  const liked = viewerId
-    ? Boolean(
-        await prisma.postLike.findUnique({
-          where: { postId_userId: { postId, userId: viewerId } }
-        })
-      )
-    : false;
-
-  const reports = await prisma.moderationReport.count({
-    where: {
-      targetType: ModerationTargetType.POST,
-      targetId: post.id
-    }
-  });
-
-  return {
-    id: post.id,
-    title: post.title,
-    content: post.content,
-    likes: post._count.likes,
-    comments: post._count.comments,
-    dislikes: 0,
-    reports,
-    projectId: post.projectId ?? undefined,
-    createdAt: post.createdAt.toISOString(),
-    liked,
-    category: toCategorySlug(post.category),
-    isPinned: post.isPinned,
-    isTrending: isTrendingPost(post.createdAt, post._count.comments, post._count.likes),
-    author: {
-      id: post.author.id,
-      name: post.author.name,
-      avatarUrl: post.author.avatarUrl
-    }
-  };
 };
 
 export async function GET(
@@ -79,8 +97,17 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { user: viewer } = await evaluateAuthorization();
-    const post = await buildPostResponse(params.id, viewer?.id);
+    // 인증 체크를 더 안전하게 처리
+    let viewerId: string | null = null;
+    try {
+      const { user: viewer } = await evaluateAuthorization();
+      viewerId = viewer?.id || null;
+    } catch (authError) {
+      console.warn('Authorization check failed:', authError);
+      // 인증 실패해도 기본 데이터는 반환
+    }
+
+    const post = await buildPostResponse(params.id, viewerId);
 
     if (!post) {
       return NextResponse.json({ message: 'Post not found' }, { status: 404 });
@@ -88,8 +115,18 @@ export async function GET(
 
     return NextResponse.json(post);
   } catch (error) {
-    console.error('Failed to load post.', error);
-    return NextResponse.json({ message: 'Unable to load post.' }, { status: 500 });
+    console.error('Failed to load post:', error);
+    
+    // 더 자세한 에러 정보 제공
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    return NextResponse.json(
+      { 
+        message: 'Unable to load post.',
+        error: errorMessage
+      }, 
+      { status: 500 }
+    );
   }
 }
 
