@@ -288,11 +288,11 @@ export async function POST(request: NextRequest) {
       },
       include: {
         author: { select: { id: true, name: true, avatarUrl: true } },
-        _count: { select: { likes: true, comments: true } }
+        _count: { select: { likes: true, dislikes: true, comments: true } }
       }
     });
 
-    const created = mapPostToResponse(post);
+    const created = mapPostToResponse(post, undefined, undefined, undefined, undefined);
 
     return NextResponse.json(created, { status: 201 });
   } catch (error) {
