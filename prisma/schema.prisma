@@ -158,6 +158,8 @@ model User {
   blockedUsers     UserBlock[]           @relation("UserBlocker")
   blockedBy        UserBlock[]           @relation("UserBlocked")
   visitLogs        VisitLog[]
+  authDevices      AuthDevice[]
+  authSessions     AuthSession[]
 }
 
 model Project {
@@ -201,6 +203,63 @@ model ProjectCollaborator {
   createdAt DateTime @default(now())
 
   @@unique([projectId, userId])
+}
+
+model AuthDevice {
+  id                String        @id @default(cuid())
+  user              User          @relation(fields: [userId], references: [id])
+  userId            String
+  deviceFingerprint String
+  firstSeenAt       DateTime      @default(now())
+  lastSeenAt        DateTime      @default(now())
+  label             String?
+  sessions          AuthSession[]
+
+  @@unique([userId, deviceFingerprint])
+}
+
+model AuthSession {
+  id                String          @id @default(cuid())
+  user              User            @relation(fields: [userId], references: [id])
+  userId            String
+  device            AuthDevice?     @relation(fields: [deviceId], references: [id])
+  deviceId          String?
+  createdAt         DateTime        @default(now())
+  lastUsedAt        DateTime        @default(now())
+  ipHash            String?
+  uaHash            String?
+  remember          Boolean         @default(false)
+  isAdmin           Boolean         @default(false)
+  client            String          @default("web")
+  absoluteExpiresAt DateTime
+  revokedAt         DateTime?
+  refreshTokens     RefreshToken[]
+
+  @@index([userId])
+  @@index([lastUsedAt])
+}
+
+model RefreshToken {
+  id                  String        @id @default(cuid())
+  session             AuthSession   @relation(fields: [sessionId], references: [id])
+  sessionId           String
+  tokenHash           String
+  tokenFingerprint    String        @unique
+  createdAt           DateTime      @default(now())
+  inactivityExpiresAt DateTime
+  absoluteExpiresAt   DateTime
+  usedAt              DateTime?
+  rotatedToId         String?       @unique
+  revokedAt           DateTime?
+  rotatedTo           RefreshToken? @relation("RefreshTokenRotation", fields: [rotatedToId], references: [id])
+  rotatedFrom         RefreshToken? @relation("RefreshTokenRotation")
+
+  @@index([sessionId])
+}
+
+model TokenBlacklist {
+  jti       String   @id
+  expiresAt DateTime
 }
 
 model Funding {

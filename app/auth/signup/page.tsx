@@ -56,7 +56,26 @@ export default function SignUpPage() {
             });
 
             if (response.ok) {
-                // 회원가입 성공 시 자동 로그인
+                const loginResponse = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        email: formData.email,
+                        password: formData.password,
+                        rememberMe: true,
+                        client: 'web',
+                    }),
+                });
+
+                if (!loginResponse.ok) {
+                    const payload = await loginResponse.json().catch(() => ({ error: '자동 로그인에 실패했습니다.' }));
+                    setError(payload.error ?? '회원가입은 완료되었지만 자동 로그인에 실패했습니다. 로그인 페이지에서 다시 시도해주세요.');
+                    return;
+                }
+
                 const result = await signIn('credentials', {
                     email: formData.email,
                     password: formData.password,
