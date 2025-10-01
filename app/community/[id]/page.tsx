@@ -55,6 +55,9 @@ export default function CommunityPostDetailPage() {
   const [dislikeCount, setDislikeCount] = useState(0);
   const [reportOpen, setReportOpen] = useState(false);
   const [reportStatus, setReportStatus] = useState<'idle' | 'submitted'>('idle');
+  const [reportReasonKey, setReportReasonKey] = useState<string | null>(null);
+  const [reportCustomReason, setReportCustomReason] = useState('');
+  const [reportError, setReportError] = useState<string | null>(null);
   const [authorMenuOpen, setAuthorMenuOpen] = useState(false);
   const [showAuthorPosts, setShowAuthorPosts] = useState(false);
   const [showMessageModal, setShowMessageModal] = useState(false);
@@ -120,6 +123,92 @@ export default function CommunityPostDetailPage() {
     }
   });
 
+  const reportReasonOptions = useMemo(() => {
+    const entries = (t('community.detail.reportReasons', { returnObjects: true }) as
+      | Record<string, { title?: string; description?: string } | string>
+      | undefined) ?? {};
+
+    return Object.entries(entries)
+      .map(([value, raw]) => {
+        if (typeof raw === 'string') {
+          return { value, title: raw, description: '' };
+        }
+
+        if (raw?.title) {
+          return { value, title: raw.title, description: raw.description ?? '' };
+        }
+
+        return null;
+      })
+      .filter((option): option is { value: string; title: string; description: string } => option !== null);
+  }, [t]);
+
+  const selectedReportReason = reportReasonKey
+    ? reportReasonOptions.find((option) => option.value === reportReasonKey)
+    : undefined;
+
+  const isOtherReportReason = reportReasonKey === 'other';
+  const trimmedCustomReportReason = reportCustomReason.trim();
+  const canSubmitReport =
+    Boolean(isAuthenticated) &&
+    Boolean(selectedReportReason) &&
+    (!isOtherReportReason || trimmedCustomReportReason.length > 0);
+
+  const reportMutation = useMutation({
+    mutationFn: async ({ reporterId, reason }: { reporterId: string; reason: string }) => {
+      const res = await fetch(`/api/community/${postId}/report`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reporterId, reason })
+      });
+
+      if (!res.ok) {
+        const payload = await res.json().catch(() => null);
+        const message = payload?.message ?? 'Failed to submit report';
+        throw new Error(message);
+      }
+
+      return res.json() as Promise<{ id: string }>;
+    },
+    onSuccess: () => {
+      setReportStatus('submitted');
+      setReportError(null);
+      void queryClient.invalidateQueries({ queryKey: ['community', 'detail', postId] });
+    },
+    onError: (error) => {
+      console.error('Failed to submit report', error);
+      setReportError(t('community.detail.reportError'));
+    }
+  });
+
+  const handleReportSubmit = () => {
+    if (reportStatus === 'submitted') {
+      setReportOpen(false);
+      return;
+    }
+
+    if (!isAuthenticated || !session?.user?.id) {
+      setReportError(t('community.detail.reportAuthRequired'));
+      return;
+    }
+
+    if (!selectedReportReason) {
+      setReportError(t('community.detail.reportReasonRequired'));
+      return;
+    }
+
+    if (isOtherReportReason && trimmedCustomReportReason.length === 0) {
+      setReportError(t('community.detail.reportOtherRequired'));
+      return;
+    }
+
+    const finalReason =
+      isOtherReportReason ? trimmedCustomReportReason : selectedReportReason.title;
+
+    setReportError(null);
+    reportMutation.mutate({ reporterId: session.user.id, reason: finalReason });
+  };
+
   const messageIsValid = useMemo(() => messageDraft.trim().length > 0, [messageDraft]);
 
   const handleSendMessage = (event: FormEvent<HTMLFormElement>) => {
@@ -157,8 +246,12 @@ export default function CommunityPostDetailPage() {
   useEffect(() => {
     if (!reportOpen) {
       setReportStatus('idle');
+      setReportReasonKey(null);
+      setReportCustomReason('');
+      setReportError(null);
+      reportMutation.reset();
     }
-  }, [reportOpen]);
+  }, [reportOpen, reportMutation]);
 
   if (isLoading) {
     return (
@@ -516,8 +609,68 @@ export default function CommunityPostDetailPage() {
             {reportStatus === 'submitted' ? (
               <p className="text-sm text-white/70">{t('community.detail.reportSuccess')}</p>
             ) : (
-              <p className="text-sm text-white/70">{t('community.detail.reportDescription')}</p>
+              <>
+                <p className="text-sm text-white/70">{t('community.detail.reportDescription')}</p>
+                {!isAuthenticated ? (
+                  <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-xs text-amber-100">
+                    {t('community.detail.reportAuthRequired')}
+                  </div>
+                ) : null}
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm font-medium text-white">
+                      {t('community.detail.reportReasonLabel')}
+                    </p>
+                    <p className="mt-1 text-xs text-white/60">
+                      {t('community.detail.reportReasonDescription')}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    {reportReasonOptions.map((option) => {
+                      const selected = option.value === reportReasonKey;
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => {
+                            setReportReasonKey(option.value);
+                            if (option.value !== 'other') {
+                              setReportCustomReason('');
+                            }
+                            setReportError(null);
+                          }}
+                          className={clsx(
+                            'w-full rounded-2xl border px-4 py-3 text-left transition',
+                            selected
+                              ? 'border-red-400/70 bg-red-500/20 text-white'
+                              : 'border-white/10 bg-white/5 text-white/80 hover:border-white/20 hover:text-white'
+                          )}
+                        >
+                          <p className="text-sm font-semibold">{option.title}</p>
+                          {option.description ? (
+                            <p className="mt-1 text-xs text-white/60">{option.description}</p>
+                          ) : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                {isOtherReportReason ? (
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold uppercase tracking-widest text-white/60">
+                      {t('community.detail.reportReasonOtherLabel')}
+                    </label>
+                    <textarea
+                      value={reportCustomReason}
+                      onChange={(event) => setReportCustomReason(event.target.value)}
+                      placeholder={t('community.detail.reportReasonOtherPlaceholder') ?? ''}
+                      className="min-h-[96px] w-full rounded-2xl border border-white/10 bg-neutral-900/80 px-3 py-2 text-sm text-white placeholder:text-white/50 focus:border-primary focus:outline-none"
+                    />
+                  </div>
+                ) : null}
+              </>
             )}
+            {reportError ? <p className="text-xs text-red-400">{reportError}</p> : null}
             <div className="flex justify-end gap-2">
               <button
                 type="button"
@@ -528,12 +681,17 @@ export default function CommunityPostDetailPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setReportStatus('submitted')}
-                className="rounded-full bg-red-500/80 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-500"
+                onClick={handleReportSubmit}
+                disabled={
+                  reportStatus !== 'submitted' && (!canSubmitReport || reportMutation.isPending)
+                }
+                className="rounded-full bg-red-500/80 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {reportStatus === 'submitted'
                   ? t('community.detail.reportSubmitted')
-                  : t('community.detail.reportConfirm')}
+                  : reportMutation.isPending
+                    ? t('community.detail.reportSubmitting')
+                    : t('community.detail.reportConfirm')}
               </button>
             </div>
           </div>
