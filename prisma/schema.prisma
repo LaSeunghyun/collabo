@@ -157,6 +157,7 @@ model User {
   filedReports     ModerationReport[]    @relation("ModerationReportReporter")
   blockedUsers     UserBlock[]           @relation("UserBlocker")
   blockedBy        UserBlock[]           @relation("UserBlocked")
+  visitLogs        VisitLog[]
 }
 
 model Project {
@@ -387,6 +388,22 @@ model Notification {
   payload   Json
   read      Boolean          @default(false)
   createdAt DateTime         @default(now())
+}
+
+model VisitLog {
+  id         String   @id @default(cuid())
+  sessionId  String
+  userId     String?
+  path       String?
+  userAgent  String?
+  ipHash     String?
+  occurredAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([occurredAt])
+  @@index([sessionId])
+  @@index([userId])
 }
 
 model Wallet {

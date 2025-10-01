@@ -311,7 +311,7 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    const created = mapPostToResponse(post, undefined, undefined, undefined, undefined);
+    const created = mapPostToResponse(post);
 
     return NextResponse.json(created, { status: 201 });
   } catch (error) {
@@ -319,3 +319,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: 'Unable to create community post.' }, { status: 500 });
   }
 }
+

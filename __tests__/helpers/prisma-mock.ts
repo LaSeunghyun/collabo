@@ -76,6 +76,10 @@ export const createPrismaMock = () => {
     postDislike: {
       findMany: jest.fn()
     },
+    visitLog: {
+      create: jest.fn(),
+      findMany: jest.fn()
+    },
     milestone: {
       findUnique: jest.fn()
     },
