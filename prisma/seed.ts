@@ -15,6 +15,7 @@ import {
   UserRole,
   PrismaClient
 } from '@/types/prisma';
+import type { Prisma } from '@prisma/client';
 
 const prisma = new PrismaClient();
 

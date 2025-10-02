@@ -1,11 +1,11 @@
-import { UserRole, type UserRoleValue } from '@/types/prisma';
+import { UserRole, type UserRoleType } from '@/types/prisma';
 
 import { hasAllPermissions, normalizeRole } from './permissions';
 
 export interface RoleGuard {
   matcher: string;
   pattern: RegExp;
-  roles?: UserRoleValue[];
+  roles?: UserRoleType[];
   permissions?: string[];
 }
 

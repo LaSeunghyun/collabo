@@ -1,3 +1,8 @@
+import type {
+  ModerationStatus as ModerationStatusType,
+  ModerationTargetType as ModerationTargetTypeType
+} from '@prisma/client';
+
 import {
   ModerationStatus,
   ModerationTargetType,
@@ -10,9 +15,9 @@ import { prisma } from '@/lib/prisma';
 
 export interface ModerationReportSummary {
   id: string;
-  targetType: ModerationTargetTypeValue;
+  targetType: ModerationTargetTypeType;
   targetId: string;
-  status: ModerationStatusValue;
+  status: ModerationStatusType;
   reason: string | null;
   createdAt: Date;
   reporter: {
@@ -32,10 +37,10 @@ export interface ModerationHandledPostSummary {
     | null;
   totalReports: number;
   lastResolvedAt: Date | null;
-  latestStatus: ModerationStatusValue;
+  latestStatus: ModerationStatusType;
 }
 
-const ACTIVE_REVIEW_STATUSES: ModerationStatusValue[] = [
+const ACTIVE_REVIEW_STATUSES: ModerationStatusType[] = [
   ModerationStatus.PENDING,
   ModerationStatus.REVIEWING
 ];

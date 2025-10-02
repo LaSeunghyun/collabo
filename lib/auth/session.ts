@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth';
 import type { Session } from 'next-auth';
 import { prisma } from '@/lib/prisma';
-import { type UserRoleValue } from '@/types/prisma';
+import type { UserRoleType } from '@/types/prisma';
 
 import { verifyAccessToken } from './access-token';
 import { authOptions } from './options';
@@ -11,12 +11,12 @@ export interface SessionUser {
   id: string;
   name?: string | null;
   email?: string | null;
-  role: UserRoleValue;
+  role: UserRoleType;
   permissions: string[];
 }
 
 export type GuardRequirement = {
-  roles?: UserRoleValue[];
+  roles?: UserRoleType[];
   permissions?: string[];
 };
 
@@ -119,7 +119,7 @@ const evaluateBearerToken = async (
     const explicitPermissions = session.user.permissions.map(
       (entry) => entry.permission.key
     );
-    const role = session.user.role as UserRoleValue;
+    const role = session.user.role as UserRoleType;
     const permissions = deriveEffectivePermissions(role, explicitPermissions);
 
     if (requirements.roles && !requirements.roles.includes(role)) {
@@ -179,7 +179,7 @@ export const evaluateAuthorization = async (
     };
   }
 
-  const role = normalizeRole(session.user.role) as UserRoleValue;
+  const role = normalizeRole(session.user.role) as UserRoleType;
   const permissions = Array.isArray(session.user.permissions)
     ? session.user.permissions
     : [];

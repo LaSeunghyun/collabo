@@ -1,8 +1,8 @@
-import { UserRole, USER_ROLE_VALUES, USER_ROLE_LABELS, type UserRoleValue } from '@/types/prisma';
+import { UserRole, USER_ROLE_VALUES, USER_ROLE_LABELS, type UserRoleType } from '@/types/prisma';
 
 export { UserRole, USER_ROLE_VALUES, USER_ROLE_LABELS };
 
-export type AppUserRole = UserRoleValue;
+export type AppUserRole = UserRoleType;
 
 const DEFAULT_SESSION_PERMISSION = 'session:read';
 
@@ -31,8 +31,8 @@ export function normalizeRole(value: string | null | undefined): AppUserRole {
     : UserRole.PARTICIPANT;
 }
 
-export function toPrismaRole(value: string | null | undefined): UserRoleValue {
-  return normalizeRole(value) as UserRoleValue;
+export function toPrismaRole(value: string | null | undefined): UserRoleType {
+  return normalizeRole(value);
 }
 
 export function deriveEffectivePermissions(
