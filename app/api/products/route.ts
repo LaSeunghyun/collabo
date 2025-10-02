@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ProductType } from '@prisma/client';
 import { requireApiUser } from '@/lib/auth/guards';
 import { prisma } from '@/lib/prisma';
+import { GuardRequirement } from '@/lib/auth/session';
 
 export async function GET(request: NextRequest) {
   try {
@@ -60,9 +61,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await requireApiUser(request);
+    const user = await requireApiUser(request as NextRequest & GuardRequirement);
     const body = await request.json();
-    const { projectId, name, description, type, price, stock } = body;
+    const { projectId, name, type, price, inventory } = body;
 
     if (!projectId || !name || !type || !price) {
       return NextResponse.json(
@@ -88,10 +89,9 @@ export async function POST(request: NextRequest) {
       data: {
         projectId,
         name,
-        description,
         type,
         price,
-        stock: stock || 0
+        inventory: inventory || 0
       },
       include: {
         project: {

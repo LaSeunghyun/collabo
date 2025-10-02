@@ -7,7 +7,7 @@ import { GuardRequirement } from '@/lib/auth/session';
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await requireApiUser(request);
+    const user = await requireApiUser(request as NextRequest & GuardRequirement);
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') as OrderStatus | null;
     const page = parseInt(searchParams.get('page') || '1');
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
         id: true,
         name: true,
         price: true,
-        stock: true,
+        inventory: true,
         project: {
           select: {
             id: true,
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
     // 재고 확인
     for (const item of items) {
       const product = products.find(p => p.id === item.productId);
-      if (!product || product.stock < item.quantity) {
+      if (!product || (product.inventory && product.inventory < item.quantity)) {
         return NextResponse.json(
           { message: `Insufficient stock for product ${product?.name}` },
           { status: 400 }
@@ -139,9 +139,9 @@ export async function POST(request: NextRequest) {
         userId: user.id,
         totalPrice,
         subtotal,
-        status: OrderStatus.PENDING,
+        orderStatus: OrderStatus.PENDING,
         items: {
-          create: orderItems
+          create: orderItems as any
         }
       },
       include: {
@@ -173,7 +173,7 @@ export async function POST(request: NextRequest) {
       await prisma.product.update({
         where: { id: item.productId },
         data: {
-          stock: {
+          inventory: {
             decrement: item.quantity
           }
         }

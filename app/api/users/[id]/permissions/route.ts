@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { requireApiUser } from '@/lib/auth/guards';
 import { prisma } from '@/lib/prisma';
+import { GuardRequirement } from '@/lib/auth/session';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await requireApiUser(request);
+    const user = await requireApiUser(request as NextRequest & GuardRequirement);
     
     // 본인 또는 관리자만 조회 가능
     if (params.id !== user.id && user.role !== 'ADMIN') {
@@ -47,7 +48,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await requireApiUser(request);
+    const user = await requireApiUser(request as NextRequest & GuardRequirement);
     
     // 관리자만 권한 부여 가능
     if (user.role !== 'ADMIN') {
@@ -142,7 +143,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await requireApiUser(request);
+    const user = await requireApiUser(request as NextRequest & GuardRequirement);
     const { searchParams } = new URL(request.url);
     const permissionId = searchParams.get('permissionId');
 

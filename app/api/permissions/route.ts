@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { requireApiUser } from '@/lib/auth/guards';
 import { prisma } from '@/lib/prisma';
+import { GuardRequirement } from '@/lib/auth/session';
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await requireApiUser(request);
+    const user = await requireApiUser(request as NextRequest & GuardRequirement);
     
     // 관리자만 권한 목록 조회 가능
     if (user.role !== 'ADMIN') {
@@ -61,7 +62,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await requireApiUser(request);
+    const user = await requireApiUser(request as NextRequest & GuardRequirement);
     
     // 관리자만 권한 생성 가능
     if (user.role !== 'ADMIN') {

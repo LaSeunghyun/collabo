@@ -3,10 +3,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { SettlementStakeholderType } from '@prisma/client';
 import { requireApiUser } from '@/lib/auth/guards';
 import { prisma } from '@/lib/prisma';
+import { GuardRequirement } from '@/lib/auth/session';
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await requireApiUser(request);
+    const user = await requireApiUser(request as NextRequest & GuardRequirement);
     const { searchParams } = new URL(request.url);
     const stakeholderType = searchParams.get('stakeholderType') as SettlementStakeholderType | null;
     const page = parseInt(searchParams.get('page') || '1');
@@ -63,9 +64,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await requireApiUser(request);
+    const user = await requireApiUser(request as NextRequest & GuardRequirement);
     const body = await request.json();
-    const { settlementId, stakeholderType, amount, description } = body;
+    const { settlementId, stakeholderType, amount } = body;
 
     if (!settlementId || !stakeholderType || !amount) {
       return NextResponse.json(
@@ -101,7 +102,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 권한 확인 (프로젝트 소유자 또는 관리자만)
-    if (settlement.project.ownerId !== user.id && user.role !== 'ADMIN') {
+    if (settlement.project.owner.id !== user.id && user.role !== 'ADMIN') {
       return NextResponse.json(
         { message: 'Unauthorized' },
         { status: 403 }
@@ -115,7 +116,6 @@ export async function POST(request: NextRequest) {
         stakeholderType,
         stakeholderId: user.id,
         amount,
-        description,
         status: 'PENDING'
       },
       include: {

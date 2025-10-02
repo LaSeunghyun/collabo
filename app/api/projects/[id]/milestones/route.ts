@@ -3,13 +3,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { MilestoneStatus } from '@prisma/client';
 import { requireApiUser } from '@/lib/auth/guards';
 import { prisma } from '@/lib/prisma';
+import { GuardRequirement } from '@/lib/auth/session';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await requireApiUser(request);
+    const user = await requireApiUser(request as NextRequest & GuardRequirement);
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') as MilestoneStatus | null;
     const page = parseInt(searchParams.get('page') || '1');
@@ -25,6 +26,14 @@ export async function GET(
       return NextResponse.json(
         { message: 'Project not found' },
         { status: 404 }
+      );
+    }
+
+    // 프로젝트 소유자 또는 관리자만 조회 가능
+    if (project.ownerId !== user.id && user.role !== 'ADMIN') {
+      return NextResponse.json(
+        { message: 'Unauthorized' },
+        { status: 403 }
       );
     }
 
@@ -78,7 +87,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await requireApiUser(request);
+    const user = await requireApiUser(request as NextRequest & GuardRequirement);
     const body = await request.json();
     const { title, description, dueDate, status } = body;
 
@@ -116,7 +125,7 @@ export async function POST(
         title,
         description,
         dueDate: new Date(dueDate),
-        status: status || MilestoneStatus.PENDING
+        status: status || MilestoneStatus.PLANNED
       },
       include: {
         project: {

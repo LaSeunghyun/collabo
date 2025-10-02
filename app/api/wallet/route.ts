@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { requireApiUser } from '@/lib/auth/guards';
 import { prisma } from '@/lib/prisma';
+import { GuardRequirement } from '@/lib/auth/session';
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await requireApiUser(request);
+    const user = await requireApiUser(request as NextRequest & GuardRequirement);
     
     const wallet = await prisma.wallet.findUnique({
       where: { userId: user.id },
@@ -54,7 +55,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await requireApiUser(request);
+    const user = await requireApiUser(request as NextRequest & GuardRequirement);
     const body = await request.json();
     const { amount, type } = body;
 

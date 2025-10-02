@@ -3,10 +3,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PaymentProvider } from '@prisma/client';
 import { requireApiUser } from '@/lib/auth/guards';
 import { prisma } from '@/lib/prisma';
+import { GuardRequirement } from '@/lib/auth/session';
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await requireApiUser(request);
+    const user = await requireApiUser(request as NextRequest & GuardRequirement);
     const { searchParams } = new URL(request.url);
     const provider = searchParams.get('provider') as PaymentProvider | null;
     const page = parseInt(searchParams.get('page') || '1');
@@ -63,7 +64,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await requireApiUser(request);
+    const user = await requireApiUser(request as NextRequest & GuardRequirement);
     const body = await request.json();
     const { fundingId, provider, externalId, amount } = body;
 
