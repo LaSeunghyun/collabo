@@ -63,25 +63,30 @@ const persistDevice = async (
     return null;
   }
 
-  const existing = await prisma.authDevice.upsert({
-    where: {
-      userId_deviceFingerprint: {
+  try {
+    const existing = await prisma.authDevice.upsert({
+      where: {
+        userId_deviceFingerprint: {
+          userId,
+          deviceFingerprint
+        }
+      },
+      create: {
         userId,
-        deviceFingerprint
+        deviceFingerprint,
+        label: deviceLabel ?? undefined
+      },
+      update: {
+        lastSeenAt: now(),
+        label: deviceLabel ?? undefined
       }
-    },
-    create: {
-      userId,
-      deviceFingerprint,
-      label: deviceLabel ?? undefined
-    },
-    update: {
-      lastSeenAt: now(),
-      label: deviceLabel ?? undefined
-    }
-  });
+    });
 
-  return existing;
+    return existing;
+  } catch (error) {
+    console.warn('Failed to persist device, continuing without device tracking:', error);
+    return null;
+  }
 };
 
 export const issueSessionWithTokens = async ({
@@ -94,12 +99,13 @@ export const issueSessionWithTokens = async ({
   deviceFingerprint,
   deviceLabel
 }: IssueSessionInput): Promise<IssuedSession> => {
-  const policy = resolveSessionPolicy({ role, remember, client });
-  const current = now();
-  const absoluteExpiresAt = new Date(current.getTime() + policy.refreshAbsoluteTtl * 1000);
-  const device = await persistDevice(userId, deviceFingerprint, deviceLabel);
-  const ipHash = hashClientHint(ipAddress ?? undefined);
-  const uaHash = hashClientHint(userAgent ?? undefined);
+  try {
+    const policy = resolveSessionPolicy({ role, remember, client });
+    const current = now();
+    const absoluteExpiresAt = new Date(current.getTime() + policy.refreshAbsoluteTtl * 1000);
+    const device = await persistDevice(userId, deviceFingerprint, deviceLabel);
+    const ipHash = hashClientHint(ipAddress ?? undefined);
+    const uaHash = hashClientHint(userAgent ?? undefined);
 
   const session = await prisma.authSession.create({
     data: {
@@ -146,6 +152,10 @@ export const issueSessionWithTokens = async ({
     session,
     permissions
   };
+  } catch (error) {
+    console.error('Failed to issue session with tokens:', error);
+    throw new Error(`Session creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 };
 
 export const rotateRefreshToken = async (
