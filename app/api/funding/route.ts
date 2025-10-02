@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
+
 import {
   FundingStatus,
   PaymentProvider,
   ProjectStatus,
-  type Prisma,
   type Funding
 } from '@/types/prisma';
 import Stripe from 'stripe';

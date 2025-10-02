@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PartnerType, UserRole } from '@/types/prisma';
+import { UserRole, type PartnerTypeValue } from '@/types/prisma';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import {
@@ -29,13 +29,13 @@ const parseBoolean = (value: string | null): boolean | undefined => {
   return undefined;
 };
 
-const parsePartnerType = (value: string | null): PartnerType | undefined => {
+const parsePartnerType = (value: string | null): PartnerTypeValue | undefined => {
   if (!value) {
     return undefined;
   }
 
-  if (PARTNER_TYPE_SET.has(value as PartnerType)) {
-    return value as PartnerType;
+  if (PARTNER_TYPE_SET.has(value as PartnerTypeValue)) {
+    return value as PartnerTypeValue;
   }
 
   return undefined;

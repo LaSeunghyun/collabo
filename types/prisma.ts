@@ -63,6 +63,16 @@ export const ModerationTargetType = PrismaPkg.ModerationTargetType;
 export const ModerationStatus = PrismaPkg.ModerationStatus;
 export const CommunityCategory = PrismaPkg.CommunityCategory;
 
+export type UserRoleValue = (typeof UserRole)[keyof typeof UserRole];
+export type ProjectStatusValue = (typeof ProjectStatus)[keyof typeof ProjectStatus];
+export type PartnerTypeValue = (typeof PartnerType)[keyof typeof PartnerType];
+export type SettlementPayoutStatusValue =
+  (typeof SettlementPayoutStatus)[keyof typeof SettlementPayoutStatus];
+export type ModerationStatusValue =
+  (typeof ModerationStatus)[keyof typeof ModerationStatus];
+export type ModerationTargetTypeValue =
+  (typeof ModerationTargetType)[keyof typeof ModerationTargetType];
+
 export enum PostVisibility {
   PUBLIC = 'PUBLIC',
   SUPPORTERS = 'SUPPORTERS',
@@ -152,7 +162,7 @@ export const MODERATION_TARGET_TYPE_VALUES = Object.values(ModerationTargetType)
 export const MODERATION_STATUS_VALUES = Object.values(ModerationStatus);
 
 // 한국어 라벨 매핑
-export const USER_ROLE_LABELS: Record<UserRoleType, string> = {
+export const USER_ROLE_LABELS: Record<UserRoleValue, string> = {
   [UserRole.CREATOR]: '크리에이터',
   [UserRole.PARTICIPANT]: '참여자',
   [UserRole.PARTNER]: '파트너',

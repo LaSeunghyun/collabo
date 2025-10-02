@@ -3,12 +3,12 @@ import { randomUUID } from 'crypto';
 import { SignJWT, jwtVerify } from 'jose';
 
 import { prisma } from '@/lib/prisma';
-import { UserRole } from '@/types/prisma';
+import { type UserRoleValue } from '@/types/prisma';
 
 export interface AccessTokenContext {
   userId: string;
   sessionId: string;
-  role: UserRole;
+  role: UserRoleValue;
   permissions: string[];
   expiresIn: number;
 }
@@ -22,7 +22,7 @@ export interface AccessTokenResult {
 export interface VerifiedAccessToken {
   userId: string;
   sessionId: string;
-  role: UserRole;
+  role: UserRoleValue;
   permissions: string[];
   jti: string;
   expiresAt: Date;
@@ -93,7 +93,7 @@ export const verifyAccessToken = async (token: string): Promise<VerifiedAccessTo
   return {
     userId: payload.sub,
     sessionId: payload.sid,
-    role: payload.role as UserRole,
+    role: payload.role as UserRoleValue,
     permissions,
     jti: payload.jti,
     expiresAt: expirationSeconds ? new Date(expirationSeconds * 1000) : new Date()

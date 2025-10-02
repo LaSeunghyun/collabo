@@ -1,4 +1,7 @@
-import { SettlementPayoutStatus } from '@/types/prisma';
+import {
+  SettlementPayoutStatus,
+  type SettlementPayoutStatusValue
+} from '@/types/prisma';
 
 import { prisma } from '@/lib/prisma';
 
@@ -8,7 +11,7 @@ export interface SettlementSummary {
   projectTitle: string;
   totalRaised: number;
   netAmount: number;
-  payoutStatus: SettlementPayoutStatus;
+  payoutStatus: SettlementPayoutStatusValue;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -18,7 +21,7 @@ const toSummary = (settlement: {
   projectId: string;
   totalRaised: number;
   netAmount: number;
-  payoutStatus: SettlementPayoutStatus;
+  payoutStatus: SettlementPayoutStatusValue;
   createdAt: Date;
   updatedAt: Date;
   project: { id: string; title: string };

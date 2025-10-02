@@ -1,5 +1,7 @@
+import type { Prisma as PrismaClientNamespace } from '@prisma/client';
+
 import { revalidatePath } from 'next/cache';
-import { Prisma, ProjectStatus, UserRole, ProjectSummary } from '@/types/prisma';
+import { Prisma, ProjectStatus, UserRole, ProjectSummary, type ProjectStatusValue } from '@/types/prisma';
 import { ZodError } from 'zod';
 
 import type { SessionUser } from '@/lib/auth/session';
@@ -37,12 +39,12 @@ export class ProjectAccessDeniedError extends Error {
 
 export type ProjectSummaryOptions = {
   ownerId?: string;
-  statuses?: ProjectStatus[];
+  statuses?: ProjectStatusValue[];
   take?: number;
 };
 
 const fetchProjectsFromDb = async (options?: ProjectSummaryOptions) => {
-  const where: Prisma.ProjectWhereInput = {};
+  const where: PrismaClientNamespace.ProjectWhereInput = {};
 
   if (options?.ownerId) {
     where.ownerId = options.ownerId;
@@ -91,7 +93,7 @@ const toProjectSummary = (project: ProjectWithCounts): ProjectSummary => {
     remainingDays,
     targetAmount: project.targetAmount,
     currentAmount: project.currentAmount,
-    status: project.status as ProjectStatus,
+    status: project.status as ProjectStatusValue,
     createdAt: project.createdAt,
     updatedAt: project.updatedAt,
     owner: {
@@ -146,18 +148,18 @@ export const getProjectSummaryById = async (id: string) => {
 
 const toJsonInput = (
   value: unknown
-): Prisma.InputJsonValue | Prisma.JsonNullValueInput => {
+): PrismaClientNamespace.InputJsonValue | PrismaClientNamespace.JsonNullValueInput => {
   if (value === undefined || value === null) {
     return Prisma.JsonNull;
   }
 
-  return value as Prisma.InputJsonValue;
+  return value as PrismaClientNamespace.InputJsonValue;
 };
 
 const buildProjectCreateData = (
   input: CreateProjectInput,
   ownerId: string
-): Prisma.ProjectUncheckedCreateInput => ({
+): PrismaClientNamespace.ProjectUncheckedCreateInput => ({
   title: input.title,
   description: input.description,
   category: input.category,
@@ -175,8 +177,8 @@ const buildProjectCreateData = (
 
 const buildProjectUpdateData = (
   input: UpdateProjectInput
-): Prisma.ProjectUncheckedUpdateInput => {
-  const data: Prisma.ProjectUncheckedUpdateInput = {};
+): PrismaClientNamespace.ProjectUncheckedUpdateInput => {
+  const data: PrismaClientNamespace.ProjectUncheckedUpdateInput = {};
 
   if (input.title !== undefined) {
     data.title = input.title;
@@ -275,7 +277,7 @@ export const createProject = async (rawInput: unknown, user: SessionUser) => {
       entity: 'Project',
       entityId: project.id,
       action: 'PROJECT_CREATED',
-      data: JSON.parse(JSON.stringify(createData)) as Prisma.InputJsonValue
+      data: JSON.parse(JSON.stringify(createData)) as PrismaClientNamespace.InputJsonValue
     }
   });
 
@@ -315,7 +317,7 @@ export const updateProject = async (id: string, rawInput: unknown, user: Session
       entity: 'Project',
       entityId: id,
       action: 'PROJECT_UPDATED',
-      data: JSON.parse(JSON.stringify(data)) as Prisma.InputJsonValue
+      data: JSON.parse(JSON.stringify(data)) as PrismaClientNamespace.InputJsonValue
     }
   });
 
