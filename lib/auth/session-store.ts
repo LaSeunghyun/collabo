@@ -140,6 +140,7 @@ export const issueSessionWithTokens = async ({
   });
 
   const { permissions, role: resolvedRole } = await loadUserPermissions(userId, role);
+
   const access = await issueAccessToken({
     userId,
     sessionId: session.id,
