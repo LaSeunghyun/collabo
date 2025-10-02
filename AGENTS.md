@@ -1,34 +1,19 @@
-﻿# Repository Guidelines
+# Repository Guidelines
 
 ## Project Structure & Module Organization
-- `app/` holds the Next.js app router; nest route groups with colocated loaders and UI.
-- Shared UI lives in `components/`, domain logic in `lib/`, reusable state in `hooks/`, and TypeScript defs in `types/`.
-- Data and migrations stay under `prisma/`; automation lives in `scripts/`; localized copy in `locales/`.
-- Tests use mirrored folders: high-level flows in `tests/`, component specs in `__tests__/`, mocks in `__mocks__/`. Docs sit in `docs/` and `DEPLOYMENT.md`.
+`app/` hosts Next.js route modules with colocated loaders, actions, and UI per feature. Shared UI lives in `components/`, domain logic in `lib/`, hooks in `hooks/`, and reusable types in `types/`. Data assets sit under `prisma/` (schema, migrations, seeds). Automation scripts belong in `scripts/`, locale strings in `locales/`, and docs under `docs/` plus `DEPLOYMENT.md`. Tests mirror sources: browser flows in `tests/`, component specs in `__tests__/`, doubles in `__mocks__/`. Inspect generated reports in `playwright-report/` and `test-results/`.
 
 ## Build, Test, and Development Commands
-- `npm run dev` spins up the dev server with hot reload.
-- `npm run build` runs `prisma generate` then compiles the production bundle.
-- `npm run start` serves the built app; `npm run lint` executes Next/ESLint rules.
-- `npm run test` runs Jest; append `--watch` for iterative runs.
-- `npm run db:push` syncs Prisma schema; `npm run create-accounts` seeds demo users.
+Run `npm run dev` for the hot-reloading Next.js server. Use `npm run build` to generate Prisma client and compile the production bundle, then `npm run start` to serve it. Execute `npm run lint` before submitting changes to apply ESLint + Next formatting. Validate the Jest suite with `npm run test`; append `--watch` for focused runs. For database schema updates, pair `npm run db:push` with `npm run create-accounts` to seed demo users.
 
 ## Coding Style & Naming Conventions
-- TypeScript + React functional components only; keep hooks prefixed with `use`.
-- Two-space indentation, trailing semicolons, and sorted imports match existing files.
-- Use `@/` path aliases from `tsconfig.json` and prefer PascalCase component files, camelCase utilities.
-- Tailwind classes stay inline, ordered from layout → spacing → color; lint before pushing.
+Favor TypeScript function components and named exports. Keep two-space indentation, trailing semicolons, and sorted imports (external modules before `@/` aliases). Tailwind classes remain inline in layout -> spacing -> typography -> color order. Let ESLint/Prettier autofix deviations.
 
 ## Testing Guidelines
-- Jest with `@testing-library/react` drives unit specs; name files `*.test.ts(x)` beside the target module or under `__tests__/`.
-- Exercise cross-route flows (artist onboarding, checkout) in `tests/` and document gaps in PRs.
-- Centralize doubles in `__mocks__/` and reset side effects via `jest.setup.ts`.
+Rely on Jest with `@testing-library/react`; name specs `*.test.tsx` beside their modules or inside `__tests__/`. Reset doubles through `__mocks__/` and `jest.setup.ts`. Cover critical flows (artist onboarding and checkout) via Playwright (`npx playwright test`) and review artifacts under `playwright-report/`.
 
 ## Commit & Pull Request Guidelines
-- Follow conventional commit prefixes (`feat:`, `fix:`, `refactor:`) as in `git log`.
-- Keep PRs focused, link issues, list validation (`npm run test`, screenshots for UI), and call out schema or env changes.
-- Request reviews from data owners when touching `prisma/` and ping localization reviewers for `locales/` edits.
+Follow Conventional Commits (`feat:`, `fix:`, `refactor:`) and keep diffs scoped. Each PR links relevant issues, lists validation steps (e.g., `npm run test`), and attaches screenshots when UI changes. Flag schema or localization updates and request data-owner or localization review as appropriate.
 
 ## Security & Configuration Tips
-- Copy `env.example` to `.env.local`, populate secrets locally, and keep `.env*` files ignored.
-- After schema edits, run `npm run db:push` and re-run `prisma generate`; review `PRISMA_GROUND_RULES.md` before altering models.
+Copy `env.example` to `.env.local` for local secrets and never commit `.env*`. After editing `prisma/schema.prisma`, run `npm run db:push` and regenerate the client if needed. Store credentials in approved vaults and rotate shared API keys before distributing datasets.
