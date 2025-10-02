@@ -1,4 +1,3 @@
-import { headers } from 'next/headers';
 import { getServerSession } from 'next-auth';
 import type { Session } from 'next-auth';
 import { prisma } from '@/lib/prisma';
@@ -21,6 +20,28 @@ export type GuardRequirement = {
   permissions?: string[];
 };
 
+export interface AuthorizationContext {
+  headers?: Pick<Headers, 'get'> | null;
+  authorization?: string | null;
+}
+
+const resolveAuthorizationHeader = (context?: AuthorizationContext) => {
+  if (!context) {
+    return null;
+  }
+
+  if (context.authorization) {
+    return context.authorization;
+  }
+
+  try {
+    return context.headers?.get('authorization') ?? null;
+  } catch (error) {
+    console.warn('Failed to read authorization header from context', error);
+    return null;
+  }
+};
+
 export const getServerAuthSession = () => getServerSession(authOptions);
 
 export const FORBIDDEN_ROUTE = '/forbidden';
@@ -38,9 +59,10 @@ export interface AuthorizationResult {
 }
 
 const evaluateBearerToken = async (
-  requirements: GuardRequirement
+  requirements: GuardRequirement,
+  context?: AuthorizationContext
 ): Promise<AuthorizationResult | null> => {
-  const authorization = headers().get('authorization');
+  const authorization = resolveAuthorizationHeader(context);
 
   if (!authorization?.startsWith('Bearer ')) {
     return null;
@@ -134,9 +156,10 @@ const evaluateBearerToken = async (
 };
 
 export const evaluateAuthorization = async (
-  requirements: GuardRequirement = {}
+  requirements: GuardRequirement = {},
+  context?: AuthorizationContext
 ): Promise<AuthorizationResult> => {
-  const bearerResult = await evaluateBearerToken(requirements);
+  const bearerResult = await evaluateBearerToken(requirements, context);
 
   if (bearerResult) {
     return bearerResult;

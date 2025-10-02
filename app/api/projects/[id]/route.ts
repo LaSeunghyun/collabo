@@ -28,9 +28,10 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   let user;
+  const authContext = { headers: request.headers };
 
   try {
-    user = await requireApiUser({ roles: [UserRole.CREATOR, UserRole.ADMIN] });
+    user = await requireApiUser({ roles: [UserRole.CREATOR, UserRole.ADMIN] }, authContext);
   } catch (error) {
     const response = handleAuthorizationError(error);
     if (response) {
@@ -71,13 +72,14 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   let user;
+  const authContext = { headers: request.headers };
 
   try {
-    user = await requireApiUser({ roles: [UserRole.CREATOR, UserRole.ADMIN] });
+    user = await requireApiUser({ roles: [UserRole.CREATOR, UserRole.ADMIN] }, authContext);
   } catch (error) {
     const response = handleAuthorizationError(error);
     if (response) {

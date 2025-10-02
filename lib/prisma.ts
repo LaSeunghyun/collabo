@@ -39,11 +39,36 @@ const normalizeServerlessConnectionString = (databaseUrl: string) => {
   }
 };
 
+const createDisabledPrismaClient = (reason: string) => {
+  const baseReason = reason || 'The Prisma client could not be initialized.';
+  const message = `[prisma] Database access is disabled: ${baseReason} Set DATABASE_URL in your environment to enable Prisma.`;
+
+  console.warn(message);
+
+  const noop = async () => undefined;
+
+  return new Proxy({} as PrismaClient, {
+    get(_target, prop) {
+      if (prop === '$disconnect') {
+        return noop;
+      }
+
+      if (prop === Symbol.toStringTag) {
+        return 'PrismaClientStub';
+      }
+
+      return () => {
+        throw new Error(message);
+      };
+    }
+  });
+};
+
 const createPrismaClient = () => {
   const databaseUrl = process.env.DATABASE_URL;
 
   if (!databaseUrl) {
-    throw new Error('DATABASE_URL is not set');
+    throw new Error('DATABASE_URL is not set.');
   }
 
   const datasourceUrl = normalizeServerlessConnectionString(databaseUrl);
@@ -59,7 +84,16 @@ const createPrismaClient = () => {
   });
 };
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+const instantiatePrisma = () => {
+  try {
+    return createPrismaClient();
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    return createDisabledPrismaClient(reason);
+  }
+};
+
+export const prisma = globalForPrisma.prisma ?? instantiatePrisma();
 
 if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma;

@@ -27,9 +27,10 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   let sessionUser;
+  const authContext = { headers: request.headers };
 
   try {
-    sessionUser = await requireApiUser({ roles: [UserRole.PARTNER, UserRole.ADMIN] });
+    sessionUser = await requireApiUser({ roles: [UserRole.PARTNER, UserRole.ADMIN] }, authContext);
   } catch (error) {
     const response = handleAuthorizationError(error);
     if (response) {

@@ -25,9 +25,10 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   let user;
+  const authContext = { headers: request.headers };
 
   try {
-    user = await requireApiUser({ roles: [UserRole.CREATOR, UserRole.ADMIN] });
+    user = await requireApiUser({ roles: [UserRole.CREATOR, UserRole.ADMIN] }, authContext);
   } catch (error) {
     const response = handleAuthorizationError(error);
     if (response) {

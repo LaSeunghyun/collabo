@@ -12,6 +12,7 @@ interface VisitRecordInput {
   path?: string | null;
   userAgent?: string | null;
   ipAddress?: string | null;
+  authorization?: string | null;
 }
 
 export interface AnalyticsOverview {
@@ -47,7 +48,13 @@ const hashIp = (ip: string | null | undefined) => {
   }
 };
 
-export const recordVisit = async ({ sessionId, path, userAgent, ipAddress }: VisitRecordInput) => {
+export const recordVisit = async ({
+  sessionId,
+  path,
+  userAgent,
+  ipAddress,
+  authorization
+}: VisitRecordInput) => {
   const normalizedSessionId = sessionId.trim();
 
   if (!normalizedSessionId) {
@@ -55,7 +62,10 @@ export const recordVisit = async ({ sessionId, path, userAgent, ipAddress }: Vis
   }
 
   try {
-    const { user } = await evaluateAuthorization();
+    const { user } = await evaluateAuthorization(
+      {},
+      authorization ? { authorization } : undefined
+    );
 
     await prisma.visitLog.create({
       data: {

@@ -43,9 +43,10 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   let sessionUser: SessionUser;
+  const authContext = { headers: request.headers };
 
   try {
-    sessionUser = await requireApiUser({});
+    sessionUser = await requireApiUser({}, authContext);
   } catch (error) {
     const response = handleAuthorizationError(error);
     if (response) {

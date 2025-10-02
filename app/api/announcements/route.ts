@@ -42,10 +42,11 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const authContext = { headers: request.headers };
   let admin;
 
   try {
-    admin = await requireApiUser({ roles: [UserRole.ADMIN] });
+    admin = await requireApiUser({ roles: [UserRole.ADMIN] }, authContext);
   } catch (error) {
     const response = handleAuthorizationError(error);
 
