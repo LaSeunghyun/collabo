@@ -1,5 +1,22 @@
 // Shared Prisma client types and enums
-import PrismaPkg from '@prisma/client';
+import {
+  UserRole,
+  ProjectStatus,
+  FundingStatus,
+  PartnerType,
+  OrderStatus,
+  PostType,
+  NotificationType,
+  ModerationTargetType,
+  ModerationStatus,
+  PaymentProvider,
+  SettlementPayoutStatus,
+  SettlementStakeholderType,
+  PartnerMatchStatus,
+  ProductType,
+  MilestoneStatus,
+  CommunityCategory
+} from '@prisma/client';
 import type {
   UserRole as UserRoleType,
   ProjectStatus as ProjectStatusType,
@@ -63,26 +80,28 @@ export type {
   CommunityCategory as CommunityCategoryType
 } from '@prisma/client';
 
-const { Prisma, PrismaClient } = PrismaPkg;
+// Prisma client and types are only available on the server
+// Use lib/prisma.ts for server-side Prisma client access
 
-export { Prisma, PrismaClient };
-
-export const UserRole = PrismaPkg.UserRole;
-export const ProjectStatus = PrismaPkg.ProjectStatus;
-export const FundingStatus = PrismaPkg.FundingStatus;
-export const PaymentProvider = PrismaPkg.PaymentProvider;
-export const SettlementPayoutStatus = PrismaPkg.SettlementPayoutStatus;
-export const SettlementStakeholderType = PrismaPkg.SettlementStakeholderType;
-export const PartnerType = PrismaPkg.PartnerType;
-export const PartnerMatchStatus = PrismaPkg.PartnerMatchStatus;
-export const ProductType = PrismaPkg.ProductType;
-export const OrderStatus = PrismaPkg.OrderStatus;
-export const PostType = PrismaPkg.PostType;
-export const NotificationType = PrismaPkg.NotificationType;
-export const MilestoneStatus = PrismaPkg.MilestoneStatus;
-export const ModerationTargetType = PrismaPkg.ModerationTargetType;
-export const ModerationStatus = PrismaPkg.ModerationStatus;
-export const CommunityCategory = PrismaPkg.CommunityCategory;
+// Export enums for client-side usage
+export {
+  UserRole,
+  ProjectStatus,
+  FundingStatus,
+  PaymentProvider,
+  SettlementPayoutStatus,
+  SettlementStakeholderType,
+  PartnerType,
+  PartnerMatchStatus,
+  ProductType,
+  OrderStatus,
+  PostType,
+  NotificationType,
+  MilestoneStatus,
+  ModerationTargetType,
+  ModerationStatus,
+  CommunityCategory
+};
 
 export type UserRoleValue = (typeof UserRole)[keyof typeof UserRole];
 export type ProjectStatusValue = (typeof ProjectStatus)[keyof typeof ProjectStatus];

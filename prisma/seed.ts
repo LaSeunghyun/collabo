@@ -12,9 +12,9 @@ import {
   ProjectStatus,
   SettlementPayoutStatus,
   SettlementStakeholderType,
-  UserRole,
-  PrismaClient
+  UserRole
 } from '@/types/prisma';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
