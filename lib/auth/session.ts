@@ -20,8 +20,12 @@ export type GuardRequirement = {
   permissions?: string[];
 };
 
+type HeaderGetter = {
+  get(name: string): string | null | undefined;
+};
+
 export interface AuthorizationContext {
-  headers?: Pick<Headers, 'get'> | null;
+  headers?: HeaderGetter | null;
   authorization?: string | null;
 }
 
