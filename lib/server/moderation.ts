@@ -6,9 +6,7 @@ import type {
 import {
   ModerationStatus,
   ModerationTargetType,
-  type ModerationReport,
-  type ModerationStatusValue,
-  type ModerationTargetTypeValue
+  type ModerationReport
 } from '@/types/prisma';
 
 import { prisma } from '@/lib/prisma';

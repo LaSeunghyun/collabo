@@ -1,5 +1,3 @@
-import 'server-only';
-
 // Shared Prisma client types and enums
 import PrismaPkg from '@prisma/client';
 import type {
