@@ -1,8 +1,8 @@
-﻿import { PartnerType } from '@/types/prisma';
+import { PartnerType, type PartnerTypeValue } from '@/types/prisma';
 
 import { getPartnersAwaitingApproval } from '@/lib/server/partners';
 
-const partnerTypeLabels: Record<PartnerType, string> = {
+const partnerTypeLabels: Record<PartnerTypeValue, string> = {
   [PartnerType.STUDIO]: 'Studio',
   [PartnerType.VENUE]: 'Venue',
   [PartnerType.PRODUCTION]: 'Production',

@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
   try {
     const issued = await issueSessionWithTokens({
       userId: user.id,
-      role: user.role as UserRole,
+      role: user.role,
       remember,
       client,
       ipAddress,

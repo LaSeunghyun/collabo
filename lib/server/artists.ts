@@ -1,6 +1,8 @@
 import { randomUUID } from 'crypto';
 import { cache } from 'react';
-import { Prisma, PostType, UserRole } from '@/types/prisma';
+import type { Prisma } from '@prisma/client';
+
+import { PostType, UserRole } from '@/types/prisma';
 
 import type { SessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';

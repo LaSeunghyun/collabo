@@ -1,9 +1,10 @@
-import { ModerationStatus, ModerationTargetType } from '@/types/prisma';
+import {
+  ModerationStatus,
+  ModerationTargetType,
+  type ModerationStatusValue,
+  type ModerationTargetTypeValue
+} from '@/types/prisma';
 import { getHandledModerationReportsByPost, getOpenModerationReports } from '@/lib/server/moderation';
-
-type ModerationStatusValue = (typeof ModerationStatus)[keyof typeof ModerationStatus];
-type ModerationTargetTypeValue =
-  (typeof ModerationTargetType)[keyof typeof ModerationTargetType];
 
 const statusLabels: Record<ModerationStatusValue, string> = {
   [ModerationStatus.PENDING]: 'Pending',
@@ -12,10 +13,12 @@ const statusLabels: Record<ModerationStatusValue, string> = {
   [ModerationStatus.DISMISSED]: 'Dismissed'
 };
 
-const targetLabels: Record<ModerationTargetTypeValue, string> = {
+const targetLabels = {
   [ModerationTargetType.POST]: 'Post',
   [ModerationTargetType.COMMENT]: 'Comment'
-};
+} as const satisfies Record<ModerationTargetTypeValue, string>;
+
+const getTargetLabel = (type: ModerationTargetTypeValue) => targetLabels[type];
 
 const dateFormatter = new Intl.DateTimeFormat('ko-KR', {
   dateStyle: 'medium',
@@ -51,7 +54,7 @@ export async function ModerationReportSection() {
               >
                 <div className="pr-4">
                   <p className="text-sm font-medium text-white">
-                    {targetLabels[report.targetType]} #{report.targetId}
+                    {getTargetLabel(report.targetType)} #{report.targetId}
                   </p>
                   <p className="mt-1 text-xs text-white/60">
                     Submitted {dateFormatter.format(report.createdAt)}

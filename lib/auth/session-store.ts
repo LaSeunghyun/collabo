@@ -1,7 +1,7 @@
 import type { AuthSession, RefreshToken } from '@prisma/client';
 
 import { prisma } from '@/lib/prisma';
-import { UserRole } from '@/types/prisma';
+import { UserRole, type UserRoleValue } from '@/types/prisma';
 
 import { issueAccessToken } from './access-token';
 import type { ClientKind } from './policy';
@@ -12,7 +12,7 @@ import { fetchUserWithPermissions } from './user';
 
 interface IssueSessionInput {
   userId: string;
-  role: UserRole;
+  role: UserRoleValue;
   remember: boolean;
   client: ClientKind;
   ipAddress?: string | null;
@@ -41,7 +41,7 @@ interface RefreshResult {
 
 const now = () => new Date();
 
-const loadUserPermissions = async (userId: string, fallbackRole: UserRole) => {
+const loadUserPermissions = async (userId: string, fallbackRole: UserRoleValue) => {
   const user = await fetchUserWithPermissions(userId);
 
   if (!user) {
@@ -51,8 +51,8 @@ const loadUserPermissions = async (userId: string, fallbackRole: UserRole) => {
   const explicitPermissions = user.permissions.map((entry) => entry.permission.key);
 
   return {
-    role: user.role as UserRole,
-    permissions: deriveEffectivePermissions(user.role as UserRole, explicitPermissions)
+    role: user.role as UserRoleValue,
+    permissions: deriveEffectivePermissions(user.role as UserRoleValue, explicitPermissions)
   };
 };
 
@@ -239,7 +239,7 @@ export const rotateRefreshToken = async (
   const ipHash = hashClientHint(ipAddress ?? undefined);
   const uaHash = hashClientHint(userAgent ?? undefined);
   const policy = resolveSessionPolicy({
-    role: session.isAdmin ? UserRole.ADMIN : (session.user.role as UserRole),
+    role: session.isAdmin ? UserRole.ADMIN : (session.user.role as UserRoleValue),
     remember: session.remember,
     client: session.client === 'mobile' ? 'mobile' : 'web'
   });
@@ -281,11 +281,14 @@ export const rotateRefreshToken = async (
   });
 
   const explicitPermissions = session.user.permissions.map((entry) => entry.permission.key);
-  const permissions = deriveEffectivePermissions(session.user.role as UserRole, explicitPermissions);
+  const permissions = deriveEffectivePermissions(
+    session.user.role as UserRoleValue,
+    explicitPermissions
+  );
   const access = await issueAccessToken({
     userId: session.userId,
     sessionId: session.id,
-    role: session.user.role as UserRole,
+    role: session.user.role as UserRoleValue,
     permissions,
     expiresIn: policy.accessTokenTtl
   });

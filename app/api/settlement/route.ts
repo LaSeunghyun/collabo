@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
+
 import {
   FundingStatus,
   PartnerMatchStatus,
   ProjectStatus,
   SettlementPayoutStatus,
   SettlementStakeholderType,
-  UserRole,
-  Prisma
+  UserRole
 } from '@/types/prisma';
 import { z } from 'zod';
 

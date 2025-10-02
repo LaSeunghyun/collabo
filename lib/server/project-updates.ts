@@ -1,10 +1,5 @@
-import {
-  FundingStatus,
-  MilestoneStatus,
-  PostType,
-  Prisma,
-  UserRole
-} from '@prisma/client';
+import type { Prisma } from '@prisma/client';
+import { FundingStatus, MilestoneStatus, PostType, UserRole } from '@prisma/client';
 
 import { PostVisibility } from '@/types/prisma';
 

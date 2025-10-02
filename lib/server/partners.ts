@@ -1,5 +1,12 @@
+import type { Prisma as PrismaClientNamespace } from '@prisma/client';
+
 import { revalidatePath } from 'next/cache';
-import { PartnerType, Prisma, UserRole, PartnerSummary } from '@/types/prisma';
+import {
+  Prisma,
+  UserRole,
+  PartnerSummary,
+  type PartnerTypeValue
+} from '@/types/prisma';
 import { ZodError } from 'zod';
 
 import type { SessionUser } from '@/lib/auth/session';
@@ -35,7 +42,7 @@ const sanitizeTags = (value?: string[] | null) => {
 
 const sanitizeAvailability = (
   value: unknown
-): Prisma.InputJsonValue | null => {
+): PrismaClientNamespace.InputJsonValue | null => {
   if (!value || typeof value !== 'object') {
     return null;
   }
@@ -69,20 +76,20 @@ const sanitizeAvailability = (
           return null;
         }
 
-        const payload: Prisma.JsonObject = note
+        const payload: PrismaClientNamespace.JsonObject = note
           ? { day, start, end, note }
           : { day, start, end };
 
         return payload;
       })
-      .filter((slot): slot is Prisma.JsonObject => Boolean(slot))
+      .filter((slot): slot is PrismaClientNamespace.JsonObject => Boolean(slot))
     : [];
 
   if (!timezone && slots.length === 0) {
     return null;
   }
 
-  const payload: Prisma.JsonObject = {
+  const payload: PrismaClientNamespace.JsonObject = {
     ...(timezone ? { timezone } : {}),
     ...(slots.length ? { slots } : {})
   };
@@ -90,7 +97,7 @@ const sanitizeAvailability = (
   return payload;
 };
 
-type PartnerWithRelations = Prisma.PartnerGetPayload<{
+type PartnerWithRelations = PrismaClientNamespace.PartnerGetPayload<{
   include: {
     user: { select: { id: true; name: true; avatarUrl: true; role: true } };
     _count: { select: { matches: true } };
@@ -109,7 +116,7 @@ const toPartnerSummary = (partner: PartnerWithRelations): PartnerSummary => {
   return {
     id: partner.id,
     name: partner.name,
-    type: partner.type as PartnerType,
+    type: partner.type as PartnerTypeValue,
     verified: partner.verified,
     // rating: partner.rating ?? null,
     description: partner.description ?? null,
@@ -192,7 +199,7 @@ export class PartnerAccessDeniedError extends Error {
 }
 
 export interface ListPartnersParams {
-  type?: PartnerType;
+  type?: PartnerTypeValue;
   search?: string;
   cursor?: string;
   limit?: number;
@@ -217,7 +224,7 @@ const resolvePageSize = (limit?: number) => {
 export const listPartners = async (params: ListPartnersParams = {}): Promise<ListPartnersResult> => {
   const { type, search, cursor, excludeOwnerId } = params;
   const take = resolvePageSize(params.limit);
-  const where: Prisma.PartnerWhereInput = {};
+  const where: PrismaClientNamespace.PartnerWhereInput = {};
 
   if (type) {
     where.type = type;
@@ -311,7 +318,10 @@ export const getPartnerProfileForUser = async (
   return toPartnerSummary(partner);
 };
 
-const buildCreateData = (input: CreatePartnerInput, ownerId: string): Prisma.PartnerCreateInput => {
+const buildCreateData = (
+  input: CreatePartnerInput,
+  ownerId: string
+): PrismaClientNamespace.PartnerCreateInput => {
   const description = sanitizeText(input.description);
   const services = sanitizeTags(input.services ?? null);
   const pricingModel = sanitizeText(input.pricingModel);
@@ -337,8 +347,8 @@ const buildCreateData = (input: CreatePartnerInput, ownerId: string): Prisma.Par
 const buildUpdateData = (
   input: UpdatePartnerInput,
   sessionUser: SessionUser
-): Prisma.PartnerUpdateInput => {
-  const data: Prisma.PartnerUpdateInput = {};
+): PrismaClientNamespace.PartnerUpdateInput => {
+  const data: PrismaClientNamespace.PartnerUpdateInput = {};
 
   if (input.name !== undefined) {
     data.name = input.name.trim();
@@ -416,7 +426,7 @@ export const createPartnerProfile = async (payload: unknown, sessionUser: Sessio
     throw new PartnerProfileExistsError();
   }
 
-  const partner = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+  const partner = await prisma.$transaction(async (tx: PrismaClientNamespace.TransactionClient) => {
     const created = await tx.partner.create({ data: buildCreateData(input, ownerId) });
 
     if (owner.role !== UserRole.ADMIN && owner.role !== UserRole.PARTNER) {

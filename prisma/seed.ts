@@ -1,3 +1,5 @@
+import type { Prisma } from '@prisma/client';
+
 import {
   FundingStatus,
   MilestoneStatus,
@@ -11,8 +13,7 @@ import {
   SettlementPayoutStatus,
   SettlementStakeholderType,
   UserRole,
-  PrismaClient,
-  type Prisma
+  PrismaClient
 } from '@/types/prisma';
 
 const prisma = new PrismaClient();
