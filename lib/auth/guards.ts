@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import {
   AuthorizationStatus,
   FORBIDDEN_ROUTE,
+  type AuthorizationContext,
   type GuardRequirement,
   type SessionUser,
   evaluateAuthorization
@@ -24,9 +25,10 @@ interface RequireUserOptions extends GuardRequirement {
 }
 
 export const requireUser = async (
-  options: RequireUserOptions
+  options: RequireUserOptions,
+  context?: AuthorizationContext
 ): Promise<{ user: SessionUser }> => {
-  const { status, user } = await evaluateAuthorization(options);
+  const { status, user } = await evaluateAuthorization(options, context);
 
   if (status === AuthorizationStatus.AUTHORIZED && user) {
     return { user };
@@ -42,9 +44,10 @@ export const requireUser = async (
 };
 
 export const requireApiUser = async (
-  options: GuardRequirement
+  options: GuardRequirement,
+  context?: AuthorizationContext
 ): Promise<SessionUser> => {
-  const { status, user } = await evaluateAuthorization(options);
+  const { status, user } = await evaluateAuthorization(options, context);
 
   if (status === AuthorizationStatus.AUTHORIZED && user) {
     return user;

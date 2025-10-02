@@ -71,11 +71,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   let sessionUser;
+  const authContext = { headers: request.headers };
 
   try {
     sessionUser = await requireApiUser({
       roles: [UserRole.PARTICIPANT, UserRole.PARTNER, UserRole.ADMIN]
-    });
+    }, authContext);
   } catch (error) {
     const response = handleAuthorizationError(error);
     if (response) {

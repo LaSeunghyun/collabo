@@ -92,6 +92,7 @@ const isTrendingCandidate = (post: PostWithAuthor) => {
 
 export async function GET(request: NextRequest) {
   try {
+    const authContext = { headers: request.headers };
     const { searchParams } = new URL(request.url);
     const sortParam = searchParams.get('sort');
     const sort = sortParam === 'popular' || sortParam === 'trending' ? sortParam : 'recent';
@@ -106,7 +107,7 @@ export async function GET(request: NextRequest) {
       .map((value) => parseCategory(value))
       .filter((value): value is CommunityCategory => Boolean(value));
 
-    const { user: viewer } = await evaluateAuthorization();
+    const { user: viewer } = await evaluateAuthorization({}, authContext);
 
     const baseWhere: Prisma.PostWhereInput = {
       type: PostType.DISCUSSION,
@@ -276,6 +277,7 @@ export async function POST(request: NextRequest) {
   const content = body.content?.trim();
   const projectId = body.projectId ? String(body.projectId) : undefined;
   const category = parseCategory(body.category ?? null) ?? CommunityCategory.GENERAL;
+  const authContext = { headers: request.headers };
 
   if (!title || !content) {
     return NextResponse.json({ message: 'Title and content are required.' }, { status: 400 });
@@ -284,7 +286,7 @@ export async function POST(request: NextRequest) {
   let sessionUser: SessionUser;
 
   try {
-    sessionUser = await requireApiUser({});
+    sessionUser = await requireApiUser({}, authContext);
   } catch (error) {
     const response = handleAuthorizationError(error);
     if (response) {

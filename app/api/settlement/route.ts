@@ -28,8 +28,9 @@ function buildError(message: string, status = 400) {
 }
 
 export async function GET(request: NextRequest) {
+  const authContext = { headers: request.headers };
   try {
-    await requireApiUser({ roles: [UserRole.CREATOR, UserRole.ADMIN, UserRole.PARTNER] });
+    await requireApiUser({ roles: [UserRole.CREATOR, UserRole.ADMIN, UserRole.PARTNER] }, authContext);
   } catch (error) {
     const response = handleAuthorizationError(error);
     if (response) {
@@ -56,8 +57,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const authContext = { headers: request.headers };
   try {
-    await requireApiUser({ roles: [UserRole.ADMIN], permissions: ['settlement:manage'] });
+    await requireApiUser({ roles: [UserRole.ADMIN], permissions: ['settlement:manage'] }, authContext);
   } catch (error) {
     const response = handleAuthorizationError(error);
     if (response) {

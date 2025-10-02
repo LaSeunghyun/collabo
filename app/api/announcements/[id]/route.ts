@@ -29,12 +29,13 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   const body = await request.json();
+  const authContext = { headers: request.headers };
 
   if (body?.markAsRead) {
     let user;
 
     try {
-      user = await requireApiUser({});
+      user = await requireApiUser({}, authContext);
     } catch (error) {
       const response = handleAuthorizationError(error);
 
@@ -57,7 +58,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   }
 
   try {
-    await requireApiUser({ roles: [UserRole.ADMIN] });
+    await requireApiUser({ roles: [UserRole.ADMIN] }, authContext);
   } catch (error) {
     const response = handleAuthorizationError(error);
 
@@ -95,9 +96,10 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   }
 }
 
-export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+  const authContext = { headers: request.headers };
   try {
-    await requireApiUser({ roles: [UserRole.ADMIN] });
+    await requireApiUser({ roles: [UserRole.ADMIN] }, authContext);
   } catch (error) {
     const response = handleAuthorizationError(error);
 

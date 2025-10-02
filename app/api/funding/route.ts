@@ -228,9 +228,10 @@ async function recordSuccessfulFunding({
 
 export async function POST(request: NextRequest) {
   let sessionUser;
+  const authContext = { headers: request.headers };
 
   try {
-    sessionUser = await requireApiUser({});
+    sessionUser = await requireApiUser({}, authContext);
   } catch (error) {
     const response = handleAuthorizationError(error);
     if (response) {

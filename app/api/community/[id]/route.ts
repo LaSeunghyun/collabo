@@ -102,14 +102,15 @@ const buildPostResponse = async (postId: string, viewerId?: string | null) => {
 };
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    const authContext = { headers: request.headers };
     // 인증 체크를 더 안전하게 처리
     let viewerId: string | null = null;
     try {
-      const { user: viewer } = await evaluateAuthorization();
+      const { user: viewer } = await evaluateAuthorization({}, authContext);
       viewerId = viewer?.id || null;
     } catch (authError) {
       console.warn('Authorization check failed:', authError);
@@ -145,11 +146,12 @@ export async function PATCH(
 ) {
   const body = await request.json();
   const action = body.action; // 'like', 'dislike', 'unlike', 'undislike'
+  const authContext = { headers: request.headers };
 
   let sessionUser: SessionUser;
 
   try {
-    sessionUser = await requireApiUser({});
+    sessionUser = await requireApiUser({}, authContext);
   } catch (error) {
     const response = handleAuthorizationError(error);
     if (response) {
