@@ -22,7 +22,7 @@ async function createTestAccounts() {
             console.log('⚠️ 팬 계정이 이미 존재합니다:', existingFan.email);
         }
 
-        const hashedPassword = await hash('TestPassword123!', 10);
+        const hashedPassword = await hash('1234', 10);
 
         // 1. 관리자 계정 생성 (upsert)
         const admin = await prisma.user.upsert({
@@ -75,11 +75,47 @@ async function createTestAccounts() {
         });
         console.log('✅ 파트너 계정 생성/업데이트 완료:', partner.email);
 
+        // 4. 크리에이터 계정 생성 (upsert)
+        const creator = await prisma.user.upsert({
+            where: { email: 'creator@collabo.com' },
+            update: {
+                name: '크리에이터',
+                passwordHash: hashedPassword,
+                role: UserRole.CREATOR
+            },
+            create: {
+                name: '크리에이터',
+                email: 'creator@collabo.com',
+                passwordHash: hashedPassword,
+                role: UserRole.CREATOR
+            }
+        });
+        console.log('✅ 크리에이터 계정 생성/업데이트 완료:', creator.email);
+
+        // 5. 일반 사용자 계정 생성 (upsert)
+        const user = await prisma.user.upsert({
+            where: { email: 'user@collabo.com' },
+            update: {
+                name: '일반사용자',
+                passwordHash: hashedPassword,
+                role: UserRole.PARTICIPANT
+            },
+            create: {
+                name: '일반사용자',
+                email: 'user@collabo.com',
+                passwordHash: hashedPassword,
+                role: UserRole.PARTICIPANT
+            }
+        });
+        console.log('✅ 일반사용자 계정 생성/업데이트 완료:', user.email);
+
         console.log('\n🎉 모든 테스트 계정이 성공적으로 생성되었습니다!');
         console.log('\n📋 계정 정보:');
-        console.log('👑 관리자: admin@collabo.com / TestPassword123!');
-        console.log('👤 팬: fan@collabo.com / TestPassword123!');
-        console.log('🤝 파트너: partner@collabo.com / TestPassword123!');
+        console.log('👑 관리자: admin@collabo.com / 1234');
+        console.log('👤 팬: fan@collabo.com / 1234');
+        console.log('🤝 파트너: partner@collabo.com / 1234');
+        console.log('🎨 크리에이터: creator@collabo.com / 1234');
+        console.log('👥 일반사용자: user@collabo.com / 1234');
 
     } catch (error) {
         console.error('❌ 계정 생성 중 오류 발생:', error);
