@@ -1,15 +1,18 @@
-﻿import { ModerationStatus, ModerationTargetType } from '@/types/prisma';
-
+import { ModerationStatus, ModerationTargetType } from '@/types/prisma';
 import { getHandledModerationReportsByPost, getOpenModerationReports } from '@/lib/server/moderation';
 
-const statusLabels: Record<ModerationStatus, string> = {
+type ModerationStatusValue = (typeof ModerationStatus)[keyof typeof ModerationStatus];
+type ModerationTargetTypeValue =
+  (typeof ModerationTargetType)[keyof typeof ModerationTargetType];
+
+const statusLabels: Record<ModerationStatusValue, string> = {
   [ModerationStatus.PENDING]: 'Pending',
   [ModerationStatus.REVIEWING]: 'Reviewing',
   [ModerationStatus.ACTION_TAKEN]: 'Action Taken',
   [ModerationStatus.DISMISSED]: 'Dismissed'
 };
 
-const targetLabels: Record<ModerationTargetType, string> = {
+const targetLabels: Record<ModerationTargetTypeValue, string> = {
   [ModerationTargetType.POST]: 'Post',
   [ModerationTargetType.COMMENT]: 'Comment'
 };
