@@ -1,4 +1,4 @@
-import type { Prisma } from '@prisma/client';
+import { PrismaClient, type Prisma } from '@prisma/client';
 
 import {
   FundingStatus,
@@ -12,8 +12,7 @@ import {
   ProjectStatus,
   SettlementPayoutStatus,
   SettlementStakeholderType,
-  UserRole,
-  PrismaClient
+  UserRole
 } from '@/types/prisma';
 
 const prisma = new PrismaClient();

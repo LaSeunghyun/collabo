@@ -1,5 +1,5 @@
-﻿import { NextResponse } from 'next/server';
-import { Prisma } from '@/types/prisma';
+﻿import { Prisma } from '@prisma/client';
+import { NextResponse } from 'next/server';
 import {
   buildApiError,
   createTransactionWrapper,

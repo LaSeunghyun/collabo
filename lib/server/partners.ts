@@ -1,14 +1,9 @@
+import { Prisma } from '@prisma/client';
 import type { Prisma as PrismaClientNamespace } from '@prisma/client';
-
 import { revalidatePath } from 'next/cache';
-import {
-  Prisma,
-  UserRole,
-  PartnerSummary,
-  type PartnerTypeValue
-} from '@/types/prisma';
 import { ZodError } from 'zod';
 
+import { UserRole, PartnerSummary, type PartnerTypeValue } from '@/types/prisma';
 import type { SessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
 import {
