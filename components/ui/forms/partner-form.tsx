@@ -6,12 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PartnerType, type PartnerTypeValue } from '@/lib/constants/partner-types';
+import { PartnerType, type PartnerTypeType } from '@/types/prisma';
 
 export type PartnerFormData = {
   name: string;
   description: string;
-  type: PartnerTypeValue;
+  type: PartnerTypeType;
   contactInfo: string;
   location: string;
   portfolioUrl: string;
@@ -105,7 +105,7 @@ export function PartnerForm({ onSubmit, initialData, onSuccess }: PartnerFormPro
 
       <div className="space-y-2">
         <Label htmlFor="type">파트너 유형 *</Label>
-        <Select value={formData.type} onValueChange={(value) => handleChange('type', value as PartnerTypeValue)}>
+        <Select value={formData.type} onValueChange={(value) => handleChange('type', value as PartnerTypeType)}>
           <SelectTrigger>
             <SelectValue placeholder="파트너 유형을 선택하세요" />
           </SelectTrigger>

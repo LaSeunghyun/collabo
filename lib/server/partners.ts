@@ -1,11 +1,9 @@
-import type { Prisma as PrismaClientNamespace } from '@prisma/client';
-
-import { revalidatePath } from 'next/cache';
+﻿import { revalidatePath } from 'next/cache';
+import { Prisma, type Prisma as PrismaTypes } from '@prisma/client';
 import {
-  Prisma,
   UserRole,
   PartnerSummary,
-  type PartnerTypeValue
+  type PartnerTypeType
 } from '@/types/prisma';
 import { ZodError } from 'zod';
 
@@ -42,7 +40,7 @@ const sanitizeTags = (value?: string[] | null) => {
 
 const sanitizeAvailability = (
   value: unknown
-): PrismaClientNamespace.InputJsonValue | null => {
+): PrismaTypes.InputJsonValue | null => {
   if (!value || typeof value !== 'object') {
     return null;
   }
@@ -76,20 +74,20 @@ const sanitizeAvailability = (
           return null;
         }
 
-        const payload: PrismaClientNamespace.JsonObject = note
+        const payload: PrismaTypes.JsonObject = note
           ? { day, start, end, note }
           : { day, start, end };
 
         return payload;
       })
-      .filter((slot): slot is PrismaClientNamespace.JsonObject => Boolean(slot))
+      .filter((slot): slot is PrismaTypes.JsonObject => Boolean(slot))
     : [];
 
   if (!timezone && slots.length === 0) {
     return null;
   }
 
-  const payload: PrismaClientNamespace.JsonObject = {
+  const payload: PrismaTypes.JsonObject = {
     ...(timezone ? { timezone } : {}),
     ...(slots.length ? { slots } : {})
   };
@@ -97,14 +95,14 @@ const sanitizeAvailability = (
   return payload;
 };
 
-type PartnerWithRelations = PrismaClientNamespace.PartnerGetPayload<{
+type PartnerWithRelations = PrismaTypes.PartnerGetPayload<{
   include: {
     user: { select: { id: true; name: true; avatarUrl: true; role: true } };
     _count: { select: { matches: true } };
   };
 }>;
 
-// PartnerSummary는 이제 @/types/prisma에서 import됨
+// PartnerSummary???댁젣 @/types/prisma?먯꽌 import??
 
 const toPartnerSummary = (partner: PartnerWithRelations): PartnerSummary => {
   // const services = Array.isArray(partner.services)
@@ -116,7 +114,7 @@ const toPartnerSummary = (partner: PartnerWithRelations): PartnerSummary => {
   return {
     id: partner.id,
     name: partner.name,
-    type: partner.type as PartnerTypeValue,
+    type: partner.type,
     verified: partner.verified,
     // rating: partner.rating ?? null,
     description: partner.description ?? null,
@@ -169,37 +167,37 @@ export class PartnerValidationError extends Error {
   issues: string[];
 
   constructor(error: ZodError) {
-    super('파트너 정보가 유효하지 않습니다.');
+    super('?뚰듃???뺣낫媛 ?좏슚?섏? ?딆뒿?덈떎.');
     this.issues = error.issues.map((issue) => issue.message);
   }
 }
 
 export class PartnerProfileExistsError extends Error {
   constructor() {
-    super('이미 등록된 파트너 프로필이 있습니다.');
+    super('?대? ?깅줉???뚰듃???꾨줈?꾩씠 ?덉뒿?덈떎.');
   }
 }
 
 export class PartnerOwnerNotFoundError extends Error {
   constructor() {
-    super('파트너 소유자 정보를 찾을 수 없습니다.');
+    super('?뚰듃???뚯쑀???뺣낫瑜?李얠쓣 ???놁뒿?덈떎.');
   }
 }
 
 export class PartnerNotFoundError extends Error {
   constructor() {
-    super('파트너 정보를 찾을 수 없습니다.');
+    super('?뚰듃???뺣낫瑜?李얠쓣 ???놁뒿?덈떎.');
   }
 }
 
 export class PartnerAccessDeniedError extends Error {
   constructor() {
-    super('파트너 정보를 수정할 권한이 없습니다.');
+    super('?뚰듃???뺣낫瑜??섏젙??沅뚰븳???놁뒿?덈떎.');
   }
 }
 
 export interface ListPartnersParams {
-  type?: PartnerTypeValue;
+  type?: PartnerTypeType;
   search?: string;
   cursor?: string;
   limit?: number;
@@ -224,7 +222,7 @@ const resolvePageSize = (limit?: number) => {
 export const listPartners = async (params: ListPartnersParams = {}): Promise<ListPartnersResult> => {
   const { type, search, cursor, excludeOwnerId } = params;
   const take = resolvePageSize(params.limit);
-  const where: PrismaClientNamespace.PartnerWhereInput = {};
+  const where: PrismaTypes.PartnerWhereInput = {};
 
   if (type) {
     where.type = type;
@@ -321,7 +319,7 @@ export const getPartnerProfileForUser = async (
 const buildCreateData = (
   input: CreatePartnerInput,
   ownerId: string
-): PrismaClientNamespace.PartnerCreateInput => {
+): PrismaTypes.PartnerCreateInput => {
   const description = sanitizeText(input.description);
   const services = sanitizeTags(input.services ?? null);
   const pricingModel = sanitizeText(input.pricingModel);
@@ -347,8 +345,8 @@ const buildCreateData = (
 const buildUpdateData = (
   input: UpdatePartnerInput,
   sessionUser: SessionUser
-): PrismaClientNamespace.PartnerUpdateInput => {
-  const data: PrismaClientNamespace.PartnerUpdateInput = {};
+): PrismaTypes.PartnerUpdateInput => {
+  const data: PrismaTypes.PartnerUpdateInput = {};
 
   if (input.name !== undefined) {
     data.name = input.name.trim();
@@ -426,7 +424,7 @@ export const createPartnerProfile = async (payload: unknown, sessionUser: Sessio
     throw new PartnerProfileExistsError();
   }
 
-  const partner = await prisma.$transaction(async (tx: PrismaClientNamespace.TransactionClient) => {
+  const partner = await prisma.$transaction(async (tx: PrismaTypes.TransactionClient) => {
     const created = await tx.partner.create({ data: buildCreateData(input, ownerId) });
 
     if (owner.role !== UserRole.ADMIN && owner.role !== UserRole.PARTNER) {
@@ -484,3 +482,5 @@ export const updatePartnerProfile = async (
 
   return refreshed;
 };
+
+

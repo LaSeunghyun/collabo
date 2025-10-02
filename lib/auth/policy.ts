@@ -1,4 +1,4 @@
-import { UserRole, type UserRoleValue } from '@/types/prisma';
+import { UserRole, type UserRoleType } from '@/types/prisma';
 
 export type ClientKind = 'web' | 'mobile';
 
@@ -36,7 +36,7 @@ const ADMIN_POLICY: SessionPolicy = {
 };
 
 export interface ResolvePolicyParams {
-  role: UserRoleValue;
+  role: UserRoleType;
   remember: boolean;
   client: ClientKind;
 }

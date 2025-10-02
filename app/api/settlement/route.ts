@@ -1,6 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import type { Prisma } from '@prisma/client';
-
 import {
   FundingStatus,
   PartnerMatchStatus,
@@ -18,7 +17,7 @@ import { validateFundingSettlementConsistency } from '@/lib/server/funding-settl
 import { buildApiError } from '@/lib/server/error-handling';
 
 const requestSchema = z.object({
-  projectId: z.string().min(1, 'projectId는 필수입니다.'),
+  projectId: z.string().min(1, 'projectId???꾩닔?낅땲??'),
   platformFeeRate: z.number().min(0).max(1).optional(),
   gatewayFeeOverride: z.number().min(0).optional(),
   notes: z.any().optional()
@@ -45,7 +44,7 @@ export async function GET(request: NextRequest) {
   const projectId = searchParams.get('projectId');
 
   if (!projectId) {
-    return buildError('projectId 파라미터가 필요합니다.');
+    return buildError('projectId ?뚮씪誘명꽣媛 ?꾩슂?⑸땲??');
   }
 
   const settlements = await prisma.settlement.findMany({
@@ -80,7 +79,7 @@ export async function POST(request: NextRequest) {
       return buildError(error.issues.map((issue) => issue.message).join(', '));
     }
 
-    return buildError('요청 본문을 확인할 수 없습니다.');
+    return buildError('?붿껌 蹂몃Ц???뺤씤?????놁뒿?덈떎.');
   }
 
   const { projectId, platformFeeRate = 0.05, gatewayFeeOverride, notes } = payload;
@@ -106,7 +105,7 @@ export async function POST(request: NextRequest) {
   });
 
   if (!project) {
-    return buildError('해당 프로젝트를 찾을 수 없습니다.', 404);
+    return buildError('?대떦 ?꾨줈?앺듃瑜?李얠쓣 ???놁뒿?덈떎.', 404);
   }
 
   if (
@@ -114,7 +113,7 @@ export async function POST(request: NextRequest) {
     project.status !== ProjectStatus.EXECUTING &&
     project.status !== ProjectStatus.COMPLETED
   ) {
-    return buildError('정산은 성공 또는 진행 중인 프로젝트에서만 생성할 수 있습니다.', 409);
+    return buildError('?뺤궛? ?깃났 ?먮뒗 吏꾪뻾 以묒씤 ?꾨줈?앺듃?먯꽌留??앹꽦?????덉뒿?덈떎.', 409);
   }
 
   const existingPending = await prisma.settlement.findFirst({
@@ -130,15 +129,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(existingPending);
   }
 
-  // 펀딩 데이터 일관성 검증
+  // ????곗씠???쇨???寃利?
   try {
     const consistencyCheck = await validateFundingSettlementConsistency(projectId);
     if (!consistencyCheck.isValid) {
-      console.warn('펀딩-정산 데이터 일관성 문제:', consistencyCheck.issues);
-      // 경고만 로그하고 계속 진행 (데이터 복구는 별도 처리)
+      console.warn('????뺤궛 ?곗씠???쇨???臾몄젣:', consistencyCheck.issues);
+      // 寃쎄퀬留?濡쒓렇?섍퀬 怨꾩냽 吏꾪뻾 (?곗씠??蹂듦뎄??蹂꾨룄 泥섎━)
     }
   } catch (error) {
-    console.warn('펀딩-정산 일관성 검증 실패:', error);
+    console.warn('????뺤궛 ?쇨???寃利??ㅽ뙣:', error);
   }
 
   const fundings = await prisma.funding.findMany({
@@ -148,22 +147,22 @@ export async function POST(request: NextRequest) {
 
   const totalRaised = fundings.reduce((acc: number, funding: { amount: number }) => acc + funding.amount, 0);
   if (totalRaised <= 0) {
-    return buildError('성공한 펀딩 내역이 없습니다.', 409);
+    return buildError('?깃났??????댁뿭???놁뒿?덈떎.', 409);
   }
 
   if (totalRaised < project.targetAmount) {
-    return buildError('목표 금액이 아직 달성되지 않았습니다.', 409);
+    return buildError('紐⑺몴 湲덉븸???꾩쭅 ?ъ꽦?섏? ?딆븯?듬땲??', 409);
   }
 
-  // 프로젝트 currentAmount와 실제 펀딩 금액 일치 확인
+  // ?꾨줈?앺듃 currentAmount? ?ㅼ젣 ???湲덉븸 ?쇱튂 ?뺤씤
   const projectCurrentAmount = await prisma.project.findUnique({
     where: { id: projectId },
     select: { currentAmount: true }
   });
 
   if (projectCurrentAmount && projectCurrentAmount.currentAmount !== totalRaised) {
-    console.warn(`프로젝트 currentAmount(${projectCurrentAmount.currentAmount})와 실제 펀딩 금액(${totalRaised})이 일치하지 않습니다.`);
-    // 데이터 일관성을 위해 currentAmount 업데이트
+    console.warn(`?꾨줈?앺듃 currentAmount(${projectCurrentAmount.currentAmount})? ?ㅼ젣 ???湲덉븸(${totalRaised})???쇱튂?섏? ?딆뒿?덈떎.`);
+    // ?곗씠???쇨??깆쓣 ?꾪빐 currentAmount ?낅뜲?댄듃
     await prisma.project.update({
       where: { id: projectId },
       data: { currentAmount: totalRaised }
@@ -201,7 +200,7 @@ export async function POST(request: NextRequest) {
       collaboratorShares
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : '정산 계산에 실패했습니다.';
+    const message = error instanceof Error ? error.message : '?뺤궛 怨꾩궛???ㅽ뙣?덉뒿?덈떎.';
     return buildError(message, 422);
   }
 

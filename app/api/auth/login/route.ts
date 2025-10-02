@@ -6,7 +6,7 @@ import { buildRefreshCookie } from '@/lib/auth/cookies';
 import type { ClientKind } from '@/lib/auth/policy';
 import { issueSessionWithTokens } from '@/lib/auth/session-store';
 import { verifyPassword } from '@/lib/auth/password';
-import { UserRole } from '@/types/prisma';
+import { UserRole, type UserRoleType } from '@/types/prisma';
 
 const requestSchema = z.object({
   email: z.string().email(),
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
   try {
     const issued = await issueSessionWithTokens({
       userId: user.id,
-      role: user.role,
+      role: user.role as UserRoleType,
       remember,
       client,
       ipAddress,

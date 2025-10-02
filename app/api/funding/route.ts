@@ -1,6 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import type { Prisma } from '@prisma/client';
-
 import {
   FundingStatus,
   PaymentProvider,
@@ -247,7 +246,7 @@ export async function POST(request: NextRequest) {
   try {
     payload = await request.json();
   } catch {
-    return buildError('요청 본문을 확인할 수 없습니다.');
+    return buildError('?붿껌 蹂몃Ц???뺤씤?????놁뒿?덈떎.');
   }
 
   const {
@@ -279,23 +278,23 @@ export async function POST(request: NextRequest) {
     : baseMetadata;
 
   if (!projectId) {
-    return buildError('프로젝트 정보가 누락되었습니다.');
+    return buildError('?꾨줈?앺듃 ?뺣낫媛 ?꾨씫?섏뿀?듬땲??');
   }
 
   const project = await prisma.project.findUnique({ where: { id: projectId } });
   if (!project) {
-    return buildError('해당 프로젝트를 찾을 수 없습니다.', 404);
+    return buildError('?대떦 ?꾨줈?앺듃瑜?李얠쓣 ???놁뒿?덈떎.', 404);
   }
 
   if (![ProjectStatus.LIVE, ProjectStatus.EXECUTING].includes(project.status as any)) {
-    return buildError('현재 상태에서는 결제를 진행할 수 없습니다.', 409);
+    return buildError('?꾩옱 ?곹깭?먯꽌??寃곗젣瑜?吏꾪뻾?????놁뒿?덈떎.', 409);
   }
 
   let stripe: Stripe;
   try {
     stripe = createStripeClient();
   } catch (error) {
-    return buildError(error instanceof Error ? error.message : 'Stripe 구성이 잘못되었습니다.', 500);
+    return buildError(error instanceof Error ? error.message : 'Stripe 援ъ꽦???섎せ?섏뿀?듬땲??', 500);
   }
 
   // Verification path
@@ -305,14 +304,14 @@ export async function POST(request: NextRequest) {
         const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
         if (paymentIntent.status !== 'succeeded') {
-          return buildError(`결제 상태가 완료되지 않았습니다. (현재 상태: ${paymentIntent.status})`, 409);
+          return buildError(`寃곗젣 ?곹깭媛 ?꾨즺?섏? ?딆븯?듬땲?? (?꾩옱 ?곹깭: ${paymentIntent.status})`, 409);
         }
 
         const amountReceived = ensureIntegerAmount(
           paymentIntent.amount_received ?? paymentIntent.amount
         );
         if (!amountReceived) {
-          return buildError('결제 금액을 확인할 수 없습니다.', 422);
+          return buildError('寃곗젣 湲덉븸???뺤씤?????놁뒿?덈떎.', 422);
         }
 
         const funding = await recordSuccessfulFunding({
@@ -324,7 +323,7 @@ export async function POST(request: NextRequest) {
           snapshot: pickStripeIntentSnapshot(paymentIntent)
         });
 
-        // 정산 자동 생성 시도
+        // ?뺤궛 ?먮룞 ?앹꽦 ?쒕룄
         try {
           const settlement = await createSettlementIfTargetReached(projectId);
           return NextResponse.json({
@@ -333,12 +332,12 @@ export async function POST(request: NextRequest) {
             settlement: settlement ? { id: settlement.id, status: settlement.payoutStatus } : null
           });
         } catch (settlementError) {
-          console.warn('정산 자동 생성 실패:', settlementError);
+          console.warn('?뺤궛 ?먮룞 ?앹꽦 ?ㅽ뙣:', settlementError);
           return NextResponse.json({
             status: 'recorded',
             funding,
             settlement: null,
-            warning: '펀딩은 성공했지만 정산 생성에 실패했습니다.'
+            warning: '??⑹? ?깃났?덉?留??뺤궛 ?앹꽦???ㅽ뙣?덉뒿?덈떎.'
           });
         }
       }
@@ -349,12 +348,12 @@ export async function POST(request: NextRequest) {
         });
 
         if (session.payment_status !== 'paid') {
-          return buildError(`체크아웃이 완료되지 않았습니다. (현재 상태: ${session.payment_status})`, 409);
+          return buildError(`泥댄겕?꾩썐???꾨즺?섏? ?딆븯?듬땲?? (?꾩옱 ?곹깭: ${session.payment_status})`, 409);
         }
 
         const amountPaid = ensureIntegerAmount(session.amount_total);
         if (!amountPaid) {
-          return buildError('결제 금액을 확인할 수 없습니다.', 422);
+          return buildError('寃곗젣 湲덉븸???뺤씤?????놁뒿?덈떎.', 422);
         }
 
         const paymentIntentReference =
@@ -371,7 +370,7 @@ export async function POST(request: NextRequest) {
           snapshot: pickStripeIntentSnapshot(session)
         });
 
-        // 정산 자동 생성 시도
+        // ?뺤궛 ?먮룞 ?앹꽦 ?쒕룄
         try {
           const settlement = await createSettlementIfTargetReached(projectId);
           return NextResponse.json({
@@ -380,31 +379,31 @@ export async function POST(request: NextRequest) {
             settlement: settlement ? { id: settlement.id, status: settlement.payoutStatus } : null
           });
         } catch (settlementError) {
-          console.warn('정산 자동 생성 실패:', settlementError);
+          console.warn('?뺤궛 ?먮룞 ?앹꽦 ?ㅽ뙣:', settlementError);
           return NextResponse.json({
             status: 'recorded',
             funding,
             settlement: null,
-            warning: '펀딩은 성공했지만 정산 생성에 실패했습니다.'
+            warning: '??⑹? ?깃났?덉?留??뺤궛 ?앹꽦???ㅽ뙣?덉뒿?덈떎.'
           });
         }
       }
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : '결제 검증 중 오류가 발생했습니다.';
+        error instanceof Error ? error.message : '寃곗젣 寃利?以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.';
       return buildError(message, 500);
     }
   }
 
   const normalisedAmount = ensureIntegerAmount(amount);
   if (!normalisedAmount) {
-    return buildError('결제 금액이 올바르지 않습니다.');
+    return buildError('寃곗젣 湲덉븸???щ컮瑜댁? ?딆뒿?덈떎.');
   }
 
   try {
     if (mode === 'checkout') {
       if (!successUrl || !cancelUrl) {
-        return buildError('Checkout 세션에는 성공 및 취소 URL이 필요합니다.');
+        return buildError('Checkout ?몄뀡?먮뒗 ?깃났 諛?痍⑥냼 URL???꾩슂?⑸땲??');
       }
 
       const session = await stripe.checkout.sessions.create({
@@ -418,7 +417,7 @@ export async function POST(request: NextRequest) {
               unit_amount: normalisedAmount,
               product_data: {
                 name: project.title,
-                description: `Collab Funding – ${project.title}`
+                description: `Collab Funding ??${project.title}`
               }
             }
           }
@@ -442,7 +441,7 @@ export async function POST(request: NextRequest) {
       automatic_payment_methods: { enabled: true },
       metadata,
       receipt_email: normalisedReceiptEmail,
-      description: `Collab Funding – ${project.title}`
+      description: `Collab Funding ??${project.title}`
     });
 
     return NextResponse.json({
@@ -451,7 +450,8 @@ export async function POST(request: NextRequest) {
       clientSecret: paymentIntent.client_secret
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : '결제 요청 처리에 실패했습니다.';
+    const message = error instanceof Error ? error.message : '寃곗젣 ?붿껌 泥섎━???ㅽ뙣?덉뒿?덈떎.';
     return buildError(message, 500);
   }
 }
+

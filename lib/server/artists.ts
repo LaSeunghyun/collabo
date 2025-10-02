@@ -1,7 +1,6 @@
-import { randomUUID } from 'crypto';
+﻿import { randomUUID } from 'crypto';
 import { cache } from 'react';
-import type { Prisma } from '@prisma/client';
-
+import { Prisma } from '@prisma/client';
 import { PostType, UserRole } from '@/types/prisma';
 
 import type { SessionUser } from '@/lib/auth/session';
@@ -278,3 +277,4 @@ export const listFeaturedArtists = cache(async (): Promise<ArtistDirectoryEntry[
     return [];
   }
 });
+

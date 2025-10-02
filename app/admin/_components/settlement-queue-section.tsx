@@ -1,11 +1,11 @@
 import {
   SettlementPayoutStatus,
-  type SettlementPayoutStatusValue
+  type SettlementPayoutStatusType
 } from '@/types/prisma';
 
 import { getSettlementsPendingPayout } from '@/lib/server/settlement-queries';
 
-const statusLabels: Record<SettlementPayoutStatusValue, string> = {
+const statusLabels: Record<SettlementPayoutStatusType, string> = {
   [SettlementPayoutStatus.PENDING]: 'Pending',
   [SettlementPayoutStatus.IN_PROGRESS]: 'In Progress',
   [SettlementPayoutStatus.PAID]: 'Paid'

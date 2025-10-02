@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 import { recordVisit } from '@/lib/server/analytics';
 
@@ -14,15 +14,17 @@ export async function POST(request: NextRequest) {
     const userAgent = request.headers.get('user-agent');
     const forwardedFor = request.headers.get('x-forwarded-for');
     const ipAddress = forwardedFor?.split(',')[0]?.trim() ?? request.headers.get('x-real-ip') ?? null;
-    const authorization = request.headers.get('authorization');
 
-    await recordVisit({
-      sessionId: body.sessionId,
-      path,
-      userAgent,
-      ipAddress,
-      authorization
-    });
+    try {
+      await recordVisit({
+        sessionId: body.sessionId,
+        path,
+        userAgent,
+        ipAddress
+      });
+    } catch (error) {
+      console.warn('Visit analytics degraded to no-op', error);
+    }
 
     return NextResponse.json({ ok: true }, { status: 201 });
   } catch (error) {

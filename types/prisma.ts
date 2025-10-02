@@ -1,5 +1,3 @@
-import 'server-only';
-
 // Shared Prisma client types and enums
 import PrismaPkg from '@prisma/client';
 import type {
@@ -9,12 +7,14 @@ import type {
   PartnerType as PartnerTypeType,
   OrderStatus as OrderStatusType,
   PostType as PostTypeType,
-  NotificationType as NotificationTypeType
+  NotificationType as NotificationTypeType,
+  ModerationTargetType as ModerationTargetTypeType,
+  ModerationStatus as ModerationStatusType
 } from '@prisma/client';
 
 export type {
-  // Announcement, // 스키마에 없음
-  // AnnouncementRead, // 스키마에 없음
+  // Announcement, // ?�키마에 ?�음
+  // AnnouncementRead, // ?�키마에 ?�음
   User,
   Project,
   ProjectCollaborator,
@@ -42,6 +42,25 @@ export type {
   CommentReaction,
   ModerationReport,
   UserBlock
+} from '@prisma/client';
+
+export type {
+  UserRole as UserRoleType,
+  ProjectStatus as ProjectStatusType,
+  FundingStatus as FundingStatusType,
+  PaymentProvider as PaymentProviderType,
+  SettlementPayoutStatus as SettlementPayoutStatusType,
+  SettlementStakeholderType as SettlementStakeholderTypeType,
+  PartnerType as PartnerTypeType,
+  PartnerMatchStatus as PartnerMatchStatusType,
+  ProductType as ProductTypeType,
+  OrderStatus as OrderStatusType,
+  PostType as PostTypeType,
+  NotificationType as NotificationTypeType,
+  MilestoneStatus as MilestoneStatusType,
+  ModerationTargetType as ModerationTargetTypeType,
+  ModerationStatus as ModerationStatusType,
+  CommunityCategory as CommunityCategoryType
 } from '@prisma/client';
 
 const { Prisma, PrismaClient } = PrismaPkg;

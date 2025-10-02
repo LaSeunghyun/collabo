@@ -1,7 +1,8 @@
 import type { Prisma as PrismaClientNamespace } from '@prisma/client';
 
 import { revalidatePath } from 'next/cache';
-import { Prisma, ProjectStatus, UserRole, ProjectSummary, type ProjectStatusValue } from '@/types/prisma';
+import { Prisma } from '@prisma/client';
+import { ProjectStatus, UserRole, ProjectSummary, type ProjectStatusType } from '@/types/prisma';
 import { ZodError } from 'zod';
 
 import type { SessionUser } from '@/lib/auth/session';
@@ -20,26 +21,26 @@ export class ProjectValidationError extends Error {
   issues: string[];
 
   constructor(error: ZodError) {
-    super('프로젝트 입력 값이 올바르지 않습니다.');
+    super('?꾨줈?앺듃 ?낅젰 媛믪씠 ?щ컮瑜댁? ?딆뒿?덈떎.');
     this.issues = error.issues.map((issue) => issue.message);
   }
 }
 
 export class ProjectNotFoundError extends Error {
   constructor() {
-    super('프로젝트를 찾을 수 없습니다.');
+    super('?꾨줈?앺듃瑜?李얠쓣 ???놁뒿?덈떎.');
   }
 }
 
 export class ProjectAccessDeniedError extends Error {
   constructor() {
-    super('프로젝트에 대한 권한이 없습니다.');
+    super('?꾨줈?앺듃?????沅뚰븳???놁뒿?덈떎.');
   }
 }
 
 export type ProjectSummaryOptions = {
   ownerId?: string;
-  statuses?: ProjectStatusValue[];
+  statuses?: ProjectStatusType[];
   take?: number;
 };
 
@@ -93,7 +94,7 @@ const toProjectSummary = (project: ProjectWithCounts): ProjectSummary => {
     remainingDays,
     targetAmount: project.targetAmount,
     currentAmount: project.currentAmount,
-    status: project.status as ProjectStatusValue,
+    status: project.status as ProjectStatusType,
     createdAt: project.createdAt,
     updatedAt: project.updatedAt,
     owner: {
@@ -353,3 +354,4 @@ export const deleteProject = async (id: string, user: SessionUser) => {
 
   revalidateProjectPaths(id);
 };
+

@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 import { CommunityCategory, ModerationTargetType, PostType } from '@prisma/client';
 import type { Prisma } from '@prisma/client';
@@ -254,20 +254,34 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(response);
   } catch (error) {
     console.error('Failed to fetch posts from database:', error);
-    console.error('Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      name: error instanceof Error ? error.name : undefined
-    });
 
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    const errorStack = error instanceof Error ? error.stack : undefined;
+    const { searchParams } = new URL(request.url);
+    const sortParam = searchParams.get('sort');
+    const fallbackSort = (sortParam === 'popular' || sortParam === 'trending' ? sortParam : 'recent') as 'recent' | 'popular' | 'trending';
+    const fallbackCategories = searchParams
+      .getAll('category')
+      .map((value) => parseCategory(value))
+      .filter((value): value is CommunityCategory => Boolean(value));
+    const fallbackCategorySlugs = fallbackCategories.length
+      ? fallbackCategories.map((category) => toCategorySlug(category))
+      : ['all'];
 
-    return NextResponse.json({
-      message: 'Unable to load community posts',
-      error: errorMessage,
-      ...(process.env.NODE_ENV === 'development' && { stack: errorStack })
-    }, { status: 500 });
+    const fallbackResponse: CommunityFeedResponse = {
+      posts: [],
+      pinned: [],
+      popular: [],
+      meta: {
+        nextCursor: null,
+        total: 0,
+        sort: fallbackSort,
+        categories: fallbackCategorySlugs,
+        search: searchParams.get('search')?.trim() || null,
+        authorId: searchParams.get('authorId'),
+        projectId: searchParams.get('projectId')
+      }
+    };
+
+    return NextResponse.json(fallbackResponse);
   }
 }
 
@@ -320,4 +334,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: 'Unable to create community post.' }, { status: 500 });
   }
 }
+
 

@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { Prisma } from '@/types/prisma';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 
 import { getServerAuthSession } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
@@ -45,7 +45,7 @@ export async function POST(_request: NextRequest, { params }: { params: { id: st
     });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-      // Already following – ignore duplicate.
+      // Already following ??ignore duplicate.
     } else {
       console.error('Failed to follow artist', error);
       return NextResponse.json({ message: 'Could not follow artist.' }, { status: 500 });
@@ -84,7 +84,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: { id: 
     });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-      // Not following – ignore.
+      // Not following ??ignore.
     } else {
       console.error('Failed to unfollow artist', error);
       return NextResponse.json({ message: 'Could not unfollow artist.' }, { status: 500 });

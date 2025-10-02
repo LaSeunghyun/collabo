@@ -5,7 +5,6 @@ import {
   type ModerationTargetTypeValue
 } from '@/types/prisma';
 import { getHandledModerationReportsByPost, getOpenModerationReports } from '@/lib/server/moderation';
-
 const statusLabels: Record<ModerationStatusValue, string> = {
   [ModerationStatus.PENDING]: 'Pending',
   [ModerationStatus.REVIEWING]: 'Reviewing',
@@ -13,7 +12,7 @@ const statusLabels: Record<ModerationStatusValue, string> = {
   [ModerationStatus.DISMISSED]: 'Dismissed'
 };
 
-const targetLabels = {
+const targetLabels: Record<ModerationTargetTypeValue, string> = {
   [ModerationTargetType.POST]: 'Post',
   [ModerationTargetType.COMMENT]: 'Comment'
 } as const satisfies Record<ModerationTargetTypeValue, string>;
