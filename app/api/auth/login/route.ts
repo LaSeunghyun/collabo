@@ -72,6 +72,8 @@ export async function POST(req: NextRequest) {
   const userAgent = req.headers.get('user-agent');
 
   try {
+    console.log('로그인 시도:', { userId: user.id, role: user.role, email: user.email });
+    
     const issued = await issueSessionWithTokens({
       userId: user.id,
       role: user.role as UserRoleType,
@@ -82,6 +84,8 @@ export async function POST(req: NextRequest) {
       deviceFingerprint: data.deviceFingerprint ?? null,
       deviceLabel: data.deviceLabel ?? null
     });
+    
+    console.log('세션 생성 성공:', { sessionId: issued.session.id });
 
     const refreshMaxAge = Math.max(
       0,
@@ -115,7 +119,15 @@ export async function POST(req: NextRequest) {
       }
     );
   } catch (error) {
-    console.error('로그인 처리 중 오류 발생', error);
-    return NextResponse.json({ error: '로그인 처리에 실패했습니다.' }, { status: 500 });
+    console.error('로그인 처리 중 오류 발생:', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      userId: user?.id,
+      email: user?.email
+    });
+    return NextResponse.json({ 
+      error: '로그인 처리에 실패했습니다.',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
