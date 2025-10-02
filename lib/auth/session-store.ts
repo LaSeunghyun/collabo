@@ -45,12 +45,16 @@ const loadUserPermissions = async (userId: string, fallbackRole: UserRoleType) =
   const user = await fetchUserWithPermissions(userId);
 
   if (!user) {
-    return { role: fallbackRole, permissions: [] };
+    const effectivePermissions = deriveEffectivePermissions(fallbackRole, []);
+    return { role: fallbackRole, permissions: effectivePermissions };
   }
+
+  const explicitPermissions = user.permissions.map((p) => p.permission.key);
+  const effectivePermissions = deriveEffectivePermissions(user.role, explicitPermissions);
 
   return {
     role: user.role as UserRoleType,
-    permissions: [] // 빈 배열로 설정
+    permissions: effectivePermissions
   };
 };
 
