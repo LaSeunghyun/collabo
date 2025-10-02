@@ -17,16 +17,14 @@ import {
   MilestoneStatus,
   CommunityCategory
 } from '@prisma/client';
+
 import type {
-  UserRole as UserRoleType,
   ProjectStatus as ProjectStatusType,
   FundingStatus as FundingStatusType,
   PartnerType as PartnerTypeType,
   OrderStatus as OrderStatusType,
   PostType as PostTypeType,
-  NotificationType as NotificationTypeType,
-  ModerationTargetType as ModerationTargetTypeType,
-  ModerationStatus as ModerationStatusType
+  NotificationType as NotificationTypeType
 } from '@prisma/client';
 
 export type {

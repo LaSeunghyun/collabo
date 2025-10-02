@@ -13,7 +13,7 @@ import {
   SettlementPayoutStatus,
   SettlementStakeholderType,
   UserRole
-} from '@/types/prisma';
+} from '../types/prisma';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
