@@ -1,12 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { headers } from 'next/headers';
+import { NextResponse } from 'next/server';
 
 import { getAnalyticsOverview } from '@/lib/server/analytics';
 import { requireApiUser } from '@/lib/auth/guards';
 import { UserRole } from '@/types/prisma';
 
-export async function GET(request: NextRequest) {
+export const dynamic = 'force-dynamic';
+
+export async function GET() {
   try {
-    const authContext = { headers: request.headers };
+    const authContext = { headers: headers() };
     const user = await requireApiUser({ roles: [UserRole.ADMIN] }, authContext);
 
     if (user.role !== UserRole.ADMIN) {
