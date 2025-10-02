@@ -1,5 +1,5 @@
 ﻿import { revalidatePath } from 'next/cache';
-import { Prisma } from '@prisma/client';
+import { Prisma, type Prisma as PrismaTypes } from '@prisma/client';
 import {
   UserRole,
   PartnerSummary,
@@ -40,7 +40,7 @@ const sanitizeTags = (value?: string[] | null) => {
 
 const sanitizeAvailability = (
   value: unknown
-): PrismaClientNamespace.InputJsonValue | null => {
+): PrismaTypes.InputJsonValue | null => {
   if (!value || typeof value !== 'object') {
     return null;
   }
@@ -74,20 +74,20 @@ const sanitizeAvailability = (
           return null;
         }
 
-        const payload: PrismaClientNamespace.JsonObject = note
+        const payload: PrismaTypes.JsonObject = note
           ? { day, start, end, note }
           : { day, start, end };
 
         return payload;
       })
-      .filter((slot): slot is PrismaClientNamespace.JsonObject => Boolean(slot))
+      .filter((slot): slot is PrismaTypes.JsonObject => Boolean(slot))
     : [];
 
   if (!timezone && slots.length === 0) {
     return null;
   }
 
-  const payload: PrismaClientNamespace.JsonObject = {
+  const payload: PrismaTypes.JsonObject = {
     ...(timezone ? { timezone } : {}),
     ...(slots.length ? { slots } : {})
   };
@@ -95,7 +95,7 @@ const sanitizeAvailability = (
   return payload;
 };
 
-type PartnerWithRelations = PrismaClientNamespace.PartnerGetPayload<{
+type PartnerWithRelations = PrismaTypes.PartnerGetPayload<{
   include: {
     user: { select: { id: true; name: true; avatarUrl: true; role: true } };
     _count: { select: { matches: true } };
@@ -222,7 +222,7 @@ const resolvePageSize = (limit?: number) => {
 export const listPartners = async (params: ListPartnersParams = {}): Promise<ListPartnersResult> => {
   const { type, search, cursor, excludeOwnerId } = params;
   const take = resolvePageSize(params.limit);
-  const where: PrismaClientNamespace.PartnerWhereInput = {};
+  const where: PrismaTypes.PartnerWhereInput = {};
 
   if (type) {
     where.type = type;
@@ -319,7 +319,7 @@ export const getPartnerProfileForUser = async (
 const buildCreateData = (
   input: CreatePartnerInput,
   ownerId: string
-): PrismaClientNamespace.PartnerCreateInput => {
+): PrismaTypes.PartnerCreateInput => {
   const description = sanitizeText(input.description);
   const services = sanitizeTags(input.services ?? null);
   const pricingModel = sanitizeText(input.pricingModel);
@@ -345,8 +345,8 @@ const buildCreateData = (
 const buildUpdateData = (
   input: UpdatePartnerInput,
   sessionUser: SessionUser
-): PrismaClientNamespace.PartnerUpdateInput => {
-  const data: PrismaClientNamespace.PartnerUpdateInput = {};
+): PrismaTypes.PartnerUpdateInput => {
+  const data: PrismaTypes.PartnerUpdateInput = {};
 
   if (input.name !== undefined) {
     data.name = input.name.trim();
@@ -424,7 +424,7 @@ export const createPartnerProfile = async (payload: unknown, sessionUser: Sessio
     throw new PartnerProfileExistsError();
   }
 
-  const partner = await prisma.$transaction(async (tx: PrismaClientNamespace.TransactionClient) => {
+  const partner = await prisma.$transaction(async (tx: PrismaTypes.TransactionClient) => {
     const created = await tx.partner.create({ data: buildCreateData(input, ownerId) });
 
     if (owner.role !== UserRole.ADMIN && owner.role !== UserRole.PARTNER) {

@@ -1,4 +1,4 @@
-import type { Prisma } from '@prisma/client';
+import type { Prisma as PrismaSeedTypes } from '@prisma/client';
 
 import {
   FundingStatus,
@@ -15,14 +15,13 @@ import {
   UserRole,
   PrismaClient
 } from '@/types/prisma';
-import type { Prisma } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 const demoPasswordHash = '$argon2id$v=19$m=65536,t=3,p=4$demo$demoHashShouldBeReplaced';
 
 async function upsertUser(
-  data: Prisma.UserCreateInput & { email: string }
+  data: PrismaSeedTypes.UserCreateInput & { email: string }
 ) {
   return prisma.user.upsert({
     where: { email: data.email },
