@@ -40,29 +40,36 @@ export async function POST(req: NextRequest) {
 
   try {
     body = await req.json();
-  } catch {
+    console.log('Login request body:', body);
+  } catch (e) {
+    console.error('Failed to parse request body:', e);
     return NextResponse.json({ error: '잘못된 요청 본문입니다.' }, { status: 400 });
   }
 
   const parsed = requestSchema.safeParse(body);
 
   if (!parsed.success) {
+    console.error('Invalid request body format:', parsed.error);
     return NextResponse.json({ error: '요청 형식이 올바르지 않습니다.' }, { status: 400 });
   }
 
   const data = parsed.data;
+  console.log('Parsed login data:', data);
 
   const user = await prisma.user.findUnique({
     where: { email: data.email }
   });
+  console.log('User found in DB:', user);
 
   if (!user || !user.passwordHash) {
+    console.warn('Login failed: user not found or no password hash', { email: data.email });
     return NextResponse.json({ error: '아이디 또는 비밀번호가 올바르지 않습니다.' }, { status: 401 });
   }
 
   const passwordMatches = await verifyPassword(user.passwordHash, data.password);
 
   if (!passwordMatches) {
+    console.warn('Login failed: password does not match', { userId: user.id });
     return NextResponse.json({ error: '아이디 또는 비밀번호가 올바르지 않습니다.' }, { status: 401 });
   }
 
@@ -72,7 +79,7 @@ export async function POST(req: NextRequest) {
   const userAgent = req.headers.get('user-agent');
 
   try {
-    console.log('로그인 시도:', { userId: user.id, role: user.role, email: user.email });
+    console.log('Attempting to issue session with tokens for user:', { userId: user.id, role: user.role });
     
     const issued = await issueSessionWithTokens({
       userId: user.id,
@@ -85,7 +92,7 @@ export async function POST(req: NextRequest) {
       deviceLabel: data.deviceLabel ?? null
     });
     
-    console.log('세션 생성 성공:', { sessionId: issued.session.id });
+    console.log('Successfully issued session with tokens:', { sessionId: issued.session.id });
 
     const refreshMaxAge = Math.max(
       0,
@@ -119,9 +126,9 @@ export async function POST(req: NextRequest) {
       }
     );
   } catch (error) {
-    console.error('로그인 처리 중 오류 발생:', {
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
+    console.error('Error during login processing:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : 'No stack available',
       userId: user?.id,
       email: user?.email
     });
