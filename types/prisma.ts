@@ -1,26 +1,16 @@
-// Prisma에서 생성된 타입과 값을 가져와 공유 타입으로 사용
-import {
-  Prisma,
-  PrismaClient,
-  UserRole,
-  ProjectStatus,
-  FundingStatus,
-  PaymentProvider,
-  SettlementPayoutStatus,
-  SettlementStakeholderType,
-  PartnerType,
-  PartnerMatchStatus,
-  ProductType,
-  OrderStatus,
-  PostType,
-  NotificationType,
-  MilestoneStatus,
-  ModerationTargetType,
-  ModerationStatus,
-  CommunityCategory
+// Shared Prisma client types and enums
+import PrismaPkg from '@prisma/client';
+import type {
+  UserRole as UserRoleType,
+  ProjectStatus as ProjectStatusType,
+  FundingStatus as FundingStatusType,
+  PartnerType as PartnerTypeType,
+  OrderStatus as OrderStatusType,
+  PostType as PostTypeType,
+  NotificationType as NotificationTypeType
 } from '@prisma/client';
 
-import type {
+export type {
   // Announcement, // 스키마에 없음
   // AnnouncementRead, // 스키마에 없음
   User,
@@ -52,66 +42,32 @@ import type {
   UserBlock
 } from '@prisma/client';
 
+const { Prisma, PrismaClient } = PrismaPkg;
+
+export { Prisma, PrismaClient };
+
+export const UserRole = PrismaPkg.UserRole;
+export const ProjectStatus = PrismaPkg.ProjectStatus;
+export const FundingStatus = PrismaPkg.FundingStatus;
+export const PaymentProvider = PrismaPkg.PaymentProvider;
+export const SettlementPayoutStatus = PrismaPkg.SettlementPayoutStatus;
+export const SettlementStakeholderType = PrismaPkg.SettlementStakeholderType;
+export const PartnerType = PrismaPkg.PartnerType;
+export const PartnerMatchStatus = PrismaPkg.PartnerMatchStatus;
+export const ProductType = PrismaPkg.ProductType;
+export const OrderStatus = PrismaPkg.OrderStatus;
+export const PostType = PrismaPkg.PostType;
+export const NotificationType = PrismaPkg.NotificationType;
+export const MilestoneStatus = PrismaPkg.MilestoneStatus;
+export const ModerationTargetType = PrismaPkg.ModerationTargetType;
+export const ModerationStatus = PrismaPkg.ModerationStatus;
+export const CommunityCategory = PrismaPkg.CommunityCategory;
+
 export enum PostVisibility {
   PUBLIC = 'PUBLIC',
   SUPPORTERS = 'SUPPORTERS',
   PRIVATE = 'PRIVATE'
 }
-
-// Prisma namespace와 클라이언트를 직접 정의
-export { PrismaClient, Prisma } from '@prisma/client';
-
-// 타입들은 별도로 export
-export type {
-  // Announcement, // 스키마에 없음
-  // AnnouncementRead, // 스키마에 없음
-  User,
-  Project,
-  ProjectCollaborator,
-  Funding,
-  Settlement,
-  Partner,
-  PartnerMatch,
-  Product,
-  Order,
-  Post,
-  Comment,
-  PostLike,
-  Notification,
-  Wallet,
-  AuditLog,
-  Permission,
-  UserPermission,
-  PaymentTransaction,
-  SettlementPayout,
-  ProjectMilestone,
-  ProjectRewardTier,
-  ProjectRequirement,
-  OrderItem,
-  UserFollow,
-  CommentReaction,
-  ModerationReport
-} from '@prisma/client';
-
-// Enum들을 re-export
-export {
-  UserRole,
-  ProjectStatus,
-  FundingStatus,
-  PaymentProvider,
-  SettlementPayoutStatus,
-  SettlementStakeholderType,
-  PartnerType,
-  PartnerMatchStatus,
-  ProductType,
-  OrderStatus,
-  PostType,
-  NotificationType,
-  MilestoneStatus,
-  ModerationTargetType,
-  ModerationStatus,
-  CommunityCategory
-} from '@prisma/client';
 
 export const POST_VISIBILITY_VALUES = Object.values(PostVisibility);
 
@@ -128,7 +84,7 @@ export type ProjectSummary = {
   thumbnail: string;
   targetAmount: number;
   currentAmount: number;
-  status: ProjectStatus;
+  status: ProjectStatusType;
   createdAt: Date;
   updatedAt: Date;
   owner: {
@@ -163,7 +119,7 @@ export type PartnerSummary = {
   id: string;
   name: string;
   description: string | null;
-  type: PartnerType;
+  type: PartnerTypeType;
   contactInfo: string;
   location: string | null;
   portfolioUrl: string | null;
@@ -196,7 +152,7 @@ export const MODERATION_TARGET_TYPE_VALUES = Object.values(ModerationTargetType)
 export const MODERATION_STATUS_VALUES = Object.values(ModerationStatus);
 
 // 한국어 라벨 매핑
-export const USER_ROLE_LABELS: Record<UserRole, string> = {
+export const USER_ROLE_LABELS: Record<UserRoleType, string> = {
   [UserRole.CREATOR]: '크리에이터',
   [UserRole.PARTICIPANT]: '참여자',
   [UserRole.PARTNER]: '파트너',
@@ -206,7 +162,7 @@ export const USER_ROLE_LABELS: Record<UserRole, string> = {
 // ROLE_LABELS 별칭 (하위 호환성)
 export const ROLE_LABELS = USER_ROLE_LABELS;
 
-export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
+export const PROJECT_STATUS_LABELS: Record<ProjectStatusType, string> = {
   [ProjectStatus.DRAFT]: '초안',
   [ProjectStatus.REVIEWING]: '검토중',
   [ProjectStatus.LIVE]: '진행중',
@@ -216,7 +172,7 @@ export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
   [ProjectStatus.COMPLETED]: '완료'
 };
 
-export const FUNDING_STATUS_LABELS: Record<FundingStatus, string> = {
+export const FUNDING_STATUS_LABELS: Record<FundingStatusType, string> = {
   [FundingStatus.PENDING]: '대기중',
   [FundingStatus.SUCCEEDED]: '성공',
   [FundingStatus.FAILED]: '실패',
@@ -224,7 +180,7 @@ export const FUNDING_STATUS_LABELS: Record<FundingStatus, string> = {
   [FundingStatus.CANCELLED]: '취소됨'
 };
 
-export const PARTNER_TYPE_LABELS: Record<PartnerType, string> = {
+export const PARTNER_TYPE_LABELS: Record<PartnerTypeType, string> = {
   [PartnerType.STUDIO]: '스튜디오',
   [PartnerType.VENUE]: '공연장',
   [PartnerType.PRODUCTION]: '제작 스튜디오',
@@ -232,7 +188,7 @@ export const PARTNER_TYPE_LABELS: Record<PartnerType, string> = {
   [PartnerType.OTHER]: '기타'
 };
 
-export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
+export const ORDER_STATUS_LABELS: Record<OrderStatusType, string> = {
   [OrderStatus.PENDING]: '대기중',
   [OrderStatus.PAID]: '결제완료',
   [OrderStatus.SHIPPED]: '배송중',
@@ -241,13 +197,13 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   [OrderStatus.CANCELLED]: '취소됨'
 };
 
-export const POST_TYPE_LABELS: Record<PostType, string> = {
+export const POST_TYPE_LABELS: Record<PostTypeType, string> = {
   [PostType.UPDATE]: '업데이트',
   [PostType.DISCUSSION]: '토론',
   [PostType.AMA]: 'Q&A'
 };
 
-export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
+export const NOTIFICATION_TYPE_LABELS: Record<NotificationTypeType, string> = {
   [NotificationType.FUNDING_SUCCESS]: '펀딩 성공',
   [NotificationType.NEW_COMMENT]: '새 댓글',
   [NotificationType.PROJECT_MILESTONE]: '프로젝트 마일스톤',

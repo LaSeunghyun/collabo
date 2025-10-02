@@ -61,7 +61,7 @@ export default withAuth(
       authorized: ({ token, req }) => {
         const pathname = req.nextUrl.pathname;
 
-        // 비회원도 접근 가능한 페이지들
+        // 인증 여부와 상관없이 접근 가능한 공용 경로 목록
         const publicPaths = [
           '/',
           '/projects',
@@ -76,21 +76,21 @@ export default withAuth(
           '/api/test-accounts'
         ];
 
-        // 정확한 경로 매칭
+        // 정확히 일치하는 경로인지 확인
         const isExactMatch = publicPaths.includes(pathname);
 
-        // 동적 경로 매칭
+        // 동적 경로(예: /projects/[id], /api/projects/[id])인지 확인
         const isDynamicMatch =
           pathname.match(/^\/projects\/[^/]+$/) || // /projects/[id]
           pathname.match(/^\/api\/projects\/[^/]+$/) || // /api/projects/[id]
-          pathname.startsWith('/api/projects/'); // /api/projects/ 하위 모든 경로
+          pathname.startsWith('/api/projects/'); // /api/projects/ 하위 경로
 
-        // 공개 페이지는 토큰 없이도 접근 가능
+        // 정확한 매칭이거나 동적 매칭이면 인증 없이 접근 허용
         if (isExactMatch || isDynamicMatch) {
           return true;
         }
 
-        // 그 외 페이지는 토큰 필요
+        // 그 외 경로는 토큰(로그인) 존재 여부로 접근 허용 결정
         return Boolean(token);
       }
     }
@@ -99,21 +99,12 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    // 보호된 페이지들
+    // 보호가 필요한 경로만 매칭합니다.
     '/admin/:path*',
-    '/projects/new',
     '/partners/:path*',
-    '/api/projects/:path*',
+    '/projects/new',
     '/api/partners/:path*',
-    '/api/settlement/:path*',
-    // 공개 페이지들 (인증 체크를 위해)
-    '/',
-    '/projects',
-    '/projects/(.*)',
-    '/community',
-    '/help',
-    '/api/community',
-    '/api/projects',
-    '/api/projects/(.*)'
+    '/api/settlement/:path*'
   ]
 };
+
