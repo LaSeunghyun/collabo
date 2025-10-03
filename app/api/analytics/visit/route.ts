@@ -10,7 +10,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'sessionId is required.' }, { status: 400 });
     }
 
-    const path = typeof body.path === 'string' ? body.path : null;
     const userAgent = request.headers.get('user-agent');
     const forwardedFor = request.headers.get('x-forwarded-for');
     const ipAddress = forwardedFor?.split(',')[0]?.trim() ?? request.headers.get('x-real-ip') ?? null;
@@ -18,7 +17,6 @@ export async function POST(request: NextRequest) {
     try {
       await recordVisit({
         sessionId: body.sessionId,
-        path,
         userAgent,
         ipAddress
       });
@@ -26,7 +24,6 @@ export async function POST(request: NextRequest) {
       console.warn('Failed to record visit analytics:', {
         error: error instanceof Error ? error.message : String(error),
         sessionId: body.sessionId,
-        path,
         timestamp: new Date().toISOString()
       });
     }

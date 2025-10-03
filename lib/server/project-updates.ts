@@ -1,6 +1,5 @@
-import { FundingStatus, MilestoneStatus, PostType, Prisma, UserRole } from '@prisma/client';
+import { MilestoneStatus, PostType, Prisma, UserRole } from '@prisma/client';
 
-import { PostVisibility } from '@/types/prisma';
 
 import type { SessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
@@ -37,7 +36,6 @@ export type ProjectUpdateRecord = {
   projectId: string;
   title: string;
   content: string;
-  visibility: PostVisibility;
   attachments: ProjectUpdateAttachment[];
   milestone: {
     id: string;
@@ -60,7 +58,6 @@ export type ProjectUpdateRecord = {
 export interface CreateProjectUpdateInput {
   title: string;
   content: string;
-  visibility?: PostVisibility;
   attachments?: ProjectUpdateAttachment[];
   milestoneId?: string | null;
 }
@@ -68,7 +65,6 @@ export interface CreateProjectUpdateInput {
 export interface UpdateProjectUpdateInput {
   title?: string;
   content?: string;
-  visibility?: PostVisibility;
   attachments?: ProjectUpdateAttachment[];
   milestoneId?: string | null;
 }
@@ -162,7 +158,6 @@ const toProjectUpdateRecord = (
   projectId: post.projectId ?? project.id,
   title: post.title,
   content: post.content,
-  visibility: post.visibility ?? PostVisibility.PUBLIC,
   attachments: normalizeAttachments(post.attachments ?? null),
   milestone: post.milestone
     ? {
@@ -221,33 +216,6 @@ export const assertProjectOwner = async (
   return project;
 };
 
-const canViewSupporterUpdates = async (
-  project: ProjectInfo,
-  viewer: SessionUser | null | undefined
-) => {
-  if (!viewer) {
-    return false;
-  }
-
-  if (viewer.role === UserRole.ADMIN || viewer.id === project.ownerId) {
-    return true;
-  }
-
-  const [fundingCount, followCount] = await Promise.all([
-    prisma.funding.count({
-      where: {
-        projectId: project.id,
-        userId: viewer.id,
-        paymentStatus: FundingStatus.SUCCEEDED
-      }
-    }),
-    prisma.userFollow.count({
-      where: { followerId: viewer.id, followingId: project.ownerId }
-    })
-  ]);
-
-  return fundingCount > 0 || followCount > 0;
-};
 
 export const listProjectUpdates = async (
   projectId: string,
@@ -262,13 +230,10 @@ export const listProjectUpdates = async (
     throw new ProjectUpdateNotFoundError('프로젝트를 찾을 수 없습니다.');
   }
 
-  const supporterAccess = await canViewSupporterUpdates(project, viewer);
-
   const posts = await prisma.post.findMany({
     where: {
       projectId,
       type: PostType.UPDATE,
-      ...(supporterAccess ? {} : { visibility: PostVisibility.PUBLIC })
     },
     orderBy: { createdAt: 'desc' },
     include: buildPostInclude()
@@ -300,7 +265,6 @@ export const createProjectUpdate = async (
       title: input.title,
       content: input.content,
       type: PostType.UPDATE,
-      visibility: input.visibility ?? PostVisibility.PUBLIC,
       attachments: toJsonInput(input.attachments),
       milestoneId: input.milestoneId ?? null
     },
@@ -343,9 +307,6 @@ export const updateProjectUpdate = async (
     data.content = input.content;
   }
 
-  if (input.visibility !== undefined) {
-    data.visibility = input.visibility;
-  }
 
   if (input.attachments !== undefined) {
     data.attachments = toJsonInput(input.attachments);
