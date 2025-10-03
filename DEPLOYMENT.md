@@ -39,12 +39,13 @@ KAKAO_CLIENT_SECRET=your-kakao-client-secret
 ## 🗄️ 데이터베이스 설정
 
 ### 1. Supabase에서 스키마 생성
-Supabase SQL Editor에서 다음 명령어를 실행하세요:
+프로덕션 데이터베이스에 Prisma 마이그레이션을 적용하세요:
 
-```sql
--- Prisma 스키마를 Supabase에 적용
--- (prisma/schema.prisma 파일의 내용을 SQL로 변환하여 실행)
+```bash
+npx prisma migrate deploy
 ```
+
+Vercel 빌드에서도 동일한 명령이 실행되도록 `package.json`과 `vercel.json`의 빌드 커맨드에는 `prisma migrate deploy`가 포함되어 있습니다. 최초 1회는 로컬이나 CI에서 위 명령을 직접 실행해 누락된 테이블이 없는지 확인하세요.
 
 ### 2. 테스트 계정 생성
 배포 후 다음 API를 호출하여 테스트 계정을 생성하세요:
