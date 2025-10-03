@@ -217,7 +217,7 @@ export function ModerationReportSection({ reports, handledReports }: ModerationR
                 className="rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2"
               >
                 <p className="text-xs text-white/70">
-                  {getTargetLabel(report.targetType)} #{report.targetId} - {statusLabels[report.status]}
+                  {getTargetLabel(report.targetType)} #{report.targetId} - {statusLabels[report.status as ModerationStatusValue]}
                 </p>
               </li>
             ))}
