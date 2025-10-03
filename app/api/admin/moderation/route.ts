@@ -39,24 +39,8 @@ export async function PATCH(req: NextRequest) {
       reviewReason: reason
     };
 
-    // 블라인드 처리인 경우 게시글/댓글 삭제 처리
-    if (action === 'blind') {
-      if (report.targetType === 'POST') {
-        await prisma.post.update({
-          where: { id: report.targetId },
-          data: { 
-            isDeleted: true
-          }
-        });
-      } else if (report.targetType === 'COMMENT') {
-        await prisma.comment.update({
-          where: { id: report.targetId },
-          data: { 
-            isDeleted: true
-          }
-        });
-      }
-    }
+    // 블라인드 처리인 경우 - 현재는 상태만 변경 (향후 확장 가능)
+    // TODO: 실제 게시글/댓글 숨김 처리 로직 추가 필요
 
     // 신고 상태 업데이트
     const updatedReport = await prisma.moderationReport.update({
