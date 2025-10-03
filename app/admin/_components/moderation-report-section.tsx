@@ -1,12 +1,10 @@
-'use client';
-
-import { useState } from 'react';
 import {
   ModerationStatus,
   ModerationTargetType,
   type ModerationStatusValue,
   type ModerationTargetTypeValue
 } from '@/types/prisma';
+import { getHandledModerationReportsByPost, getOpenModerationReports } from '@/lib/server/moderation';
 
 const statusLabels: Record<ModerationStatusValue, string> = {
   [ModerationStatus.PENDING]: '대기중',
@@ -27,64 +25,12 @@ const dateFormatter = new Intl.DateTimeFormat('ko-KR', {
   timeStyle: 'short'
 });
 
-interface ModerationReport {
-  id: string;
-  targetType: ModerationTargetTypeValue;
-  targetId: string;
-  status: ModerationStatusValue;
-  reason: string | null;
-  createdAt: Date;
-  reporter: {
-    id: string;
-    name: string | null;
-  } | null;
-}
-
-interface ModerationReportSectionProps {
-  reports: ModerationReport[];
-  handledReports: any[];
-}
-
-export function ModerationReportSection({ reports, handledReports }: ModerationReportSectionProps) {
-  const [processingReports, setProcessingReports] = useState<Set<string>>(new Set());
-  const [selectedReport, setSelectedReport] = useState<string | null>(null);
-  const [actionReason, setActionReason] = useState('');
-
-  const handleReportAction = async (reportId: string, action: 'blind' | 'dismiss' | 'reviewing') => {
-    setProcessingReports(prev => new Set(prev).add(reportId));
-    
-    try {
-      const response = await fetch('/api/admin/moderation', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          reportId,
-          action,
-          reason: actionReason || undefined
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('신고 처리에 실패했습니다.');
-      }
-
-      // 성공 시 페이지 새로고침
-      window.location.reload();
-    } catch (error) {
-      console.error('신고 처리 오류:', error);
-      alert('신고 처리에 실패했습니다. 다시 시도해주세요.');
-    } finally {
-      setProcessingReports(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(reportId);
-        return newSet;
-      });
-      setSelectedReport(null);
-      setActionReason('');
-    }
-  };
+export async function ModerationReportSection() {
+  try {
+    const [reports, handledReports] = await Promise.all([
+      getOpenModerationReports(),
+      getHandledModerationReportsByPost()
+    ]);
 
   return (
     <section
@@ -122,33 +68,6 @@ export function ModerationReportSection({ reports, handledReports }: ModerationR
                 {report.reason ? (
                   <p className="mt-2 line-clamp-2 text-xs text-white/70">{report.reason}</p>
                 ) : null}
-                
-                {/* 신고 처리 버튼들 */}
-                {report.status === ModerationStatus.PENDING && (
-                  <div className="mt-3 flex gap-2">
-                    <button
-                      onClick={() => setSelectedReport(report.id)}
-                      className="rounded-lg bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-                      disabled={processingReports.has(report.id)}
-                    >
-                      검토하기
-                    </button>
-                    <button
-                      onClick={() => handleReportAction(report.id, 'blind')}
-                      className="rounded-lg bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50"
-                      disabled={processingReports.has(report.id)}
-                    >
-                      블라인드
-                    </button>
-                    <button
-                      onClick={() => handleReportAction(report.id, 'dismiss')}
-                      className="rounded-lg bg-gray-600 px-3 py-1 text-xs font-medium text-white hover:bg-gray-700 disabled:opacity-50"
-                      disabled={processingReports.has(report.id)}
-                    >
-                      기각
-                    </button>
-                  </div>
-                )}
               </div>
               <span className="shrink-0 rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-white/80">
                 {statusLabels[report.status]}
@@ -162,42 +81,6 @@ export function ModerationReportSection({ reports, handledReports }: ModerationR
         </p>
       )}
 
-      {/* 검토 모달 */}
-      {selectedReport && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/[0.05] p-6">
-            <h3 className="text-lg font-semibold text-white">신고 검토</h3>
-            <p className="mt-2 text-sm text-white/60">
-              이 신고를 검토 상태로 변경하시겠습니까?
-            </p>
-            <textarea
-              value={actionReason}
-              onChange={(e) => setActionReason(e.target.value)}
-              placeholder="검토 사유 (선택사항)"
-              className="mt-4 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/50"
-              rows={3}
-            />
-            <div className="mt-6 flex gap-3">
-              <button
-                onClick={() => handleReportAction(selectedReport, 'reviewing')}
-                className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-                disabled={processingReports.has(selectedReport)}
-              >
-                검토 시작
-              </button>
-              <button
-                onClick={() => {
-                  setSelectedReport(null);
-                  setActionReason('');
-                }}
-                className="flex-1 rounded-lg border border-white/20 px-4 py-2 text-sm font-medium text-white hover:bg-white/5"
-              >
-                취소
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="mt-8 border-t border-white/5 pt-6">
         <div className="flex items-center justify-between">
@@ -230,4 +113,16 @@ export function ModerationReportSection({ reports, handledReports }: ModerationR
       </div>
     </section>
   );
+  } catch (error) {
+    console.error('신고 목록 로드 실패:', error);
+    return (
+      <section
+        id="moderation"
+        className="rounded-3xl border border-red-500/30 bg-red-500/10 p-6 text-sm text-red-100"
+      >
+        <h2 className="text-lg font-semibold text-red-100">신고 대응</h2>
+        <p className="mt-2">신고 목록을 불러올 수 없습니다. 잠시 후 다시 시도해주세요.</p>
+      </section>
+    );
+  }
 }

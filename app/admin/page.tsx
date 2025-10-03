@@ -8,18 +8,14 @@ import { ProjectReviewSection } from './_components/project-review-section';
 import { SettlementQueueSection } from './_components/settlement-queue-section';
 
 export default async function AdminDashboardPage() {
-  const [overview, reports, handledReports] = await Promise.all([
-    getAnalyticsOverview(),
-    getOpenModerationReports(),
-    getHandledModerationReportsByPost()
-  ]);
+  const overview = await getAnalyticsOverview();
 
   return (
     <div className="space-y-10">
       <AnalyticsOverviewSection overview={overview} />
       <ProjectReviewSection />
       <PartnerApprovalSection />
-      <ModerationReportSection reports={reports} handledReports={handledReports} />
+      <ModerationReportSection />
       <SettlementQueueSection />
     </div>
   );

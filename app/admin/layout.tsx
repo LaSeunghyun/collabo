@@ -4,10 +4,11 @@ import { requireUser } from '@/lib/auth/guards';
 import { ROLE_LABELS, UserRole } from '@/types/prisma';
 
 const navigationAnchors = [
-  { href: '#project-review', label: '프로젝트 검수' },
-  { href: '#partner-approvals', label: '파트너 승인' },
-  { href: '#moderation', label: '신고 대응' },
-  { href: '#settlements', label: '정산 관리' }
+  { href: '/admin', label: '대시보드' },
+  { href: '/admin/projects', label: '프로젝트 검수' },
+  { href: '/admin/partners', label: '파트너 승인' },
+  { href: '/admin/moderation', label: '신고 대응' },
+  { href: '/admin/settlements', label: '정산 관리' }
 ];
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
