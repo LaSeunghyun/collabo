@@ -34,7 +34,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: '신고를 찾을 수 없습니다.' }, { status: 404 });
     }
 
-    let updateData: any = {
+    const updateData: any = {
       status: action === 'reviewing' ? ModerationStatus.REVIEWING : 
               action === 'blind' ? ModerationStatus.ACTION_TAKEN :
               ModerationStatus.DISMISSED,
