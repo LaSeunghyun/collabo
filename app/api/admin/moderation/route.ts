@@ -39,17 +39,23 @@ export async function PATCH(req: NextRequest) {
       reviewReason: reason
     };
 
-    // 블라인드 처리인 경우 게시글/댓글 숨김 처리
+    // 블라인드 처리인 경우 게시글/댓글 삭제 처리
     if (action === 'blind') {
       if (report.targetType === 'POST') {
         await prisma.post.update({
           where: { id: report.targetId },
-          data: { isHidden: true }
+          data: { 
+            deletedAt: new Date(),
+            isDeleted: true
+          }
         });
       } else if (report.targetType === 'COMMENT') {
         await prisma.comment.update({
           where: { id: report.targetId },
-          data: { isHidden: true }
+          data: { 
+            deletedAt: new Date(),
+            isDeleted: true
+          }
         });
       }
     }
