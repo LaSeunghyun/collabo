@@ -203,6 +203,55 @@
       }
     }
   },
+  "admin": {
+    "title": "관리 센터",
+    "welcome": "{{name}}님, {{role}} 역할로 플랫폼의 품질과 안정성을 관리할 수 있습니다.",
+    "navigation": {
+      "projectReview": "프로젝트 검수",
+      "partnerApprovals": "파트너 승인",
+      "moderation": "신고 대응",
+      "settlements": "정산 관리"
+    },
+    "announcements": {
+      "title": "공지 관리",
+      "description": "플랫폼 전체 사용자에게 전달되는 공지를 작성하고 발행 일정을 관리하세요. 공지 등록과 동시에 알림이 발송되며, 상단 고정 및 예약 발행을 통해 중요도를 조정할 수 있습니다.",
+      "publishedTitle": "발행된 공지 관리",
+      "publishedDescription": "상단 고정 여부와 발행 일정을 조정하고 필요 시 공지를 삭제할 수 있습니다.",
+      "totalCount": "총 {{count}}건",
+      "errors": {
+        "updateFailed": "공지 업데이트 중 오류가 발생했습니다.",
+        "deleteFailed": "공지 삭제 중 오류가 발생했습니다."
+      }
+    },
+    "analytics": {
+      "title": "Visitor Overview",
+      "description": "세션 기반 방문 로그와 회원가입 추세를 확인해 커뮤니티 활성도를 파악하세요.",
+      "updated": "Updated {{time}}",
+      "metrics": {
+        "totalVisits": "총 방문",
+        "uniqueSessions": "유니크 세션",
+        "uniqueUsers": "방문 유저",
+        "activeUsers": "활성 유저",
+        "recentDays": "최근 {{days}}일",
+        "sessionBased": "세션 ID 기준",
+        "accountBased": "계정 기준",
+        "last7Days": "최근 7일"
+      },
+      "charts": {
+        "dailyVisits": "일별 방문 통계",
+        "signupTrend": "회원가입 추세",
+        "recent7Days": "최근 7일",
+        "visits": "방문 {{count}}",
+        "sessions": "세션 {{count}}",
+        "users": "유저 {{count}}",
+        "signups": "{{count}}명"
+      },
+      "empty": {
+        "visits": "수집된 방문 로그가 없습니다.",
+        "signups": "최근 가입한 사용자가 없습니다."
+      }
+    }
+  },
   "footer": {
     "brand": {
       "name": "Collaborium",

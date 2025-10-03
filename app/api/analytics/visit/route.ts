@@ -23,7 +23,12 @@ export async function POST(request: NextRequest) {
         ipAddress
       });
     } catch (error) {
-      console.warn('Visit analytics degraded to no-op', error);
+      console.warn('Failed to record visit analytics:', {
+        error: error instanceof Error ? error.message : String(error),
+        sessionId: body.sessionId,
+        path,
+        timestamp: new Date().toISOString()
+      });
     }
 
     return NextResponse.json({ ok: true }, { status: 201 });

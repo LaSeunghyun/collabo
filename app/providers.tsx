@@ -4,7 +4,7 @@ import { ReactNode, useEffect, useLayoutEffect } from 'react';
 import { I18nextProvider } from 'react-i18next';
 import { ThemeProvider } from 'next-themes';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { SessionProvider, signOut, useSession } from 'next-auth/react';
+import { SessionProvider, useSession } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 
 import { initI18n } from '@/lib/i18n';
@@ -30,9 +30,9 @@ function SessionPersistenceManager() {
     const flag = window.sessionStorage.getItem(SESSION_PERSISTENCE_KEY);
 
     if (status === 'authenticated') {
+      // 세션 지속성 플래그가 없으면 활성으로 설정 (로그아웃하지 않음)
       if (!flag) {
-        window.sessionStorage.setItem(SESSION_PERSISTENCE_KEY, SESSION_PERSISTENCE_PENDING_SIGN_OUT);
-        void signOut({ callbackUrl: '/auth/signin' });
+        window.sessionStorage.setItem(SESSION_PERSISTENCE_KEY, SESSION_PERSISTENCE_ACTIVE);
         return;
       }
 

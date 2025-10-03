@@ -253,7 +253,12 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Failed to fetch posts from database:', error);
+    console.error('Failed to fetch posts from database:', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      url: request.url,
+      timestamp: new Date().toISOString()
+    });
 
     const { searchParams } = new URL(request.url);
     const sortParam = searchParams.get('sort');
