@@ -23,11 +23,7 @@ export async function PATCH(req: NextRequest) {
 
     // 신고 정보 조회
     const report = await prisma.moderationReport.findUnique({
-      where: { id: reportId },
-      include: {
-        targetPost: true,
-        targetComment: true
-      }
+      where: { id: reportId }
     });
 
     if (!report) {
@@ -45,12 +41,12 @@ export async function PATCH(req: NextRequest) {
 
     // 블라인드 처리인 경우 게시글/댓글 숨김 처리
     if (action === 'blind') {
-      if (report.targetType === 'POST' && report.targetPost) {
+      if (report.targetType === 'POST') {
         await prisma.post.update({
           where: { id: report.targetId },
           data: { isHidden: true }
         });
-      } else if (report.targetType === 'COMMENT' && report.targetComment) {
+      } else if (report.targetType === 'COMMENT') {
         await prisma.comment.update({
           where: { id: report.targetId },
           data: { isHidden: true }
