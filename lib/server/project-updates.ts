@@ -1,4 +1,4 @@
-import { MilestoneStatus, PostType, PostVisibility, Prisma, UserRole } from '@prisma/client';
+import { MilestoneStatus, PostType, Prisma, UserRole } from '@prisma/client';
 
 
 import type { SessionUser } from '@/lib/auth/session';
@@ -36,7 +36,6 @@ export type ProjectUpdateRecord = {
   projectId: string;
   title: string;
   content: string;
-  visibility: PostVisibility;
   attachments: ProjectUpdateAttachment[];
   milestone: {
     id: string;
@@ -59,7 +58,6 @@ export type ProjectUpdateRecord = {
 export interface CreateProjectUpdateInput {
   title: string;
   content: string;
-  visibility?: PostVisibility;
   attachments?: ProjectUpdateAttachment[];
   milestoneId?: string | null;
 }
@@ -67,7 +65,6 @@ export interface CreateProjectUpdateInput {
 export interface UpdateProjectUpdateInput {
   title?: string;
   content?: string;
-  visibility?: PostVisibility;
   attachments?: ProjectUpdateAttachment[];
   milestoneId?: string | null;
 }
@@ -161,7 +158,6 @@ const toProjectUpdateRecord = (
   projectId: post.projectId ?? project.id,
   title: post.title,
   content: post.content,
-  visibility: post.visibility ?? PostVisibility.PUBLIC,
   attachments: normalizeAttachments(post.attachments ?? null),
   milestone: post.milestone
     ? {
@@ -269,7 +265,6 @@ export const createProjectUpdate = async (
       title: input.title,
       content: input.content,
       type: PostType.UPDATE,
-      visibility: input.visibility ?? PostVisibility.PUBLIC,
       attachments: toJsonInput(input.attachments),
       milestoneId: input.milestoneId ?? null
     },
@@ -313,9 +308,6 @@ export const updateProjectUpdate = async (
   }
 
 
-  if (input.visibility !== undefined) {
-    data.visibility = input.visibility;
-  }
 
   if (input.attachments !== undefined) {
     data.attachments = toJsonInput(input.attachments);

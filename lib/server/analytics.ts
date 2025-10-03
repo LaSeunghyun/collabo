@@ -9,8 +9,6 @@ export const ACTIVE_USER_WINDOW_DAYS = 7;
 
 interface VisitRecordInput {
   sessionId: string;
-  path?: string | null;
-  userAgent?: string | null;
   ipAddress?: string | null;
   authorization?: string | null;
 }
@@ -50,8 +48,6 @@ const hashIp = (ip: string | null | undefined) => {
 
 export const recordVisit = async ({
   sessionId,
-  path,
-  userAgent,
   ipAddress,
   authorization
 }: VisitRecordInput) => {
@@ -71,8 +67,6 @@ export const recordVisit = async ({
       data: {
         sessionId: normalizedSessionId,
         userId: user?.id ?? null,
-        path: path?.slice(0, 256) ?? null,
-        userAgent: userAgent?.slice(0, 512) ?? null,
         ipHash: hashIp(ipAddress)
       }
     });

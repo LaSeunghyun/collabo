@@ -10,16 +10,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'sessionId is required.' }, { status: 400 });
     }
 
-    const path = typeof body.path === 'string' ? body.path : null;
-    const userAgent = request.headers.get('user-agent');
     const forwardedFor = request.headers.get('x-forwarded-for');
     const ipAddress = forwardedFor?.split(',')[0]?.trim() ?? request.headers.get('x-real-ip') ?? null;
 
     try {
       await recordVisit({
         sessionId: body.sessionId,
-        path,
-        userAgent,
         ipAddress
       });
     } catch (error) {
