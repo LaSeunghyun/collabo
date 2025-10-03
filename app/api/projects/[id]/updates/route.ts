@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   FundingStatus,
   NotificationType,
+  POST_VISIBILITY_VALUES,
+  PostVisibility,
   UserRole
 } from '@/types/prisma';
 
@@ -66,7 +68,8 @@ const createSupporterNotification = async (
     projectId: project.id,
     projectTitle: project.title,
     postId: update.id,
-    title: update.title
+    title: update.title,
+    visibility: update.visibility
   } satisfies Record<string, unknown>;
 
   await prisma.notification.createMany({
@@ -119,9 +122,15 @@ export async function POST(
     const body = await request.json();
     const hasMilestoneField = Object.prototype.hasOwnProperty.call(body, 'milestoneId');
 
+    const rawVisibility =
+      typeof body.visibility === 'string' ? body.visibility.toUpperCase() : undefined;
+    const visibility =
+      POST_VISIBILITY_VALUES.find((value) => value === rawVisibility) ?? PostVisibility.PUBLIC;
+
     const input = {
       title: String(body.title ?? ''),
       content: String(body.content ?? ''),
+      visibility,
       attachments: Array.isArray(body.attachments) ? body.attachments : undefined,
       milestoneId: hasMilestoneField
         ? body.milestoneId === null
