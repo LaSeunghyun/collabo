@@ -45,7 +45,6 @@ export async function PATCH(req: NextRequest) {
         await prisma.post.update({
           where: { id: report.targetId },
           data: { 
-            deletedAt: new Date(),
             isDeleted: true
           }
         });
@@ -53,7 +52,6 @@ export async function PATCH(req: NextRequest) {
         await prisma.comment.update({
           where: { id: report.targetId },
           data: { 
-            deletedAt: new Date(),
             isDeleted: true
           }
         });
