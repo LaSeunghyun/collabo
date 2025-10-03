@@ -42,10 +42,10 @@ export default async function AdminPartnersPage() {
                         {partner.description}
                       </p>
                     )}
-                    {partner.website && (
+                    {partner.portfolioUrl && (
                       <p className="mt-2 text-sm text-blue-400">
-                        웹사이트: <a href={partner.website} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                          {partner.website}
+                        포트폴리오: <a href={partner.portfolioUrl} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                          {partner.portfolioUrl}
                         </a>
                       </p>
                     )}

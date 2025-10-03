@@ -1,5 +1,4 @@
 import { getAnalyticsOverview } from '@/lib/server/analytics';
-import { getHandledModerationReportsByPost, getOpenModerationReports } from '@/lib/server/moderation';
 
 import { AnalyticsOverviewSection } from './_components/analytics-overview-section';
 import { ModerationReportSection } from './_components/moderation-report-section';

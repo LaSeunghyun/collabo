@@ -94,13 +94,13 @@ export async function ModerationReportSection() {
         
         {handledReports.length > 0 ? (
           <ul className="mt-4 space-y-2">
-            {handledReports.map((report) => (
+            {handledReports.map((report, index) => (
               <li
-                key={report.id}
+                key={index}
                 className="rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2"
               >
                 <p className="text-xs text-white/70">
-                  {getTargetLabel(report.targetType)} #{report.targetId} - {statusLabels[report.status as ModerationStatusValue]}
+                  게시글 #{report.postId} - {statusLabels[report.latestStatus as ModerationStatusValue]}
                 </p>
               </li>
             ))}

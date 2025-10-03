@@ -46,12 +46,12 @@ export default async function AdminSettlementsPage() {
                     </p>
                     <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <p className="text-white/60">정산 대상자</p>
-                        <p className="font-medium text-white">{settlement.stakeholderCount}명</p>
+                        <p className="text-white/60">총 모금액</p>
+                        <p className="font-medium text-white">{currencyFormatter.format(settlement.totalRaised)}</p>
                       </div>
                       <div>
                         <p className="text-white/60">정산 금액</p>
-                        <p className="font-medium text-white">{currencyFormatter.format(settlement.totalAmount)}</p>
+                        <p className="font-medium text-white">{currencyFormatter.format(settlement.netAmount)}</p>
                       </div>
                     </div>
                   </div>
