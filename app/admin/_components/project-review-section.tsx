@@ -17,10 +17,10 @@ export async function ProjectReviewSection() {
         className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 shadow-lg shadow-black/5"
       >
         <header>
-          <p className="text-xs uppercase tracking-wider text-primary/60">Project Reviews</p>
-          <h2 className="mt-1 text-lg font-semibold text-white">Projects Waiting for Approval</h2>
+          <p className="text-xs uppercase tracking-wider text-primary/60">프로젝트 검수</p>
+          <h2 className="mt-1 text-lg font-semibold text-white">승인 대기 중인 프로젝트</h2>
           <p className="mt-2 text-sm text-white/60">
-            Review submissions that are still in the REVIEWING state and unblock creators quickly.
+            검토 상태의 제출물을 검토하고 창작자들이 빠르게 진행할 수 있도록 도와주세요.
           </p>
         </header>
 
@@ -34,7 +34,7 @@ export async function ProjectReviewSection() {
                 <div>
                   <p className="text-sm font-medium text-white">{project.title}</p>
                   <p className="text-xs text-white/50">
-                    Submitted {dateFormatter.format(project.createdAt)} | Participants {project.participants}
+                    제출일 {dateFormatter.format(project.createdAt)} | 참여자 {project.participants}명
                   </p>
                 </div>
                 <span className="text-xs font-semibold text-amber-300">
@@ -45,7 +45,7 @@ export async function ProjectReviewSection() {
           </ul>
         ) : (
           <p className="mt-6 rounded-2xl border border-dashed border-white/10 bg-white/5 px-4 py-6 text-center text-sm text-white/60">
-            There are no projects waiting for review.
+            검토 대기 중인 프로젝트가 없습니다.
           </p>
         )}
       </section>
@@ -57,8 +57,8 @@ export async function ProjectReviewSection() {
         id="project-review"
         className="rounded-3xl border border-red-500/30 bg-red-500/10 p-6 text-sm text-red-100"
       >
-        <h2 className="text-lg font-semibold text-red-100">Project Reviews</h2>
-        <p className="mt-2">We could not load the review queue. Please try again shortly.</p>
+        <h2 className="text-lg font-semibold text-red-100">프로젝트 검수</h2>
+        <p className="mt-2">검토 대기열을 불러올 수 없습니다. 잠시 후 다시 시도해주세요.</p>
       </section>
     );
   }
