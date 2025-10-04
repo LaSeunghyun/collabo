@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "npx prisma migrate deploy && npx prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
@@ -16,7 +16,7 @@
     "create-accounts": "ts-node scripts/create-test-accounts.ts",
     "db:push": "prisma db push",
     "db:generate": "prisma generate",
-    "vercel-build": "prisma generate && next build"
+    "vercel-build": "npx prisma migrate deploy && npx prisma generate && next build"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
