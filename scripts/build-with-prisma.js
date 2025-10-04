@@ -15,12 +15,29 @@ const hasDatabaseUrl = Boolean(process.env.DATABASE_URL);
 if (!hasDatabaseUrl) {
   console.warn('[build] DATABASE_URL is not set. Skipping `prisma migrate deploy`.');
 } else {
+  console.log('[build] DATABASE_URL is set. Attempting prisma migrate deploy...');
+  console.log('[build] Database URL:', process.env.DATABASE_URL?.replace(/:[^:@]+@/, ':***@'));
+  
+  // Set timeout for database operations
+  const timeout = 30000; // 30 seconds
+  const startTime = Date.now();
+  
   try {
     console.log('[build] Running prisma migrate deploy...');
-    run('npx', ['prisma', 'migrate', 'deploy']);
+    const result = spawnSync('npx', ['prisma', 'migrate', 'deploy'], { 
+      stdio: 'inherit',
+      timeout: timeout
+    });
+    
+    if (result.status !== 0) {
+      console.warn('[build] Prisma migrate deploy failed with status:', result.status);
+      console.warn('[build] Continuing with build...');
+    } else {
+      console.log('[build] Prisma migrate deploy completed successfully');
+    }
   } catch (error) {
-    console.warn('[build] Prisma migrate deploy failed, continuing with build...');
-    console.warn(error.message);
+    console.warn('[build] Prisma migrate deploy failed:', error.message);
+    console.warn('[build] Continuing with build...');
   }
 }
 
