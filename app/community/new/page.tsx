@@ -30,7 +30,7 @@ function CommunityNewPostForm() {
   const { t } = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const [formValues, setFormValues] = useState<NewPostFormValues>({
     title: '',
     content: '',
