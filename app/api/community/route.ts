@@ -357,14 +357,14 @@ export async function POST(request: NextRequest) {
       console.error('Failed to create post in database:', error);
       return NextResponse.json({ 
         message: 'Unable to create community post.',
-        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        error: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : undefined
       }, { status: 500 });
     }
   } catch (error) {
     console.error('Unexpected error in POST /api/community:', error);
     return NextResponse.json({ 
       message: 'Invalid request format.',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : undefined
     }, { status: 400 });
   }
 }
