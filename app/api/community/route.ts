@@ -291,52 +291,81 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const title = body.title?.trim();
-  const content = body.content?.trim();
-  const projectId = body.projectId ? String(body.projectId) : undefined;
-  const category = parseCategory(body.category ?? null) ?? CommunityCategory.GENERAL;
-  const authContext = { headers: request.headers };
-
-  if (!title || !content) {
-    return NextResponse.json({ message: 'Title and content are required.' }, { status: 400 });
-  }
-
-  let sessionUser: SessionUser;
-
   try {
-    sessionUser = await requireApiUser({}, authContext);
-  } catch (error) {
-    const response = handleAuthorizationError(error);
-    if (response) {
-      return response;
+    const body = await request.json();
+    console.log('Received POST request body:', { 
+      title: body.title?.substring(0, 50) + '...', 
+      content: body.content?.substring(0, 50) + '...', 
+      category: body.category,
+      hasProjectId: !!body.projectId 
+    });
+    
+    const title = body.title?.trim();
+    const content = body.content?.trim();
+    const projectId = body.projectId ? String(body.projectId) : undefined;
+    const category = parseCategory(body.category ?? null) ?? CommunityCategory.GENERAL;
+    const authContext = { headers: request.headers };
+
+    if (!title || !content) {
+      console.log('Validation failed: missing title or content', { title: !!title, content: !!content });
+      return NextResponse.json({ message: 'Title and content are required.' }, { status: 400 });
     }
 
-    throw error;
-  }
+    let sessionUser: SessionUser;
 
-  try {
-    const post = await prisma.post.create({
-      data: {
-        title,
-        content,
-        type: PostType.DISCUSSION,
-        category,
-        authorId: sessionUser.id,
-        projectId: projectId ?? undefined
-      },
-      include: {
-        author: { select: { id: true, name: true, avatarUrl: true } },
-        _count: { select: { likes: true, dislikes: true, comments: true } }
+    try {
+      sessionUser = await requireApiUser({}, authContext);
+      console.log('User authenticated:', { userId: sessionUser.id, userRole: sessionUser.role });
+    } catch (error) {
+      console.error('Authentication failed:', error);
+      const response = handleAuthorizationError(error);
+      if (response) {
+        return response;
       }
-    });
 
-    const created = mapPostToResponse(post);
+      throw error;
+    }
 
-    return NextResponse.json(created, { status: 201 });
+    try {
+      console.log('Creating post with data:', { 
+        title: title.substring(0, 50) + '...', 
+        category, 
+        authorId: sessionUser.id,
+        projectId: projectId || 'none'
+      });
+      
+      const post = await prisma.post.create({
+        data: {
+          title,
+          content,
+          type: PostType.DISCUSSION,
+          category,
+          authorId: sessionUser.id,
+          projectId: projectId ?? undefined
+        },
+        include: {
+          author: { select: { id: true, name: true, avatarUrl: true } },
+          _count: { select: { likes: true, dislikes: true, comments: true } }
+        }
+      });
+
+      console.log('Post created successfully:', { postId: post.id });
+      const created = mapPostToResponse(post);
+
+      return NextResponse.json(created, { status: 201 });
+    } catch (error) {
+      console.error('Failed to create post in database:', error);
+      return NextResponse.json({ 
+        message: 'Unable to create community post.',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      }, { status: 500 });
+    }
   } catch (error) {
-    console.error('Failed to create post in database.', error);
-    return NextResponse.json({ message: 'Unable to create community post.' }, { status: 500 });
+    console.error('Unexpected error in POST /api/community:', error);
+    return NextResponse.json({ 
+      message: 'Invalid request format.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    }, { status: 400 });
   }
 }
 

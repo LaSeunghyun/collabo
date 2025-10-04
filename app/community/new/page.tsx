@@ -67,7 +67,6 @@ function CommunityNewPostForm() {
         title: values.title.trim(),
         content: values.content.trim(),
         category: values.category,
-        authorId: session?.user?.id,
         attachments: values.attachments.map((file) => ({
           name: file.name,
           size: file.size,
@@ -82,7 +81,8 @@ function CommunityNewPostForm() {
       });
 
       if (!res.ok) {
-        throw new Error('Failed to create community post');
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to create community post');
       }
 
       return (await res.json()) as CommunityPost;
@@ -91,8 +91,9 @@ function CommunityNewPostForm() {
       setFormValues({ title: '', content: '', category: 'general', attachments: [] });
       router.push(`/community/${post.id}`);
     },
-    onError: () => {
-      setError(t('community.postErrorMessage') ?? '');
+    onError: (error: Error) => {
+      console.error('Failed to create post:', error);
+      setError(error.message || t('community.postErrorMessage') || '게시글 작성에 실패했습니다.');
     }
   });
 
