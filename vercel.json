@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npx prisma migrate deploy && npx prisma generate && next build",
+  "buildCommand": "node scripts/build-with-prisma.js",
   "installCommand": "npm install",
   "framework": "nextjs",
   "functions": {
