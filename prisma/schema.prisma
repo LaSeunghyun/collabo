@@ -90,11 +90,6 @@ enum PostType {
   AMA
 }
 
-enum PostVisibility {
-  PUBLIC
-  SUPPORTERS
-  PRIVATE
-}
 
 enum CommunityCategory {
   GENERAL
@@ -392,6 +387,7 @@ model Post {
   title       String
   content     String
   type        PostType          @default(UPDATE)
+  visibility  String?           @default("PUBLIC")
   attachments Json?
   milestone   ProjectMilestone? @relation("ProjectMilestonePosts", fields: [milestoneId], references: [id])
   milestoneId String?
