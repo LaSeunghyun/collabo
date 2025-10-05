@@ -50,8 +50,8 @@ export default function CommunityPostDetailPage() {
 
   // 세션 상태 디버깅
   useEffect(() => {
-    console.log('Session status:', { status, session, isAuthenticated });
-  }, [status, session, isAuthenticated]);
+    console.log('Session status:', { status, isAuthenticated });
+  }, [status, isAuthenticated]);
 
   const { data: post, isLoading, isError } = useCommunityPost(postId);
   const { data: comments = [], isLoading: commentsLoading } = useCommunityComments(postId);
