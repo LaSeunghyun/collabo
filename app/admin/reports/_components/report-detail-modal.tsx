@@ -52,12 +52,6 @@ export function ReportDetailModal({
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [actionNote, setActionNote] = useState('');
 
-  useEffect(() => {
-    if (isOpen && postId) {
-      fetchPostDetails();
-    }
-  }, [isOpen, postId, fetchPostDetails]);
-
   const fetchPostDetails = useCallback(async () => {
     setLoading(true);
     try {
@@ -73,6 +67,12 @@ export function ReportDetailModal({
       setLoading(false);
     }
   }, [postId]);
+
+  useEffect(() => {
+    if (isOpen && postId) {
+      fetchPostDetails();
+    }
+  }, [isOpen, postId, fetchPostDetails]);
 
   const handleStatusUpdate = async (reportId: string, status: string) => {
     setProcessing(true);
