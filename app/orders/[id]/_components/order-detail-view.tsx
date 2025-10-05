@@ -6,18 +6,17 @@ import { OrderStatus } from '@/types/prisma';
 
 interface Order {
   id: string;
-  status: OrderStatus;
-  totalAmount: number;
+  orderStatus: OrderStatus;
+  totalPrice: number;
   createdAt: Date;
-  paidAt: Date | null;
   project: {
     id: string;
     title: string;
     thumbnail: string | null;
     status: string;
     endDate: Date | null;
-  };
-  orderItems: Array<{
+  } | null;
+  items: Array<{
     id: string;
     quantity: number;
     unitPrice: number;
@@ -29,7 +28,7 @@ interface Order {
       price: number;
       deliveryType: string;
       estimatedDelivery: Date | null;
-    };
+    } | null;
     tickets: Array<{
       id: string;
       qrCode: string;
@@ -49,9 +48,7 @@ interface Order {
   payments: Array<{
     id: string;
     amount: number;
-    provider: string;
     status: string;
-    transactionId: string;
     createdAt: Date;
   }>;
 }
@@ -145,8 +142,8 @@ export function OrderDetailView({ order }: OrderDetailViewProps) {
               <p className="text-white/60">주문 번호: {order.id}</p>
             </div>
             <div className="text-right">
-              <div className={`inline-flex px-4 py-2 rounded-full text-sm font-semibold ${getStatusColor(order.status)}`}>
-                {getStatusText(order.status)}
+              <div className={`inline-flex px-4 py-2 rounded-full text-sm font-semibold ${getStatusColor(order.orderStatus)}`}>
+                {getStatusText(order.orderStatus)}
               </div>
               <p className="text-white/60 text-sm mt-2">
                 주문일: {formatDate(order.createdAt)}
@@ -157,19 +154,19 @@ export function OrderDetailView({ order }: OrderDetailViewProps) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="text-center">
               <div className="text-2xl font-bold text-white">
-                {order.totalAmount.toLocaleString()}원
+                {order.totalPrice.toLocaleString()}원
               </div>
               <div className="text-white/60 text-sm">총 결제 금액</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-white">
-                {order.orderItems.length}
+                {order.items.length}
               </div>
               <div className="text-white/60 text-sm">주문 아이템</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-white">
-                {order.project.title}
+                {order.project?.title || 'N/A'}
               </div>
               <div className="text-white/60 text-sm">프로젝트</div>
             </div>
@@ -182,16 +179,16 @@ export function OrderDetailView({ order }: OrderDetailViewProps) {
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 p-6">
               <h2 className="text-xl font-semibold text-white mb-4">주문 아이템</h2>
               <div className="space-y-4">
-                {order.orderItems.map((item) => (
+                {order.items.map((item) => (
                   <div key={item.id} className="p-4 bg-white/5 rounded-lg border border-white/10">
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="text-white font-medium">{item.reward.title}</h3>
+                      <h3 className="text-white font-medium">{item.reward?.title || '리워드 정보 없음'}</h3>
                       <div className="text-primary font-semibold">
                         {item.totalPrice.toLocaleString()}원
                       </div>
                     </div>
                     
-                    {item.reward.description && (
+                    {item.reward?.description && (
                       <p className="text-white/60 text-sm mb-2">{item.reward.description}</p>
                     )}
                     
@@ -250,7 +247,7 @@ export function OrderDetailView({ order }: OrderDetailViewProps) {
                           {payment.amount.toLocaleString()}원
                         </div>
                         <div className="text-white/60 text-sm">
-                          {payment.provider} • {formatDate(payment.createdAt)}
+                          {formatDate(payment.createdAt)}
                         </div>
                       </div>
                       <div className="text-right">
@@ -262,7 +259,7 @@ export function OrderDetailView({ order }: OrderDetailViewProps) {
                           {payment.status === 'SUCCEEDED' ? '성공' : '실패'}
                         </div>
                         <div className="text-white/60 text-xs mt-1">
-                          {payment.transactionId}
+                          ID: {payment.id}
                         </div>
                       </div>
                     </div>
@@ -275,13 +272,13 @@ export function OrderDetailView({ order }: OrderDetailViewProps) {
           {/* 사이드바 */}
           <div className="space-y-6">
             {/* 결제 버튼 */}
-            {order.status === OrderStatus.PENDING && (
+            {order.orderStatus === OrderStatus.PENDING && (
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 p-6">
                 <h3 className="text-lg font-semibold text-white mb-4">결제하기</h3>
                 <div className="space-y-4">
                   <div className="text-center">
                     <div className="text-2xl font-bold text-white mb-2">
-                      {order.totalAmount.toLocaleString()}원
+                      {order.totalPrice.toLocaleString()}원
                     </div>
                     <div className="text-white/60 text-sm">결제 예정 금액</div>
                   </div>
@@ -301,24 +298,26 @@ export function OrderDetailView({ order }: OrderDetailViewProps) {
               </div>
             )}
 
-            {/* 프로젝트 정보 */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">프로젝트 정보</h3>
-              <div className="space-y-3">
-                <div>
-                  <div className="text-white/60 text-sm">프로젝트</div>
-                  <div className="text-white font-medium">{order.project.title}</div>
-                </div>
-                <div>
-                  <div className="text-white/60 text-sm">상태</div>
-                  <div className="text-white">{order.project.status}</div>
-                </div>
-                <div>
-                  <div className="text-white/60 text-sm">마감일</div>
-                  <div className="text-white">{formatDate(order.project.endDate)}</div>
+            {/* 프로젝트 정보 (프로젝트가 있는 경우에만 표시) */}
+            {order.project && (
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 p-6">
+                <h3 className="text-lg font-semibold text-white mb-4">프로젝트 정보</h3>
+                <div className="space-y-3">
+                  <div>
+                    <div className="text-white/60 text-sm">프로젝트</div>
+                    <div className="text-white font-medium">{order.project.title}</div>
+                  </div>
+                  <div>
+                    <div className="text-white/60 text-sm">상태</div>
+                    <div className="text-white">{order.project.status}</div>
+                  </div>
+                  <div>
+                    <div className="text-white/60 text-sm">마감일</div>
+                    <div className="text-white">{formatDate(order.project.endDate)}</div>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* 주문 정보 */}
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 p-6">
@@ -332,16 +331,10 @@ export function OrderDetailView({ order }: OrderDetailViewProps) {
                   <span className="text-white/60">주문일</span>
                   <span className="text-white">{formatDate(order.createdAt)}</span>
                 </div>
-                {order.paidAt && (
-                  <div className="flex justify-between">
-                    <span className="text-white/60">결제일</span>
-                    <span className="text-white">{formatDate(order.paidAt)}</span>
-                  </div>
-                )}
                 <div className="flex justify-between">
                   <span className="text-white/60">총 금액</span>
                   <span className="text-white font-semibold">
-                    {order.totalAmount.toLocaleString()}원
+                    {order.totalPrice.toLocaleString()}원
                   </span>
                 </div>
               </div>

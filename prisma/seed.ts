@@ -211,20 +211,19 @@ async function seedFunding(
     create: {
       id: 'demo-settlement',
       project: { connect: { id: projectId } },
-      totalRaised: 2500000,
+      totalAmount: 2500000,
       platformFee: 125000,
-      gatewayFees: 30000,
       netAmount: 2345000,
-      creatorShare: 1800000,
-      partnerShare: 400000,
-      collaboratorShare: 145000,
-      payoutStatus: SettlementPayoutStatus.IN_PROGRESS,
-      distributionBreakdown: [
-        { type: 'CREATOR', amount: 1800000 },
-        { type: 'PARTNER', amount: 400000 },
-        { type: 'COLLABORATOR', amount: 145000 },
-        { type: 'PLATFORM', amount: 125000 }
-      ]
+      status: "IN_PROGRESS",
+      metadata: {
+        distributionBreakdown: [
+          { type: 'CREATOR', amount: 1800000 },
+          { type: 'PARTNER', amount: 400000 },
+          { type: 'COLLABORATOR', amount: 145000 },
+          { type: 'PLATFORM', amount: 125000 }
+        ],
+        notes: "데모 정산 데이터"
+      }
     }
   });
 

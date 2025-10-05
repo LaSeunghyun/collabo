@@ -63,8 +63,12 @@ export async function createSettlementIfTargetReached(
     const existingSettlement = await prisma.settlement.findFirst({
         where: {
             projectId,
-            payoutStatus: {
-                in: [SettlementPayoutStatus.PENDING, SettlementPayoutStatus.IN_PROGRESS]
+            payouts: {
+                some: {
+                    status: {
+                        in: [SettlementPayoutStatus.PENDING, SettlementPayoutStatus.IN_PROGRESS]
+                    }
+                }
             }
         }
     });
@@ -130,16 +134,14 @@ export async function createSettlementIfTargetReached(
         const created = await tx.settlement.create({
             data: {
                 projectId,
-                totalRaised: breakdown.totalRaised,
+                totalAmount: breakdown.totalRaised,
                 platformFee: breakdown.platformFee,
-                creatorShare: breakdown.creatorShare,
-                partnerShare: breakdown.partnerShareTotal,
-                collaboratorShare: breakdown.collaboratorShareTotal,
-                gatewayFees: breakdown.gatewayFees,
                 netAmount: breakdown.netAmount,
-                payoutStatus: SettlementPayoutStatus.PENDING,
-                distributionBreakdown: breakdown as any,
-                notes: notes ?? null
+                status: "PENDING",
+                metadata: {
+                    breakdown: breakdown as any,
+                    notes: notes ?? null
+                }
             }
         });
 
@@ -172,18 +174,20 @@ export async function createSettlementIfTargetReached(
         ].filter((payout) => payout.amount > 0);
 
         await Promise.all(
-            payoutPayload.map((payout) =>
-                tx.settlementPayout.create({
-                    data: {
-                        settlementId: created.id,
-                        stakeholderType: payout.stakeholderType,
-                        stakeholderId: payout.stakeholderId,
-                        amount: payout.amount,
-                        percentage: payout.percentage,
-                        status: SettlementPayoutStatus.PENDING
-                    }
-                })
-            )
+            payoutPayload
+                .filter((payout) => payout.stakeholderId !== null)
+                .map((payout) =>
+                    tx.settlementPayout.create({
+                        data: {
+                            settlementId: created.id,
+                            stakeholderType: payout.stakeholderType,
+                            stakeholderId: payout.stakeholderId!,
+                            amount: payout.amount,
+                            percentage: payout.percentage,
+                            status: SettlementPayoutStatus.PENDING
+                        }
+                    })
+                )
         );
 
         return created;
@@ -205,7 +209,7 @@ export async function validateFundingSettlementConsistency(projectId: string) {
                 select: { amount: true }
             },
             settlements: {
-                select: { totalRaised: true }
+                select: { totalAmount: true }
             }
         }
     });
@@ -225,8 +229,8 @@ export async function validateFundingSettlementConsistency(projectId: string) {
     }
 
     // 정산 금액과 펀딩 금액 일치 확인
-    if (latestSettlement && latestSettlement.totalRaised !== totalFundingAmount) {
-        issues.push(`최신 정산 금액(${latestSettlement.totalRaised})과 펀딩 금액(${totalFundingAmount})이 일치하지 않습니다.`);
+    if (latestSettlement && latestSettlement.totalAmount !== totalFundingAmount) {
+        issues.push(`최신 정산 금액(${latestSettlement.totalAmount})과 펀딩 금액(${totalFundingAmount})이 일치하지 않습니다.`);
     }
 
     return {

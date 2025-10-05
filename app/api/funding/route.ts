@@ -329,7 +329,7 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({
             status: 'recorded',
             funding,
-            settlement: settlement ? { id: settlement.id, status: settlement.payoutStatus } : null
+            settlement: settlement ? { id: settlement.id, status: settlement.status } : null
           });
         } catch (settlementError) {
           console.warn('?뺤궛 ?먮룞 ?앹꽦 ?ㅽ뙣:', settlementError);
@@ -376,7 +376,7 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({
             status: 'recorded',
             funding,
-            settlement: settlement ? { id: settlement.id, status: settlement.payoutStatus } : null
+            settlement: settlement ? { id: settlement.id, status: settlement.status } : null
           });
         } catch (settlementError) {
           console.warn('?뺤궛 ?먮룞 ?앹꽦 ?ㅽ뙣:', settlementError);

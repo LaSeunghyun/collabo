@@ -19,7 +19,7 @@ async function getOrder(id: string) {
           endDate: true
         }
       },
-      orderItems: {
+      items: {
         include: {
           reward: {
             select: {

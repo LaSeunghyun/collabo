@@ -1,7 +1,6 @@
 import type { Prisma as PrismaClientNamespace } from '@prisma/client';
 
 import { revalidatePath } from 'next/cache';
-import { Prisma } from '@prisma/client';
 import { ProjectStatus, UserRole, ProjectSummary, type ProjectStatusType } from '@/types/prisma';
 import { ZodError } from 'zod';
 
@@ -149,9 +148,9 @@ export const getProjectSummaryById = async (id: string) => {
 
 const toJsonInput = (
   value: unknown
-): PrismaClientNamespace.InputJsonValue | PrismaClientNamespace.JsonNullValueInput => {
+): PrismaClientNamespace.InputJsonValue => {
   if (value === undefined || value === null) {
-    return Prisma.JsonNull;
+    return {};
   }
 
   return value as PrismaClientNamespace.InputJsonValue;

@@ -119,7 +119,11 @@ export async function POST(request: NextRequest) {
   const existingPending = await prisma.settlement.findFirst({
     where: {
       projectId,
-      payoutStatus: { in: [SettlementPayoutStatus.PENDING, SettlementPayoutStatus.IN_PROGRESS] }
+      payouts: {
+        some: {
+          status: { in: [SettlementPayoutStatus.PENDING, SettlementPayoutStatus.IN_PROGRESS] }
+        }
+      }
     },
     orderBy: { createdAt: 'desc' },
     include: { payouts: true }
@@ -208,16 +212,14 @@ export async function POST(request: NextRequest) {
     const created = await tx.settlement.create({
       data: {
         projectId,
-        totalRaised: breakdown.totalRaised,
+        totalAmount: breakdown.totalRaised,
         platformFee: breakdown.platformFee,
-        creatorShare: breakdown.creatorShare,
-        partnerShare: breakdown.partnerShareTotal,
-        collaboratorShare: breakdown.collaboratorShareTotal,
-        gatewayFees: breakdown.gatewayFees,
         netAmount: breakdown.netAmount,
-        payoutStatus: SettlementPayoutStatus.PENDING,
-        distributionBreakdown: breakdown as any,
-        notes: notes ?? null
+        status: "PENDING",
+        metadata: {
+          breakdown: breakdown as any,
+          notes: notes ?? null
+        }
       }
     });
 
@@ -255,18 +257,20 @@ export async function POST(request: NextRequest) {
     ].filter((payout) => payout.amount > 0);
 
     await Promise.all(
-      payoutPayload.map((payout) =>
-        tx.settlementPayout.create({
-          data: {
-            settlementId: created.id,
-            stakeholderType: payout.stakeholderType,
-            stakeholderId: payout.stakeholderId,
-            amount: payout.amount,
-            percentage: payout.percentage,
-            status: SettlementPayoutStatus.PENDING
-          }
-        })
-      )
+      payoutPayload
+        .filter((payout) => payout.stakeholderId !== null)
+        .map((payout) =>
+          tx.settlementPayout.create({
+            data: {
+              settlementId: created.id,
+              stakeholderType: payout.stakeholderType,
+              stakeholderId: payout.stakeholderId!,
+              amount: payout.amount,
+              percentage: payout.percentage,
+              status: SettlementPayoutStatus.PENDING
+            }
+          })
+        )
     );
 
     return (

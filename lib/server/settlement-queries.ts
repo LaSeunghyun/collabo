@@ -16,9 +16,9 @@ export interface SettlementSummary {
 const toSummary = (settlement: {
   id: string;
   projectId: string;
-  totalRaised: number;
+  totalAmount: number;
   netAmount: number;
-  payoutStatus: SettlementPayoutStatusType;
+  status: string;
   createdAt: Date;
   updatedAt: Date;
   project: { id: string; title: string };
@@ -26,9 +26,9 @@ const toSummary = (settlement: {
   id: settlement.id,
   projectId: settlement.projectId,
   projectTitle: settlement.project.title,
-  totalRaised: settlement.totalRaised,
+  totalRaised: settlement.totalAmount,
   netAmount: settlement.netAmount,
-  payoutStatus: settlement.payoutStatus,
+  payoutStatus: settlement.status as any,
   createdAt: settlement.createdAt,
   updatedAt: settlement.updatedAt
 });
@@ -36,7 +36,11 @@ const toSummary = (settlement: {
 export const getSettlementsPendingPayout = async (limit = 5) => {
   const settlements = await prisma.settlement.findMany({
     where: {
-      payoutStatus: { in: [SettlementPayoutStatus.PENDING, SettlementPayoutStatus.IN_PROGRESS] }
+      payouts: {
+        some: {
+          status: { in: [SettlementPayoutStatus.PENDING, SettlementPayoutStatus.IN_PROGRESS] }
+        }
+      }
     },
     include: {
       project: { select: { id: true, title: true } }

@@ -76,9 +76,9 @@ type ProjectInfo = {
 
 const toJsonInput = (
   value: ProjectUpdateAttachment[] | undefined
-): Prisma.InputJsonValue | Prisma.JsonNullValueInput => {
+): Prisma.InputJsonValue => {
   if (!value || value.length === 0) {
-    return Prisma.JsonNull;
+    return [];
   }
 
   return value as unknown as Prisma.InputJsonValue;

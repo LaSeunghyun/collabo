@@ -81,7 +81,7 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
           rewardId,
           quantity: 1,
           shippingAddress: {
-            name: session.user.name,
+            name: session.user?.name || 'Unknown',
             address: '서울시 강남구 테헤란로 123',
             phone: '010-1234-5678'
           }

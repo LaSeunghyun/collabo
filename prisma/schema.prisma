@@ -107,9 +107,17 @@ enum PostType {
   AMA
 }
 
+enum PostStatus {
+  ACTIVE
+  HIDDEN
+  DELETED
+}
 
 enum CommunityCategory {
   GENERAL
+  QUESTION
+  REVIEW
+  SUGGESTION
   NOTICE
   COLLAB
   SUPPORT
@@ -204,6 +212,7 @@ model Project {
   partnerMatches    PartnerMatch[]
   products          Product[]
   rewards           Reward[]
+  orders            Order[]
   posts             Post[]
   milestoneEntries  ProjectMilestone[]
   rewardTierEntries ProjectRewardTier[]
@@ -304,19 +313,14 @@ model Settlement {
   id                    String                 @id @default(cuid())
   project               Project                @relation(fields: [projectId], references: [id])
   projectId             String
-  totalRaised           Int
+  totalAmount           Int
   platformFee           Int
-  creatorShare          Int
-  partnerShare          Int                    @default(0)
-  collaboratorShare     Int                    @default(0)
-  gatewayFees           Int                    @default(0)
-  netAmount             Int                    @default(0)
-  payoutStatus          SettlementPayoutStatus @default(PENDING)
-  distributionBreakdown Json?
-  notes                 Json?
+  netAmount             Int
+  status                String                 @default("PENDING")
+  metadata              Json?
+  payouts               SettlementPayout[]
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
-  payouts               SettlementPayout[]
 }
 
 model Partner {
@@ -381,6 +385,8 @@ model Order {
   id            String      @id @default(cuid())
   user          User        @relation(fields: [userId], references: [id])
   userId        String
+  project       Project?    @relation(fields: [projectId], references: [id])
+  projectId     String?
   totalPrice    Int
   subtotal      Int
   currency      String      @default("KRW")
@@ -394,6 +400,7 @@ model Order {
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   items         OrderItem[]
+  payments      PaymentTransaction[]
 }
 
 model Post {
@@ -404,7 +411,7 @@ model Post {
   authorId    String
   title       String
   content     String
-  type        PostType          @default(UPDATE)
+  type        PostType          @default(DISCUSSION)
   visibility  String?           @default("PUBLIC")
   attachments Json?
   milestone   ProjectMilestone? @relation("ProjectMilestonePosts", fields: [milestoneId], references: [id])
@@ -416,11 +423,17 @@ model Post {
   scheduledAt DateTime?
   publishedAt DateTime?
   isPinned    Boolean           @default(false)
+  isAnonymous Boolean           @default(false)
+  status      PostStatus        @default(ACTIVE)
+  likesCount  Int               @default(0)
+  reportsCount Int              @default(0)
+  editedAt    DateTime?
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
   likes       PostLike[]
   dislikes    PostDislike[]
   comments    Comment[]
+  reports     ModerationReport[]
 }
 
 model Comment {
@@ -468,8 +481,13 @@ model Notification {
   user      User             @relation(fields: [userId], references: [id])
   userId    String
   type      NotificationType
-  payload   Json
-  read      Boolean          @default(false)
+  title     String
+  content   String
+  metadata  Json?
+  relatedId String?
+  relatedType String?
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
   createdAt DateTime         @default(now())
 }
 
@@ -535,11 +553,13 @@ model UserPermission {
 
 model PaymentTransaction {
   id         String          @id @default(cuid())
-  funding    Funding         @relation(fields: [fundingId], references: [id])
-  fundingId  String          @unique
+  funding    Funding?        @relation(fields: [fundingId], references: [id])
+  fundingId  String?         @unique
+  order      Order?          @relation(fields: [orderId], references: [id])
+  orderId    String?         @unique
   provider   PaymentProvider
   externalId String
-  status     FundingStatus
+  status     String          @default("PENDING")
   amount     Int
   currency   String          @default("KRW")
   gatewayFee Int?            @default(0)
@@ -554,13 +574,14 @@ model SettlementPayout {
   settlement      Settlement                @relation(fields: [settlementId], references: [id])
   settlementId    String
   stakeholderType SettlementStakeholderType
-  stakeholderId   String?
+  stakeholderId   String
   amount          Int
   percentage      Float?
   status          SettlementPayoutStatus    @default(PENDING)
-  dueDate         DateTime?
+  description     String?
+  notes           Json?
   paidAt          DateTime?
-  metadata        Json?
+  failedAt        DateTime?
   createdAt       DateTime                  @default(now())
   updatedAt       DateTime                  @updatedAt
 }
@@ -719,6 +740,7 @@ model ModerationReport {
   notes      Json?
   createdAt  DateTime             @default(now())
   resolvedAt DateTime?
+  post       Post?                @relation(fields: [targetId], references: [id])
 }
 
 model UserBlock {

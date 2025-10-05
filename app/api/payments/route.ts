@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       where: { id: orderId },
       include: {
         project: true,
-        orderItems: {
+        items: {
           include: {
             reward: true
           }
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (order.status !== OrderStatus.PENDING) {
+    if (order.orderStatus !== OrderStatus.PENDING) {
       return NextResponse.json(
         { message: '이미 처리된 주문입니다.' },
         { status: 400 }
@@ -57,8 +57,7 @@ export async function POST(request: NextRequest) {
 
     // 결제 처리 (실제 결제 게이트웨이 연동은 추후 구현)
     const paymentResult = await processPayment({
-      orderId,
-      amount: order.totalAmount,
+      amount: order.totalPrice,
       paymentMethod,
       paymentData
     });
@@ -74,10 +73,10 @@ export async function POST(request: NextRequest) {
     const payment = await prisma.paymentTransaction.create({
       data: {
         orderId,
-        amount: order.totalAmount,
+        amount: order.totalPrice,
         provider: paymentMethod === 'CARD' ? PaymentProvider.STRIPE : PaymentProvider.TOSS,
         status: 'SUCCEEDED',
-        transactionId: paymentResult.transactionId,
+        externalId: paymentResult.transactionId || `txn_${Date.now()}`,
         metadata: {
           paymentData,
           processedAt: new Date().toISOString()
@@ -89,13 +88,14 @@ export async function POST(request: NextRequest) {
     await prisma.order.update({
       where: { id: orderId },
       data: {
-        status: OrderStatus.PAID,
-        paidAt: new Date()
+        orderStatus: OrderStatus.PAID
       }
     });
 
     // 프로젝트 성공 여부 확인
-    await checkProjectSuccess(order.projectId);
+    if (order.projectId) {
+      await checkProjectSuccess(order.projectId);
+    }
 
     return NextResponse.json({
       paymentId: payment.id,
@@ -114,12 +114,10 @@ export async function POST(request: NextRequest) {
 
 // 결제 처리 함수 (실제 구현은 결제 게이트웨이에 따라 달라짐)
 async function processPayment({
-  orderId,
   amount,
   paymentMethod,
   paymentData
 }: {
-  orderId: string;
   amount: number;
   paymentMethod: string;
   paymentData: any;
@@ -149,7 +147,7 @@ async function processPayment({
       success: true,
       transactionId: `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     };
-  } catch (error) {
+  } catch {
     return { success: false, error: '결제 처리 중 오류가 발생했습니다.' };
   }
 }
@@ -167,8 +165,7 @@ async function checkProjectSuccess(projectId: string) {
     await prisma.project.update({
       where: { id: projectId },
       data: {
-        status: 'SUCCEEDED',
-        succeededAt: new Date()
+        status: 'SUCCEEDED'
       }
     });
 

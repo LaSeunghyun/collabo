@@ -147,11 +147,11 @@ export function ProjectDetailTabs({
                   {currencyFormatter.format(latestSettlement.totalAmount)}
                 </p>
                 <p className="mt-2 text-xs text-white/60">
-                  제작자 {currencyFormatter.format(latestSettlement.creatorShare)} · 플랫폼{' '}
-                  {currencyFormatter.format(latestSettlement.platformShare)}
+                  플랫폼 수수료 {currencyFormatter.format(latestSettlement.platformFee)} · 순수익{' '}
+                  {currencyFormatter.format(latestSettlement.netAmount)}
                 </p>
                 <p className="mt-2 text-xs text-white/50">
-                  {latestSettlement.distributed ? '분배 완료' : '분배 대기'} ·{' '}
+                  {latestSettlement.status} ·{' '}
                   {dateFormatter.format(new Date(latestSettlement.createdAt))}
                 </p>
               </div>

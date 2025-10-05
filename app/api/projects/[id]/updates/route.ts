@@ -73,7 +73,9 @@ const createSupporterNotification = async (
     data: Array.from(recipients).map((userId) => ({
       userId,
       type: NotificationType.SYSTEM,
-      payload
+      title: '프로젝트 업데이트',
+      content: '새로운 프로젝트 업데이트가 있습니다.',
+      metadata: payload
     }))
   });
 };
