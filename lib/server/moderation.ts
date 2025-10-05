@@ -93,6 +93,54 @@ export const getModerationStats = async () => {
   };
 };
 
+export const getReportedPostDetails = async (postId: string) => {
+  const [post, reports] = await Promise.all([
+    prisma.post.findUnique({
+      where: { id: postId },
+      include: {
+        author: { select: { id: true, name: true, avatarUrl: true } },
+        _count: { select: { likes: true, comments: true } }
+      }
+    }),
+    prisma.moderationReport.findMany({
+      where: { 
+        targetType: ModerationTargetType.POST,
+        targetId: postId 
+      },
+      include: {
+        reporter: { select: { id: true, name: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    })
+  ]);
+
+  if (!post) {
+    throw new Error('Post not found');
+  }
+
+  return {
+    post,
+    reports
+  };
+};
+
+export const updateModerationStatus = async (
+  reportId: string, 
+  status: ModerationStatusType, 
+  adminId: string,
+  actionNote?: string
+) => {
+  return await prisma.moderationReport.update({
+    where: { id: reportId },
+    data: {
+      status,
+      resolvedAt: new Date(),
+      resolvedBy: adminId,
+      actionNote
+    }
+  });
+};
+
 export const getHandledModerationReportsByPost = async (limit = 8) => {
   const grouped = await prisma.moderationReport.groupBy({
     by: ['targetId'],

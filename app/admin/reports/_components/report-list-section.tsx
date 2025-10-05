@@ -7,6 +7,7 @@ import {
   type ModerationStatusValue,
   type ModerationTargetTypeValue 
 } from '@/types/prisma';
+import { ReportDetailModal } from './report-detail-modal';
 
 const statusLabels: Record<ModerationStatusValue, string> = {
   [ModerationStatus.PENDING]: '대기중',
@@ -46,6 +47,8 @@ interface ReportListSectionProps {
 
 export function ReportListSection({ reports }: ReportListSectionProps) {
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const filteredReports = reports.filter((report) => {
     if (filter === 'all') return true;
@@ -63,6 +66,21 @@ export function ReportListSection({ reports }: ReportListSectionProps) {
       dateStyle: 'medium',
       timeStyle: 'short'
     }).format(date);
+  };
+
+  const handleViewDetails = (postId: string) => {
+    setSelectedPostId(postId);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedPostId(null);
+  };
+
+  const handleStatusUpdate = () => {
+    // 모달이 닫힌 후 데이터 새로고침을 위해 페이지 리로드
+    window.location.reload();
   };
 
   return (
@@ -137,11 +155,17 @@ export function ReportListSection({ reports }: ReportListSectionProps) {
                 </div>
                 
                 <div className="ml-4 flex gap-2">
-                  <button className="px-3 py-1 text-xs font-medium text-white/60 hover:text-white border border-white/20 rounded-lg hover:bg-white/10 transition-colors">
+                  <button 
+                    onClick={() => handleViewDetails(report.targetId)}
+                    className="px-3 py-1 text-xs font-medium text-white/60 hover:text-white border border-white/20 rounded-lg hover:bg-white/10 transition-colors"
+                  >
                     상세보기
                   </button>
                   {report.status === ModerationStatus.PENDING && (
-                    <button className="px-3 py-1 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary/80 transition-colors">
+                    <button 
+                      onClick={() => handleViewDetails(report.targetId)}
+                      className="px-3 py-1 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary/80 transition-colors"
+                    >
                       처리하기
                     </button>
                   )}
@@ -159,6 +183,16 @@ export function ReportListSection({ reports }: ReportListSectionProps) {
           </div>
         )}
       </div>
+
+      {/* 신고 상세 모달 */}
+      {selectedPostId && (
+        <ReportDetailModal
+          postId={selectedPostId}
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          onStatusUpdate={handleStatusUpdate}
+        />
+      )}
     </div>
   );
 }
