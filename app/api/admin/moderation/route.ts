@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const { user } = await requireApiUser({ roles: [UserRole.ADMIN] });
+    const user = await requireApiUser({ roles: [UserRole.ADMIN] });
     const body = await request.json();
     const { reportId, status, actionNote } = body;
 

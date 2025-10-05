@@ -135,8 +135,7 @@ export const updateModerationStatus = async (
     data: {
       status,
       resolvedAt: new Date(),
-      resolvedBy: adminId,
-      actionNote
+      notes: actionNote ? { note: actionNote, adminId } : undefined
     }
   });
 };
