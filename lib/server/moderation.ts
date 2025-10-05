@@ -75,6 +75,24 @@ export const getOpenModerationReports = async (limit = 5) => {
   return reports.map(toSummary);
 };
 
+export const getModerationStats = async () => {
+  const [totalReports, pendingReports, completedReports] = await Promise.all([
+    prisma.moderationReport.count(),
+    prisma.moderationReport.count({
+      where: { status: { in: ACTIVE_REVIEW_STATUSES } }
+    }),
+    prisma.moderationReport.count({
+      where: { status: { notIn: ACTIVE_REVIEW_STATUSES } }
+    })
+  ]);
+
+  return {
+    total: totalReports,
+    pending: pendingReports,
+    completed: completedReports
+  };
+};
+
 export const getHandledModerationReportsByPost = async (limit = 8) => {
   const grouped = await prisma.moderationReport.groupBy({
     by: ['targetId'],
