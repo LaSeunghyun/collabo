@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  directUrl         = env("DIRECT_URL")
 }
 
 enum UserRole {
@@ -391,7 +392,6 @@ model Post {
   title       String
   content     String
   type        PostType          @default(UPDATE)
-  visibility  PostVisibility?   @default(PUBLIC)
   attachments Json?
   milestone   ProjectMilestone? @relation("ProjectMilestonePosts", fields: [milestoneId], references: [id])
   milestoneId String?
