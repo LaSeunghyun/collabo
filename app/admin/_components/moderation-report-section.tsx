@@ -4,7 +4,7 @@ import {
   type ModerationStatusValue,
   type ModerationTargetTypeValue
 } from '@/types/prisma';
-import { getHandledModerationReportsByPost, getModerationStats, getOpenModerationReports } from '@/lib/server/moderation';
+import { getModerationStats, getOpenModerationReports } from '@/lib/server/moderation';
 import Link from 'next/link';
 
 const statusLabels: Record<ModerationStatusValue, string> = {

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { X, Eye, EyeOff, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { X, EyeOff, XCircle } from 'lucide-react';
 import { ModerationStatus } from '@/types/prisma';
 
 interface Post {
@@ -55,9 +55,9 @@ export function ReportDetailModal({
     if (isOpen && postId) {
       fetchPostDetails();
     }
-  }, [isOpen, postId]);
+  }, [isOpen, postId, fetchPostDetails]);
 
-  const fetchPostDetails = async () => {
+  const fetchPostDetails = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch(`/api/admin/moderation?postId=${postId}`);
@@ -71,7 +71,7 @@ export function ReportDetailModal({
     } finally {
       setLoading(false);
     }
-  };
+  }, [postId]);
 
   const handleStatusUpdate = async (reportId: string, status: string) => {
     setProcessing(true);
