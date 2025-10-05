@@ -6,7 +6,7 @@ import { ModerationStatus } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
   try {
-    const { user } = await requireApiUser({ roles: [UserRole.ADMIN] });
+    await requireApiUser({ roles: [UserRole.ADMIN] });
     const { searchParams } = new URL(request.url);
     const postId = searchParams.get('postId');
 

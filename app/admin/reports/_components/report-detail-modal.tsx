@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { X, EyeOff, XCircle } from 'lucide-react';
+import Image from 'next/image';
 import { ModerationStatus } from '@/types/prisma';
 
 interface Post {
@@ -168,9 +169,11 @@ export function ReportDetailModal({
                 <div className="flex items-start gap-4 mb-4">
                   <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
                     {post.author.avatarUrl ? (
-                      <img 
+                      <Image 
                         src={post.author.avatarUrl} 
                         alt={post.author.name || 'User'} 
+                        width={40}
+                        height={40}
                         className="w-10 h-10 rounded-full"
                       />
                     ) : (

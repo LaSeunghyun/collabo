@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { AlertTriangle, CheckCircle, Clock, FileText } from 'lucide-react';
+import { CheckCircle, Clock, FileText } from 'lucide-react';
 
 interface ReportStats {
   total: number;

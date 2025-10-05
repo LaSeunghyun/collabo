@@ -185,7 +185,7 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
       popular: firstPage.popular,
       total: firstPage.meta.total
     });
-  }, [firstPage]); // onMetaChange 제거
+  }, [firstPage, onMetaChange]);
 
   const posts = useMemo(
     () => data?.pages.flatMap((page) => page.posts) ?? [],
