@@ -16,12 +16,15 @@ enum UserRole {
 
 enum ProjectStatus {
   DRAFT
-  REVIEWING
+  REVIEW_PENDING
+  PRELAUNCH
   LIVE
-  SUCCESSFUL
+  SUCCEEDED
   FAILED
+  SETTLING
   EXECUTING
   COMPLETED
+  CANCELLED
 }
 
 enum FundingStatus {
@@ -76,10 +79,25 @@ enum ProductType {
 
 enum OrderStatus {
   PENDING
+  PAID_PENDING_CAPTURE
   PAID
   SHIPPED
   DELIVERED
   REFUNDED
+  CANCELLED
+}
+
+enum DeliveryType {
+  SHIPPING
+  PICKUP
+  DIGITAL
+  TICKET
+}
+
+enum TicketStatus {
+  PENDING
+  ISSUED
+  USED
   CANCELLED
 }
 
@@ -185,6 +203,7 @@ model Project {
   settlements       Settlement[]
   partnerMatches    PartnerMatch[]
   products          Product[]
+  rewards           Reward[]
   posts             Post[]
   milestoneEntries  ProjectMilestone[]
   rewardTierEntries ProjectRewardTier[]
@@ -563,6 +582,28 @@ model ProjectMilestone {
   posts         Post[]          @relation("ProjectMilestonePosts")
 }
 
+model Reward {
+  id                String      @id @default(cuid())
+  project           Project     @relation(fields: [projectId], references: [id])
+  projectId         String
+  title             String
+  description       String?
+  price             Int
+  stock             Int?
+  claimed           Int         @default(0)
+  deliveryType      DeliveryType @default(SHIPPING)
+  estimatedDelivery DateTime?
+  isEarlyBird       Boolean     @default(false)
+  isStretchGoal     Boolean     @default(false)
+  options           Json?
+  metadata          Json?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  orderItems        OrderItem[]
+  tickets           Ticket[]
+  shipments         Shipment[]
+}
+
 model ProjectRewardTier {
   id                String    @id @default(cuid())
   project           Project   @relation(fields: [projectId], references: [id])
@@ -599,14 +640,49 @@ model OrderItem {
   id         String   @id @default(cuid())
   order      Order    @relation(fields: [orderId], references: [id])
   orderId    String
-  product    Product  @relation(fields: [productId], references: [id])
-  productId  String
+  product    Product? @relation(fields: [productId], references: [id])
+  productId  String?
+  reward     Reward?  @relation(fields: [rewardId], references: [id])
+  rewardId   String?
   quantity   Int      @default(1)
   unitPrice  Int
   totalPrice Int
+  options    Json?
   metadata   Json?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  tickets    Ticket[]
+  shipments  Shipment[]
+}
+
+model Ticket {
+  id          String      @id @default(cuid())
+  orderItem   OrderItem   @relation(fields: [orderItemId], references: [id])
+  orderItemId String
+  reward      Reward?     @relation(fields: [rewardId], references: [id])
+  rewardId    String?
+  qrCode      String      @unique
+  seat        String?
+  eventDate   DateTime?
+  status      TicketStatus @default(PENDING)
+  usedAt      DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Shipment {
+  id          String   @id @default(cuid())
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id])
+  orderItemId String
+  reward      Reward?  @relation(fields: [rewardId], references: [id])
+  rewardId    String?
+  carrier     String?
+  trackingNo  String?
+  status      String   @default("PENDING")
+  shippedAt   DateTime?
+  deliveredAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model UserFollow {
