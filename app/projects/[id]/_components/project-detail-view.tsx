@@ -64,14 +64,42 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
   const isSuccessful = project.status === ProjectStatus.SUCCEEDED;
   const isFailed = project.status === ProjectStatus.FAILED;
 
-  const handleFundProject = (rewardId: string) => {
+  const handleFundProject = async (rewardId: string) => {
     if (!session) {
       // 로그인 페이지로 리다이렉트
       window.location.href = '/auth/signin';
       return;
     }
-    setSelectedReward(rewardId);
-    setShowFundingModal(true);
+    
+    try {
+      // 주문 생성
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId: project.id,
+          rewardId,
+          quantity: 1,
+          shippingAddress: {
+            name: session.user.name,
+            address: '서울시 강남구 테헤란로 123',
+            phone: '010-1234-5678'
+          }
+        })
+      });
+
+      if (response.ok) {
+        const order = await response.json();
+        // 주문 상세 페이지로 이동
+        window.location.href = `/orders/${order.orderId}`;
+      } else {
+        const error = await response.json();
+        alert(error.message || '주문 생성에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('Failed to create order:', error);
+      alert('주문 생성 중 오류가 발생했습니다.');
+    }
   };
 
   return (
@@ -242,7 +270,7 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
                         
                         <button
                           onClick={() => handleFundProject(reward.id)}
-                          disabled={reward.stock && reward.claimed >= reward.stock}
+                          disabled={Boolean(reward.stock && reward.claimed >= reward.stock)}
                           className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                           {reward.stock && reward.claimed >= reward.stock ? '품절' : '후원하기'}

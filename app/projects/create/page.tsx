@@ -567,8 +567,13 @@ function PartnerMatchingStep({ data, onChange }: { data: ProjectFormData; onChan
                 value={data.partnerRequirements?.minBudget || ''}
                 onChange={(e) => onChange({
                   partnerRequirements: {
-                    ...data.partnerRequirements,
-                    minBudget: parseInt(e.target.value) || 0
+                    category: data.partnerRequirements?.category || '',
+                    minBudget: parseInt(e.target.value) || 0,
+                    maxBudget: data.partnerRequirements?.maxBudget || 0,
+                    location: data.partnerRequirements?.location,
+                    services: data.partnerRequirements?.services || [],
+                    startDate: data.partnerRequirements?.startDate,
+                    endDate: data.partnerRequirements?.endDate
                   }
                 })}
                 className="w-full p-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-primary"
@@ -583,8 +588,13 @@ function PartnerMatchingStep({ data, onChange }: { data: ProjectFormData; onChan
                 value={data.partnerRequirements?.maxBudget || ''}
                 onChange={(e) => onChange({
                   partnerRequirements: {
-                    ...data.partnerRequirements,
-                    maxBudget: parseInt(e.target.value) || 0
+                    category: data.partnerRequirements?.category || '',
+                    minBudget: data.partnerRequirements?.minBudget || 0,
+                    maxBudget: parseInt(e.target.value) || 0,
+                    location: data.partnerRequirements?.location,
+                    services: data.partnerRequirements?.services || [],
+                    startDate: data.partnerRequirements?.startDate,
+                    endDate: data.partnerRequirements?.endDate
                   }
                 })}
                 className="w-full p-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-primary"
@@ -600,8 +610,13 @@ function PartnerMatchingStep({ data, onChange }: { data: ProjectFormData; onChan
               value={data.partnerRequirements?.location || ''}
               onChange={(e) => onChange({
                 partnerRequirements: {
-                  ...data.partnerRequirements,
-                  location: e.target.value
+                  category: data.partnerRequirements?.category || '',
+                  minBudget: data.partnerRequirements?.minBudget || 0,
+                  maxBudget: data.partnerRequirements?.maxBudget || 0,
+                  location: e.target.value,
+                  services: data.partnerRequirements?.services || [],
+                  startDate: data.partnerRequirements?.startDate,
+                  endDate: data.partnerRequirements?.endDate
                 }
               })}
               className="w-full p-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-primary"

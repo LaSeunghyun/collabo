@@ -207,12 +207,15 @@ export const ROLE_LABELS = USER_ROLE_LABELS;
 
 export const PROJECT_STATUS_LABELS: Record<ProjectStatusType, string> = {
   [ProjectStatus.DRAFT]: '초안',
-  [ProjectStatus.REVIEWING]: '검토중',
+  [ProjectStatus.REVIEW_PENDING]: '검토 대기중',
+  [ProjectStatus.PRELAUNCH]: '프리런치',
   [ProjectStatus.LIVE]: '진행중',
-  [ProjectStatus.SUCCESSFUL]: '성공',
+  [ProjectStatus.SUCCEEDED]: '성공',
   [ProjectStatus.FAILED]: '실패',
+  [ProjectStatus.SETTLING]: '정산중',
   [ProjectStatus.EXECUTING]: '실행중',
-  [ProjectStatus.COMPLETED]: '완료'
+  [ProjectStatus.COMPLETED]: '완료',
+  [ProjectStatus.CANCELLED]: '취소됨'
 };
 
 export const FUNDING_STATUS_LABELS: Record<FundingStatusType, string> = {
@@ -233,6 +236,7 @@ export const PARTNER_TYPE_LABELS: Record<PartnerTypeType, string> = {
 
 export const ORDER_STATUS_LABELS: Record<OrderStatusType, string> = {
   [OrderStatus.PENDING]: '대기중',
+  [OrderStatus.PAID_PENDING_CAPTURE]: '결제 대기중',
   [OrderStatus.PAID]: '결제완료',
   [OrderStatus.SHIPPED]: '배송중',
   [OrderStatus.DELIVERED]: '배송완료',

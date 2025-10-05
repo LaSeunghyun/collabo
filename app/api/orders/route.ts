@@ -1,52 +1,173 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-import { OrderStatus } from '@prisma/client';
 import { requireApiUser } from '@/lib/auth/guards';
+import { UserRole, OrderStatus } from '@/types/prisma';
 import { prisma } from '@/lib/prisma';
-import { GuardRequirement } from '@/lib/auth/session';
+
+export async function POST(request: NextRequest) {
+  try {
+    const user = await requireApiUser({ roles: [UserRole.PARTICIPANT] });
+    const body = await request.json();
+
+    const {
+      projectId,
+      rewardId,
+      quantity = 1,
+      options = {},
+      shippingAddress,
+      paymentMethod = 'CARD'
+    } = body;
+
+    // 필수 필드 검증
+    if (!projectId || !rewardId) {
+      return NextResponse.json(
+        { message: '프로젝트 ID와 리워드 ID가 필요합니다.' },
+        { status: 400 }
+      );
+    }
+
+    // 프로젝트와 리워드 확인
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+      include: {
+        rewards: {
+          where: { id: rewardId }
+        }
+      }
+    });
+
+    if (!project) {
+      return NextResponse.json(
+        { message: '프로젝트를 찾을 수 없습니다.' },
+        { status: 404 }
+      );
+    }
+
+    if (project.status !== 'LIVE') {
+      return NextResponse.json(
+        { message: '진행중인 프로젝트가 아닙니다.' },
+        { status: 400 }
+      );
+    }
+
+    const reward = project.rewards[0];
+    if (!reward) {
+      return NextResponse.json(
+        { message: '리워드를 찾을 수 없습니다.' },
+        { status: 404 }
+      );
+    }
+
+    // 재고 확인
+    if (reward.stock && (reward.claimed + quantity) > reward.stock) {
+      return NextResponse.json(
+        { message: '재고가 부족합니다.' },
+        { status: 400 }
+      );
+    }
+
+    // 주문 생성
+    const order = await prisma.order.create({
+      data: {
+        userId: user.id,
+        projectId,
+        status: OrderStatus.PENDING,
+        totalAmount: reward.price * quantity,
+        metadata: {
+          shippingAddress,
+          paymentMethod,
+          options
+        }
+      }
+    });
+
+    // 주문 아이템 생성
+    const orderItem = await prisma.orderItem.create({
+      data: {
+        orderId: order.id,
+        rewardId,
+        quantity,
+        unitPrice: reward.price,
+        totalPrice: reward.price * quantity,
+        options
+      }
+    });
+
+    // 리워드 claimed 수량 업데이트
+    await prisma.reward.update({
+      where: { id: rewardId },
+      data: {
+        claimed: {
+          increment: quantity
+        }
+      }
+    });
+
+    // 프로젝트 현재 모금액 업데이트
+    await prisma.project.update({
+      where: { id: projectId },
+      data: {
+        currentAmount: {
+          increment: reward.price * quantity
+        }
+      }
+    });
+
+    return NextResponse.json({
+      orderId: order.id,
+      status: order.status,
+      totalAmount: order.totalAmount,
+      message: '주문이 생성되었습니다. 결제를 진행해주세요.'
+    }, { status: 201 });
+
+  } catch (error) {
+    console.error('Failed to create order:', error);
+    return NextResponse.json(
+      { message: '주문 생성에 실패했습니다.' },
+      { status: 500 }
+    );
+  }
+}
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await requireApiUser(request as NextRequest & GuardRequirement);
+    const user = await requireApiUser({ roles: [UserRole.PARTICIPANT] });
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status') as OrderStatus | null;
+    const status = searchParams.get('status');
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
 
     const where: any = { userId: user.id };
     if (status) where.status = status;
 
-    const [orders, total] = await Promise.all([
-      prisma.order.findMany({
-        where,
-        include: {
-          items: {
-            include: {
-              product: {
-                include: {
-                  project: {
-                    select: {
-                      id: true,
-                      title: true,
-                      owner: {
-                        select: {
-                          id: true,
-                          name: true
-                        }
-                      }
-                    }
-                  }
-                }
+    const orders = await prisma.order.findMany({
+      where,
+      include: {
+        project: {
+          select: {
+            id: true,
+            title: true,
+            thumbnail: true
+          }
+        },
+        orderItems: {
+          include: {
+            reward: {
+              select: {
+                id: true,
+                title: true,
+                price: true,
+                deliveryType: true
               }
             }
           }
-        },
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: { createdAt: 'desc' }
-      }),
-      prisma.order.count({ where })
-    ]);
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit
+    });
+
+    const total = await prisma.order.count({ where });
 
     return NextResponse.json({
       orders,
@@ -60,131 +181,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Failed to fetch orders:', error);
     return NextResponse.json(
-      { message: 'Failed to fetch orders' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function POST(request: NextRequest) {
-  try {
-    const user = await requireApiUser(request as NextRequest & GuardRequirement);
-    const body = await request.json();
-    const { items } = body;
-
-    if (!items || !Array.isArray(items) || items.length === 0) {
-      return NextResponse.json(
-        { message: 'Items are required' },
-        { status: 400 }
-      );
-    }
-
-    // 상품 정보 조회 및 검증
-    const productIds = items.map((item: any) => item.productId);
-    const products = await prisma.product.findMany({
-      where: { id: { in: productIds } },
-      select: {
-        id: true,
-        name: true,
-        price: true,
-        inventory: true,
-        project: {
-          select: {
-            id: true,
-            title: true,
-            status: true
-          }
-        }
-      }
-    });
-
-    if (products.length !== productIds.length) {
-      return NextResponse.json(
-        { message: 'Some products not found' },
-        { status: 400 }
-      );
-    }
-
-    // 재고 확인
-    for (const item of items) {
-      const product = products.find(p => p.id === item.productId);
-      if (!product || (product.inventory && product.inventory < item.quantity)) {
-        return NextResponse.json(
-          { message: `Insufficient stock for product ${product?.name}` },
-          { status: 400 }
-        );
-      }
-    }
-
-    // 주문 총액 계산
-    let subtotal = 0;
-    const orderItems = items.map((item: any) => {
-      const product = products.find(p => p.id === item.productId)!;
-      const itemTotal = product.price * item.quantity;
-      subtotal += itemTotal;
-      
-      return {
-        productId: item.productId,
-        quantity: item.quantity,
-        price: product.price,
-        total: itemTotal
-      };
-    });
-
-    const totalPrice = subtotal; // 배송비 등 추가 가능
-
-    // 주문 생성
-    const order = await prisma.order.create({
-      data: {
-        userId: user.id,
-        totalPrice,
-        subtotal,
-        orderStatus: OrderStatus.PENDING,
-        items: {
-          create: orderItems as any
-        }
-      },
-      include: {
-        items: {
-          include: {
-            product: {
-              include: {
-                project: {
-                  select: {
-                    id: true,
-                    title: true,
-                    owner: {
-                      select: {
-                        id: true,
-                        name: true
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    });
-
-    // 재고 차감
-    for (const item of items) {
-      await prisma.product.update({
-        where: { id: item.productId },
-        data: {
-          inventory: {
-            decrement: item.quantity
-          }
-        }
-      });
-    }
-
-    return NextResponse.json(order, { status: 201 });
-  } catch (error) {
-    console.error('Failed to create order:', error);
-    return NextResponse.json(
-      { message: 'Failed to create order' },
+      { message: '주문 목록을 불러올 수 없습니다.' },
       { status: 500 }
     );
   }

@@ -123,7 +123,7 @@ export const getProjectSummaries = async (options?: ProjectSummaryOptions) => {
 };
 
 export const getProjectsPendingReview = async (limit = 5) =>
-  getProjectSummaries({ statuses: [ProjectStatus.REVIEWING], take: limit });
+  getProjectSummaries({ statuses: [ProjectStatus.REVIEW_PENDING], take: limit });
 
 export const getProjectSummaryById = async (id: string) => {
   const project = await prisma.project.findUnique({

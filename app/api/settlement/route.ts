@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (
-    project.status !== ProjectStatus.SUCCESSFUL &&
+    project.status !== ProjectStatus.SUCCEEDED &&
     project.status !== ProjectStatus.EXECUTING &&
     project.status !== ProjectStatus.COMPLETED
   ) {

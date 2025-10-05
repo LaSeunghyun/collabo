@@ -79,17 +79,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 파트너 매칭 요청 생성
-    if (needsPartner && partnerRequirements) {
-      await prisma.partnerMatch.create({
-        data: {
-          projectId: project.id,
-          partnerId: null, // 아직 매칭되지 않음
-          status: 'PENDING',
-          requirements: partnerRequirements
-        }
-      });
-    }
+    // 파트너 매칭 요청은 나중에 처리 (파트너가 매칭될 때)
+    // if (needsPartner && partnerRequirements) {
+    //   // 파트너 매칭 로직은 별도 API에서 처리
+    // }
 
     return NextResponse.json(project, { status: 201 });
   } catch (error) {
