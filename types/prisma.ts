@@ -6,7 +6,6 @@ import {
   PartnerType,
   OrderStatus,
   PostType,
-  PostVisibility,
   NotificationType,
   ModerationTargetType,
   ModerationStatus,
@@ -25,7 +24,6 @@ import type {
   PartnerType as PartnerTypeType,
   OrderStatus as OrderStatusType,
   PostType as PostTypeType,
-  PostVisibility as PostVisibilityType,
   NotificationType as NotificationTypeType
 } from '@prisma/client';
 
@@ -73,7 +71,6 @@ export type {
   ProductType as ProductTypeType,
   OrderStatus as OrderStatusType,
   PostType as PostTypeType,
-  PostVisibility as PostVisibilityType,
   NotificationType as NotificationTypeType,
   MilestoneStatus as MilestoneStatusType,
   ModerationTargetType as ModerationTargetTypeType,
@@ -97,7 +94,6 @@ export {
   ProductType,
   OrderStatus,
   PostType,
-  PostVisibility,
   NotificationType,
   MilestoneStatus,
   ModerationTargetType,
@@ -115,7 +111,8 @@ export type ModerationStatusValue =
 export type ModerationTargetTypeValue =
   (typeof ModerationTargetType)[keyof typeof ModerationTargetType];
 
-export const POST_VISIBILITY_VALUES = Object.values(PostVisibility);
+// PostVisibility enum was removed, using string type instead
+export const POST_VISIBILITY_VALUES = ['PUBLIC', 'PRIVATE', 'FRIENDS'];
 
 // 공통 타입 정의
 export type DatabaseId = string;

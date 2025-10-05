@@ -1,4 +1,4 @@
-﻿import { MilestoneStatus, PostType, PostVisibility, UserRole } from '@/types/prisma';
+﻿import { MilestoneStatus, PostType, UserRole } from '@/types/prisma';
 import {
   assertProjectOwner,
   createProjectUpdate,
@@ -76,7 +76,7 @@ describe('project updates domain service', () => {
       const updates = await listProjectUpdates('project-1', null);
 
       const args = mockPrisma.post.findMany.mock.calls[0][0];
-      expect(args.where.visibility).toBe(PostVisibility.PUBLIC);
+      expect(args.where.visibility).toBe('PUBLIC');
       expect(updates[0]).toMatchObject({
         liked: false,
         canEdit: false,

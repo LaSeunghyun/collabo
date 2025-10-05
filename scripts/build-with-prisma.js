@@ -6,8 +6,10 @@ function run(command, args, options = {}) {
   const result = spawnSync(command, args, { stdio: 'inherit', ...options });
   if (result.status !== 0) {
     console.error(`Command failed: ${command} ${args.join(' ')}`);
-    process.exit(result.status ?? 1);
+    console.error(`Exit code: ${result.status}, Signal: ${result.signal}`);
+    throw new Error(`Command failed with status ${result.status || 'null'} and signal ${result.signal || 'none'}`);
   }
+  return result;
 }
 
 const hasDatabaseUrl = Boolean(process.env.DATABASE_URL);
@@ -42,7 +44,19 @@ if (!hasDatabaseUrl) {
 }
 
 console.log('[build] Generating Prisma client...');
-run('npx', ['prisma', 'generate']);
+const prismaResult = spawnSync('npx', ['prisma', 'generate'], { stdio: 'inherit' });
+if (prismaResult.status !== 0) {
+  console.error('[build] Prisma generate failed with status:', prismaResult.status);
+  console.error('[build] Signal:', prismaResult.signal);
+  process.exit(1);
+}
+console.log('[build] Prisma client generated successfully');
 
 console.log('[build] Building Next.js application...');
-run('next', ['build']);
+const buildResult = spawnSync('next', ['build'], { stdio: 'inherit' });
+if (buildResult.status !== 0) {
+  console.error('[build] Next.js build failed with status:', buildResult.status);
+  console.error('[build] Signal:', buildResult.signal);
+  process.exit(1);
+}
+console.log('[build] Next.js build completed successfully');

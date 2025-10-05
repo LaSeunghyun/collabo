@@ -51,7 +51,7 @@ import {
   ProjectUpdateValidationError,
   updateProjectUpdate
 } from '@/lib/server/project-updates';
-import { PostVisibility } from '@/types/prisma';
+// PostVisibility enum was removed, using string literals instead
 
 const mockRequireApiUser = require('@/lib/auth/guards').requireApiUser as jest.Mock;
 
@@ -93,7 +93,7 @@ describe('Project updates API routes', () => {
     projectId: 'project-1',
     title: '새 소식',
     content: '내용',
-    visibility: PostVisibility.PUBLIC,
+    visibility: 'PUBLIC',
     attachments: [],
     milestone: null,
     createdAt: new Date('2024-01-01T00:00:00.000Z'),
@@ -167,7 +167,7 @@ describe('Project updates API routes', () => {
     expect(mockCreateProjectUpdate).toHaveBeenCalledWith('project-1', {
       title: '제목',
       content: '본문',
-      visibility: PostVisibility.PUBLIC,
+      visibility: 'PUBLIC',
       attachments: undefined,
       milestoneId: undefined
     }, ownerUser);
