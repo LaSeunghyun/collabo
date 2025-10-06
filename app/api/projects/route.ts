@@ -3,6 +3,7 @@ import { withAuth, parsePaginationParams } from '@/lib/server/api-utils';
 import { createProject, getProjects } from '@/lib/server/project-service';
 
 export async function POST(request: NextRequest) {
+
   return withAuth(async (user, req) => {
     const body = await req.json();
     const {
@@ -46,7 +47,8 @@ export async function GET(request: NextRequest) {
   const result = await getProjects(filters);
   
   if (result.success && 'data' in result) {
-    return NextResponse.json(result.data);
+    // getProjects는 { projects, pagination } 형태로 반환하므로 projects 배열만 반환
+    return NextResponse.json(result.data.projects);
   } else {
     return NextResponse.json(
       { message: result.message },

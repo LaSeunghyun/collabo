@@ -42,6 +42,9 @@ export default function HomePage() {
     staleTime: 1000 * 60
   });
 
+  // 안전하게 배열인지 확인
+  const safeProjects = Array.isArray(projects) ? projects : [];
+
   const { data: artistsResponse } = useQuery<ArtistListResponse>({
     queryKey: ['artists', 'home'],
     queryFn: async () => {
@@ -71,8 +74,8 @@ export default function HomePage() {
   const [featuredPost, ...highlightedPosts] = communityPosts;
 
   const popularProjects = useMemo(() => {
-    return [...projects].sort((a, b) => b.participants - a.participants).slice(0, 6);
-  }, [projects]);
+    return [...safeProjects].sort((a, b) => b.participants - a.participants).slice(0, 6);
+  }, [safeProjects]);
 
   const ProjectSkeleton = ({ className = '' }: { className?: string }) => (
     <div className={`flex h-full flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/5 ${className}`}>
@@ -165,7 +168,7 @@ export default function HomePage() {
           <div className="grid gap-4 rounded-3xl border border-white/10 bg-white/5 p-6 text-sm text-white/70">
             <div className="flex items-center justify-between">
               <span>{t('home.hero.metrics.projects')}</span>
-              <span className="text-2xl font-semibold text-white">{projects.length}</span>
+              <span className="text-2xl font-semibold text-white">{safeProjects.length}</span>
             </div>
             <div className="flex items-center justify-between">
               <span>{t('home.hero.metrics.community')}</span>
