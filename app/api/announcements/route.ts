@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import { getServerAuthSession } from '@/lib/auth/session';
 import { getAnnouncements, createAnnouncement } from '@/lib/server/announcements';
-import { UserRole } from '@/types/prisma';
+import { UserRole } from '@/types/drizzle';
 
 const parseCategory = (value: string | null): string | null => {
   if (!value) {

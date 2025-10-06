@@ -8,7 +8,7 @@ import {
   markAnnouncementAsRead,
   updateAnnouncement
 } from '@/lib/server/announcements';
-import { UserRole } from '@/types/prisma';
+import { UserRole } from '@/types/drizzle';
 
 export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
   try {

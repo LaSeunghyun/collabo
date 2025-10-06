@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireApiUser } from '@/lib/auth/guards';
-import { UserRole } from '@/types/prisma';
+import { UserRole, ModerationStatus } from '@/types/drizzle';
 import { getReportedPostDetails, updateModerationStatus } from '@/lib/server/moderation';
-import { ModerationStatus } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
   try {
