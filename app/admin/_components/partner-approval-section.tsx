@@ -1,4 +1,4 @@
-import { PartnerType, type PartnerTypeType } from '@/types/prisma';
+import { PartnerType, type PartnerTypeType } from '@/types/drizzle';
 
 import { getPartnersAwaitingApproval } from '@/lib/server/partners';
 

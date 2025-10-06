@@ -4,7 +4,7 @@ import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 import KakaoProvider from 'next-auth/providers/kakao';
-import { PrismaAdapter } from '@next-auth/prisma-adapter';
+// PrismaAdapter removed - using custom Drizzle implementation
 import { compare } from 'bcryptjs';
 
 import { prisma } from '@/lib/prisma';

@@ -1,4 +1,4 @@
-import { UserRole, USER_ROLE_VALUES, USER_ROLE_LABELS, type UserRoleType } from '@/types/prisma';
+import { UserRole, USER_ROLE_VALUES, USER_ROLE_LABELS, type UserRoleType } from '@/types/drizzle';
 
 export { UserRole, USER_ROLE_VALUES, USER_ROLE_LABELS };
 

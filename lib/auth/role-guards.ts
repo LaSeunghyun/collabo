@@ -1,4 +1,4 @@
-import { UserRole, type UserRoleType } from '@/types/prisma';
+import { UserRole, type UserRoleType } from '@/types/drizzle';
 
 import { hasAllPermissions, normalizeRole } from './permissions';
 
