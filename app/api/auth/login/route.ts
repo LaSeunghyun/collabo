@@ -1,12 +1,16 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 
-import { prisma } from '@/lib/prisma';
+import { eq } from 'drizzle-orm';
+
+import { db } from '@/lib/db/client';
+import { users } from '@/lib/db/schema';
 import { buildRefreshCookie } from '@/lib/auth/cookies';
 import type { ClientKind } from '@/lib/auth/policy';
 import { issueSessionWithTokens } from '@/lib/auth/session-store';
 import { verifyPassword } from '@/lib/auth/password';
-import { UserRole, type UserRoleType } from '@/types/prisma';
+
+type UserRoleType = typeof users.$inferSelect['role'];
 
 const requestSchema = z.object({
   email: z.string().email(),
@@ -52,8 +56,8 @@ export async function POST(req: NextRequest) {
 
   const data = parsed.data;
 
-  const user = await prisma.user.findUnique({
-    where: { email: data.email }
+  const user = await db.query.users.findFirst({
+    where: eq(users.email, data.email)
   });
 
   if (!user || !user.passwordHash) {
@@ -66,7 +70,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: '아이디 또는 비밀번호가 올바르지 않습니다.' }, { status: 401 });
   }
 
-  const remember = user.role === UserRole.ADMIN ? false : data.rememberMe ?? false;
+  const remember = user.role === 'ADMIN' ? false : data.rememberMe ?? false;
   const client: ClientKind = data.client === 'mobile' ? 'mobile' : 'web';
   const ipAddress = extractClientIp(req);
   const userAgent = req.headers.get('user-agent');
