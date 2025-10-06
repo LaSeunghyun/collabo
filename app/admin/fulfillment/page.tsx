@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import Image from 'next/image';
 import { 
   Search, 
   Filter, 
@@ -267,9 +268,11 @@ export default function FulfillmentPage() {
                     <div className="flex items-center space-x-4">
                       <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
                         {shipment.order.user.avatarUrl ? (
-                          <img
+                          <Image
                             src={shipment.order.user.avatarUrl}
                             alt={shipment.order.user.name}
+                            width={48}
+                            height={48}
                             className="w-12 h-12 rounded-full object-cover"
                           />
                         ) : (
@@ -361,9 +364,11 @@ export default function FulfillmentPage() {
                     <div className="flex items-center space-x-4">
                       <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
                         {ticket.order.user.avatarUrl ? (
-                          <img
+                          <Image
                             src={ticket.order.user.avatarUrl}
                             alt={ticket.order.user.name}
+                            width={48}
+                            height={48}
                             className="w-12 h-12 rounded-full object-cover"
                           />
                         ) : (

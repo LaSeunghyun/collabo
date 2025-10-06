@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, MapPin, Star, Users, Calendar } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface Partner {
   id: string;
@@ -172,9 +173,11 @@ export default function PartnersPage() {
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
                     {partner.user.avatarUrl ? (
-                      <img
+                      <Image
                         src={partner.user.avatarUrl}
                         alt={partner.name}
+                        width={48}
+                        height={48}
                         className="w-12 h-12 rounded-full object-cover"
                       />
                     ) : (

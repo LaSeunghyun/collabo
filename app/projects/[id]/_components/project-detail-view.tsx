@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { ProjectStatus } from '@/types/prisma';
+import Image from 'next/image';
 
 interface Project {
   id: string;
@@ -129,9 +130,11 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
                 <div className="flex items-center gap-2">
                   <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
                     {project.owner.avatarUrl ? (
-                      <img 
+                      <Image 
                         src={project.owner.avatarUrl} 
                         alt={project.owner.name} 
+                        width={40}
+                        height={40}
                         className="w-10 h-10 rounded-full"
                       />
                     ) : (
@@ -147,9 +150,11 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
             
             {project.thumbnail && (
               <div className="ml-8">
-                <img 
+                <Image 
                   src={project.thumbnail} 
                   alt={project.title}
+                  width={128}
+                  height={128}
                   className="w-32 h-32 rounded-lg object-cover"
                 />
               </div>
@@ -220,9 +225,11 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
                           {funding.user.avatarUrl ? (
-                            <img 
+                            <Image 
                               src={funding.user.avatarUrl} 
                               alt={funding.user.name} 
+                              width={32}
+                              height={32}
                               className="w-8 h-8 rounded-full"
                             />
                           ) : (

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface Project {
   id: string;
@@ -125,9 +126,11 @@ export default function ProjectsPage() {
                 >
                   {project.thumbnail && (
                     <div className="mb-4">
-                      <img 
+                      <Image 
                         src={project.thumbnail} 
                         alt={project.title}
+                        width={400}
+                        height={192}
                         className="w-full h-48 object-cover rounded-lg"
                       />
                     </div>
@@ -182,9 +185,11 @@ export default function ProjectsPage() {
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
                         {project.owner.avatarUrl ? (
-                          <img 
+                          <Image 
                             src={project.owner.avatarUrl} 
                             alt={project.owner.name} 
+                            width={24}
+                            height={24}
                             className="w-6 h-6 rounded-full"
                           />
                         ) : (

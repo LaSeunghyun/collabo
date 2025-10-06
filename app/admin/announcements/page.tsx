@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import Image from 'next/image';
 import { 
   Search, 
   Filter, 
@@ -254,9 +255,11 @@ export default function AdminAnnouncementsPage() {
                 <div className="flex items-center space-x-4">
                   <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
                     {announcement.author.avatarUrl ? (
-                      <img
+                      <Image
                         src={announcement.author.avatarUrl}
                         alt={announcement.author.name}
+                        width={48}
+                        height={48}
                         className="w-12 h-12 rounded-full object-cover"
                       />
                     ) : (

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/cards';
 import { Badge } from '@/components/ui/badge';
@@ -67,9 +68,11 @@ export function SettlementCard({ settlement, onStatusUpdate }: SettlementCardPro
           <div className="flex items-center space-x-4">
             <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
               {settlement.project.owner.avatarUrl ? (
-                <img
+                <Image
                   src={settlement.project.owner.avatarUrl}
                   alt={settlement.project.owner.name}
+                  width={48}
+                  height={48}
                   className="w-12 h-12 rounded-full object-cover"
                 />
               ) : (
@@ -123,9 +126,11 @@ export function SettlementCard({ settlement, onStatusUpdate }: SettlementCardPro
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
                   {payout.stakeholder.avatarUrl ? (
-                    <img
+                    <Image
                       src={payout.stakeholder.avatarUrl}
                       alt={payout.stakeholder.name}
+                      width={32}
+                      height={32}
                       className="w-8 h-8 rounded-full object-cover"
                     />
                   ) : (
