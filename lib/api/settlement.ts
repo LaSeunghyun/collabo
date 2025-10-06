@@ -2,7 +2,7 @@ import { Settlement } from '@/types/prisma';
 
 export type SettlementRecord = Omit<Settlement, 'distributionBreakdown' | 'notes' | 'payouts' | 'updatedAt'> & {
   distributed: boolean;
-  totalAmount: number;
+  netAmount: number;
   platformShare: number;
 };
 

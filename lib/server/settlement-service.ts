@@ -4,9 +4,8 @@ import { responses } from './api-responses';
 
 export interface SettlementCreateData {
   projectId: string;
-  totalAmount: number;
-  platformFee: number;
   netAmount: number;
+  platformFee: number;
   stakeholders: Array<{
     userId: string;
     type: SettlementStakeholderType;
@@ -44,7 +43,7 @@ export interface SettlementFilters {
  */
 export async function createSettlement(data: SettlementCreateData) {
   try {
-    const { projectId, totalAmount, platformFee, netAmount, stakeholders, metadata } = data;
+    const { projectId, netAmount, platformFee, stakeholders, metadata } = data;
 
     // 프로젝트 존재 확인
     const project = await prisma.project.findUnique({
@@ -69,9 +68,8 @@ export async function createSettlement(data: SettlementCreateData) {
       const newSettlement = await tx.settlement.create({
         data: {
           projectId,
-          totalAmount,
-          platformFee,
           netAmount,
+          platformFee,
           metadata
         }
       });
@@ -320,7 +318,7 @@ export async function getSettlementStats(projectId?: string) {
   try {
     const where = projectId ? { projectId } : {};
 
-    const [totalSettlements, pendingSettlements, completedSettlements, totalAmount] = await Promise.all([
+    const [totalSettlements, pendingSettlements, completedSettlements, netAmount] = await Promise.all([
       prisma.settlement.count({ where }),
       prisma.settlement.count({ 
         where: { 
@@ -344,7 +342,7 @@ export async function getSettlementStats(projectId?: string) {
       totalSettlements,
       pendingSettlements,
       completedSettlements,
-      totalAmount: totalAmount._sum.netAmount || 0
+      totalAmount: netAmount._sum.netAmount || 0
     };
 
     return responses.success(stats);
@@ -405,9 +403,8 @@ export async function autoCreateSettlement(projectId: string) {
 
     return await createSettlement({
       projectId,
-      totalAmount,
-      platformFee,
       netAmount,
+      platformFee,
       stakeholders
     });
   } catch (error) {

@@ -11,8 +11,7 @@ interface StatusBadgeProps {
 
 const statusConfig = {
   // 프로젝트 상태
-  DRAFT: { label: '초안', variant: 'default' as const },
-  REVIEW_PENDING: { label: '검토 대기중', variant: 'warning' as const },
+  DRAFT: { label: '초안/검토 대기중', variant: 'warning' as const },
   PRELAUNCH: { label: '프리런치', variant: 'info' as const },
   LIVE: { label: '진행중', variant: 'success' as const },
   SUCCEEDED: { label: '성공', variant: 'success' as const },

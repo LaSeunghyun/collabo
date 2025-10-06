@@ -206,8 +206,7 @@ export const USER_ROLE_LABELS: Record<UserRoleValue, string> = {
 export const ROLE_LABELS = USER_ROLE_LABELS;
 
 export const PROJECT_STATUS_LABELS: Record<ProjectStatusType, string> = {
-  [ProjectStatus.DRAFT]: '초안',
-  [ProjectStatus.REVIEW_PENDING]: '검토 대기중',
+  [ProjectStatus.DRAFT]: '초안/검토 대기중',
   [ProjectStatus.PRELAUNCH]: '프리런치',
   [ProjectStatus.LIVE]: '진행중',
   [ProjectStatus.SUCCEEDED]: '성공',

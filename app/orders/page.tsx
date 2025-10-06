@@ -8,7 +8,7 @@ import { OrderStatus } from '@/types/prisma';
 interface Order {
   id: string;
   status: OrderStatus;
-  totalAmount: number;
+  netAmount: number;
   createdAt: Date;
   paidAt: Date | null;
   project: {
@@ -173,7 +173,7 @@ export default function OrdersPage() {
                   
                   <div className="text-right">
                     <div className="text-xl font-bold text-white">
-                      {order.totalAmount.toLocaleString()}원
+                      {order.netAmount.toLocaleString()}원
                     </div>
                     <div className="text-white/60 text-sm">
                       {order.orderItems.length}개 아이템

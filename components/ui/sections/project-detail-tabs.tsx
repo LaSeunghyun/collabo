@@ -144,7 +144,7 @@ export function ProjectDetailTabs({
               <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
                 <p className="text-xs text-white/60">최신 정산 금액</p>
                 <p className="mt-2 text-lg font-semibold text-white">
-                  {currencyFormatter.format(latestSettlement.totalAmount)}
+                  {currencyFormatter.format(latestSettlement.netAmount)}
                 </p>
                 <p className="mt-2 text-xs text-white/60">
                   플랫폼 수수료 {currencyFormatter.format(latestSettlement.platformFee)} · 순수익{' '}
@@ -166,7 +166,7 @@ export function ProjectDetailTabs({
                         className="flex flex-col gap-1 rounded-2xl border border-white/5 bg-neutral-950/60 p-3 sm:flex-row sm:items-center sm:justify-between"
                       >
                         <span className="font-medium text-white/80">
-                          {currencyFormatter.format(item.totalAmount)}
+                          {currencyFormatter.format(item.netAmount)}
                         </span>
                         <span>{dateFormatter.format(new Date(item.createdAt))}</span>
                         <span className="text-white/40">{item.distributed ? '분배 완료' : '분배 준비'}</span>

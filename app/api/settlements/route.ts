@@ -5,7 +5,7 @@ import { createSettlement, getSettlements, autoCreateSettlement } from '@/lib/se
 export async function POST(request: NextRequest) {
   return withAuth(async (user, req) => {
     const body = await req.json();
-    const { projectId, totalAmount, platformFee, netAmount, stakeholders, metadata } = body;
+    const { projectId, netAmount, platformFee, stakeholders, metadata } = body;
 
     // 자동 정산 생성인지 확인
     if (body.autoCreate && projectId) {
@@ -14,9 +14,8 @@ export async function POST(request: NextRequest) {
 
     return await createSettlement({
       projectId,
-      totalAmount,
-      platformFee,
       netAmount,
+      platformFee,
       stakeholders,
       metadata
     });

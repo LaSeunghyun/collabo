@@ -16,7 +16,6 @@ export interface SettlementSummary {
 const toSummary = (settlement: {
   id: string;
   projectId: string;
-  totalAmount: number;
   netAmount: number;
   status: string;
   createdAt: Date;
@@ -26,7 +25,7 @@ const toSummary = (settlement: {
   id: settlement.id,
   projectId: settlement.projectId,
   projectTitle: settlement.project.title,
-  totalRaised: settlement.totalAmount,
+  totalRaised: settlement.netAmount,
   netAmount: settlement.netAmount,
   payoutStatus: settlement.status as any,
   createdAt: settlement.createdAt,
