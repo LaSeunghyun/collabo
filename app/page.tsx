@@ -43,7 +43,9 @@ export default function HomePage() {
   });
 
   // 안전하게 배열인지 확인
-  const safeProjects = Array.isArray(projects) ? projects : [];
+  const safeProjects = useMemo(() => {
+    return Array.isArray(projects) ? projects : [];
+  }, [projects]);
 
   const { data: artistsResponse } = useQuery<ArtistListResponse>({
     queryKey: ['artists', 'home'],

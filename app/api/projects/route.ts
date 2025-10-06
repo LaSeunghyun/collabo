@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
   
   if (result.success && 'data' in result) {
     // getProjects는 { projects, pagination } 형태로 반환하므로 projects 배열만 반환
-    return NextResponse.json(result.data.projects);
+    return NextResponse.json(result.data?.projects || []);
   } else {
     return NextResponse.json(
       { message: result.message },
