@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
-import { OrderStatus } from '@/types/prisma';
+import { OrderStatus } from '@/types/drizzle';
 
 interface Order {
   id: string;

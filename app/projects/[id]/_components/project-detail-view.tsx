@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { ProjectStatus } from '@/types/prisma';
+import { ProjectStatus } from '@/types/drizzle';
 import Image from 'next/image';
 
 interface Project {

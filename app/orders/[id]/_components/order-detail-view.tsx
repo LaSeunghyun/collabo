@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { OrderStatus } from '@/types/prisma';
+import { OrderStatus } from '@/types/drizzle';
 
 interface Order {
   id: string;

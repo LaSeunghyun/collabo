@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { PartnerType } from '@prisma/client';
+import { PartnerType } from '@/types/drizzle';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/cards';
 import { Badge } from '@/components/ui/badge';

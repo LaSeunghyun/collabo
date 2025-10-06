@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { PartnerType } from '@prisma/client';
+import { PartnerType } from '@/types/drizzle';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/cards';
 import { Input } from '@/components/ui/input';
