@@ -16,7 +16,6 @@ enum UserRole {
 
 enum ProjectStatus {
   DRAFT
-  REVIEW_PENDING
   PRELAUNCH
   LIVE
   SUCCEEDED

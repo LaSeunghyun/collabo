@@ -74,7 +74,7 @@ async function setupTestData() {
         description: '검토 대기 중인 프로젝트입니다.',
         category: 'MUSIC',
         targetAmount: 1000000,
-        status: ProjectStatus.REVIEW_PENDING,
+        status: ProjectStatus.DRAFT,
         ownerId: creator.id,
         endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
       }

@@ -38,7 +38,7 @@ test.describe('Admin Flow', () => {
     
     // 필터 기능 테스트
     await page.fill('input[placeholder="프로젝트 검색..."]', '테스트');
-    await page.selectOption('select', 'REVIEW_PENDING');
+    await page.selectOption('select', 'DRAFT');
     
     // 프로젝트 목록 확인
     const projectCards = page.locator('[data-testid="project-card"]');

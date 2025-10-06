@@ -54,7 +54,6 @@ interface ProjectsResponse {
 
 const STATUS_LABELS = {
   [ProjectStatus.DRAFT]: '초안/검토 대기중',
-  [ProjectStatus.REVIEW_PENDING]: '검토 대기중',
   [ProjectStatus.PRELAUNCH]: '프리런치',
   [ProjectStatus.LIVE]: '진행중',
   [ProjectStatus.SUCCEEDED]: '성공',
@@ -67,7 +66,6 @@ const STATUS_LABELS = {
 
 const STATUS_COLORS = {
   [ProjectStatus.DRAFT]: 'bg-yellow-100 text-yellow-800',
-  [ProjectStatus.REVIEW_PENDING]: 'bg-yellow-100 text-yellow-800',
   [ProjectStatus.PRELAUNCH]: 'bg-blue-100 text-blue-800',
   [ProjectStatus.LIVE]: 'bg-green-100 text-green-800',
   [ProjectStatus.SUCCEEDED]: 'bg-emerald-100 text-emerald-800',
