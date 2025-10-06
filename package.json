@@ -16,6 +16,7 @@
     "create-accounts": "ts-node scripts/create-test-accounts.ts",
     "db:push": "prisma db push",
     "db:generate": "prisma generate",
+    "db:baseline": "node scripts/capture-prisma-baseline.mjs",
     "vercel-build": "node scripts/build-with-prisma.js"
   },
   "dependencies": {
