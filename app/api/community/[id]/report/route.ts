@@ -1,4 +1,4 @@
-﻿import { ModerationTargetType } from '@prisma/client';
+﻿import { ModerationTargetType } from '@/types/drizzle';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { prisma } from '@/lib/prisma';

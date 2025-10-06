@@ -1,6 +1,6 @@
 'use client';
 
-import { CommunityCategory } from '@/types/prisma';
+import { CommunityCategory } from '@/types/drizzle';
 import { usePostForm } from '@/hooks/use-post-form';
 
 interface PostFormProps {

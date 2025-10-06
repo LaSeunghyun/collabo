@@ -1,4 +1,4 @@
-import { DeliveryType, TicketStatus } from '@prisma/client';
+// DeliveryType, TicketStatus enums removed - using string types
 import { prisma } from '@/lib/prisma';
 import { responses } from './api-responses';
 

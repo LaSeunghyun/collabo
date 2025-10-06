@@ -1,4 +1,4 @@
-import { PartnerType, PARTNER_TYPE_VALUES, PARTNER_TYPE_LABELS } from '@/types/prisma';
+import { PartnerType, PARTNER_TYPE_VALUES, PARTNER_TYPE_LABELS } from '@/types/drizzle';
 import { z } from 'zod';
 
 export { PartnerType, PARTNER_TYPE_VALUES, PARTNER_TYPE_LABELS };

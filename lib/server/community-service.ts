@@ -1,4 +1,5 @@
-import { PostType, CommunityCategory, PostStatus } from '@prisma/client';
+import { PostType, CommunityCategory } from '@/types/drizzle';
+// PostStatus enum removed - using string type
 import { prisma } from '@/lib/prisma';
 import { responses } from './api-responses';
 

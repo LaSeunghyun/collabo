@@ -1,4 +1,4 @@
-import { Settlement } from '@/types/prisma';
+import { Settlement } from '@/types/drizzle';
 
 export type SettlementRecord = Omit<Settlement, 'distributionBreakdown' | 'notes' | 'payouts' | 'updatedAt'> & {
   distributed: boolean;

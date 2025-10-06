@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireApiUser } from '@/lib/auth/guards';
-import { UserRole, OrderStatus, PaymentProvider } from '@/types/prisma';
+import { UserRole, OrderStatus, PaymentProvider } from '@/types/drizzle';
 import { prisma } from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {

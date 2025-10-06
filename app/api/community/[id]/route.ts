@@ -1,6 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 
-import { CommunityCategory, ModerationTargetType } from '@prisma/client';
+import { CommunityCategory, ModerationTargetType } from '@/types/drizzle';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import { evaluateAuthorization } from '@/lib/auth/session';

@@ -1,10 +1,10 @@
 ﻿import { revalidatePath } from 'next/cache';
-import { Prisma, type Prisma as PrismaTypes } from '@prisma/client';
+// Prisma types removed - using Drizzle types
 import {
   UserRole,
   PartnerSummary,
   type PartnerTypeType
-} from '@/types/prisma';
+} from '@/types/drizzle';
 import { ZodError } from 'zod';
 
 import type { SessionUser } from '@/lib/auth/session';

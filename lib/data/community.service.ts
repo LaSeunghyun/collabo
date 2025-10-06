@@ -1,6 +1,6 @@
 
-import { CommunityCategory, ModerationTargetType, PostType } from '@prisma/client';
-import type { Prisma } from '@prisma/client';
+import { CommunityCategory, ModerationTargetType, PostType } from '@/types/drizzle';
+// Prisma types removed - using Drizzle types
 
 import { prisma } from '@/lib/prisma';
 import type { SessionUser } from '../auth/session';

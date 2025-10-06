@@ -6,7 +6,7 @@ import { CalendarDays, Edit3, Paperclip, Plus, ShieldCheck, Trash2, X } from 'lu
 
 import { CommunityPostCard } from '@/components/ui/sections/community-board';
 import type { CommunityPost } from '@/lib/data/community';
-// import { PostVisibility } from '@/types/prisma'; // 스키마에 없음
+// PostVisibility enum removed - using string type
 
 type ProjectUpdateAttachment = {
   url: string;

@@ -1,4 +1,4 @@
-import { OrderStatus, UserRole } from '@prisma/client';
+import { OrderStatus, UserRole } from '@/types/drizzle';
 import { prisma } from '@/lib/prisma';
 import { responses } from './api-responses';
 

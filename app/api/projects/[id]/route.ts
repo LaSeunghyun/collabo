@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { UserRole } from '@/types/prisma';
+import { UserRole } from '@/types/drizzle';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import {

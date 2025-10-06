@@ -1,4 +1,4 @@
-import { NotificationType } from '@prisma/client';
+import { NotificationType } from '@/types/drizzle';
 import { prisma } from '@/lib/prisma';
 import { responses } from './api-responses';
 

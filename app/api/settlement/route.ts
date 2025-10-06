@@ -1,5 +1,5 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
-import type { Prisma } from '@prisma/client';
+// Prisma types removed - using Drizzle types
 import {
   FundingStatus,
   PartnerMatchStatus,
@@ -7,7 +7,7 @@ import {
   SettlementPayoutStatus,
   SettlementStakeholderType,
   UserRole
-} from '@/types/prisma';
+} from '@/types/drizzle';
 import { z } from 'zod';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';

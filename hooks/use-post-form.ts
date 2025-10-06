@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { CommunityCategory } from '@/types/prisma';
+import { CommunityCategory } from '@/types/drizzle';
 
 export interface PostFormData {
   title: string;

@@ -1,4 +1,4 @@
-import { ProjectStatus, PROJECT_STATUS_VALUES, PROJECT_STATUS_LABELS } from '@/types/prisma';
+import { ProjectStatus, PROJECT_STATUS_VALUES, PROJECT_STATUS_LABELS } from '@/types/drizzle';
 import { z } from 'zod';
 
 export { ProjectStatus, PROJECT_STATUS_VALUES, PROJECT_STATUS_LABELS };

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 
 import { requireUser } from '@/lib/auth/guards';
-import { ROLE_LABELS, UserRole } from '@/types/prisma';
+import { ROLE_LABELS, UserRole } from '@/types/drizzle';
 
 const navigationAnchors = [
   { href: '#overview', label: '현황 요약' },

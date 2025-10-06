@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { SettlementStakeholderType } from '@prisma/client';
+import { SettlementStakeholderType } from '@/types/drizzle';
 import { requireApiUser } from '@/lib/auth/guards';
 import { prisma } from '@/lib/prisma';
 import { GuardRequirement } from '@/lib/auth/session';

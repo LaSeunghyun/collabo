@@ -1,4 +1,4 @@
-import { UserRole, type UserRoleType } from '@/types/prisma';
+import { UserRole, type UserRoleType } from '@/types/drizzle';
 
 export type ClientKind = 'web' | 'mobile';
 

@@ -1,4 +1,5 @@
-import { MilestoneStatus, PostType, Prisma, UserRole } from '@prisma/client';
+import { MilestoneStatus, PostType, UserRole } from '@/types/drizzle';
+// Prisma types removed - using Drizzle types
 
 
 import type { SessionUser } from '@/lib/auth/session';

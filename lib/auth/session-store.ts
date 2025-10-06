@@ -1,7 +1,7 @@
-import type { AuthSession, RefreshToken } from '@prisma/client';
+import type { AuthSession, RefreshToken } from '@/types/drizzle';
 
 import { prisma } from '@/lib/prisma';
-import { UserRole, type UserRoleType } from '@/types/prisma';
+import { UserRole, type UserRoleType } from '@/types/drizzle';
 
 import { issueAccessToken } from './access-token';
 import type { ClientKind } from './policy';

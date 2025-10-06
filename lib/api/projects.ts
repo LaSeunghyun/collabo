@@ -1,4 +1,4 @@
-import { ProjectSummary } from '@/types/prisma';
+import { ProjectSummary } from '@/types/drizzle';
 
 export type { ProjectSummary };
 

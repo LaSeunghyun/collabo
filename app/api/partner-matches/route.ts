@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PartnerMatchStatus } from '@prisma/client';
+import { PartnerMatchStatus } from '@/types/drizzle';
 import { withAuth, parsePaginationParams } from '@/lib/server/api-utils';
 import { createPartnerMatch, getPartnerMatches } from '@/lib/server/partner-service';
 

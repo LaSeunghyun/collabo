@@ -6,7 +6,7 @@ import { buildRefreshCookie } from '@/lib/auth/cookies';
 import type { ClientKind } from '@/lib/auth/policy';
 import { issueSessionWithTokens } from '@/lib/auth/session-store';
 import { verifyPassword } from '@/lib/auth/password';
-import { UserRole, type UserRoleType } from '@/types/prisma';
+import { UserRole, type UserRoleType } from '@/types/drizzle';
 
 const requestSchema = z.object({
   email: z.string().email(),

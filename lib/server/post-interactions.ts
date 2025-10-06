@@ -1,4 +1,5 @@
-import { PostStatus, ModerationTargetType, ModerationStatus } from '@prisma/client';
+import { ModerationTargetType, ModerationStatus } from '@/types/drizzle';
+// PostStatus enum removed - using string type
 import { prisma } from '@/lib/prisma';
 
 export interface PostInteractionResult {

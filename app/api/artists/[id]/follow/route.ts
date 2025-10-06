@@ -1,5 +1,5 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
-import { Prisma } from '@prisma/client';
+// Prisma types removed - using Drizzle types
 
 import { getServerAuthSession } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { ProductType } from '@prisma/client';
+import { ProductType } from '@/types/drizzle';
 import { requireApiUser } from '@/lib/auth/guards';
 import { prisma } from '@/lib/prisma';
 import { GuardRequirement } from '@/lib/auth/session';

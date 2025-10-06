@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth';
 import type { Session } from 'next-auth';
 import { prisma } from '@/lib/prisma';
-import type { UserRoleType } from '@/types/prisma';
+import type { UserRoleType } from '@/types/drizzle';
 
 import { verifyAccessToken } from './access-token';
 import { authOptions } from './options';

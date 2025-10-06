@@ -1,13 +1,10 @@
-import type {
-  ModerationStatus as ModerationStatusType,
-  ModerationTargetType as ModerationTargetTypeType
-} from '@prisma/client';
-
 import {
   ModerationStatus,
   ModerationTargetType,
-  type ModerationReport
-} from '@/types/prisma';
+  type ModerationReport,
+  type ModerationStatusType,
+  type ModerationTargetTypeType
+} from '@/types/drizzle';
 
 import { prisma } from '@/lib/prisma';
 

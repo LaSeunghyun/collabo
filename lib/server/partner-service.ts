@@ -1,4 +1,4 @@
-import { PartnerType, PartnerMatchStatus } from '@prisma/client';
+import { PartnerType, PartnerMatchStatus } from '@/types/drizzle';
 import { prisma } from '@/lib/prisma';
 import { responses } from './api-responses';
 

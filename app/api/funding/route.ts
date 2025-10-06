@@ -1,11 +1,11 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
-import type { Prisma } from '@prisma/client';
+// Prisma types removed - using Drizzle types
 import {
   FundingStatus,
   PaymentProvider,
   ProjectStatus,
   type Funding
-} from '@/types/prisma';
+} from '@/types/drizzle';
 import Stripe from 'stripe';
 
 import { prisma } from '@/lib/prisma';

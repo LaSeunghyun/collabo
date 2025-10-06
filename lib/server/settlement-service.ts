@@ -1,4 +1,4 @@
-import { SettlementPayoutStatus, SettlementStakeholderType, UserRole } from '@prisma/client';
+import { SettlementPayoutStatus, SettlementStakeholderType, UserRole } from '@/types/drizzle';
 import { prisma } from '@/lib/prisma';
 import { responses } from './api-responses';
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PostStatus } from '@prisma/client';
+// PostStatus enum removed - using string type
 import { requireApiUser } from '@/lib/auth/guards';
 import { prisma } from '@/lib/prisma';
 

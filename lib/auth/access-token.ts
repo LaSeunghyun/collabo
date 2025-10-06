@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto';
 import { SignJWT, jwtVerify } from 'jose';
 
 import { prisma } from '@/lib/prisma';
-import type { UserRoleType } from '@/types/prisma';
+import type { UserRoleType } from '@/types/drizzle';
 
 export interface AccessTokenContext {
   userId: string;

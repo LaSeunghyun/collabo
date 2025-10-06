@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PartnerType } from '@prisma/client';
+import { PartnerType } from '@/types/drizzle';
 import { withAuth, parsePaginationParams } from '@/lib/server/api-utils';
 import { createPartner, getPartners } from '@/lib/server/partner-service';
 

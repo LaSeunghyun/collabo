@@ -1,4 +1,4 @@
-import { FundingStatus, SettlementPayoutStatus } from '@/types/prisma';
+import { FundingStatus, SettlementPayoutStatus } from '@/types/drizzle';
 import { prisma } from '@/lib/prisma';
 import { calculateSettlementBreakdown } from './settlements';
 

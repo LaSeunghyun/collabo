@@ -1,7 +1,7 @@
 ﻿import { randomUUID } from 'crypto';
 import { cache } from 'react';
-import { Prisma } from '@prisma/client';
-import { PostType, UserRole } from '@/types/prisma';
+// Prisma types removed - using Drizzle types
+import { PostType, UserRole } from '@/types/drizzle';
 
 import type { SessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
