@@ -68,6 +68,7 @@ export async function createSettlement(data: SettlementCreateData) {
       const newSettlement = await tx.settlement.create({
         data: {
           projectId,
+          totalAmount: netAmount,
           netAmount,
           platformFee,
           metadata
