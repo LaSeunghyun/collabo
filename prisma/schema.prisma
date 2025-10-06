@@ -55,6 +55,13 @@ enum SettlementStakeholderType {
   OTHER
 }
 
+enum SettlementStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
 enum PartnerType {
   STUDIO
   VENUE
@@ -315,7 +322,7 @@ model Settlement {
   totalAmount           Int
   platformFee           Int
   netAmount             Int
-  status                String                 @default("PENDING")
+  status                SettlementStatus       @default(PENDING)
   metadata              Json?
   payouts               SettlementPayout[]
   createdAt             DateTime               @default(now())

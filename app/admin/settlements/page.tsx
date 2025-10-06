@@ -14,7 +14,7 @@ interface Settlement {
   id: string;
   netAmount: number;
   platformFee: number;
-  status: string;
+  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
   createdAt: string;
   project: {
     id: string;
