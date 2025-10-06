@@ -209,7 +209,7 @@ export async function validateFundingSettlementConsistency(projectId: string) {
                 select: { amount: true }
             },
             settlements: {
-                select: { totalAmount: true }
+                select: { netAmount: true }
             }
         }
     });
@@ -229,8 +229,8 @@ export async function validateFundingSettlementConsistency(projectId: string) {
     }
 
     // 정산 금액과 펀딩 금액 일치 확인
-    if (latestSettlement && latestSettlement.totalAmount !== totalFundingAmount) {
-        issues.push(`최신 정산 금액(${latestSettlement.totalAmount})과 펀딩 금액(${totalFundingAmount})이 일치하지 않습니다.`);
+    if (latestSettlement && latestSettlement.netAmount !== totalFundingAmount) {
+        issues.push(`최신 정산 금액(${latestSettlement.netAmount})과 펀딩 금액(${totalFundingAmount})이 일치하지 않습니다.`);
     }
 
     return {

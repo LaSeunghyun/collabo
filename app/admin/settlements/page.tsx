@@ -12,9 +12,8 @@ import { useSettlementMutations } from '@/hooks/use-settlement-mutations';
 // Types should be centralized
 interface Settlement {
   id: string;
-  totalAmount: number;
-  platformFee: number;
   netAmount: number;
+  platformFee: number;
   status: string;
   createdAt: string;
   project: {

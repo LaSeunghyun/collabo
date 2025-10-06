@@ -10,9 +10,8 @@ import { Eye, MoreHorizontal, Clock, CheckCircle } from 'lucide-react';
 // These types should ideally be defined in a central place, e.g., '@/types/settlement.d.ts'
 interface Settlement {
   id: string;
-  totalAmount: number;
-  platformFee: number;
   netAmount: number;
+  platformFee: number;
   status: string;
   createdAt: string;
   project: {
@@ -102,7 +101,7 @@ export function SettlementCard({ settlement, onStatusUpdate }: SettlementCardPro
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
           <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">{formatCurrency(settlement.totalAmount)}</div>
+            <div className="text-2xl font-bold text-green-600">{formatCurrency(settlement.netAmount)}</div>
             <div className="text-sm text-gray-600">총 금액</div>
           </div>
           <div className="text-center">

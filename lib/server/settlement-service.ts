@@ -297,11 +297,11 @@ export async function processSettlementPayout(
       data: updateData,
       include: {
         settlement: {
-          select: {
-            id: true,
-            projectId: true,
-            totalAmount: true
-          }
+        select: {
+          id: true,
+          projectId: true,
+          netAmount: true
+        }
         }
       }
     });
@@ -336,7 +336,7 @@ export async function getSettlementStats(projectId?: string) {
       }),
       prisma.settlement.aggregate({
         where,
-        _sum: { totalAmount: true }
+        _sum: { netAmount: true }
       })
     ]);
 
@@ -344,7 +344,7 @@ export async function getSettlementStats(projectId?: string) {
       totalSettlements,
       pendingSettlements,
       completedSettlements,
-      totalAmount: totalAmount._sum.totalAmount || 0
+      totalAmount: totalAmount._sum.netAmount || 0
     };
 
     return responses.success(stats);
