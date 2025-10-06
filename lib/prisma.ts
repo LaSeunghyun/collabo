@@ -1,17 +1,13 @@
-import { PrismaClient } from '@prisma/client';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
+import * as schema from './db/schema';
 
-const globalForPrisma = globalThis as unknown as {
-  prisma?: PrismaClient;
+const globalForDrizzle = globalThis as unknown as {
+  drizzle?: ReturnType<typeof drizzle>;
 };
 
-// Vercel 서버리스 환경을 위한 Prisma Client 설정
+// Vercel 서버리스 환경을 위한 Drizzle 설정
 const normalizeServerlessConnectionString = (databaseUrl: string) => {
-  const isDataProxy = databaseUrl.startsWith('prisma://');
-
-  if (isDataProxy) {
-    return databaseUrl;
-  }
-
   try {
     const url = new URL(databaseUrl);
     const isPostgres = url.protocol === 'postgres:' || url.protocol === 'postgresql:';
@@ -34,27 +30,27 @@ const normalizeServerlessConnectionString = (databaseUrl: string) => {
 
     return url.toString();
   } catch (error) {
-    console.warn('[prisma] Invalid DATABASE_URL format. Falling back to the raw value.', error);
+    console.warn('[drizzle] Invalid DATABASE_URL format. Falling back to the raw value.', error);
     return databaseUrl;
   }
 };
 
-const createDisabledPrismaClient = (reason: string) => {
-  const baseReason = reason || 'The Prisma client could not be initialized.';
-  const message = `[prisma] Database access is disabled: ${baseReason} Set DATABASE_URL in your environment to enable Prisma.`;
+const createDisabledDrizzleClient = (reason: string) => {
+  const baseReason = reason || 'The Drizzle client could not be initialized.';
+  const message = `[drizzle] Database access is disabled: ${baseReason} Set DATABASE_URL in your environment to enable Drizzle.`;
 
   console.warn(message);
 
   const noop = async () => undefined;
 
-  return new Proxy({} as PrismaClient, {
+  return new Proxy({} as ReturnType<typeof drizzle>, {
     get(_target, prop) {
       if (prop === '$disconnect') {
         return noop;
       }
 
       if (prop === Symbol.toStringTag) {
-        return 'PrismaClientStub';
+        return 'DrizzleClientStub';
       }
 
       // Return a proxy for nested properties to avoid immediate errors
@@ -73,7 +69,7 @@ const createDisabledPrismaClient = (reason: string) => {
   });
 };
 
-const createPrismaClient = () => {
+const createDrizzleClient = () => {
   const databaseUrl = process.env.DATABASE_URL;
 
   if (!databaseUrl) {
@@ -81,40 +77,33 @@ const createPrismaClient = () => {
   }
 
   const datasourceUrl = normalizeServerlessConnectionString(databaseUrl);
+  const client = postgres(datasourceUrl, { prepare: false });
 
-  return new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-    errorFormat: 'pretty',
-    datasources: {
-      db: {
-        url: datasourceUrl
-      }
-    }
-  });
+  return drizzle(client, { schema });
 };
 
-const instantiatePrisma = () => {
+const instantiateDrizzle = () => {
   try {
-    return createPrismaClient();
+    return createDrizzleClient();
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
-    return createDisabledPrismaClient(reason);
+    return createDisabledDrizzleClient(reason);
   }
 };
 
-export const prisma = globalForPrisma.prisma ?? instantiatePrisma();
+export const db = globalForDrizzle.drizzle ?? instantiateDrizzle();
 
 if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma;
+  globalForDrizzle.drizzle = db;
 }
 
 // 서버리스 환경에서 연결 정리
 if (typeof window === 'undefined' && typeof process !== 'undefined' && typeof process.on === 'function') {
   process.on('beforeExit', async () => {
-    await prisma.$disconnect();
+    // Drizzle doesn't need explicit disconnect for postgres-js
   });
 }
 
-// Prisma shim을 위한 타입 재export
-export type { Prisma } from '@prisma/client';
-export default prisma;
+// Backward compatibility - export as prisma for gradual migration
+export const prisma = db;
+export default db;

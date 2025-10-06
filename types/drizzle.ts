@@ -1,5 +1,5 @@
-// Shared Prisma client types and enums
-import {
+// Drizzle ORM types and enums
+import type {
   UserRole,
   ProjectStatus,
   FundingStatus,
@@ -16,70 +16,102 @@ import {
   ProductType,
   MilestoneStatus,
   CommunityCategory
-} from '@prisma/client';
+} from '@/lib/db/schema';
 
 import type {
-  ProjectStatus as ProjectStatusType,
-  FundingStatus as FundingStatusType,
-  PartnerType as PartnerTypeType,
-  OrderStatus as OrderStatusType,
-  PostType as PostTypeType,
-  NotificationType as NotificationTypeType
-} from '@prisma/client';
+  users,
+  projects,
+  projectCollaborators,
+  fundings,
+  settlements,
+  partners,
+  partnerMatches,
+  products,
+  orders,
+  posts,
+  comments,
+  notifications,
+  wallets,
+  auditLogs,
+  permissions,
+  userPermissions,
+  paymentTransactions,
+  settlementPayouts,
+  projectMilestones,
+  projectRewardTiers,
+  projectRequirements,
+  orderItems,
+  userFollows,
+  commentReactions,
+  moderationReports,
+  userBlocks
+} from '@/lib/db/schema';
 
+// Export types from Drizzle schema
 export type {
-  // Announcement, // ?�키마에 ?�음
-  // AnnouncementRead, // ?�키마에 ?�음
-  User,
-  Project,
-  ProjectCollaborator,
-  Funding,
-  Settlement,
-  Partner,
-  PartnerMatch,
-  Product,
-  Order,
-  Post,
-  Comment,
-  PostLike,
-  Notification,
-  Wallet,
-  AuditLog,
-  Permission,
-  UserPermission,
-  PaymentTransaction,
-  SettlementPayout,
-  ProjectMilestone,
-  ProjectRewardTier,
-  ProjectRequirement,
-  OrderItem,
-  UserFollow,
-  CommentReaction,
-  ModerationReport,
-  UserBlock
-} from '@prisma/client';
+  UserRole,
+  ProjectStatus,
+  FundingStatus,
+  PartnerType,
+  OrderStatus,
+  PostType,
+  NotificationType,
+  ModerationTargetType,
+  ModerationStatus,
+  PaymentProvider,
+  SettlementPayoutStatus,
+  SettlementStakeholderType,
+  PartnerMatchStatus,
+  ProductType,
+  MilestoneStatus,
+  CommunityCategory
+};
 
-export type {
-  UserRole as UserRoleType,
-  ProjectStatus as ProjectStatusType,
-  FundingStatus as FundingStatusType,
-  PaymentProvider as PaymentProviderType,
-  SettlementPayoutStatus as SettlementPayoutStatusType,
-  SettlementStakeholderType as SettlementStakeholderTypeType,
-  PartnerType as PartnerTypeType,
-  PartnerMatchStatus as PartnerMatchStatusType,
-  ProductType as ProductTypeType,
-  OrderStatus as OrderStatusType,
-  PostType as PostTypeType,
-  NotificationType as NotificationTypeType,
-  MilestoneStatus as MilestoneStatusType,
-  ModerationTargetType as ModerationTargetTypeType,
-  ModerationStatus as ModerationStatusType,
-  CommunityCategory as CommunityCategoryType
-} from '@prisma/client';
+// Infer types from Drizzle tables
+export type User = typeof users.$inferSelect;
+export type Project = typeof projects.$inferSelect;
+export type ProjectCollaborator = typeof projectCollaborators.$inferSelect;
+export type Funding = typeof fundings.$inferSelect;
+export type Settlement = typeof settlements.$inferSelect;
+export type Partner = typeof partners.$inferSelect;
+export type PartnerMatch = typeof partnerMatches.$inferSelect;
+export type Product = typeof products.$inferSelect;
+export type Order = typeof orders.$inferSelect;
+export type Post = typeof posts.$inferSelect;
+export type Comment = typeof comments.$inferSelect;
+export type Notification = typeof notifications.$inferSelect;
+export type Wallet = typeof wallets.$inferSelect;
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type Permission = typeof permissions.$inferSelect;
+export type UserPermission = typeof userPermissions.$inferSelect;
+export type PaymentTransaction = typeof paymentTransactions.$inferSelect;
+export type SettlementPayout = typeof settlementPayouts.$inferSelect;
+export type ProjectMilestone = typeof projectMilestones.$inferSelect;
+export type ProjectRewardTier = typeof projectRewardTiers.$inferSelect;
+export type ProjectRequirement = typeof projectRequirements.$inferSelect;
+export type OrderItem = typeof orderItems.$inferSelect;
+export type UserFollow = typeof userFollows.$inferSelect;
+export type CommentReaction = typeof commentReactions.$inferSelect;
+export type ModerationReport = typeof moderationReports.$inferSelect;
+export type UserBlock = typeof userBlocks.$inferSelect;
 
-// Prisma client and types are only available on the server
-// Use lib/prisma.ts for server-side Prisma client access
+// Type aliases for backward compatibility
+export type UserRoleType = UserRole;
+export type ProjectStatusType = ProjectStatus;
+export type FundingStatusType = FundingStatus;
+export type PaymentProviderType = PaymentProvider;
+export type SettlementPayoutStatusType = SettlementPayoutStatus;
+export type SettlementStakeholderTypeType = SettlementStakeholderType;
+export type PartnerTypeType = PartnerType;
+export type PartnerMatchStatusType = PartnerMatchStatus;
+export type ProductTypeType = ProductType;
+export type OrderStatusType = OrderStatus;
+export type PostTypeType = PostType;
+export type NotificationTypeType = NotificationType;
+export type MilestoneStatusType = MilestoneStatus;
+export type ModerationTargetTypeType = ModerationTargetType;
+export type ModerationStatusType = ModerationStatus;
+export type CommunityCategoryType = CommunityCategory;
 
 // Export enums for client-side usage
 export {
@@ -256,5 +288,4 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationTypeType, string> = {
   [NotificationType.PARTNER_REQUEST]: '파트너 요청',
   [NotificationType.SETTLEMENT_PAID]: '정산 완료',
   [NotificationType.SYSTEM]: '시스템 알림',
-  // [NotificationType.ANNOUNCEMENT]: '공지 알림' // 스키마에 없음
 };

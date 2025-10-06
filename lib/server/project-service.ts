@@ -1,5 +1,7 @@
-import { ProjectStatus, UserRole } from '@prisma/client';
-import { prisma } from '@/lib/prisma';
+import { ProjectStatus, UserRole } from '@/types/drizzle';
+import { db } from '@/lib/prisma';
+import { projects, users, fundings, orders } from '@/lib/db/schema';
+import { eq, and, or, like, desc, sql } from 'drizzle-orm';
 import { responses } from './api-responses';
 
 export interface ProjectCreateData {
@@ -42,38 +44,53 @@ export interface ProjectFilters {
  */
 export async function createProject(data: ProjectCreateData) {
   try {
-    const project = await prisma.project.create({
-      data: {
-        title: data.title,
-        description: data.description,
-        category: data.category,
-        targetAmount: data.targetAmount,
-        currency: data.currency || 'KRW',
-        startDate: data.startDate,
-        endDate: data.endDate,
-        thumbnail: data.thumbnail,
-        metadata: data.metadata,
-        ownerId: data.ownerId,
-        status: ProjectStatus.DRAFT
-      },
-      include: {
-        owner: {
-          select: {
-            id: true,
-            name: true,
-            avatarUrl: true
-          }
-        },
-        _count: {
-          select: {
-            fundings: true,
-            orders: true
-          }
-        }
-      }
-    });
+    const project = await db.insert(projects).values({
+      title: data.title,
+      description: data.description,
+      category: data.category,
+      targetAmount: data.targetAmount,
+      currency: data.currency || 'KRW',
+      startDate: data.startDate,
+      endDate: data.endDate,
+      thumbnail: data.thumbnail,
+      metadata: data.metadata,
+      ownerId: data.ownerId,
+      status: ProjectStatus.DRAFT
+    }).returning();
 
-    return responses.success(project, '프로젝트가 생성되었습니다.');
+    // 프로젝트와 관련 데이터를 조회
+    const projectWithDetails = await db
+      .select({
+        id: projects.id,
+        title: projects.title,
+        description: projects.description,
+        category: projects.category,
+        targetAmount: projects.targetAmount,
+        currentAmount: projects.currentAmount,
+        currency: projects.currency,
+        status: projects.status,
+        startDate: projects.startDate,
+        endDate: projects.endDate,
+        thumbnail: projects.thumbnail,
+        metadata: projects.metadata,
+        ownerId: projects.ownerId,
+        createdAt: projects.createdAt,
+        updatedAt: projects.updatedAt,
+        owner: {
+          id: users.id,
+          name: users.name,
+          avatarUrl: users.avatarUrl
+        },
+        fundingCount: sql<number>`count(${fundings.id})`.as('fundingCount')
+      })
+      .from(projects)
+      .leftJoin(users, eq(projects.ownerId, users.id))
+      .leftJoin(fundings, eq(projects.id, fundings.projectId))
+      .where(eq(projects.id, project[0].id))
+      .groupBy(projects.id, users.id)
+      .limit(1);
+
+    return responses.success(projectWithDetails[0], '프로젝트가 생성되었습니다.');
   } catch (error) {
     console.error('프로젝트 생성 실패:', error);
     return responses.error('프로젝트 생성에 실패했습니다.');
@@ -85,40 +102,56 @@ export async function createProject(data: ProjectCreateData) {
  */
 export async function updateProject(projectId: string, data: ProjectUpdateData, userId: string, userRole: UserRole) {
   try {
-    const project = await prisma.project.findUnique({
-      where: { id: projectId }
-    });
+    const project = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, projectId))
+      .limit(1);
 
-    if (!project) {
+    if (project.length === 0) {
       return responses.notFound('프로젝트');
     }
 
     // 소유자 또는 관리자만 수정 가능
-    if (project.ownerId !== userId && userRole !== UserRole.ADMIN) {
+    if (project[0].ownerId !== userId && userRole !== UserRole.ADMIN) {
       return responses.forbidden();
     }
 
-    const updatedProject = await prisma.project.update({
-      where: { id: projectId },
-      data,
-      include: {
-        owner: {
-          select: {
-            id: true,
-            name: true,
-            avatarUrl: true
-          }
-        },
-        _count: {
-          select: {
-            fundings: true,
-            orders: true
-          }
-        }
-      }
-    });
+    await db.update(projects).set(data).where(eq(projects.id, projectId));
 
-    return responses.success(updatedProject, '프로젝트가 수정되었습니다.');
+    // 업데이트된 프로젝트와 관련 데이터를 조회
+    const updatedProject = await db
+      .select({
+        id: projects.id,
+        title: projects.title,
+        description: projects.description,
+        category: projects.category,
+        targetAmount: projects.targetAmount,
+        currentAmount: projects.currentAmount,
+        currency: projects.currency,
+        status: projects.status,
+        startDate: projects.startDate,
+        endDate: projects.endDate,
+        thumbnail: projects.thumbnail,
+        metadata: projects.metadata,
+        ownerId: projects.ownerId,
+        createdAt: projects.createdAt,
+        updatedAt: projects.updatedAt,
+        owner: {
+          id: users.id,
+          name: users.name,
+          avatarUrl: users.avatarUrl
+        },
+        fundingCount: sql<number>`count(${fundings.id})`.as('fundingCount')
+      })
+      .from(projects)
+      .leftJoin(users, eq(projects.ownerId, users.id))
+      .leftJoin(fundings, eq(projects.id, fundings.projectId))
+      .where(eq(projects.id, projectId))
+      .groupBy(projects.id, users.id)
+      .limit(1);
+
+    return responses.success(updatedProject[0], '프로젝트가 수정되었습니다.');
   } catch (error) {
     console.error('프로젝트 수정 실패:', error);
     return responses.error('프로젝트 수정에 실패했습니다.');
@@ -133,50 +166,67 @@ export async function getProjects(filters: ProjectFilters) {
     const { status, category, ownerId, search, page = 1, limit = 20 } = filters;
     const skip = (page - 1) * limit;
 
-    const where: any = {};
-    
-    if (status) where.status = status;
-    if (category) where.category = category;
-    if (ownerId) where.ownerId = ownerId;
+    let query = db
+      .select({
+        id: projects.id,
+        title: projects.title,
+        description: projects.description,
+        category: projects.category,
+        targetAmount: projects.targetAmount,
+        currentAmount: projects.currentAmount,
+        currency: projects.currency,
+        status: projects.status,
+        startDate: projects.startDate,
+        endDate: projects.endDate,
+        thumbnail: projects.thumbnail,
+        metadata: projects.metadata,
+        ownerId: projects.ownerId,
+        createdAt: projects.createdAt,
+        updatedAt: projects.updatedAt,
+        owner: {
+          id: users.id,
+          name: users.name,
+          avatarUrl: users.avatarUrl
+        },
+        fundingCount: sql<number>`count(${fundings.id})`.as('fundingCount')
+      })
+      .from(projects)
+      .leftJoin(users, eq(projects.ownerId, users.id))
+      .leftJoin(fundings, eq(projects.id, fundings.projectId))
+      .groupBy(projects.id, users.id)
+      .orderBy(desc(projects.createdAt));
+
+    // 필터 적용
+    const conditions = [];
+    if (status) conditions.push(eq(projects.status, status));
+    if (category) conditions.push(eq(projects.category, category));
+    if (ownerId) conditions.push(eq(projects.ownerId, ownerId));
     if (search) {
-      where.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } }
-      ];
+      conditions.push(
+        or(
+          like(projects.title, `%${search}%`),
+          like(projects.description, `%${search}%`)
+        )
+      );
     }
 
-    const [projects, total] = await Promise.all([
-      prisma.project.findMany({
-        where,
-        skip,
-        take: limit,
-        include: {
-          owner: {
-            select: {
-              id: true,
-              name: true,
-              avatarUrl: true
-            }
-          },
-          _count: {
-            select: {
-              fundings: true,
-              orders: true
-            }
-          }
-        },
-        orderBy: { createdAt: 'desc' }
-      }),
-      prisma.project.count({ where })
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+
+      // 총 개수 조회를 위한 별도 쿼리
+      db.select({ count: sql<number>`count(*)` })
+        .from(projects)
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
     ]);
 
     return responses.success({
-      projects,
+      projects: projectsResult,
       pagination: {
         page,
         limit,
-        total,
-        pages: Math.ceil(total / limit)
+        total: totalResult[0]?.count || 0,
+        pages: Math.ceil((totalResult[0]?.count || 0) / limit)
       }
     });
   } catch (error) {
@@ -190,55 +240,42 @@ export async function getProjects(filters: ProjectFilters) {
  */
 export async function getProject(projectId: string) {
   try {
-    const project = await prisma.project.findUnique({
-      where: { id: projectId },
-      include: {
+    const project = await db
+      .select({
+        id: projects.id,
+        title: projects.title,
+        description: projects.description,
+        category: projects.category,
+        targetAmount: projects.targetAmount,
+        currentAmount: projects.currentAmount,
+        currency: projects.currency,
+        status: projects.status,
+        startDate: projects.startDate,
+        endDate: projects.endDate,
+        thumbnail: projects.thumbnail,
+        metadata: projects.metadata,
+        ownerId: projects.ownerId,
+        createdAt: projects.createdAt,
+        updatedAt: projects.updatedAt,
         owner: {
-          select: {
-            id: true,
-            name: true,
-            avatarUrl: true
-          }
+          id: users.id,
+          name: users.name,
+          avatarUrl: users.avatarUrl
         },
-        fundings: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                avatarUrl: true
-              }
-            }
-          },
-          orderBy: { createdAt: 'desc' }
-        },
-        orders: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                avatarUrl: true
-              }
-            }
-          },
-          orderBy: { createdAt: 'desc' }
-        },
-        _count: {
-          select: {
-            fundings: true,
-            orders: true,
-            posts: true
-          }
-        }
-      }
-    });
+        fundingCount: sql<number>`count(${fundings.id})`.as('fundingCount')
+      })
+      .from(projects)
+      .leftJoin(users, eq(projects.ownerId, users.id))
+      .leftJoin(fundings, eq(projects.id, fundings.projectId))
+      .where(eq(projects.id, projectId))
+      .groupBy(projects.id, users.id)
+      .limit(1);
 
-    if (!project) {
+    if (project.length === 0) {
       return responses.notFound('프로젝트');
     }
 
-    return responses.success(project);
+    return responses.success(project[0]);
   } catch (error) {
     console.error('프로젝트 조회 실패:', error);
     return responses.error('프로젝트 정보를 불러올 수 없습니다.');
@@ -255,34 +292,52 @@ export async function updateProjectStatus(
   userRole: UserRole
 ) {
   try {
-    const project = await prisma.project.findUnique({
-      where: { id: projectId }
-    });
+    const project = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, projectId))
+      .limit(1);
 
-    if (!project) {
+    if (project.length === 0) {
       return responses.notFound('프로젝트');
     }
 
     // 소유자 또는 관리자만 상태 변경 가능
-    if (project.ownerId !== userId && userRole !== UserRole.ADMIN) {
+    if (project[0].ownerId !== userId && userRole !== UserRole.ADMIN) {
       return responses.forbidden();
     }
 
-    const updatedProject = await prisma.project.update({
-      where: { id: projectId },
-      data: { status },
-      include: {
-        owner: {
-          select: {
-            id: true,
-            name: true,
-            avatarUrl: true
-          }
-        }
-      }
-    });
+    await db.update(projects).set({ status }).where(eq(projects.id, projectId));
 
-    return responses.success(updatedProject, '프로젝트 상태가 변경되었습니다.');
+    const updatedProject = await db
+      .select({
+        id: projects.id,
+        title: projects.title,
+        description: projects.description,
+        category: projects.category,
+        targetAmount: projects.targetAmount,
+        currentAmount: projects.currentAmount,
+        currency: projects.currency,
+        status: projects.status,
+        startDate: projects.startDate,
+        endDate: projects.endDate,
+        thumbnail: projects.thumbnail,
+        metadata: projects.metadata,
+        ownerId: projects.ownerId,
+        createdAt: projects.createdAt,
+        updatedAt: projects.updatedAt,
+        owner: {
+          id: users.id,
+          name: users.name,
+          avatarUrl: users.avatarUrl
+        }
+      })
+      .from(projects)
+      .leftJoin(users, eq(projects.ownerId, users.id))
+      .where(eq(projects.id, projectId))
+      .limit(1);
+
+    return responses.success(updatedProject[0], '프로젝트 상태가 변경되었습니다.');
   } catch (error) {
     console.error('프로젝트 상태 변경 실패:', error);
     return responses.error('프로젝트 상태 변경에 실패했습니다.');
@@ -294,34 +349,40 @@ export async function updateProjectStatus(
  */
 export async function getProjectStats(projectId: string) {
   try {
-    const project = await prisma.project.findUnique({
-      where: { id: projectId }
-    });
+    const project = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, projectId))
+      .limit(1);
 
-    if (!project) {
+    if (project.length === 0) {
       return responses.notFound('프로젝트');
     }
 
     const [fundingStats, orderStats] = await Promise.all([
-      prisma.funding.aggregate({
-        where: { projectId },
-        _sum: { amount: true },
-        _count: { id: true }
-      }),
-      prisma.order.aggregate({
-        where: { projectId },
-        _sum: { totalPrice: true },
-        _count: { id: true }
-      })
+      db
+        .select({
+          totalAmount: sql<number>`sum(${fundings.amount})`,
+          count: sql<number>`count(${fundings.id})`
+        })
+        .from(fundings)
+        .where(eq(fundings.projectId, projectId)),
+      db
+        .select({
+          totalAmount: sql<number>`sum(${orders.totalPrice})`,
+          count: sql<number>`count(${orders.id})`
+        })
+        .from(orders)
+        .where(eq(orders.projectId, projectId))
     ]);
 
     const stats = {
-      totalFunding: fundingStats._sum.amount || 0,
-      fundingCount: fundingStats._count.id,
-      totalOrders: orderStats._sum.totalPrice || 0,
-      orderCount: orderStats._count.id,
-      fundingProgress: project.targetAmount > 0 
-        ? Math.min(((fundingStats._sum.amount || 0) / project.targetAmount) * 100, 100)
+      totalFunding: fundingStats[0]?.totalAmount || 0,
+      fundingCount: fundingStats[0]?.count || 0,
+      totalOrders: orderStats[0]?.totalAmount || 0,
+      orderCount: orderStats[0]?.count || 0,
+      fundingProgress: project[0].targetAmount > 0 
+        ? Math.min(((fundingStats[0]?.totalAmount || 0) / project[0].targetAmount) * 100, 100)
         : 0
     };
 

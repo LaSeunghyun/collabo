@@ -1,11 +1,11 @@
-import type { Prisma as PrismaClientNamespace } from '@prisma/client';
-
 import { revalidatePath } from 'next/cache';
-import { ProjectStatus, UserRole, ProjectSummary, type ProjectStatusType } from '@/types/prisma';
+import { ProjectStatus, UserRole, ProjectSummary, type ProjectStatusType } from '@/types/drizzle';
 import { ZodError } from 'zod';
+import { eq, and, inArray, desc, sql } from 'drizzle-orm';
 
 import type { SessionUser } from '@/lib/auth/session';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/prisma';
+import { projects, users, fundings, auditLogs } from '@/lib/db/schema';
 import {
   createProjectSchema,
   updateProjectSchema,
@@ -44,35 +44,45 @@ export type ProjectSummaryOptions = {
 };
 
 const fetchProjectsFromDb = async (options?: ProjectSummaryOptions) => {
-  const where: PrismaClientNamespace.ProjectWhereInput = {};
+  let query = db
+    .select({
+      id: projects.id,
+      title: projects.title,
+      description: projects.description,
+      category: projects.category,
+      thumbnail: projects.thumbnail,
+      targetAmount: projects.targetAmount,
+      currentAmount: projects.currentAmount,
+      status: projects.status,
+      createdAt: projects.createdAt,
+      updatedAt: projects.updatedAt,
+      ownerId: projects.ownerId,
+      owner: {
+        id: users.id,
+        name: users.name,
+        avatarUrl: users.avatarUrl
+      },
+      fundingCount: sql<number>`count(${fundings.id})`.as('fundingCount')
+    })
+    .from(projects)
+    .leftJoin(users, eq(projects.ownerId, users.id))
+    .leftJoin(fundings, eq(projects.id, fundings.projectId))
+    .groupBy(projects.id, users.id)
+    .orderBy(desc(projects.createdAt));
 
   if (options?.ownerId) {
-    where.ownerId = options.ownerId;
+    query = query.where(eq(projects.ownerId, options.ownerId));
   }
 
   if (options?.statuses?.length) {
-    where.status = { in: options.statuses };
+    query = query.where(inArray(projects.status, options.statuses));
   }
 
-  const take = options?.take && options.take > 0 ? options.take : undefined;
+  if (options?.take && options.take > 0) {
+    query = query.limit(options.take);
+  }
 
-  return prisma.project.findMany({
-    where,
-    include: {
-      _count: { select: { fundings: true } },
-      owner: {
-        select: {
-          id: true,
-          name: true,
-          avatarUrl: true
-        }
-      }
-    },
-    orderBy: {
-      createdAt: 'desc'
-    },
-    ...(take ? { take } : {})
-  });
+  return query;
 };
 
 type ProjectWithCounts = Awaited<ReturnType<typeof fetchProjectsFromDb>>[number];
@@ -89,7 +99,7 @@ const toProjectSummary = (project: ProjectWithCounts): ProjectSummary => {
     description: project.description,
     category: project.category,
     thumbnail: project.thumbnail ?? DEFAULT_THUMBNAIL,
-    participants: project._count.fundings,
+    participants: project.fundingCount,
     remainingDays,
     targetAmount: project.targetAmount,
     currentAmount: project.currentAmount,
@@ -102,7 +112,7 @@ const toProjectSummary = (project: ProjectWithCounts): ProjectSummary => {
       avatarUrl: project.owner.avatarUrl
     },
     _count: {
-      fundings: project._count.fundings
+      fundings: project.fundingCount
     }
   };
 };
@@ -125,41 +135,52 @@ export const getProjectsPendingReview = async (limit = 5) =>
   getProjectSummaries({ statuses: [ProjectStatus.DRAFT], take: limit });
 
 export const getProjectSummaryById = async (id: string) => {
-  const project = await prisma.project.findUnique({
-    where: { id },
-    include: {
-      _count: { select: { fundings: true } },
+  const result = await db
+    .select({
+      id: projects.id,
+      title: projects.title,
+      description: projects.description,
+      category: projects.category,
+      thumbnail: projects.thumbnail,
+      targetAmount: projects.targetAmount,
+      currentAmount: projects.currentAmount,
+      status: projects.status,
+      createdAt: projects.createdAt,
+      updatedAt: projects.updatedAt,
+      ownerId: projects.ownerId,
       owner: {
-        select: {
-          id: true,
-          name: true,
-          avatarUrl: true
-        }
-      }
-    }
-  });
+        id: users.id,
+        name: users.name,
+        avatarUrl: users.avatarUrl
+      },
+      fundingCount: sql<number>`count(${fundings.id})`.as('fundingCount')
+    })
+    .from(projects)
+    .leftJoin(users, eq(projects.ownerId, users.id))
+    .leftJoin(fundings, eq(projects.id, fundings.projectId))
+    .where(eq(projects.id, id))
+    .groupBy(projects.id, users.id)
+    .limit(1);
 
-  if (!project) {
+  if (result.length === 0) {
     return null;
   }
 
-  return toProjectSummary(project);
+  return toProjectSummary(result[0]);
 };
 
-const toJsonInput = (
-  value: unknown
-): PrismaClientNamespace.InputJsonValue => {
+const toJsonInput = (value: unknown): any => {
   if (value === undefined || value === null) {
     return {};
   }
 
-  return value as PrismaClientNamespace.InputJsonValue;
+  return value;
 };
 
 const buildProjectCreateData = (
   input: CreateProjectInput,
   ownerId: string
-): PrismaClientNamespace.ProjectUncheckedCreateInput => ({
+) => ({
   title: input.title,
   description: input.description,
   category: input.category,
@@ -175,10 +196,8 @@ const buildProjectCreateData = (
   currentAmount: 0
 });
 
-const buildProjectUpdateData = (
-  input: UpdateProjectInput
-): PrismaClientNamespace.ProjectUncheckedUpdateInput => {
-  const data: PrismaClientNamespace.ProjectUncheckedUpdateInput = {};
+const buildProjectUpdateData = (input: UpdateProjectInput) => {
+  const data: any = {};
 
   if (input.title !== undefined) {
     data.title = input.title;
@@ -267,38 +286,35 @@ export const createProject = async (rawInput: unknown, user: SessionUser) => {
 
   const createData = buildProjectCreateData(input, ownerId);
 
-  const project = await prisma.project.create({
-    data: createData
+  const project = await db.insert(projects).values(createData).returning();
+
+  await db.insert(auditLogs).values({
+    userId: user.id,
+    entity: 'Project',
+    entityId: project[0].id,
+    action: 'PROJECT_CREATED',
+    data: JSON.parse(JSON.stringify(createData))
   });
 
-  await prisma.auditLog.create({
-    data: {
-      userId: user.id,
-      entity: 'Project',
-      entityId: project.id,
-      action: 'PROJECT_CREATED',
-      data: JSON.parse(JSON.stringify(createData)) as PrismaClientNamespace.InputJsonValue
-    }
-  });
+  revalidateProjectPaths(project[0].id);
 
-  revalidateProjectPaths(project.id);
-
-  return getProjectSummaryById(project.id);
+  return getProjectSummaryById(project[0].id);
 };
 
 export const updateProject = async (id: string, rawInput: unknown, user: SessionUser) => {
   const input = parseUpdateInput(rawInput);
 
-  const project = await prisma.project.findUnique({
-    where: { id },
-    select: { ownerId: true }
-  });
+  const project = await db
+    .select({ ownerId: projects.ownerId })
+    .from(projects)
+    .where(eq(projects.id, id))
+    .limit(1);
 
-  if (!project) {
+  if (project.length === 0) {
     throw new ProjectNotFoundError();
   }
 
-  assertProjectOwnership(project.ownerId, user);
+  assertProjectOwnership(project[0].ownerId, user);
 
   const data = buildProjectUpdateData(input);
 
@@ -306,19 +322,14 @@ export const updateProject = async (id: string, rawInput: unknown, user: Session
     return getProjectSummaryById(id);
   }
 
-  await prisma.project.update({
-    where: { id },
-    data
-  });
+  await db.update(projects).set(data).where(eq(projects.id, id));
 
-  await prisma.auditLog.create({
-    data: {
-      userId: user.id,
-      entity: 'Project',
-      entityId: id,
-      action: 'PROJECT_UPDATED',
-      data: JSON.parse(JSON.stringify(data)) as PrismaClientNamespace.InputJsonValue
-    }
+  await db.insert(auditLogs).values({
+    userId: user.id,
+    entity: 'Project',
+    entityId: id,
+    action: 'PROJECT_UPDATED',
+    data: JSON.parse(JSON.stringify(data))
   });
 
   revalidateProjectPaths(id);
@@ -327,28 +338,25 @@ export const updateProject = async (id: string, rawInput: unknown, user: Session
 };
 
 export const deleteProject = async (id: string, user: SessionUser) => {
-  const project = await prisma.project.findUnique({
-    where: { id },
-    select: { ownerId: true }
-  });
+  const project = await db
+    .select({ ownerId: projects.ownerId })
+    .from(projects)
+    .where(eq(projects.id, id))
+    .limit(1);
 
-  if (!project) {
+  if (project.length === 0) {
     throw new ProjectNotFoundError();
   }
 
-  assertProjectOwnership(project.ownerId, user);
+  assertProjectOwnership(project[0].ownerId, user);
 
-  await prisma.project.delete({
-    where: { id }
-  });
+  await db.delete(projects).where(eq(projects.id, id));
 
-  await prisma.auditLog.create({
-    data: {
-      userId: user.id,
-      entity: 'Project',
-      entityId: id,
-      action: 'PROJECT_DELETED'
-    }
+  await db.insert(auditLogs).values({
+    userId: user.id,
+    entity: 'Project',
+    entityId: id,
+    action: 'PROJECT_DELETED'
   });
 
   revalidateProjectPaths(id);
