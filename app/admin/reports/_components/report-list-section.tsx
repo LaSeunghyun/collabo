@@ -6,7 +6,7 @@ import {
   ModerationTargetType,
   type ModerationStatusValue,
   type ModerationTargetTypeValue 
-} from '@/types/prisma';
+} from '@/types/drizzle';
 import { ReportDetailModal } from './report-detail-modal';
 
 const statusLabels: Record<ModerationStatusValue, string> = {

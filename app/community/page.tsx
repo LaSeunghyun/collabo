@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Plus, Search } from 'lucide-react';
 import { PostList } from './_components/post-list';
-import { CommunityCategory } from '@/types/prisma';
+import { CommunityCategory } from '@/types/drizzle';
 
 interface Post {
   id: string;

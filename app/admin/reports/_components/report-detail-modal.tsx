@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { X, EyeOff, XCircle } from 'lucide-react';
 import Image from 'next/image';
-import { ModerationStatus } from '@/types/prisma';
+import { ModerationStatus } from '@/types/drizzle';
 
 interface Post {
   id: string;
