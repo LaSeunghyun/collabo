@@ -23,7 +23,7 @@ The following tables group every Prisma dependency discovered via static analysi
 ### Tooling & Automation
 | Category | Files |
 | --- | --- |
-| Build & deployment | [`scripts/build-with-prisma.js`](../scripts/build-with-prisma.js), [`vercel.json`](../vercel.json) |
+| Build & deployment | [`scripts/build-with-drizzle.mjs`](../scripts/build-with-drizzle.mjs), [`vercel.json`](../vercel.json) |
 | Data maintenance | [`add-milestone-column.js`](../add-milestone-column.js), [`add-missing-columns.js`](../add-missing-columns.js), [`fix-vercel-db-schema.js`](../fix-vercel-db-schema.js), [`schema-validation.js`](../schema-validation.js), [`test-db-connection.js`](../test-db-connection.js) |
 | Account seeding | [`scripts/create-test-accounts.ts`](../scripts/create-test-accounts.ts) |
 | Seed data | [`prisma/seed.ts`](../prisma/seed.ts) |

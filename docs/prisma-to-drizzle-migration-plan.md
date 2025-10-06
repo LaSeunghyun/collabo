@@ -10,7 +10,7 @@ Success is achieved when no Prisma runtime dependency remains (`@prisma/client`,
 ## Phase 0 – Discovery & Preparation
 1. **Inventory Prisma touchpoints**
    - Source runtime: `lib/prisma.ts`, modules under `app/`, `components/`, `lib/server/`, API route handlers, and middleware call into `prisma`.
-   - Tooling: scripts (`scripts/build-with-prisma.js`, `scripts/create-test-accounts.ts`, maintenance scripts in repo root), testing helpers (`__tests__/helpers/prisma-mock.ts`), and validation utilities (`schema-validation.js`, `fix-vercel-db-schema.js`).
+   - Tooling: scripts (`scripts/build-with-drizzle.mjs`, `scripts/create-test-accounts.ts`, maintenance scripts in repo root), testing helpers (`__tests__/helpers/prisma-mock.ts`), and validation utilities (`schema-validation.js`, `fix-vercel-db-schema.js`).
    - Schema assets: `prisma/schema.prisma`, any raw SQL helpers (e.g., `database_setup.sql`).
 2. **Freeze database shape**
    - Run `npm run db:push` and export the current schema via `prisma migrate diff` so we can diff generated Drizzle migrations later.
@@ -27,7 +27,7 @@ Success is achieved when no Prisma runtime dependency remains (`@prisma/client`,
    - Establish a `drizzle/` directory for migrations and generated SQL snapshots; update `tsconfig.json` and `eslint` path aliases if needed.
 3. **Developer workflow**
    - Replace `npm run db:push`/`db:generate` scripts with Drizzle equivalents (`drizzle-kit generate`, `drizzle-kit push`).
-   - Update `scripts/build-with-prisma.js` to a generalized database deploy script (`scripts/build-with-drizzle.ts`).
+   - Update `scripts/build-with-prisma.js` to a generalized database deploy script (`scripts/build-with-drizzle.mjs`).
 
 ## Phase 2 – Schema Translation
 1. **Model conversion**
