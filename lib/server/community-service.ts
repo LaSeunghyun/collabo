@@ -1,6 +1,6 @@
 import { PostType, CommunityCategory, PostStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { responses } from './api-utils';
+import { responses } from './api-responses';
 
 export interface PostCreateData {
   title: string;

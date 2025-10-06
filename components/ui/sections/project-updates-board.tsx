@@ -140,8 +140,19 @@ const toCommunityPost = (update: ProjectUpdate): CommunityPost => ({
   content: update.content,
   likes: update.likes,
   comments: update.comments,
+  dislikes: 0,
+  reports: 0,
+  category: 'general',
+  createdAt: update.createdAt,
   liked: update.liked,
-  category: 'general'
+  disliked: false,
+  isPinned: false,
+  isTrending: false,
+  author: {
+    id: update.author.id,
+    name: update.author.name || 'Unknown',
+    avatarUrl: update.author.avatarUrl
+  }
 });
 
 interface ProjectUpdatesBoardProps {

@@ -123,15 +123,6 @@ export default function CommunityPage() {
     setPagination(prev => ({ ...prev, page: 1 }));
   };
 
-  const handleLike = () => {
-    // 좋아요 처리 후 목록 새로고침
-    fetchPosts();
-  };
-
-  const handleReport = () => {
-    // 신고 처리 후 목록 새로고침
-    fetchPosts();
-  };
 
 
   return (
@@ -229,8 +220,6 @@ export default function CommunityPage() {
         <>
           <PostList
             posts={posts}
-            onLike={handleLike}
-            onReport={handleReport}
           />
 
           {/* 페이지네이션 */}

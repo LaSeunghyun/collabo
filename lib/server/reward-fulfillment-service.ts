@@ -1,6 +1,6 @@
 import { DeliveryType, TicketStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { responses } from './api-utils';
+import { responses } from './api-responses';
 
 export interface RewardFulfillmentData {
   orderItemId: string;

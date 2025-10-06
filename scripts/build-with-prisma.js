@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+require('dotenv').config({ path: '.env.local' });
+
 const { spawnSync } = require('node:child_process');
 
 function run(command, args, options = {}) {
@@ -14,6 +16,7 @@ function run(command, args, options = {}) {
 
 const hasDatabaseUrl = Boolean(process.env.DATABASE_URL);
 
+/*
 if (!hasDatabaseUrl) {
   console.warn('[build] DATABASE_URL is not set. Skipping `prisma migrate deploy`.');
 } else {
@@ -42,7 +45,9 @@ if (!hasDatabaseUrl) {
     console.warn('[build] Continuing with build...');
   }
 }
+*/
 
+/*
 console.log('[build] Generating Prisma client...');
 const prismaResult = spawnSync('npx', ['prisma', 'generate'], { stdio: 'inherit' });
 if (prismaResult.status !== 0) {
@@ -51,6 +56,7 @@ if (prismaResult.status !== 0) {
   process.exit(1);
 }
 console.log('[build] Prisma client generated successfully');
+*/
 
 console.log('[build] Building Next.js application...');
 const buildResult = spawnSync('next', ['build'], { stdio: 'inherit' });

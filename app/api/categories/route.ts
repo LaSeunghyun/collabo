@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { responses } from '@/lib/server/api-responses';
 
 export interface Category {
   id: string;
@@ -51,9 +52,9 @@ export async function GET() {
       }
     ];
 
-    return NextResponse.json(categories);
+    return NextResponse.json(responses.success(categories));
   } catch (error) {
     console.error('Failed to load categories', error);
-    return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json(responses.error('Internal Server Error'), { status: 500 });
   }
 }

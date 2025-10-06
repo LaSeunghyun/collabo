@@ -2,11 +2,14 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useSession } from 'next-auth/react';
-import { Heart, MessageCircle, Eye, Flag, MoreHorizontal } from 'lucide-react';
+import { Heart, MessageCircle, Eye, Flag } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
+import { usePostMutations } from '@/hooks/use-post-mutations';
+
+// NOTE: This Post interface is specific to the list view.
+// It might differ from the global CommunityPost type.
 interface Post {
   id: string;
   title: string;
@@ -14,8 +17,6 @@ interface Post {
   category: string;
   isPinned: boolean;
   isAnonymous: boolean;
-  likesCount: number;
-  reportsCount: number;
   createdAt: string;
   author: {
     id: string;
@@ -34,9 +35,8 @@ interface Post {
 
 interface PostListProps {
   posts: Post[];
-  onLike?: (postId: string) => void;
-  onReport?: (postId: string) => void;
-  // onDelete?: (postId: string) => void;
+  // The parent component might want to refetch data on mutation
+  onMutation?: () => void;
 }
 
 const categoryLabels: Record<string, string> = {
@@ -47,7 +47,7 @@ const categoryLabels: Record<string, string> = {
   NOTICE: '공지',
   COLLAB: '협업',
   SUPPORT: '지원',
-  SHOWCASE: '쇼케이스'
+  SHOWCASE: '쇼케이스',
 };
 
 const categoryColors: Record<string, string> = {
@@ -58,102 +58,49 @@ const categoryColors: Record<string, string> = {
   NOTICE: 'bg-red-100 text-red-800',
   COLLAB: 'bg-orange-100 text-orange-800',
   SUPPORT: 'bg-yellow-100 text-yellow-800',
-  SHOWCASE: 'bg-pink-100 text-pink-800'
+  SHOWCASE: 'bg-pink-100 text-pink-800',
 };
 
-export function PostList({ posts, onLike, onReport }: PostListProps) {
-  const { data: session } = useSession();
-  const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
+export function PostList({ posts, onMutation }: PostListProps) {
+  const { likePost, reportPost, likeState } = usePostMutations();
+  const [likedPosts, setLikedPosts] = useState<Set<string>>(() => 
+    new Set(posts.filter(p => (p as any).liked).map(p => p.id))
+  );
 
   const handleLike = async (postId: string) => {
-    if (!session) {
-      alert('로그인이 필요합니다.');
-      return;
-    }
+    const isLiked = likedPosts.has(postId);
+    // Optimistic UI update
+    setLikedPosts(prev => {
+      const newSet = new Set(prev);
+      if (isLiked) {
+        newSet.delete(postId);
+      } else {
+        newSet.add(postId);
+      }
+      return newSet;
+    });
 
     try {
-      const isLiked = likedPosts.has(postId);
-      const method = isLiked ? 'DELETE' : 'POST';
-      
-      const response = await fetch(`/api/posts/${postId}/like`, {
-        method,
-        headers: {
-          'Content-Type': 'application/json'
+      await likePost(postId, isLiked);
+      onMutation?.(); // Notify parent to refetch if needed
+    } catch {
+      // Revert optimistic update on error
+      setLikedPosts(prev => {
+        const newSet = new Set(prev);
+        if (isLiked) {
+          newSet.add(postId);
+        } else {
+          newSet.delete(postId);
         }
+        return newSet;
       });
-
-      if (response.ok) {
-        setLikedPosts(prev => {
-          const newSet = new Set(prev);
-          if (isLiked) {
-            newSet.delete(postId);
-          } else {
-            newSet.add(postId);
-          }
-          return newSet;
-        });
-        onLike?.(postId);
-      } else {
-        const error = await response.json();
-        alert(error.message || '좋아요 처리에 실패했습니다.');
-      }
-    } catch (error) {
-      console.error('좋아요 처리 실패:', error);
-      alert('좋아요 처리에 실패했습니다.');
     }
   };
 
   const handleReport = async (postId: string) => {
-    if (!session) {
-      alert('로그인이 필요합니다.');
-      return;
-    }
-
-    const reason = prompt('신고 사유를 입력해주세요:');
-    if (!reason) return;
-
-    try {
-      const response = await fetch(`/api/posts/${postId}/report`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ reason })
-      });
-
-      if (response.ok) {
-        alert('신고가 접수되었습니다.');
-        onReport?.(postId);
-      } else {
-        const error = await response.json();
-        alert(error.message || '신고 접수에 실패했습니다.');
-      }
-    } catch (error) {
-      console.error('신고 접수 실패:', error);
-      alert('신고 접수에 실패했습니다.');
-    }
-  };
-
-  // const handleDelete = async (postId: string) => {
-  //   if (!confirm('정말로 이 게시글을 삭제하시겠습니까?')) return;
-
-  //   try {
-  //     const response = await fetch(`/api/posts/${postId}`, {
-  //       method: 'DELETE'
-  //     });
-
-  //     if (response.ok) {
-  //       alert('게시글이 삭제되었습니다.');
-  //       onDelete?.(postId);
-  //     } else {
-  //       const error = await response.json();
-  //       alert(error.message || '게시글 삭제에 실패했습니다.');
-  //     }
-  //   } catch (error) {
-  //     console.error('게시글 삭제 실패:', error);
-  //     alert('게시글 삭제에 실패했습니다.');
-  //   }
-  // };
+    await reportPost(postId);
+    onMutation?.();
+  }
 
   return (
     <div className="space-y-4">
@@ -164,7 +111,7 @@ export function PostList({ posts, onLike, onReport }: PostListProps) {
             post.isPinned ? 'border-l-4 border-l-blue-500' : ''
           }`}
         >
-          {/* 헤더 */}
+          {/* Header */}
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2">
@@ -195,34 +142,26 @@ export function PostList({ posts, onLike, onReport }: PostListProps) {
               >
                 <Flag className="h-4 w-4" />
               </button>
-              {session?.user?.id === post.author.id && (
-                <div className="relative">
-                  <button className="p-1 text-gray-400 hover:text-gray-600 transition-colors">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </button>
-                  {/* 드롭다운 메뉴는 추후 구현 */}
-                </div>
-              )}
+              {/* More options dropdown can be added here */}
             </div>
           </div>
 
-          {/* 제목 */}
+          {/* Title */}
           <h2 className="text-lg font-semibold text-gray-900 mb-2">
             <Link href={`/community/${post.id}`} className="hover:text-blue-600">
               {post.title}
             </Link>
           </h2>
 
-          {/* 내용 미리보기 */}
+          {/* Content Preview */}
           <p className="text-gray-600 text-sm mb-4 line-clamp-3">
             {post.content}
           </p>
 
-          {/* 메타 정보 */}
+          {/* Meta Info */}
           <div className="flex items-center justify-between text-sm text-gray-500">
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-1">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={post.author.avatarUrl || '/default-avatar.png'}
                   alt={post.author.name || '익명'}
@@ -235,7 +174,7 @@ export function PostList({ posts, onLike, onReport }: PostListProps) {
               <span>
                 {formatDistanceToNow(new Date(post.createdAt), {
                   addSuffix: true,
-                  locale: ko
+                  locale: ko,
                 })}
               </span>
             </div>
@@ -243,6 +182,7 @@ export function PostList({ posts, onLike, onReport }: PostListProps) {
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => handleLike(post.id)}
+                disabled={likeState.isLoading}
                 className={`flex items-center space-x-1 transition-colors ${
                   likedPosts.has(post.id)
                     ? 'text-red-500'
@@ -250,7 +190,8 @@ export function PostList({ posts, onLike, onReport }: PostListProps) {
                 }`}
               >
                 <Heart className="h-4 w-4" />
-                <span>{post._count.likes}</span>
+                {/* This count should ideally be updated based on API response */}
+                <span>{post._count.likes + (likedPosts.has(post.id) ? 1 : 0) - ((post as any).liked ? 1 : 0) }</span>
               </button>
               <div className="flex items-center space-x-1 text-gray-400">
                 <MessageCircle className="h-4 w-4" />
@@ -258,7 +199,7 @@ export function PostList({ posts, onLike, onReport }: PostListProps) {
               </div>
               <div className="flex items-center space-x-1 text-gray-400">
                 <Eye className="h-4 w-4" />
-                <span>0</span>
+                <span>0</span>{/* View count not available in data */}
               </div>
             </div>
           </div>

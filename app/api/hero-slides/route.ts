@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { responses } from '@/lib/server/api-responses';
 
 export interface HeroSlide {
   id: string;
@@ -12,7 +13,7 @@ export interface HeroSlide {
 
 export async function GET() {
   try {
-    // 실제로는 데이터베이스에서 가져와야 하지만, 일단 하드코딩된 데이터를 반환
+    // In a real scenario, this would be fetched from a database
     const slides: HeroSlide[] = [
       {
         id: 'banner-1',
@@ -43,9 +44,9 @@ export async function GET() {
       }
     ];
 
-    return NextResponse.json(slides);
+    return NextResponse.json(responses.success(slides));
   } catch (error) {
     console.error('Failed to load hero slides', error);
-    return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json(responses.error('Internal Server Error'), { status: 500 });
   }
 }

@@ -1,24 +1,20 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { responses } from '@/lib/server/api-responses';
 
 export async function GET() {
     try {
-        // 데이터베이스 연결 테스트
+        // Test database connection
         await prisma.$queryRaw`SELECT 1`;
 
-        return NextResponse.json({
+        return NextResponse.json(responses.success({
             status: 'ok',
             database: 'connected',
             timestamp: new Date().toISOString()
-        });
+        }));
     } catch (error) {
         console.error('Health check error:', error);
 
-        return NextResponse.json({
-            status: 'error',
-            database: 'disconnected',
-            error: error instanceof Error ? error.message : 'Unknown error',
-            timestamp: new Date().toISOString()
-        }, { status: 500 });
+        return NextResponse.json(responses.error('Health check failed', 500), { status: 500 });
     }
 }

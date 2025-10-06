@@ -1,13 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import { CommunityCategory } from '@/types/prisma';
+import { usePostForm } from '@/hooks/use-post-form';
 
 interface PostFormProps {
   projectId?: string;
-  onSuccess?: () => void;
+  onSuccess?: (postId: string) => void;
   onCancel?: () => void;
 }
 
@@ -19,107 +17,19 @@ const categoryOptions = [
   { value: CommunityCategory.NOTICE, label: '공지' },
   { value: CommunityCategory.COLLAB, label: '협업' },
   { value: CommunityCategory.SUPPORT, label: '지원' },
-  { value: CommunityCategory.SHOWCASE, label: '쇼케이스' }
+  { value: CommunityCategory.SHOWCASE, label: '쇼케이스' },
 ];
 
 export function PostForm({ projectId, onSuccess, onCancel }: PostFormProps) {
-  const router = useRouter();
-  const { data: session } = useSession();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    title: '',
-    content: '',
-    category: CommunityCategory.GENERAL,
-    isAnonymous: false,
-    tags: [] as string[]
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.title.trim()) {
-      newErrors.title = '제목을 입력해주세요.';
-    } else if (formData.title.length < 5) {
-      newErrors.title = '제목은 5자 이상이어야 합니다.';
-    } else if (formData.title.length > 100) {
-      newErrors.title = '제목은 100자 이하여야 합니다.';
-    }
-
-    if (!formData.content.trim()) {
-      newErrors.content = '내용을 입력해주세요.';
-    } else if (formData.content.length < 10) {
-      newErrors.content = '내용은 10자 이상이어야 합니다.';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!session) {
-      alert('로그인이 필요합니다.');
-      return;
-    }
-
-    if (!validateForm()) {
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      const response = await fetch('/api/posts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          ...formData,
-          projectId
-        })
-      });
-
-      if (response.ok) {
-        const post = await response.json();
-        onSuccess?.();
-        router.push(`/community/${post.id}`);
-      } else {
-        const error = await response.json();
-        alert(error.message || '게시글 작성에 실패했습니다.');
-      }
-    } catch (error) {
-      console.error('게시글 작성 실패:', error);
-      alert('게시글 작성에 실패했습니다.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
-    }
-  };
-
-  const handleTagAdd = (tag: string) => {
-    if (tag.trim() && !formData.tags.includes(tag.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        tags: [...prev.tags, tag.trim()]
-      }));
-    }
-  };
-
-  const handleTagRemove = (tagToRemove: string) => {
-    setFormData(prev => ({
-      ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove)
-    }));
-  };
+  const {
+    formData,
+    errors,
+    isSubmitting,
+    handleSubmit,
+    handleInputChange,
+    handleTagAdd,
+    handleTagRemove,
+  } = usePostForm({ projectId, onSuccess });
 
   return (
     <div className="max-w-4xl mx-auto p-6">
@@ -129,11 +39,9 @@ export function PostForm({ projectId, onSuccess, onCancel }: PostFormProps) {
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* 카테고리 선택 */}
+          {/* Category Select */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              카테고리 *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">카테고리 *</label>
             <select
               value={formData.category}
               onChange={(e) => handleInputChange('category', e.target.value)}
@@ -145,16 +53,12 @@ export function PostForm({ projectId, onSuccess, onCancel }: PostFormProps) {
                 </option>
               ))}
             </select>
-            {errors.category && (
-              <p className="mt-1 text-sm text-red-600">{errors.category}</p>
-            )}
+            {errors.category && <p className="mt-1 text-sm text-red-600">{errors.category}</p>}
           </div>
 
-          {/* 제목 */}
+          {/* Title Input */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              제목 *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">제목 *</label>
             <input
               type="text"
               value={formData.title}
@@ -169,11 +73,9 @@ export function PostForm({ projectId, onSuccess, onCancel }: PostFormProps) {
             </div>
           </div>
 
-          {/* 내용 */}
+          {/* Content Textarea */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              내용 *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">내용 *</label>
             <textarea
               value={formData.content}
               onChange={(e) => handleInputChange('content', e.target.value)}
@@ -187,23 +89,14 @@ export function PostForm({ projectId, onSuccess, onCancel }: PostFormProps) {
             </div>
           </div>
 
-          {/* 해시태그 */}
+          {/* Hashtags Input */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              해시태그
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">해시태그</label>
             <div className="flex flex-wrap gap-2 mb-2">
               {formData.tags.map((tag, index) => (
-                <span
-                  key={index}
-                  className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
-                >
+                <span key={index} className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
                   #{tag}
-                  <button
-                    type="button"
-                    onClick={() => handleTagRemove(tag)}
-                    className="ml-1 text-blue-600 hover:text-blue-800"
-                  >
+                  <button type="button" onClick={() => handleTagRemove(tag)} className="ml-1 text-blue-600 hover:text-blue-800">
                     ×
                   </button>
                 </span>
@@ -223,7 +116,7 @@ export function PostForm({ projectId, onSuccess, onCancel }: PostFormProps) {
             />
           </div>
 
-          {/* 익명 옵션 (프로젝트 게시글인 경우만) */}
+          {/* Anonymous Option (only for project posts) */}
           {projectId && (
             <div className="flex items-center">
               <input
@@ -233,26 +126,16 @@ export function PostForm({ projectId, onSuccess, onCancel }: PostFormProps) {
                 onChange={(e) => handleInputChange('isAnonymous', e.target.checked)}
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
-              <label htmlFor="isAnonymous" className="ml-2 text-sm text-gray-700">
-                익명으로 게시하기
-              </label>
+              <label htmlFor="isAnonymous" className="ml-2 text-sm text-gray-700">익명으로 게시하기</label>
             </div>
           )}
 
-          {/* 버튼 */}
+          {/* Action Buttons */}
           <div className="flex justify-end space-x-3">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
-            >
+            <button type="button" onClick={onCancel} className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors">
               취소
             </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
+            <button type="submit" disabled={isSubmitting} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
               {isSubmitting ? '작성 중...' : '게시글 작성'}
             </button>
           </div>

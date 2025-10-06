@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
+import { responses } from '@/lib/server/api-responses';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('q')?.trim();
 
   if (!query) {
-    return NextResponse.json([]);
+    return NextResponse.json(responses.success([]));
   }
 
   try {
@@ -22,9 +23,9 @@ export async function GET(request: NextRequest) {
       take: 10
     });
 
-    return NextResponse.json(users);
+    return NextResponse.json(responses.success(users));
   } catch (error) {
     console.error('Failed to search users', error);
-    return NextResponse.json([]);
+    return NextResponse.json(responses.success([])); // Return empty array on error
   }
 }

@@ -3,22 +3,13 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/cards';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import { 
-  Search, 
-  Filter, 
-  DollarSign, 
-  Clock, 
-  CheckCircle,
-  Eye,
-  MoreHorizontal
-} from 'lucide-react';
-import Link from 'next/link';
+import { Search, Filter, DollarSign } from 'lucide-react';
+import { SettlementCard } from './_components/SettlementCard';
+import { useSettlementMutations } from '@/hooks/use-settlement-mutations';
 
+// Types should be centralized
 interface Settlement {
   id: string;
   totalAmount: number;
@@ -29,9 +20,7 @@ interface Settlement {
   project: {
     id: string;
     title: string;
-    status: string;
     owner: {
-      id: string;
       name: string;
       avatarUrl: string | null;
     };
@@ -40,9 +29,7 @@ interface Settlement {
     id: string;
     amount: number;
     percentage: number;
-    status: string;
     stakeholder: {
-      id: string;
       name: string;
       email: string;
       avatarUrl: string | null;
@@ -68,16 +55,7 @@ const STATUS_LABELS = {
   CANCELLED: '취소됨'
 };
 
-const STATUS_COLORS = {
-  PENDING: 'bg-yellow-100 text-yellow-800',
-  PROCESSING: 'bg-blue-100 text-blue-800',
-  COMPLETED: 'bg-green-100 text-green-800',
-  FAILED: 'bg-red-100 text-red-800',
-  CANCELLED: 'bg-gray-100 text-gray-800'
-};
-
 export default function SettlementsPage() {
-  const { toast } = useToast();
   const [filters, setFilters] = useState({
     status: '',
     search: ''
@@ -101,46 +79,15 @@ export default function SettlementsPage() {
     }
   });
 
+  const { updateStatus: mutateUpdateStatus } = useSettlementMutations();
+  
+  const updateStatus = (settlementId: string, status: string) => {
+    mutateUpdateStatus({ settlementId, status });
+  };
+
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
     setPage(1);
-  };
-
-  const handleStatusUpdate = async (settlementId: string, status: string) => {
-    try {
-      const response = await fetch(`/api/settlements/${settlementId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ status })
-      });
-
-      if (!response.ok) {
-        throw new Error('정산 상태 변경에 실패했습니다.');
-      }
-
-      toast({
-        title: '상태 변경 완료',
-        description: '정산 상태가 변경되었습니다.',
-      });
-
-      refetch();
-    } catch (error) {
-      console.error('정산 상태 변경 실패:', error);
-      toast({
-        title: '상태 변경 실패',
-        description: error instanceof Error ? error.message : '정산 상태 변경에 실패했습니다.',
-        variant: 'destructive'
-      });
-    }
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('ko-KR', {
-      style: 'currency',
-      currency: 'KRW'
-    }).format(amount);
   };
 
   if (isLoading) {
@@ -173,7 +120,7 @@ export default function SettlementsPage() {
         </p>
       </div>
 
-      {/* 필터 */}
+      {/* Filters */}
       <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="relative">
@@ -207,146 +154,18 @@ export default function SettlementsPage() {
         </div>
       </div>
 
-      {/* 정산 목록 */}
+      {/* Settlements List */}
       <div className="space-y-4">
         {data?.settlements.map((settlement) => (
-          <Card key={settlement.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-                    {settlement.project.owner.avatarUrl ? (
-                      <img
-                        src={settlement.project.owner.avatarUrl}
-                        alt={settlement.project.owner.name}
-                        className="w-12 h-12 rounded-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-gray-600 font-semibold">
-                        {settlement.project.owner.name?.[0] || 'U'}
-                      </span>
-                    )}
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg">{settlement.project.title}</CardTitle>
-                    <CardDescription>
-                      {settlement.project.owner.name} • {new Date(settlement.createdAt).toLocaleDateString('ko-KR')}
-                    </CardDescription>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Badge className={STATUS_COLORS[settlement.status as keyof typeof STATUS_COLORS]}>
-                    {STATUS_LABELS[settlement.status as keyof typeof STATUS_LABELS]}
-                  </Badge>
-                  <Button variant="ghost" size="sm">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">
-                    {formatCurrency(settlement.totalAmount)}
-                  </div>
-                  <div className="text-sm text-gray-600">총 금액</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {formatCurrency(settlement.platformFee)}
-                  </div>
-                  <div className="text-sm text-gray-600">플랫폼 수수료</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-600">
-                    {formatCurrency(settlement.netAmount)}
-                  </div>
-                  <div className="text-sm text-gray-600">정산 금액</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-orange-600">
-                    {settlement.payouts.length}
-                  </div>
-                  <div className="text-sm text-gray-600">이해관계자</div>
-                </div>
-              </div>
-
-              {/* 이해관계자 목록 */}
-              <div className="space-y-2">
-                <h4 className="font-semibold text-gray-700">이해관계자</h4>
-                {settlement.payouts.map((payout) => (
-                  <div key={payout.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                        {payout.stakeholder.avatarUrl ? (
-                          <img
-                            src={payout.stakeholder.avatarUrl}
-                            alt={payout.stakeholder.name}
-                            className="w-8 h-8 rounded-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-gray-600 text-sm font-semibold">
-                            {payout.stakeholder.name[0]}
-                          </span>
-                        )}
-                      </div>
-                      <div>
-                        <div className="font-medium">{payout.stakeholder.name}</div>
-                        <div className="text-sm text-gray-600">{payout.stakeholder.email}</div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-semibold">{formatCurrency(payout.amount)}</div>
-                      <div className="text-sm text-gray-600">{payout.percentage}%</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* 액션 버튼 */}
-              <div className="flex justify-end space-x-2 mt-4">
-                <Button variant="outline" asChild>
-                  <Link href={`/admin/settlements/${settlement.id}`}>
-                    <Eye className="h-4 w-4 mr-2" />
-                    상세보기
-                  </Link>
-                </Button>
-                
-                {settlement.status === 'PENDING' && (
-                  <>
-                    <Button
-                      variant="outline"
-                      onClick={() => handleStatusUpdate(settlement.id, 'PROCESSING')}
-                    >
-                      <Clock className="h-4 w-4 mr-2" />
-                      처리중
-                    </Button>
-                    <Button
-                      onClick={() => handleStatusUpdate(settlement.id, 'COMPLETED')}
-                    >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      완료
-                    </Button>
-                  </>
-                )}
-                
-                {settlement.status === 'PROCESSING' && (
-                  <Button
-                    onClick={() => handleStatusUpdate(settlement.id, 'COMPLETED')}
-                  >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    완료
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <SettlementCard 
+            key={settlement.id} 
+            settlement={settlement} 
+            onStatusUpdate={updateStatus}
+          />
         ))}
       </div>
 
-      {/* 페이지네이션 */}
+      {/* Pagination */}
       {data && data.pagination.pages > 1 && (
         <div className="flex justify-center space-x-2 mt-8">
           <Button

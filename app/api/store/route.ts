@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { responses } from '@/lib/server/api-responses';
 
 export interface StoreItem {
   id: string;
@@ -61,9 +62,9 @@ const FALLBACK_ITEMS: StoreItem[] = [
 
 export async function GET() {
   try {
-    return NextResponse.json(FALLBACK_ITEMS);
+    return NextResponse.json(responses.success(FALLBACK_ITEMS));
   } catch (error) {
     console.error('Failed to load store items', error);
-    return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json(responses.error('Internal Server Error'), { status: 500 });
   }
 }
