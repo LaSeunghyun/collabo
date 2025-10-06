@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireApiUser } from '@/lib/auth/guards';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/drizzle';
 
 import { ApiResponse } from './api-responses';
 
@@ -19,7 +19,7 @@ export interface PaginationResult {
 }
 
 /**
- * API 핸들러 래퍼 - 공통 에러 처리 및 인증
+ * API ?�들???�퍼 - 공통 ?�러 처리 �??�증
  */
 export async function withAuth<T>(
   handler: (user: any, request: NextRequest, params?: any) => Promise<ApiResponse<T>>,
@@ -34,21 +34,21 @@ export async function withAuth<T>(
       return NextResponse.json(result.data, { status: 200 });
     } else {
       return NextResponse.json(
-        { message: result.message || '요청 처리에 실패했습니다.' },
+        { message: result.message || '?�청 처리???�패?�습?�다.' },
         { status: 400 }
       );
     }
   } catch (error) {
-    console.error('API 에러:', error);
+    console.error('API ?�러:', error);
     return NextResponse.json(
-      { message: '서버 오류가 발생했습니다.' },
+      { message: '?�버 ?�류가 발생?�습?�다.' },
       { status: 500 }
     );
   }
 }
 
 /**
- * 페이지네이션 파라미터 파싱
+ * ?�이지?�이???�라미터 ?�싱
  */
 export function parsePaginationParams(request: NextRequest): PaginationParams {
   const { searchParams } = new URL(request.url);
@@ -62,7 +62,7 @@ export function parsePaginationParams(request: NextRequest): PaginationParams {
 }
 
 /**
- * 페이지네이션 결과 생성
+ * ?�이지?�이??결과 ?�성
  */
 export function createPaginationResult(
   page: number,
@@ -78,7 +78,7 @@ export function createPaginationResult(
 }
 
 /**
- * 데이터베이스 트랜잭션 래퍼
+ * ?�이?�베?�스 ?�랜??�� ?�퍼
  */
 export async function withTransaction<T>(
   operation: (tx: any) => Promise<T>

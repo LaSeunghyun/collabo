@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server';
 
 import { getAnalyticsOverview } from '@/lib/server/analytics';
 import { requireApiUser } from '@/lib/auth/guards';
-import { UserRole } from '@/types/drizzle';
 import { responses } from '@/lib/server/api-responses';
 
 export const dynamic = 'force-dynamic';
@@ -11,9 +10,9 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     const authContext = { headers: headers() };
-    const user = await requireApiUser({ roles: [UserRole.ADMIN] }, authContext);
+    const user = await requireApiUser({ roles: ['ADMIN'] }, authContext);
 
-    if (user.role !== UserRole.ADMIN) {
+    if (user.role !== 'ADMIN') {
       return NextResponse.json(responses.forbidden(), { status: 403 });
     }
 

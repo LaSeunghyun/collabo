@@ -1,11 +1,53 @@
 import { revalidatePath } from 'next/cache';
-import { ProjectStatus, UserRole, ProjectSummary, type ProjectStatusType } from '@/types/drizzle';
 import { ZodError } from 'zod';
-import { eq, and, inArray, desc, sql } from 'drizzle-orm';
+import { eq, inArray, desc, sql } from 'drizzle-orm';
 
 import type { SessionUser } from '@/lib/auth/session';
-import { db } from '@/lib/prisma';
+import { db } from '@/lib/drizzle';
 import { projects, users, fundings, auditLogs } from '@/lib/db/schema';
+
+// Drizzle enum values
+const ProjectStatus = {
+  DRAFT: 'DRAFT',
+  PRELAUNCH: 'PRELAUNCH',
+  LIVE: 'LIVE',
+  SUCCEEDED: 'SUCCEEDED',
+  FAILED: 'FAILED',
+  SETTLING: 'SETTLING',
+  EXECUTING: 'EXECUTING',
+  COMPLETED: 'COMPLETED',
+  CANCELLED: 'CANCELLED',
+} as const;
+
+const UserRole = {
+  CREATOR: 'CREATOR',
+  PARTICIPANT: 'PARTICIPANT',
+  PARTNER: 'PARTNER',
+  ADMIN: 'ADMIN',
+} as const;
+
+type ProjectStatusType = typeof ProjectStatus[keyof typeof ProjectStatus];
+type UserRole = typeof UserRole[keyof typeof UserRole];
+
+export type ProjectSummary = {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  targetAmount: number;
+  currentAmount: number;
+  currency: string;
+  status: ProjectStatusType;
+  thumbnail: string | null;
+  owner: {
+    id: string;
+    name: string;
+    avatarUrl: string | null;
+  };
+  participants?: number;
+  createdAt: Date;
+  updatedAt: Date;
+};
 import {
   createProjectSchema,
   updateProjectSchema,
@@ -20,20 +62,20 @@ export class ProjectValidationError extends Error {
   issues: string[];
 
   constructor(error: ZodError) {
-    super('?꾨줈?앺듃 ?낅젰 媛믪씠 ?щ컮瑜댁? ?딆뒿?덈떎.');
+    super('?꾨줈??�듃 ??�젰 媛�?????�?��?? ??�뒿??�떎.');
     this.issues = error.issues.map((issue) => issue.message);
   }
 }
 
 export class ProjectNotFoundError extends Error {
   constructor() {
-    super('?꾨줈?앺듃瑜?李얠쓣 ???놁뒿?덈떎.');
+    super('?꾨줈??�듃??李얠??????�뒿??�떎.');
   }
 }
 
 export class ProjectAccessDeniedError extends Error {
   constructor() {
-    super('?꾨줈?앺듃?????沅뚰븳???놁뒿?덈떎.');
+    super('?꾨줈??�듃??????沅뚰�????�뒿??�떎.');
   }
 }
 
@@ -107,9 +149,9 @@ const toProjectSummary = (project: ProjectWithCounts): ProjectSummary => {
     createdAt: project.createdAt,
     updatedAt: project.updatedAt,
     owner: {
-      id: project.owner.id,
-      name: project.owner.name,
-      avatarUrl: project.owner.avatarUrl
+      id: project.owner?.id || '',
+      name: project.owner?.name || '',
+      avatarUrl: project.owner?.avatarUrl || null
     },
     _count: {
       fundings: project.fundingCount
@@ -290,10 +332,10 @@ export const createProject = async (rawInput: unknown, user: SessionUser) => {
 
   await db.insert(auditLogs).values({
     userId: user.id,
-    entity: 'Project',
-    entityId: project[0].id,
+    resourceType: 'Project',
+    resourceId: project[0].id,
     action: 'PROJECT_CREATED',
-    data: JSON.parse(JSON.stringify(createData))
+    newValues: JSON.parse(JSON.stringify(createData))
   });
 
   revalidateProjectPaths(project[0].id);
@@ -326,10 +368,10 @@ export const updateProject = async (id: string, rawInput: unknown, user: Session
 
   await db.insert(auditLogs).values({
     userId: user.id,
-    entity: 'Project',
-    entityId: id,
+    resourceType: 'Project',
+    resourceId: id,
     action: 'PROJECT_UPDATED',
-    data: JSON.parse(JSON.stringify(data))
+    newValues: JSON.parse(JSON.stringify(data))
   });
 
   revalidateProjectPaths(id);
@@ -354,8 +396,8 @@ export const deleteProject = async (id: string, user: SessionUser) => {
 
   await db.insert(auditLogs).values({
     userId: user.id,
-    entity: 'Project',
-    entityId: id,
+    resourceType: 'Project',
+    resourceId: id,
     action: 'PROJECT_DELETED'
   });
 

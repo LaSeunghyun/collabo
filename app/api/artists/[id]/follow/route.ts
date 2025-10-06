@@ -1,8 +1,8 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
-// Prisma types removed - using Drizzle types
-
+import { db } from '@/lib/drizzle';
+import { users, userFollows } from '@/lib/db/schema';
+import { eq, and, count } from 'drizzle-orm';
 import { getServerAuthSession } from '@/lib/auth/session';
-import { prisma } from '@/lib/prisma';
 
 const unauthorized = () =>
   NextResponse.json({ message: 'Authentication required to follow artists.' }, { status: 401 });
@@ -10,13 +10,25 @@ const unauthorized = () =>
 const cannotFollowSelf = () =>
   NextResponse.json({ message: 'You cannot follow yourself.' }, { status: 400 });
 
-const getFollowerCount = (artistId: string) => prisma.userFollow.count({ where: { followingId: artistId } });
-
 const notFound = () => NextResponse.json({ message: 'Artist not found' }, { status: 404 });
 
-const ensureArtistExists = async (artistId: string) => {
-  const exists = await prisma.user.findUnique({ where: { id: artistId }, select: { id: true } });
-  return Boolean(exists);
+const getFollowerCount = async (artistId: string): Promise<number> => {
+  const [result] = await db
+    .select({ count: count() })
+    .from(userFollows)
+    .where(eq(userFollows.followingId, artistId));
+  
+  return result?.count ?? 0;
+};
+
+const ensureArtistExists = async (artistId: string): Promise<boolean> => {
+  const [artist] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.id, artistId))
+    .limit(1);
+  
+  return !!artist;
 };
 
 export async function POST(_request: NextRequest, { params }: { params: { id: string } }) {
@@ -37,15 +49,14 @@ export async function POST(_request: NextRequest, { params }: { params: { id: st
   }
 
   try {
-    await prisma.userFollow.create({
-      data: {
-        followerId: session.user.id,
-        followingId: artistId
-      }
+    await db.insert(userFollows).values({
+      followerId: session.user.id,
+      followingId: artistId
     });
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-      // Already following ??ignore duplicate.
+  } catch (error: any) {
+    // Check if it's a unique constraint violation (already following)
+    if (error?.code === '23505') {
+      // Already following - ignore duplicate
     } else {
       console.error('Failed to follow artist', error);
       return NextResponse.json({ message: 'Could not follow artist.' }, { status: 500 });
@@ -74,17 +85,16 @@ export async function DELETE(_request: NextRequest, { params }: { params: { id: 
   }
 
   try {
-    await prisma.userFollow.delete({
-      where: {
-        followerId_followingId: {
-          followerId: session.user.id,
-          followingId: artistId
-        }
-      }
-    });
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-      // Not following ??ignore.
+    await db
+      .delete(userFollows)
+      .where(and(
+        eq(userFollows.followerId, session.user.id),
+        eq(userFollows.followingId, artistId)
+      ));
+  } catch (error: any) {
+    // Check if it's a not found error (not following)
+    if (error?.code === 'P2025') {
+      // Not following - ignore
     } else {
       console.error('Failed to unfollow artist', error);
       return NextResponse.json({ message: 'Could not unfollow artist.' }, { status: 500 });

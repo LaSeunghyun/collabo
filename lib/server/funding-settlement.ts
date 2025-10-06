@@ -1,6 +1,32 @@
-import { FundingStatus, SettlementPayoutStatus } from '@/types/drizzle';
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/drizzle';
+import { 
+  projects, 
+  fundings, 
+  settlements, 
+  settlementPayouts, 
+  projectCollaborators, 
+  partnerMatches
+} from '@/lib/db/schema';
+import { eq, and, desc, sql } from 'drizzle-orm';
 import { calculateSettlementBreakdown } from './settlements';
+
+// Drizzle enum values
+const SettlementPayoutStatus = {
+  PENDING: 'PENDING',
+  IN_PROGRESS: 'IN_PROGRESS',
+  PAID: 'PAID',
+} as const;
+
+const FundingStatus = {
+  PENDING: 'PENDING',
+  SUCCEEDED: 'SUCCEEDED',
+  FAILED: 'FAILED',
+  REFUNDED: 'REFUNDED',
+  CANCELLED: 'CANCELLED',
+} as const;
+
+type SettlementPayoutStatus = typeof SettlementPayoutStatus[keyof typeof SettlementPayoutStatus];
+type FundingStatus = typeof FundingStatus[keyof typeof FundingStatus];
 
 export interface FundingSettlementData {
     projectId: string;
@@ -19,8 +45,8 @@ export interface SettlementCreationParams {
 }
 
 /**
- * 펀딩 성공 후 정산 데이터를 자동으로 생성하는 함수
- * 프로젝트가 목표 금액을 달성했을 때만 정산을 생성합니다.
+ * ?�???�공 ???�산 ?�이?��? ?�동?�로 ?�성?�는 ?�수
+ * ?�로?�트가 목표 금액???�성?�을 ?�만 ?�산???�성?�니??
  */
 export async function createSettlementIfTargetReached(
     projectId: string,
@@ -28,91 +54,99 @@ export async function createSettlementIfTargetReached(
     gatewayFeeOverride?: number,
     notes?: any
 ) {
-    const project = await prisma.project.findUnique({
-        where: { id: projectId },
-        select: {
-            id: true,
-            targetAmount: true,
-            currentAmount: true,
-            status: true,
-            ownerId: true,
-            partnerMatches: {
-                where: {
-                    status: {
-                        in: ['ACCEPTED', 'COMPLETED']
-                    }
-                },
-                select: { partnerId: true, settlementShare: true }
-            },
-            collaborators: {
-                select: { userId: true, share: true }
-            }
-        }
-    });
+    const project = await db
+        .select({
+            id: projects.id,
+            targetAmount: projects.targetAmount,
+            currentAmount: projects.currentAmount,
+            status: projects.status,
+            ownerId: projects.ownerId
+        })
+        .from(projects)
+        .where(eq(projects.id, projectId))
+        .limit(1);
 
-    if (!project) {
-        throw new Error('프로젝트를 찾을 수 없습니다.');
+    if (project.length === 0) {
+        throw new Error('?�로?�트�?찾을 ???�습?�다.');
     }
 
-    // 프로젝트가 목표 금액을 달성했는지 확인
-    if (project.currentAmount < project.targetAmount) {
-        return null; // 아직 목표 금액 달성하지 않음
+    const projectData = project[0];
+
+    // ?�로?�트가 목표 금액???�성?�는지 ?�인
+    if (projectData.currentAmount < projectData.targetAmount) {
+        return null; // ?�직 목표 금액 ?�성?��? ?�음
     }
 
-    // 이미 진행 중인 정산이 있는지 확인
-    const existingSettlement = await prisma.settlement.findFirst({
-        where: {
-            projectId,
-            payouts: {
-                some: {
-                    status: {
-                        in: [SettlementPayoutStatus.PENDING, SettlementPayoutStatus.IN_PROGRESS]
-                    }
-                }
-            }
-        }
-    });
+    // ?��? 진행 중인 ?�산???�는지 ?�인
+    const existingSettlement = await db
+        .select()
+        .from(settlements)
+        .leftJoin(settlementPayouts, eq(settlements.id, settlementPayouts.settlementId))
+        .where(and(
+            eq(settlements.projectId, projectId),
+            eq(settlementPayouts.status, SettlementPayoutStatus.PENDING)
+        ))
+        .limit(1);
 
-    if (existingSettlement) {
-        return existingSettlement; // 이미 정산이 진행 중
+    if (existingSettlement.length > 0) {
+        return existingSettlement[0].settlements; // ?��? ?�산??진행 �?
     }
 
-    // 성공한 펀딩 데이터 조회
-    const fundings = await prisma.funding.findMany({
-        where: {
-            projectId,
-            paymentStatus: FundingStatus.SUCCEEDED
-        },
-        select: {
-            amount: true,
-            transaction: {
-                select: { gatewayFee: true }
-            }
-        }
-    });
+    // ?�공???�???�이??조회
+    const fundingData = await db
+        .select({
+            amount: fundings.amount,
+            metadata: fundings.metadata,
+        })
+        .from(fundings)
+        .where(and(
+            eq(fundings.projectId, projectId),
+            eq(fundings.paymentStatus, FundingStatus.SUCCEEDED)
+        ));
 
-    const totalRaised = fundings.reduce((acc, funding) => acc + funding.amount, 0);
+    const totalRaised = fundingData.reduce((acc, funding) => acc + funding.amount, 0);
 
     if (totalRaised <= 0) {
-        throw new Error('성공한 펀딩 내역이 없습니다.');
+        throw new Error('?�공???�???�역???�습?�다.');
     }
 
-    // 게이트웨이 수수료 계산
-    const inferredGatewayFees = fundings.reduce(
-        (acc, funding) => acc + (funding.transaction?.gatewayFee ?? 0),
+    // 게이?�웨???�수�?계산 (metadata?�서 추출)
+    const inferredGatewayFees = fundingData.reduce(
+        (acc, funding) => {
+            const metadata = funding.metadata as any;
+            return acc + (metadata?.gatewayFee ?? 0);
+        },
         0
     );
 
-    // 파트너 및 협력자 배분 비율 정규화
-    const partnerShares = project.partnerMatches
+    // ?�트??�??�력???�보 조회
+    const [partnerData, collaboratorData] = await Promise.all([
+        db
+            .select({
+                partnerId: partnerMatches.partnerId,
+                settlementShare: partnerMatches.settlementShare,
+            })
+            .from(partnerMatches)
+            .where(eq(partnerMatches.projectId, projectId)),
+        db
+            .select({
+                userId: projectCollaborators.userId,
+                share: projectCollaborators.share,
+            })
+            .from(projectCollaborators)
+            .where(eq(projectCollaborators.projectId, projectId)),
+    ]);
+
+    // ?�트??�??�력??배분 비율 ?�규??
+    const partnerShares = partnerData
         .filter((match) => typeof match.settlementShare === 'number')
         .map((match) => ({
             stakeholderId: match.partnerId,
-            share: normaliseShare(match.settlementShare ?? 0)
+            share: normaliseShare(Number(match.settlementShare) ?? 0)
         }))
         .filter((entry) => entry.share > 0);
 
-    const collaboratorShares = project.collaborators
+    const collaboratorShares = collaboratorData
         .filter((collab) => typeof collab.share === 'number')
         .map((collab) => ({
             stakeholderId: collab.userId,
@@ -120,7 +154,7 @@ export async function createSettlementIfTargetReached(
         }))
         .filter((entry) => entry.share > 0);
 
-    // 정산 계산
+    // ?�산 계산
     const breakdown = calculateSettlementBreakdown({
         totalRaised,
         platformFeeRate,
@@ -129,108 +163,112 @@ export async function createSettlementIfTargetReached(
         collaboratorShares
     });
 
-    // 정산 레코드 생성
-    const settlement = await prisma.$transaction(async (tx) => {
-        const created = await tx.settlement.create({
-            data: {
-                projectId,
-                totalAmount: breakdown.totalRaised,
-                platformFee: breakdown.platformFee,
-                netAmount: breakdown.netAmount,
-                status: "PENDING",
-                metadata: {
-                    breakdown: breakdown as any,
-                    notes: notes ?? null
-                }
+    // ?�산 ?�코???�성
+    const [created] = await db
+        .insert(settlements)
+        .values({
+            projectId,
+            totalAmount: breakdown.totalRaised,
+            platformFee: breakdown.platformFee,
+            netAmount: breakdown.netAmount,
+            status: "PENDING",
+            metadata: {
+                breakdown: breakdown as any,
+                notes: notes ?? null
             }
-        });
+        })
+        .returning();
 
-        // 정산 배분 레코드 생성
-        const payoutPayload = [
-            {
-                stakeholderType: 'PLATFORM' as const,
-                stakeholderId: null,
-                amount: breakdown.platformFee,
-                percentage: breakdown.totalRaised > 0 ? breakdown.platformFee / breakdown.totalRaised : 0
-            },
-            {
-                stakeholderType: 'CREATOR' as const,
-                stakeholderId: project.ownerId,
-                amount: breakdown.creatorShare,
-                percentage: breakdown.totalRaised > 0 ? breakdown.creatorShare / breakdown.totalRaised : 0
-            },
-            ...breakdown.partners.map((partner) => ({
-                stakeholderType: 'PARTNER' as const,
-                stakeholderId: partner.stakeholderId,
-                amount: partner.amount,
-                percentage: partner.percentage
-            })),
-            ...breakdown.collaborators.map((collaborator) => ({
-                stakeholderType: 'COLLABORATOR' as const,
-                stakeholderId: collaborator.stakeholderId,
-                amount: collaborator.amount,
-                percentage: collaborator.percentage
-            }))
-        ].filter((payout) => payout.amount > 0);
+    // ?�산 배분 ?�코???�성
+    const payoutPayload = [
+        {
+            stakeholderType: 'PLATFORM' as const,
+            stakeholderId: 'platform',
+            amount: breakdown.platformFee,
+        },
+        {
+            stakeholderType: 'CREATOR' as const,
+            stakeholderId: projectData.ownerId,
+            amount: breakdown.creatorShare,
+        },
+        ...breakdown.partners.map((partner) => ({
+            stakeholderType: 'PARTNER' as const,
+            stakeholderId: partner.stakeholderId,
+            amount: partner.amount,
+        })),
+        ...breakdown.collaborators.map((collaborator) => ({
+            stakeholderType: 'COLLABORATOR' as const,
+            stakeholderId: collaborator.stakeholderId,
+            amount: collaborator.amount,
+        }))
+    ].filter((payout) => payout.amount > 0);
 
-        await Promise.all(
-            payoutPayload
-                .filter((payout) => payout.stakeholderId !== null)
-                .map((payout) =>
-                    tx.settlementPayout.create({
-                        data: {
-                            settlementId: created.id,
-                            stakeholderType: payout.stakeholderType,
-                            stakeholderId: payout.stakeholderId!,
-                            amount: payout.amount,
-                            percentage: payout.percentage,
-                            status: SettlementPayoutStatus.PENDING
-                        }
-                    })
-                )
-        );
+    if (payoutPayload.length > 0) {
+        await db
+            .insert(settlementPayouts)
+            .values(
+                payoutPayload.map((payout) => ({
+                    settlementId: created.id,
+                    stakeholderType: payout.stakeholderType,
+                    stakeholderId: payout.stakeholderId,
+                    amount: payout.amount,
+                    status: SettlementPayoutStatus.PENDING,
+                }))
+            );
+    }
 
-        return created;
-    });
-
-    return settlement;
+    return created;
 }
 
 /**
- * 펀딩과 정산 데이터의 일관성을 검증하는 함수
+ * ?�?�과 ?�산 ?�이?�의 ?��??�을 검증하???�수
  */
 export async function validateFundingSettlementConsistency(projectId: string) {
-    const project = await prisma.project.findUnique({
-        where: { id: projectId },
-        select: {
-            currentAmount: true,
-            fundings: {
-                where: { paymentStatus: FundingStatus.SUCCEEDED },
-                select: { amount: true }
-            },
-            settlements: {
-                select: { netAmount: true }
-            }
-        }
-    });
+    const [projectData, fundingData, settlementData] = await Promise.all([
+        db
+            .select({
+                currentAmount: projects.currentAmount,
+            })
+            .from(projects)
+            .where(eq(projects.id, projectId))
+            .limit(1),
+        db
+            .select({
+                amount: fundings.amount,
+            })
+            .from(fundings)
+            .where(and(
+                eq(fundings.projectId, projectId),
+                eq(fundings.paymentStatus, FundingStatus.SUCCEEDED)
+            )),
+        db
+            .select({
+                netAmount: settlements.netAmount,
+            })
+            .from(settlements)
+            .where(eq(settlements.projectId, projectId))
+            .orderBy(desc(settlements.createdAt))
+            .limit(1),
+    ]);
 
-    if (!project) {
-        throw new Error('프로젝트를 찾을 수 없습니다.');
+    if (projectData.length === 0) {
+        throw new Error('?�로?�트�?찾을 ???�습?�다.');
     }
 
-    const totalFundingAmount = project.fundings.reduce((acc, funding) => acc + funding.amount, 0);
-    const latestSettlement = project.settlements[0];
+    const project = projectData[0];
+    const totalFundingAmount = fundingData.reduce((acc, funding) => acc + funding.amount, 0);
+    const latestSettlement = settlementData[0];
 
     const issues: string[] = [];
 
-    // 펀딩 금액과 프로젝트 currentAmount 일치 확인
+    // ?�??금액�??�로?�트 currentAmount ?�치 ?�인
     if (project.currentAmount !== totalFundingAmount) {
-        issues.push(`프로젝트 currentAmount(${project.currentAmount})와 실제 펀딩 금액(${totalFundingAmount})이 일치하지 않습니다.`);
+        issues.push(`?�로?�트 currentAmount(${project.currentAmount})?� ?�제 ?�??금액(${totalFundingAmount})???�치?��? ?�습?�다.`);
     }
 
-    // 정산 금액과 펀딩 금액 일치 확인
+    // ?�산 금액�??�??금액 ?�치 ?�인
     if (latestSettlement && latestSettlement.netAmount !== totalFundingAmount) {
-        issues.push(`최신 정산 금액(${latestSettlement.netAmount})과 펀딩 금액(${totalFundingAmount})이 일치하지 않습니다.`);
+        issues.push(`최신 ?�산 금액(${latestSettlement.netAmount})�??�??금액(${totalFundingAmount})???�치?��? ?�습?�다.`);
     }
 
     return {
@@ -240,31 +278,32 @@ export async function validateFundingSettlementConsistency(projectId: string) {
 }
 
 /**
- * 펀딩 데이터를 안전하게 업데이트하는 함수
+ * ?�???�이?��? ?�전?�게 ?�데?�트?�는 ?�수
  */
 export async function safeUpdateFundingData(
     projectId: string,
     amount: number,
     updateProjectAmount = true
 ) {
-    return prisma.$transaction(async (tx) => {
-        // 펀딩 데이터 업데이트
-        if (updateProjectAmount) {
-            await tx.project.update({
-                where: { id: projectId },
-                data: { currentAmount: { increment: amount } }
-            });
-        }
+    // ?�???�이???�데?�트
+    if (updateProjectAmount) {
+        await db
+            .update(projects)
+            .set({ 
+                currentAmount: sql`${projects.currentAmount} + ${amount}`,
+                updatedAt: new Date()
+            })
+            .where(eq(projects.id, projectId));
+    }
 
-        // 정산 자동 생성 시도
-        const settlement = await createSettlementIfTargetReached(projectId);
+    // ?�산 ?�동 ?�성 ?�도
+    const settlement = await createSettlementIfTargetReached(projectId);
 
-        return { settlement };
-    });
+    return { settlement };
 }
 
 /**
- * 배분 비율 정규화 함수
+ * 배분 비율 ?�규???�수
  */
 function normaliseShare(value: number, hundredScale = false) {
     if (!Number.isFinite(value) || value <= 0) {

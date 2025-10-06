@@ -51,11 +51,11 @@ interface AnnouncementsResponse {
 }
 
 const CATEGORY_LABELS = {
-  GENERAL: '일반',
-  UPDATE: '업데이트',
-  MAINTENANCE: '점검',
-  EVENT: '이벤트',
-  NOTICE: '공지'
+  GENERAL: '?�반',
+  UPDATE: '?�데?�트',
+  MAINTENANCE: '?��?',
+  EVENT: '?�벤??,
+  NOTICE: '공�?'
 };
 
 const CATEGORY_COLORS = {
@@ -86,7 +86,7 @@ export default function AdminAnnouncementsPage() {
 
       const response = await fetch(`/api/announcements?${params}`);
       if (!response.ok) {
-        throw new Error('공지 목록을 불러올 수 없습니다.');
+        throw new Error('공�? 목록??불러?????�습?�다.');
       }
       return response.json();
     }
@@ -98,7 +98,7 @@ export default function AdminAnnouncementsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('정말로 이 공지를 삭제하시겠습니까?')) {
+    if (!confirm('?�말�???공�?�???��?�시겠습?�까?')) {
       return;
     }
 
@@ -108,20 +108,20 @@ export default function AdminAnnouncementsPage() {
       });
 
       if (!response.ok) {
-        throw new Error('공지 삭제에 실패했습니다.');
+        throw new Error('공�? ??��???�패?�습?�다.');
       }
 
       toast({
-        title: '삭제 완료',
-        description: '공지가 삭제되었습니다.',
+        title: '??�� ?�료',
+        description: '공�?가 ??��?�었?�니??',
       });
 
       refetch();
     } catch (error) {
-      console.error('공지 삭제 실패:', error);
+      console.error('공�? ??�� ?�패:', error);
       toast({
-        title: '삭제 실패',
-        description: error instanceof Error ? error.message : '공지 삭제에 실패했습니다.',
+        title: '??�� ?�패',
+        description: error instanceof Error ? error.message : '공�? ??��???�패?�습?�다.',
         variant: 'destructive'
       });
     }
@@ -138,20 +138,20 @@ export default function AdminAnnouncementsPage() {
       });
 
       if (!response.ok) {
-        throw new Error('고정 상태 변경에 실패했습니다.');
+        throw new Error('고정 ?�태 변경에 ?�패?�습?�다.');
       }
 
       toast({
-        title: '상태 변경 완료',
-        description: isPinned ? '고정이 해제되었습니다.' : '공지가 고정되었습니다.',
+        title: '?�태 변�??�료',
+        description: isPinned ? '고정???�제?�었?�니??' : '공�?가 고정?�었?�니??',
       });
 
       refetch();
     } catch (error) {
-      console.error('고정 상태 변경 실패:', error);
+      console.error('고정 ?�태 변�??�패:', error);
       toast({
-        title: '상태 변경 실패',
-        description: error instanceof Error ? error.message : '고정 상태 변경에 실패했습니다.',
+        title: '?�태 변�??�패',
+        description: error instanceof Error ? error.message : '고정 ?�태 변경에 ?�패?�습?�다.',
         variant: 'destructive'
       });
     }
@@ -176,8 +176,8 @@ export default function AdminAnnouncementsPage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">오류 발생</h2>
-          <p className="text-gray-600">공지 목록을 불러오는 중 오류가 발생했습니다.</p>
+          <h2 className="text-2xl font-bold text-red-600 mb-4">?�류 발생</h2>
+          <p className="text-gray-600">공�? 목록??불러?�는 �??�류가 발생?�습?�다.</p>
         </div>
       </div>
     );
@@ -188,25 +188,25 @@ export default function AdminAnnouncementsPage() {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold mb-4">공지 관리</h1>
+            <h1 className="text-3xl font-bold mb-4">공�? 관�?/h1>
             <p className="text-gray-600">
-              플랫폼 공지를 작성하고 관리하세요.
+              ?�랫??공�?�??�성?�고 관리하?�요.
             </p>
           </div>
           <Button disabled>
             <Plus className="h-4 w-4 mr-2" />
-            새 공지 작성 (준비 중)
+            ??공�? ?�성 (준�?�?
           </Button>
         </div>
       </div>
 
-      {/* 필터 */}
+      {/* ?�터 */}
       <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="공지 검색..."
+              placeholder="공�? 검??.."
               value={filters.search}
               onChange={(e) => handleFilterChange('search', e.target.value)}
               className="pl-10"
@@ -218,7 +218,7 @@ export default function AdminAnnouncementsPage() {
               <SelectValue placeholder="카테고리" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">전체</SelectItem>
+              <SelectItem value="">?�체</SelectItem>
               {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
                 <SelectItem key={key} value={key}>
                   {label}
@@ -229,24 +229,24 @@ export default function AdminAnnouncementsPage() {
 
           <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
             <SelectTrigger>
-              <SelectValue placeholder="상태" />
+              <SelectValue placeholder="?�태" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">전체</SelectItem>
-              <SelectItem value="published">발행됨</SelectItem>
-              <SelectItem value="scheduled">예약됨</SelectItem>
+              <SelectItem value="">?�체</SelectItem>
+              <SelectItem value="published">발행??/SelectItem>
+              <SelectItem value="scheduled">?�약??/SelectItem>
               <SelectItem value="draft">초안</SelectItem>
             </SelectContent>
           </Select>
 
           <Button variant="outline" onClick={() => refetch()}>
             <Filter className="h-4 w-4 mr-2" />
-            새로고침
+            ?�로고침
           </Button>
         </div>
       </div>
 
-      {/* 공지 목록 */}
+      {/* 공�? 목록 */}
       <div className="space-y-4">
         {data?.announcements.map((announcement) => (
           <Card key={announcement.id} className="hover:shadow-lg transition-shadow">
@@ -276,7 +276,7 @@ export default function AdminAnnouncementsPage() {
                       )}
                     </div>
                     <CardDescription>
-                      {announcement.author.name} • {formatDate(announcement.createdAt)}
+                      {announcement.author.name} ??{formatDate(announcement.createdAt)}
                     </CardDescription>
                   </div>
                 </div>
@@ -299,19 +299,19 @@ export default function AdminAnnouncementsPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div className="flex items-center text-sm text-gray-600">
                   <Calendar className="h-4 w-4 mr-2" />
-                  <span>발행일: {formatDate(announcement.publishedAt)}</span>
+                  <span>발행?? {formatDate(announcement.publishedAt)}</span>
                 </div>
                 <div className="flex items-center text-sm text-gray-600">
                   <Calendar className="h-4 w-4 mr-2" />
-                  <span>예약일: {formatDate(announcement.scheduledAt)}</span>
+                  <span>?�약?? {formatDate(announcement.scheduledAt)}</span>
                 </div>
                 <div className="flex items-center text-sm text-gray-600">
                   <Pin className="h-4 w-4 mr-2" />
-                  <span>{announcement.isPinned ? '고정됨' : '일반'}</span>
+                  <span>{announcement.isPinned ? '고정?? : '?�반'}</span>
                 </div>
               </div>
 
-              {/* 액션 버튼 */}
+              {/* ?�션 버튼 */}
               <div className="flex justify-end space-x-2">
                 <Button variant="outline" asChild>
                   <Link href={`/announcements/${announcement.id}`}>
@@ -325,7 +325,7 @@ export default function AdminAnnouncementsPage() {
                   disabled
                 >
                   <Edit className="h-4 w-4 mr-2" />
-                  수정 (준비 중)
+                  ?�정 (준�?�?
                 </Button>
                 
                 <Button
@@ -333,7 +333,7 @@ export default function AdminAnnouncementsPage() {
                   onClick={() => handleTogglePin(announcement.id, announcement.isPinned)}
                 >
                   <Pin className="h-4 w-4 mr-2" />
-                  {announcement.isPinned ? '고정해제' : '고정'}
+                  {announcement.isPinned ? '고정?�제' : '고정'}
                 </Button>
                 
                 <Button
@@ -341,7 +341,7 @@ export default function AdminAnnouncementsPage() {
                   onClick={() => handleDelete(announcement.id)}
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
-                  삭제
+                  ??��
                 </Button>
               </div>
             </CardContent>
@@ -349,7 +349,7 @@ export default function AdminAnnouncementsPage() {
         ))}
       </div>
 
-      {/* 페이지네이션 */}
+      {/* ?�이지?�이??*/}
       {data && data.pagination.pages > 1 && (
         <div className="flex justify-center space-x-2 mt-8">
           <Button
@@ -357,7 +357,7 @@ export default function AdminAnnouncementsPage() {
             onClick={() => setPage(prev => Math.max(1, prev - 1))}
             disabled={page === 1}
           >
-            이전
+            ?�전
           </Button>
           
           <span className="flex items-center px-4">
@@ -369,7 +369,7 @@ export default function AdminAnnouncementsPage() {
             onClick={() => setPage(prev => Math.min(data.pagination.pages, prev + 1))}
             disabled={page === data.pagination.pages}
           >
-            다음
+            ?�음
           </Button>
         </div>
       )}
@@ -380,10 +380,10 @@ export default function AdminAnnouncementsPage() {
             <Megaphone className="h-16 w-16 mx-auto" />
           </div>
           <h3 className="text-lg font-semibold text-gray-600 mb-2">
-            공지가 없습니다
+            공�?가 ?�습?�다
           </h3>
           <p className="text-gray-500">
-            아직 작성된 공지가 없습니다.
+            ?�직 ?�성??공�?가 ?�습?�다.
           </p>
         </div>
       )}

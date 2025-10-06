@@ -60,7 +60,7 @@ describe.skip('Funding-Settlement API Integration', () => {
     });
 
     describe('Funding API with Settlement Integration', () => {
-        it('펀딩 성공 시 정산 자동 생성이 시도되어야 함', async () => {
+        it('펀딩 성공 시 정산이 자동으로 생성되어야 함', async () => {
             // 목표 금액 달성을 위한 펀딩 생성
             const fundingRequest = new NextRequest('http://localhost:3000/api/funding', {
                 method: 'POST',
@@ -82,13 +82,13 @@ describe.skip('Funding-Settlement API Integration', () => {
             expect(response.status).toBe(200);
             expect(responseData.status).toBe('recorded');
             expect(responseData.funding).toBeDefined();
-            // 정산 생성 시도 여부 확인 (실제로는 Stripe mock이 필요)
+            // 정산 생성 시도 여부 확인 (실제로는 Stripe mock 필요)
             expect(responseData.settlement).toBeDefined();
         });
     });
 
     describe('Settlement API with Data Validation', () => {
-        it('정산 생성 시 펀딩 데이터 일관성을 검증해야 함', async () => {
+        it('정산 생성 시 데이터의 정확성을 검증해야 함', async () => {
             // 펀딩 데이터 생성
             await prisma.funding.create({
                 data: {
@@ -122,7 +122,7 @@ describe.skip('Funding-Settlement API Integration', () => {
             expect(settlementData.payoutStatus).toBe('PENDING');
         });
 
-        it('펀딩 데이터 불일치 시 자동 수정되어야 함', async () => {
+        it('펀딩 데이터 불일치 시 자동 조정되어야 함', async () => {
             // 펀딩 데이터 생성
             await prisma.funding.create({
                 data: {
@@ -151,7 +151,7 @@ describe.skip('Funding-Settlement API Integration', () => {
             const response = await settlementPOST(settlementRequest);
             expect(response.status).toBe(201);
 
-            // 프로젝트 currentAmount가 자동으로 수정되었는지 확인
+            // 프로젝트 currentAmount가 자동으로 조정되었는지 확인
             const updatedProject = await prisma.project.findUnique({
                 where: { id: testProjectId },
                 select: { currentAmount: true }

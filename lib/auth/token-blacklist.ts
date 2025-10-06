@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/drizzle';
 
 export const blacklistToken = (jti: string, expiresAt: Date) =>
   prisma.tokenBlacklist.upsert({

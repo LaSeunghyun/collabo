@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { X, EyeOff, XCircle } from 'lucide-react';
 import Image from 'next/image';
-import { ModerationStatus } from '@/types/drizzle';
 
 interface Post {
   id: string;
@@ -90,7 +89,7 @@ export function ReportDetailModal({
       });
 
       if (response.ok) {
-        await fetchPostDetails(); // 데이터 새로고침
+        await fetchPostDetails(); // ?�이???�로고침
         onStatusUpdate();
         onClose();
       } else {
@@ -114,13 +113,13 @@ export function ReportDetailModal({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case ModerationStatus.PENDING:
+      case 'PENDING':
         return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      case ModerationStatus.REVIEWING:
+      case 'REVIEWING':
         return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-      case ModerationStatus.ACTION_TAKEN:
+      case 'ACTION_TAKEN':
         return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case ModerationStatus.DISMISSED:
+      case 'DISMISSED':
         return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
       default:
         return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
@@ -129,14 +128,14 @@ export function ReportDetailModal({
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case ModerationStatus.PENDING:
-        return '대기중';
-      case ModerationStatus.REVIEWING:
-        return '검토중';
-      case ModerationStatus.ACTION_TAKEN:
-        return '조치완료';
-      case ModerationStatus.DISMISSED:
-        return '기각됨';
+      case 'PENDING':
+        return '?�기중';
+      case 'REVIEWING':
+        return '검?�중';
+      case 'ACTION_TAKEN':
+        return '조치?�료';
+      case 'DISMISSED':
+        return '기각??;
       default:
         return status;
     }
@@ -148,7 +147,7 @@ export function ReportDetailModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm">
         <div className="sticky top-0 flex items-center justify-between border-b border-white/10 bg-white/5 p-6">
-          <h2 className="text-xl font-semibold text-white">신고된 게시글 상세</h2>
+          <h2 className="text-xl font-semibold text-white">?�고??게시글 ?�세</h2>
           <button
             onClick={onClose}
             className="rounded-full p-2 hover:bg-white/10 transition-colors"
@@ -164,7 +163,7 @@ export function ReportDetailModal({
             </div>
           ) : post ? (
             <>
-              {/* 게시글 정보 */}
+              {/* 게시글 ?�보 */}
               <div className="rounded-xl border border-white/10 bg-white/5 p-6">
                 <div className="flex items-start gap-4 mb-4">
                   <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
@@ -187,11 +186,11 @@ export function ReportDetailModal({
                       <h3 className="font-semibold text-white">{post.title}</h3>
                     </div>
                     <p className="text-sm text-white/60 mb-2">
-                      {post.author.name || '익명'} • {formatDate(post.createdAt)}
+                      {post.author.name || '?�명'} ??{formatDate(post.createdAt)}
                     </p>
                     <div className="flex items-center gap-4 text-sm text-white/60">
-                      <span>👍 {post._count.likes}</span>
-                      <span>💬 {post._count.comments}</span>
+                      <span>?�� {post._count.likes}</span>
+                      <span>?�� {post._count.comments}</span>
                     </div>
                   </div>
                 </div>
@@ -200,9 +199,9 @@ export function ReportDetailModal({
                 </div>
               </div>
 
-              {/* 신고 목록 */}
+              {/* ?�고 목록 */}
               <div className="rounded-xl border border-white/10 bg-white/5 p-6">
-                <h3 className="text-lg font-semibold text-white mb-4">신고 내역</h3>
+                <h3 className="text-lg font-semibold text-white mb-4">?�고 ?�역</h3>
                 <div className="space-y-4">
                   {reports.map((report) => (
                     <div
@@ -212,7 +211,7 @@ export function ReportDetailModal({
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium text-white">
-                            신고자: {report.reporter?.name || report.reporter?.id || '익명'}
+                            ?�고?? {report.reporter?.name || report.reporter?.id || '?�명'}
                           </span>
                           <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(report.status)}`}>
                             {getStatusLabel(report.status)}
@@ -229,19 +228,19 @@ export function ReportDetailModal({
                         </p>
                       )}
 
-                      {/* 처리 버튼들 */}
-                      {report.status === ModerationStatus.PENDING && (
+                      {/* 처리 버튼??*/}
+                      {report.status === 'PENDING' && (
                         <div className="flex gap-2 mt-4">
                           <button
-                            onClick={() => handleStatusUpdate(report.id, ModerationStatus.ACTION_TAKEN)}
+                            onClick={() => handleStatusUpdate(report.id, 'ACTION_TAKEN')}
                             disabled={processing && selectedReportId === report.id}
                             className="flex items-center gap-2 px-4 py-2 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/30 transition-colors disabled:opacity-50"
                           >
                             <EyeOff className="h-4 w-4" />
-                            블라인드 처리
+                            블라?�드 처리
                           </button>
                           <button
-                            onClick={() => handleStatusUpdate(report.id, ModerationStatus.DISMISSED)}
+                            onClick={() => handleStatusUpdate(report.id, 'DISMISSED')}
                             disabled={processing && selectedReportId === report.id}
                             className="flex items-center gap-2 px-4 py-2 bg-gray-500/20 text-gray-400 border border-gray-500/30 rounded-lg hover:bg-gray-500/30 transition-colors disabled:opacity-50"
                           >
@@ -261,14 +260,14 @@ export function ReportDetailModal({
                 <textarea
                   value={actionNote}
                   onChange={(e) => setActionNote(e.target.value)}
-                  placeholder="처리 사유나 메모를 입력하세요..."
+                  placeholder="처리 ?�유??메모�??�력?�세??.."
                   className="w-full h-24 p-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
               </div>
             </>
           ) : (
             <div className="text-center py-12">
-              <p className="text-white/60">게시글 정보를 불러올 수 없습니다.</p>
+              <p className="text-white/60">게시글 ?�보�?불러?????�습?�다.</p>
             </div>
           )}
         </div>

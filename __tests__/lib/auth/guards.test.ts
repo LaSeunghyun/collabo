@@ -1,4 +1,4 @@
-﻿jest.mock('@/lib/auth/session', () => {
+jest.mock('@/lib/auth/session', () => {
   const actual = jest.requireActual('@/lib/auth/session');
   return {
     ...actual,

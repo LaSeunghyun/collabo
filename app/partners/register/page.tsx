@@ -15,11 +15,11 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
 const PARTNER_TYPE_LABELS = {
-  [PartnerType.STUDIO]: '스튜디오',
-  [PartnerType.VENUE]: '공연장',
-  [PartnerType.PRODUCTION]: '제작 스튜디오',
-  [PartnerType.MERCHANDISE]: '머천다이즈',
-  [PartnerType.OTHER]: '기타'
+  [PartnerType.STUDIO]: '?�튜?�오',
+  [PartnerType.VENUE]: '공연??,
+  [PartnerType.PRODUCTION]: '?�작 ?�튜?�오',
+  [PartnerType.MERCHANDISE]: '머천?�이�?,
+  [PartnerType.OTHER]: '기�?'
 };
 
 interface FormData {
@@ -95,8 +95,8 @@ export default function PartnerRegisterPage() {
     
     if (!formData.terms) {
       toast({
-        title: '약관 동의 필요',
-        description: '이용약관에 동의해야 합니다.',
+        title: '?��? ?�의 ?�요',
+        description: '?�용?��????�의?�야 ?�니??',
         variant: 'destructive'
       });
       return;
@@ -124,20 +124,20 @@ export default function PartnerRegisterPage() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || '파트너 등록에 실패했습니다.');
+        throw new Error(error.message || '?�트???�록???�패?�습?�다.');
       }
 
       toast({
-        title: '등록 완료',
-        description: '파트너 등록이 완료되었습니다. 검토 후 승인됩니다.',
+        title: '?�록 ?�료',
+        description: '?�트???�록???�료?�었?�니?? 검?????�인?�니??',
       });
 
       router.push('/partners');
     } catch (error) {
-      console.error('파트너 등록 실패:', error);
+      console.error('?�트???�록 ?�패:', error);
       toast({
-        title: '등록 실패',
-        description: error instanceof Error ? error.message : '파트너 등록에 실패했습니다.',
+        title: '?�록 ?�패',
+        description: error instanceof Error ? error.message : '?�트???�록???�패?�습?�다.',
         variant: 'destructive'
       });
     } finally {
@@ -148,28 +148,28 @@ export default function PartnerRegisterPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-4">파트너 등록</h1>
+        <h1 className="text-3xl font-bold mb-4">?�트???�록</h1>
         <p className="text-gray-600">
-          전문 파트너로 등록하여 프로젝트에 참여해보세요.
+          ?�문 ?�트?�로 ?�록?�여 ?�로?�트??참여?�보?�요.
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>기본 정보</CardTitle>
+          <CardTitle>기본 ?�보</CardTitle>
           <CardDescription>
-            파트너 등록에 필요한 기본 정보를 입력해주세요.
+            ?�트???�록???�요??기본 ?�보�??�력?�주?�요.
           </CardDescription>
         </CardHeader>
         
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* 파트너 유형 */}
+            {/* ?�트???�형 */}
             <div className="space-y-2">
-              <Label htmlFor="type">파트너 유형 *</Label>
+              <Label htmlFor="type">?�트???�형 *</Label>
               <Select value={formData.type} onValueChange={(value) => handleInputChange('type', value)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="파트너 유형을 선택하세요" />
+                  <SelectValue placeholder="?�트???�형???�택?�세?? />
                 </SelectTrigger>
                 <SelectContent>
                   {Object.entries(PARTNER_TYPE_LABELS).map(([key, label]) => (
@@ -181,42 +181,42 @@ export default function PartnerRegisterPage() {
               </Select>
             </div>
 
-            {/* 파트너명 */}
+            {/* ?�트?�명 */}
             <div className="space-y-2">
-              <Label htmlFor="name">파트너명 *</Label>
+              <Label htmlFor="name">?�트?�명 *</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
-                placeholder="파트너명을 입력하세요"
+                placeholder="?�트?�명???�력?�세??
                 required
               />
             </div>
 
-            {/* 설명 */}
+            {/* ?�명 */}
             <div className="space-y-2">
-              <Label htmlFor="description">설명</Label>
+              <Label htmlFor="description">?�명</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
-                placeholder="파트너에 대한 설명을 입력하세요"
+                placeholder="?�트?�에 ?�???�명???�력?�세??
                 rows={4}
               />
             </div>
 
-            {/* 서비스 */}
+            {/* ?�비??*/}
             <div className="space-y-2">
-              <Label>제공 서비스</Label>
+              <Label>?�공 ?�비??/Label>
               <div className="flex space-x-2">
                 <Input
                   value={serviceInput}
                   onChange={(e) => setServiceInput(e.target.value)}
-                  placeholder="서비스를 입력하세요"
+                  placeholder="?�비?��? ?�력?�세??
                   onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addService())}
                 />
                 <Button type="button" onClick={addService} variant="outline">
-                  추가
+                  추�?
                 </Button>
               </div>
               {formData.services.length > 0 && (
@@ -237,43 +237,43 @@ export default function PartnerRegisterPage() {
               )}
             </div>
 
-            {/* 가격 모델 */}
+            {/* 가�?모델 */}
             <div className="space-y-2">
-              <Label htmlFor="pricingModel">가격 모델</Label>
+              <Label htmlFor="pricingModel">가�?모델</Label>
               <Input
                 id="pricingModel"
                 value={formData.pricingModel}
                 onChange={(e) => handleInputChange('pricingModel', e.target.value)}
-                placeholder="예: 시간당, 프로젝트당, 고정가 등"
+                placeholder="?? ?�간?? ?�로?�트?? 고정가 ??
               />
             </div>
 
-            {/* 연락처 */}
+            {/* ?�락�?*/}
             <div className="space-y-2">
-              <Label htmlFor="contactInfo">연락처 *</Label>
+              <Label htmlFor="contactInfo">?�락�?*</Label>
               <Input
                 id="contactInfo"
                 value={formData.contactInfo}
                 onChange={(e) => handleInputChange('contactInfo', e.target.value)}
-                placeholder="이메일 또는 전화번호"
+                placeholder="?�메???�는 ?�화번호"
                 required
               />
             </div>
 
-            {/* 위치 */}
+            {/* ?�치 */}
             <div className="space-y-2">
-              <Label htmlFor="location">위치</Label>
+              <Label htmlFor="location">?�치</Label>
               <Input
                 id="location"
                 value={formData.location}
                 onChange={(e) => handleInputChange('location', e.target.value)}
-                placeholder="서울시 강남구 등"
+                placeholder="?�울??강남�???
               />
             </div>
 
-            {/* 포트폴리오 URL */}
+            {/* ?�트?�리??URL */}
             <div className="space-y-2">
-              <Label htmlFor="portfolioUrl">포트폴리오 URL</Label>
+              <Label htmlFor="portfolioUrl">?�트?�리??URL</Label>
               <Input
                 id="portfolioUrl"
                 value={formData.portfolioUrl}
@@ -283,7 +283,7 @@ export default function PartnerRegisterPage() {
               />
             </div>
 
-            {/* 약관 동의 */}
+            {/* ?��? ?�의 */}
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="terms"
@@ -291,11 +291,11 @@ export default function PartnerRegisterPage() {
                 onCheckedChange={(checked) => handleInputChange('terms', checked)}
               />
               <Label htmlFor="terms" className="text-sm">
-                파트너 등록 약관에 동의합니다 *
+                ?�트???�록 ?��????�의?�니??*
               </Label>
             </div>
 
-            {/* 제출 버튼 */}
+            {/* ?�출 버튼 */}
             <div className="flex space-x-4 pt-4">
               <Button
                 type="button"
@@ -310,7 +310,7 @@ export default function PartnerRegisterPage() {
                 disabled={isSubmitting || !formData.type || !formData.name || !formData.contactInfo || !formData.terms}
               >
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                등록하기
+                ?�록?�기
               </Button>
             </div>
           </form>

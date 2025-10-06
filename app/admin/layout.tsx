@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/options';
-import { UserRole } from '@/types/drizzle';
 import { AdminSidebar } from './_components/admin-sidebar';
 import { AdminHeader } from './_components/admin-header';
 
@@ -16,7 +15,7 @@ export default async function AdminLayout({
     redirect('/auth/signin?callbackUrl=/admin');
   }
 
-  if (session.user.role !== UserRole.ADMIN) {
+  if (session.user.role !== 'ADMIN') {
     redirect('/forbidden');
   }
 

@@ -36,10 +36,10 @@ export function usePostForm({ projectId, initialData, onSuccess }: UsePostFormPr
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     if (!formData.title.trim() || formData.title.length < 5 || formData.title.length > 100) {
-      newErrors.title = '제목은 5자 이상 100자 이하로 입력해주세요.';
+      newErrors.title = '?�목?� 5???�상 100???�하�??�력?�주?�요.';
     }
     if (!formData.content.trim() || formData.content.length < 10) {
-      newErrors.content = '내용은 10자 이상 입력해주세요.';
+      newErrors.content = '?�용?� 10???�상 ?�력?�주?�요.';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -48,7 +48,7 @@ export function usePostForm({ projectId, initialData, onSuccess }: UsePostFormPr
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!session) {
-      alert('로그인이 필요합니다.');
+      alert('로그?�이 ?�요?�니??');
       return;
     }
     if (!validateForm()) return;
@@ -67,11 +67,11 @@ export function usePostForm({ projectId, initialData, onSuccess }: UsePostFormPr
         router.push(`/community/${post.id}`);
       } else {
         const error = await response.json();
-        alert(error.message || '게시글 작성에 실패했습니다.');
+        alert(error.message || '게시글 ?�성???�패?�습?�다.');
       }
     } catch (error) {
-      console.error('게시글 작성 실패:', error);
-      alert('게시글 작성에 실패했습니다.');
+      console.error('게시글 ?�성 ?�패:', error);
+      alert('게시글 ?�성???�패?�습?�다.');
     } finally {
       setIsSubmitting(false);
     }

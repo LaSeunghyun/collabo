@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { ProductType } from '@/types/drizzle';
+import { type ProductTypeType } from '@/types/drizzle';
 import { requireApiUser } from '@/lib/auth/guards';
-import { prisma } from '@/lib/prisma';
 import { GuardRequirement } from '@/lib/auth/session';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const projectId = searchParams.get('projectId');
-    const type = searchParams.get('type') as ProductType | null;
+    const type = searchParams.get('type') as ProductTypeType | null;
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
 
@@ -72,7 +71,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 프로젝트 소유자인지 확인
+    // ?�로?�트 ?�유?�인지 ?�인
     const project = await prisma.project.findUnique({
       where: { id: projectId },
       select: { ownerId: true }

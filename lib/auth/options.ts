@@ -4,13 +4,12 @@ import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 import KakaoProvider from 'next-auth/providers/kakao';
-// PrismaAdapter removed - using custom Drizzle implementation
 import { compare } from 'bcryptjs';
-
-import { prisma } from '@/lib/prisma';
-
 import { AUTH_V3_ENABLED } from './flags';
 import { deriveEffectivePermissions } from './permissions';
+import { db } from '@/lib/drizzle';
+import { users, userPermissions } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
 
 // Skip OAuth validation during build time
 const isBuildTime = process.env.NODE_ENV === 'production' && process.env.NEXT_PHASE === 'phase-production-build';
@@ -38,20 +37,38 @@ const fetchUserWithPermissions = async (identifier: { id?: string; email?: strin
     return null;
   }
 
-  return prisma.user.findUnique({
-    where: identifier.id ? { id: identifier.id } : { email: identifier.email! },
-    include: {
-      permissions: {
-        include: {
-          permission: true
-        }
-      }
-    }
-  });
+  const user = await db
+    .select()
+    .from(users)
+    .where(identifier.id ? eq(users.id, identifier.id) : eq(users.email, identifier.email!))
+    .limit(1);
+
+  if (user.length === 0) {
+    return null;
+  }
+
+  // Get user permissions
+  const permissions = await db
+    .select({
+      permission: userPermissions.permission,
+      resourceType: userPermissions.resourceType,
+      resourceId: userPermissions.resourceId,
+    })
+    .from(userPermissions)
+    .where(eq(userPermissions.userId, user[0].id));
+
+  return {
+    ...user[0],
+    permissions: permissions.map(p => ({
+      permission: p.permission,
+      resourceType: p.resourceType,
+      resourceId: p.resourceId,
+    }))
+  };
 };
 
 export const authOptions: NextAuthOptions = {
-  adapter: isBuildTime ? undefined : PrismaAdapter(prisma),
+  // adapter: isBuildTime ? undefined : PrismaAdapter(prisma), // Removed PrismaAdapter
   pages: {
     signIn: '/auth/signin',
   },
@@ -75,21 +92,23 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email
-          }
-        });
+        const user = await db
+          .select()
+          .from(users)
+          .where(eq(users.email, credentials.email))
+          .limit(1);
 
-        if (!user || !user.passwordHash) {
+        if (user.length === 0 || !user[0].passwordHash) {
           return null;
         }
 
+        const userData = user[0];
+
         let passwordMatches = false;
-        if (user.passwordHash.startsWith('$2')) {
-          passwordMatches = await compare(credentials.password, user.passwordHash);
-        } else {
-          passwordMatches = safeCompare(user.passwordHash, credentials.password);
+        if (userData.passwordHash && userData.passwordHash.startsWith('$2')) {
+          passwordMatches = await compare(credentials.password, userData.passwordHash);
+        } else if (userData.passwordHash) {
+          passwordMatches = safeCompare(userData.passwordHash, credentials.password);
         }
 
         if (!passwordMatches) {
@@ -97,10 +116,10 @@ export const authOptions: NextAuthOptions = {
         }
 
         return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role as any
+          id: userData.id,
+          name: userData.name,
+          email: userData.email,
+          role: userData.role as any
         };
       }
     }),
@@ -151,7 +170,7 @@ export const authOptions: NextAuthOptions = {
           if (dbUser) {
             resolvedRole = dbUser.role;
             explicitPermissions = dbUser.permissions.map(
-              (entry: { permission: { key: string } }) => entry.permission.key
+              (entry: { permission: string }) => entry.permission
             );
           }
         }

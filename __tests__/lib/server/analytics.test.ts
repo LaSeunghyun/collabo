@@ -1,4 +1,4 @@
-﻿import { jest } from '@jest/globals';
+import { jest } from '@jest/globals';
 
 jest.mock('@/lib/prisma', () => ({
   prisma: {
@@ -17,7 +17,7 @@ jest.mock('@/lib/auth/session', () => ({
 }));
 
 import { getAnalyticsOverview, recordVisit } from '@/lib/server/analytics';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/drizzle';
 import { evaluateAuthorization } from '@/lib/auth/session';
 
 describe('analytics server utilities', () => {

@@ -6,7 +6,7 @@ import {
   type ModerationTargetTypeType
 } from '@/types/drizzle';
 
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/drizzle';
 
 export interface ModerationReportSummary {
   id: string;

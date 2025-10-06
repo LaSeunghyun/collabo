@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireApiUser } from '@/lib/auth/guards';
 import { UserRole, OrderStatus, PaymentProvider } from '@/types/drizzle';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/drizzle';
 
 export async function POST(request: NextRequest) {
   try {
@@ -123,8 +123,7 @@ async function processPayment({
   paymentData: any;
 }) {
   // 실제 환경에서는 Stripe, Toss Payments 등과 연동
-  // 여기서는 시뮬레이션
-  
+  // 여기는 시뮬레이션입니다.  
   try {
     // 결제 검증 로직
     if (amount <= 0) {
@@ -136,7 +135,7 @@ async function processPayment({
       return { success: false, error: '카드 정보가 필요합니다.' };
     }
 
-    // 결제 시뮬레이션 (90% 성공률)
+    // 결제 시뮬레이션 (90% 성공)
     const isSuccess = Math.random() > 0.1;
     
     if (!isSuccess) {

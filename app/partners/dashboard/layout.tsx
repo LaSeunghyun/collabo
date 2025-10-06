@@ -27,7 +27,7 @@ export default async function PartnerDashboardLayout({
         <h1 className="mt-2 text-3xl font-semibold text-white">파트너 허브</h1>
         <p className="mt-3 text-sm text-white/60">
           {user.name ? `${user.name}님, ` : ''}
-          {ROLE_LABELS[user.role]} 권한으로 협업 요청과 프로필 현황을 빠르게 확인하세요.
+          {ROLE_LABELS[user.role]} 권한으로 협업 요청과 프로젝트 현황을 빠르게 확인하세요.
         </p>
         <nav className="mt-6 flex flex-wrap gap-3">
           {navigationAnchors.map((item) => (

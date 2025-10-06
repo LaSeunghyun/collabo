@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { signOut } from 'next-auth/react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { 
   Bell, 
@@ -35,7 +36,7 @@ export function AdminHeader({ user }: AdminHeaderProps) {
     <header className="bg-white shadow-sm border-b">
       <div className="px-6 py-4">
         <div className="flex items-center justify-between">
-          {/* 로고 및 제목 */}
+          {/* 로고 �??�목 */}
           <div className="flex items-center space-x-4">
             <Button
               variant="ghost"
@@ -50,13 +51,13 @@ export function AdminHeader({ user }: AdminHeaderProps) {
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">A</span>
               </div>
-              <h1 className="text-xl font-bold text-gray-900">관리 센터</h1>
+              <h1 className="text-xl font-bold text-gray-900">관�??�터</h1>
             </Link>
           </div>
 
-          {/* 우측 메뉴 */}
+          {/* ?�측 메뉴 */}
           <div className="flex items-center space-x-4">
-            {/* 알림 */}
+            {/* ?�림 */}
             <Button variant="ghost" size="sm" className="relative">
               <Bell className="h-5 w-5" />
               <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
@@ -64,14 +65,14 @@ export function AdminHeader({ user }: AdminHeaderProps) {
               </span>
             </Button>
 
-            {/* 설정 */}
+            {/* ?�정 */}
             <Button variant="ghost" size="sm" asChild>
               <Link href="/admin/settings">
                 <Settings className="h-5 w-5" />
               </Link>
             </Button>
 
-            {/* 사용자 프로필 */}
+            {/* ?�용???�로??*/}
             <div className="relative">
               <Button
                 variant="ghost"
@@ -81,9 +82,11 @@ export function AdminHeader({ user }: AdminHeaderProps) {
               >
                 <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
                   {user.avatarUrl ? (
-                    <img
+                    <Image
                       src={user.avatarUrl}
                       alt={user.name || 'Admin'}
+                      width={32}
+                      height={32}
                       className="w-8 h-8 rounded-full object-cover"
                     />
                   ) : (
@@ -96,7 +99,7 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                 <ChevronDown className="h-4 w-4" />
               </Button>
 
-              {/* 프로필 드롭다운 */}
+              {/* ?�로???�롭?�운 */}
               {isProfileOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border z-50">
                   <div className="py-1">
@@ -111,7 +114,7 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                       onClick={() => setIsProfileOpen(false)}
                     >
                       <User className="h-4 w-4 mr-2" />
-                      프로필
+                      ?�로??
                     </Link>
                     
                     <Link
@@ -120,7 +123,7 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                       onClick={() => setIsProfileOpen(false)}
                     >
                       <Settings className="h-4 w-4 mr-2" />
-                      설정
+                      ?�정
                     </Link>
                     
                     <button
@@ -128,7 +131,7 @@ export function AdminHeader({ user }: AdminHeaderProps) {
                       className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
                       <LogOut className="h-4 w-4 mr-2" />
-                      로그아웃
+                      로그?�웃
                     </button>
                   </div>
                 </div>
@@ -138,7 +141,7 @@ export function AdminHeader({ user }: AdminHeaderProps) {
         </div>
       </div>
 
-      {/* 모바일 메뉴 */}
+      {/* 모바??메뉴 */}
       {isMobileMenuOpen && (
         <div className="md:hidden border-t bg-white">
           <div className="px-6 py-4 space-y-2">
@@ -147,42 +150,42 @@ export function AdminHeader({ user }: AdminHeaderProps) {
               className="block px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              대시보드
+              ?�?�보??
             </Link>
             <Link
               href="/admin/projects"
               className="block px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              프로젝트 검수
+              ?�로?�트 검??
             </Link>
             <Link
               href="/admin/partners"
               className="block px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              파트너 승인
+              ?�트???�인
             </Link>
             <Link
               href="/admin/reports"
               className="block px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              신고 관리
+              ?�고 관�?
             </Link>
             <Link
               href="/admin/settlements"
               className="block px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              정산 관리
+              ?�산 관�?
             </Link>
             <Link
               href="/admin/announcements"
               className="block px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              공지 관리
+              공�? 관�?
             </Link>
           </div>
         </div>

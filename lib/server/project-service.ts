@@ -1,5 +1,5 @@
-import { ProjectStatus, UserRole } from '@/types/drizzle';
-import { db } from '@/lib/prisma';
+import { type ProjectStatusType, type UserRoleType } from '@/types/drizzle';
+import { db } from '@/lib/drizzle';
 import { projects, users, fundings, orders } from '@/lib/db/schema';
 import { eq, and, or, like, desc, sql } from 'drizzle-orm';
 import { responses } from './api-responses';
@@ -27,11 +27,11 @@ export interface ProjectUpdateData {
   endDate?: Date;
   thumbnail?: string;
   metadata?: any;
-  status?: ProjectStatus;
+  status?: ProjectStatusType;
 }
 
 export interface ProjectFilters {
-  status?: ProjectStatus;
+  status?: ProjectStatusType;
   category?: string;
   ownerId?: string;
   search?: string;
@@ -40,7 +40,7 @@ export interface ProjectFilters {
 }
 
 /**
- * 프로젝트 생성
+ * ?�로?�트 ?�성
  */
 export async function createProject(data: ProjectCreateData) {
   try {
@@ -55,10 +55,10 @@ export async function createProject(data: ProjectCreateData) {
       thumbnail: data.thumbnail,
       metadata: data.metadata,
       ownerId: data.ownerId,
-      status: ProjectStatus.DRAFT
+      status: 'DRAFT' as ProjectStatusType
     }).returning();
 
-    // 프로젝트와 관련 데이터를 조회
+    // ?�로?�트?� 관???�이?��? 조회
     const projectWithDetails = await db
       .select({
         id: projects.id,
@@ -90,17 +90,17 @@ export async function createProject(data: ProjectCreateData) {
       .groupBy(projects.id, users.id)
       .limit(1);
 
-    return responses.success(projectWithDetails[0], '프로젝트가 생성되었습니다.');
+    return responses.success(projectWithDetails[0], '?�로?�트가 ?�성?�었?�니??');
   } catch (error) {
-    console.error('프로젝트 생성 실패:', error);
-    return responses.error('프로젝트 생성에 실패했습니다.');
+    console.error('?�로?�트 ?�성 ?�패:', error);
+    return responses.error('?�로?�트 ?�성???�패?�습?�다.');
   }
 }
 
 /**
- * 프로젝트 수정
+ * ?�로?�트 ?�정
  */
-export async function updateProject(projectId: string, data: ProjectUpdateData, userId: string, userRole: UserRole) {
+export async function updateProject(projectId: string, data: ProjectUpdateData, userId: string, userRole: UserRoleType) {
   try {
     const project = await db
       .select()
@@ -109,17 +109,17 @@ export async function updateProject(projectId: string, data: ProjectUpdateData, 
       .limit(1);
 
     if (project.length === 0) {
-      return responses.notFound('프로젝트');
+      return responses.notFound('?�로?�트');
     }
 
-    // 소유자 또는 관리자만 수정 가능
-    if (project[0].ownerId !== userId && userRole !== UserRole.ADMIN) {
+    // ?�유???�는 관리자�??�정 가??
+    if (project[0].ownerId !== userId && userRole !== 'ADMIN') {
       return responses.forbidden();
     }
 
     await db.update(projects).set(data).where(eq(projects.id, projectId));
 
-    // 업데이트된 프로젝트와 관련 데이터를 조회
+    // ?�데?�트???�로?�트?� 관???�이?��? 조회
     const updatedProject = await db
       .select({
         id: projects.id,
@@ -151,22 +151,37 @@ export async function updateProject(projectId: string, data: ProjectUpdateData, 
       .groupBy(projects.id, users.id)
       .limit(1);
 
-    return responses.success(updatedProject[0], '프로젝트가 수정되었습니다.');
+    return responses.success(updatedProject[0], '?�로?�트가 ?�정?�었?�니??');
   } catch (error) {
-    console.error('프로젝트 수정 실패:', error);
-    return responses.error('프로젝트 수정에 실패했습니다.');
+    console.error('?�로?�트 ?�정 ?�패:', error);
+    return responses.error('?�로?�트 ?�정???�패?�습?�다.');
   }
 }
 
 /**
- * 프로젝트 목록 조회
+ * ?�로?�트 목록 조회
  */
 export async function getProjects(filters: ProjectFilters) {
   try {
     const { status, category, ownerId, search, page = 1, limit = 20 } = filters;
-    const skip = (page - 1) * limit;
 
-    let query = db
+    // ?�터 조건 구성
+    const conditions = [];
+    if (status) conditions.push(eq(projects.status, status));
+    if (category) conditions.push(eq(projects.category, category));
+    if (ownerId) conditions.push(eq(projects.ownerId, ownerId));
+    if (search) {
+      conditions.push(
+        or(
+          like(projects.title, `%${search}%`),
+          like(projects.description, `%${search}%`)
+        )
+      );
+    }
+
+    const whereCondition = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const projectsResult = await db
       .select({
         id: projects.id,
         title: projects.title,
@@ -193,50 +208,34 @@ export async function getProjects(filters: ProjectFilters) {
       .from(projects)
       .leftJoin(users, eq(projects.ownerId, users.id))
       .leftJoin(fundings, eq(projects.id, fundings.projectId))
+      .where(whereCondition)
       .groupBy(projects.id, users.id)
-      .orderBy(desc(projects.createdAt));
+      .orderBy(desc(projects.createdAt))
+      .offset((page - 1) * limit)
+      .limit(limit);
 
-    // 필터 적용
-    const conditions = [];
-    if (status) conditions.push(eq(projects.status, status));
-    if (category) conditions.push(eq(projects.category, category));
-    if (ownerId) conditions.push(eq(projects.ownerId, ownerId));
-    if (search) {
-      conditions.push(
-        or(
-          like(projects.title, `%${search}%`),
-          like(projects.description, `%${search}%`)
-        )
-      );
-    }
-
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-
-      // 총 개수 조회를 위한 별도 쿼리
-      db.select({ count: sql<number>`count(*)` })
-        .from(projects)
-        .where(conditions.length > 0 ? and(...conditions) : undefined)
-    ]);
+    // �?개수 조회�??�한 별도 쿼리
+    const countResult = await db.select({ count: sql<number>`count(*)` })
+      .from(projects)
+      .where(whereCondition);
 
     return responses.success({
       projects: projectsResult,
       pagination: {
         page,
         limit,
-        total: totalResult[0]?.count || 0,
-        pages: Math.ceil((totalResult[0]?.count || 0) / limit)
+        total: countResult[0]?.count || 0,
+        pages: Math.ceil((countResult[0]?.count || 0) / limit)
       }
     });
   } catch (error) {
-    console.error('프로젝트 목록 조회 실패:', error);
-    return responses.error('프로젝트 목록을 불러올 수 없습니다.');
+    console.error('?�로?�트 목록 조회 ?�패:', error);
+    return responses.error('?�로?�트 목록??불러?????�습?�다.');
   }
 }
 
 /**
- * 프로젝트 상세 조회
+ * ?�로?�트 ?�세 조회
  */
 export async function getProject(projectId: string) {
   try {
@@ -272,24 +271,24 @@ export async function getProject(projectId: string) {
       .limit(1);
 
     if (project.length === 0) {
-      return responses.notFound('프로젝트');
+      return responses.notFound('?�로?�트');
     }
 
     return responses.success(project[0]);
   } catch (error) {
-    console.error('프로젝트 조회 실패:', error);
-    return responses.error('프로젝트 정보를 불러올 수 없습니다.');
+    console.error('?�로?�트 조회 ?�패:', error);
+    return responses.error('?�로?�트 ?�보�?불러?????�습?�다.');
   }
 }
 
 /**
- * 프로젝트 상태 변경
+ * ?�로?�트 ?�태 변�?
  */
 export async function updateProjectStatus(
   projectId: string, 
-  status: ProjectStatus, 
+  status: ProjectStatusType, 
   userId: string, 
-  userRole: UserRole
+  userRole: UserRoleType
 ) {
   try {
     const project = await db
@@ -299,11 +298,11 @@ export async function updateProjectStatus(
       .limit(1);
 
     if (project.length === 0) {
-      return responses.notFound('프로젝트');
+      return responses.notFound('?�로?�트');
     }
 
-    // 소유자 또는 관리자만 상태 변경 가능
-    if (project[0].ownerId !== userId && userRole !== UserRole.ADMIN) {
+    // ?�유???�는 관리자�??�태 변�?가??
+    if (project[0].ownerId !== userId && userRole !== 'ADMIN') {
       return responses.forbidden();
     }
 
@@ -337,15 +336,15 @@ export async function updateProjectStatus(
       .where(eq(projects.id, projectId))
       .limit(1);
 
-    return responses.success(updatedProject[0], '프로젝트 상태가 변경되었습니다.');
+    return responses.success(updatedProject[0], '?�로?�트 ?�태가 변경되?�습?�다.');
   } catch (error) {
-    console.error('프로젝트 상태 변경 실패:', error);
-    return responses.error('프로젝트 상태 변경에 실패했습니다.');
+    console.error('?�로?�트 ?�태 변�??�패:', error);
+    return responses.error('?�로?�트 ?�태 변경에 ?�패?�습?�다.');
   }
 }
 
 /**
- * 프로젝트 통계 조회
+ * ?�로?�트 ?�계 조회
  */
 export async function getProjectStats(projectId: string) {
   try {
@@ -356,7 +355,7 @@ export async function getProjectStats(projectId: string) {
       .limit(1);
 
     if (project.length === 0) {
-      return responses.notFound('프로젝트');
+      return responses.notFound('?�로?�트');
     }
 
     const [fundingStats, orderStats] = await Promise.all([
@@ -388,7 +387,7 @@ export async function getProjectStats(projectId: string) {
 
     return responses.success(stats);
   } catch (error) {
-    console.error('프로젝트 통계 조회 실패:', error);
-    return responses.error('프로젝트 통계를 불러올 수 없습니다.');
+    console.error('?�로?�트 ?�계 조회 ?�패:', error);
+    return responses.error('?�로?�트 ?�계�?불러?????�습?�다.');
   }
 }

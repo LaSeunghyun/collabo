@@ -1,4 +1,4 @@
-﻿import { PartnerType, UserRole } from '@/types/prisma';
+import { PartnerType, UserRole } from '@/types/prisma';
 import { createPartnerProfile, PartnerAccessDeniedError, updatePartnerProfile } from '@/lib/server/partners';
 import { type MockPrisma, createPrismaMock } from '../../helpers/prisma-mock';
 

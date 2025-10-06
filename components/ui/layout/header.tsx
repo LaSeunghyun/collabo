@@ -11,19 +11,19 @@ export function Header() {
   const { data: unreadCount = 0 } = useAnnouncementUnreadCount(Boolean(session?.user));
 
   const navigationItems = [
-    { href: '/projects', label: '프로젝트' },
-    { href: '/artists', label: '아티스트' },
-    { href: '/partners', label: '파트너' },
-    { href: '/community', label: '커뮤니티' },
-    { href: '/announcements', label: '공지사항', unreadCount }
+    { href: '/projects', label: '?�로?�트' },
+    { href: '/artists', label: '?�티?�트' },
+    { href: '/partners', label: '?�트?? },
+    { href: '/community', label: '커�??�티' },
+    { href: '/announcements', label: '공�??�항', unreadCount }
   ];
 
   if (session?.user && canAccessRoute(session.user, '/partners/dashboard')) {
-    navigationItems.push({ href: '/partners/dashboard', label: '파트너 허브' });
+    navigationItems.push({ href: '/partners/dashboard', label: '?�트???�브' });
   }
 
   if (session?.user && canAccessRoute(session.user, '/admin')) {
-    navigationItems.push({ href: '/admin', label: '관리' });
+    navigationItems.push({ href: '/admin', label: '관�? });
   }
 
   return (
@@ -61,7 +61,7 @@ export function Header() {
                 href="/profile"
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors"
               >
-                프로필
+                ?�로??
               </Link>
             ) : (
               <>
@@ -69,13 +69,13 @@ export function Header() {
                   href="/auth/signin"
                   className="text-neutral-300 hover:text-white transition-colors"
                 >
-                  로그인
+                  로그??
                 </Link>
                 <Link
                   href="/auth/signup"
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors"
                 >
-                  회원가입
+                  ?�원가??
                 </Link>
               </>
             )}

@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 
 import { SignJWT, jwtVerify } from 'jose';
 
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/drizzle';
 import type { UserRoleType } from '@/types/drizzle';
 
 export interface AccessTokenContext {
@@ -73,7 +73,7 @@ export const verifyAccessToken = async (token: string): Promise<VerifiedAccessTo
   const { payload } = await jwtVerify(token, getSecret(), { issuer: ISSUER });
 
   if (!payload.sub || typeof payload.sid !== 'string' || typeof payload.jti !== 'string') {
-    throw new Error('잘못된 액세스 토큰입니다.');
+    throw new Error('?�못???�세???�큰?�니??');
   }
 
   const blacklisted = await prisma.tokenBlacklist.findUnique({
@@ -81,7 +81,7 @@ export const verifyAccessToken = async (token: string): Promise<VerifiedAccessTo
   });
 
   if (blacklisted) {
-    throw new Error('만료되거나 폐기된 토큰입니다.');
+    throw new Error('만료?�거???�기???�큰?�니??');
   }
 
   const permissions = Array.isArray(payload.permissions)

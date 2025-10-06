@@ -1,4 +1,4 @@
-﻿jest.mock('react', () => {
+jest.mock('react', () => {
   const actual = jest.requireActual('react');
   return {
     ...actual,

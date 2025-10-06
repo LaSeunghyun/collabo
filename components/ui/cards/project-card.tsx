@@ -60,7 +60,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
           <div className="flex items-center justify-between text-xs text-white/60">
             <span>{progress}%</span>
             <span>
-              {project.currentAmount.toLocaleString()}₩ / {project.targetAmount.toLocaleString()}₩
+              {project.currentAmount.toLocaleString()}??/ {project.targetAmount.toLocaleString()}??
             </span>
           </div>
         </div>

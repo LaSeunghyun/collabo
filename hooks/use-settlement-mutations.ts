@@ -28,15 +28,15 @@ export function useSettlementMutations() {
     mutationFn: updateSettlementStatus,
     onSuccess: () => {
       toast({
-        title: '상태 변경 완료',
-        description: '정산 상태가 성공적으로 변경되었습니다.',
+        title: '?�태 변�??�료',
+        description: '?�산 ?�태가 ?�공?�으�?변경되?�습?�다.',
       });
       // Invalidate and refetch the settlements query to show the updated data
       queryClient.invalidateQueries({ queryKey: ['settlements'] });
     },
     onError: (error) => {
       toast({
-        title: '상태 변경 실패',
+        title: '?�태 변�??�패',
         description: error.message,
         variant: 'destructive',
       });

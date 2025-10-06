@@ -52,6 +52,6 @@ export async function PATCH(request: NextRequest) {
       return await markAllNotificationsAsRead(user.id);
     }
 
-    return { success: false, message: '지원하지 않는 액션입니다.' };
+    return { success: false, message: '지?�하지 ?�는 ?�션?�니??' };
   }, request);
 }

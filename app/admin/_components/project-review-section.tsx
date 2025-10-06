@@ -1,4 +1,4 @@
-ï»¿import { PROJECT_STATUS_LABELS } from '@/types/drizzle';
+import { PROJECT_STATUS_LABELS } from '@/types/drizzle';
 
 import { getProjectsPendingReview } from '@/lib/server/projects';
 
@@ -17,10 +17,10 @@ export async function ProjectReviewSection() {
         className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 shadow-lg shadow-black/5"
       >
         <header>
-          <p className="text-xs uppercase tracking-wider text-primary/60">í”„ë¡œì íŠ¸ ê²€ìˆ˜</p>
-          <h2 className="mt-1 text-lg font-semibold text-white">ìŠ¹ì¸ ëŒ€ê¸° ì¤‘ì¸ í”„ë¡œì íŠ¸</h2>
+          <p className="text-xs uppercase tracking-wider text-primary/60">ÇÁ·ÎÁ§Æ® °Ë¼ö</p>
+          <h2 className="mt-1 text-lg font-semibold text-white">½ÂÀÎ ´ë±â ÁßÀÎ ÇÁ·ÎÁ§Æ®</h2>
           <p className="mt-2 text-sm text-white/60">
-            ê²€í†  ìƒíƒœì˜ ì œì¶œë¬¼ì„ ê²€í† í•˜ê³  ì°½ìž‘ìžë“¤ì´ ë¹ ë¥´ê²Œ ì§„í–‰í•  ìˆ˜ ìžˆë„ë¡ ë„ì™€ì£¼ì„¸ìš”.
+            °ËÅä »óÅÂÀÇ Á¦Ãâ¹°À» °ËÅäÇÏ°í Ã¢ÀÛÀÚµéÀÌ ºü¸£°Ô ÁøÇàÇÒ ¼ö ÀÖµµ·Ï µµ¿ÍÁÖ¼¼¿ä.
           </p>
         </header>
 
@@ -34,7 +34,7 @@ export async function ProjectReviewSection() {
                 <div>
                   <p className="text-sm font-medium text-white">{project.title}</p>
                   <p className="text-xs text-white/50">
-                    ì œì¶œì¼ {dateFormatter.format(project.createdAt)} | ì°¸ì—¬ìž {project.participants}ëª…
+                    Á¦ÃâÀÏ {dateFormatter.format(project.createdAt)} | Âü¿©ÀÚ {project.participants}¸í
                   </p>
                 </div>
                 <span className="text-xs font-semibold text-amber-300">
@@ -45,7 +45,7 @@ export async function ProjectReviewSection() {
           </ul>
         ) : (
           <p className="mt-6 rounded-2xl border border-dashed border-white/10 bg-white/5 px-4 py-6 text-center text-sm text-white/60">
-            ê²€í†  ëŒ€ê¸° ì¤‘ì¸ í”„ë¡œì íŠ¸ê°€ ì—†ìŠµë‹ˆë‹¤.
+            °ËÅä ´ë±â ÁßÀÎ ÇÁ·ÎÁ§Æ®°¡ ¾ø½À´Ï´Ù.
           </p>
         )}
       </section>
@@ -57,8 +57,8 @@ export async function ProjectReviewSection() {
         id="project-review"
         className="rounded-3xl border border-red-500/30 bg-red-500/10 p-6 text-sm text-red-100"
       >
-        <h2 className="text-lg font-semibold text-red-100">í”„ë¡œì íŠ¸ ê²€ìˆ˜</h2>
-        <p className="mt-2">ê²€í†  ëŒ€ê¸°ì—´ì„ ë¶ˆëŸ¬ì˜¬ ìˆ˜ ì—†ìŠµë‹ˆë‹¤. ìž ì‹œ í›„ ë‹¤ì‹œ ì‹œë„í•´ì£¼ì„¸ìš”.</p>
+        <h2 className="text-lg font-semibold text-red-100">ÇÁ·ÎÁ§Æ® °Ë¼ö</h2>
+        <p className="mt-2">°ËÅä ´ë±â¿­À» ºÒ·¯¿Ã ¼ö ¾ø½À´Ï´Ù. Àá½Ã ÈÄ ´Ù½Ã ½ÃµµÇØÁÖ¼¼¿ä.</p>
       </section>
     );
   }

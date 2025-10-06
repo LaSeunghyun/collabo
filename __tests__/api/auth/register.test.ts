@@ -1,7 +1,7 @@
-﻿import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { NextRequest } from 'next/server';
 import { POST } from '@/app/api/auth/register/route';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/drizzle';
 import { UserRole } from '@/types/prisma';
 import { hash } from 'bcryptjs';
 

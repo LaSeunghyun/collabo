@@ -1,4 +1,4 @@
-﻿jest.mock('next-auth', () => ({
+jest.mock('next-auth', () => ({
   getServerSession: jest.fn()
 }));
 

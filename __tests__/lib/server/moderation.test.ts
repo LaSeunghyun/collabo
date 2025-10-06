@@ -1,4 +1,4 @@
-﻿import { ModerationStatus, ModerationTargetType } from '@/types/prisma';
+import { ModerationStatus, ModerationTargetType } from '@/types/prisma';
 import { getOpenModerationReports } from '@/lib/server/moderation';
 import { type MockPrisma, createPrismaMock } from '../../helpers/prisma-mock';
 

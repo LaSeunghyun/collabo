@@ -1,4 +1,4 @@
-﻿import { revalidatePath } from 'next/cache';
+import { revalidatePath } from 'next/cache';
 // Prisma types removed - using Drizzle types
 import {
   UserRole,
@@ -8,7 +8,7 @@ import {
 import { ZodError } from 'zod';
 
 import type { SessionUser } from '@/lib/auth/session';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/drizzle';
 import {
   createPartnerSchema,
   updatePartnerSchema,
@@ -102,7 +102,7 @@ type PartnerWithRelations = PrismaTypes.PartnerGetPayload<{
   };
 }>;
 
-// PartnerSummary???댁젣 @/types/prisma?먯꽌 import??
+// PartnerSummary???�제 @/types/prisma?�서 import??
 
 const toPartnerSummary = (partner: PartnerWithRelations): PartnerSummary => {
   // const services = Array.isArray(partner.services)
@@ -167,32 +167,32 @@ export class PartnerValidationError extends Error {
   issues: string[];
 
   constructor(error: ZodError) {
-    super('?뚰듃???뺣낫媛 ?좏슚?섏? ?딆뒿?덈떎.');
+    super('?�트???�보가 ?�효?��? ?�습?�다.');
     this.issues = error.issues.map((issue) => issue.message);
   }
 }
 
 export class PartnerProfileExistsError extends Error {
   constructor() {
-    super('?대? ?깅줉???뚰듃???꾨줈?꾩씠 ?덉뒿?덈떎.');
+    super('?��? ?�록???�트???�로?�이 ?�습?�다.');
   }
 }
 
 export class PartnerOwnerNotFoundError extends Error {
   constructor() {
-    super('?뚰듃???뚯쑀???뺣낫瑜?李얠쓣 ???놁뒿?덈떎.');
+    super('?�트???�유???�보�?찾을 ???�습?�다.');
   }
 }
 
 export class PartnerNotFoundError extends Error {
   constructor() {
-    super('?뚰듃???뺣낫瑜?李얠쓣 ???놁뒿?덈떎.');
+    super('?�트???�보�?찾을 ???�습?�다.');
   }
 }
 
 export class PartnerAccessDeniedError extends Error {
   constructor() {
-    super('?뚰듃???뺣낫瑜??섏젙??沅뚰븳???놁뒿?덈떎.');
+    super('?�트???�보�??�정??권한???�습?�다.');
   }
 }
 

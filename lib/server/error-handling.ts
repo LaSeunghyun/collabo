@@ -1,5 +1,5 @@
-﻿import { NextResponse } from 'next/server';
-import { Prisma } from '@prisma/client';
+import { NextResponse } from 'next/server';
+// Prisma types removed - using Drizzle types
 
 export interface ApiError {
     message: string;
@@ -41,26 +41,26 @@ export function handleFundingSettlementError(error: unknown): NextResponse {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
         switch (error.code) {
             case 'P2002':
-                return buildApiError('?곗씠??以묐났 ?ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 409, 'DUPLICATE_ENTRY');
+                return buildApiError('?�이??중복 ?�류가 발생?�습?�다.', 409, 'DUPLICATE_ENTRY');
             case 'P2025':
-                return buildApiError('?붿껌???곗씠?곕? 李얠쓣 ???놁뒿?덈떎.', 404, 'NOT_FOUND');
+                return buildApiError('?�청???�이?��? 찾을 ???�습?�다.', 404, 'NOT_FOUND');
             case 'P2003':
-                return buildApiError('李몄“ 臾닿껐???ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 400, 'FOREIGN_KEY_CONSTRAINT');
+                return buildApiError('참조 무결???�류가 발생?�습?�다.', 400, 'FOREIGN_KEY_CONSTRAINT');
             default:
-                return buildApiError('?곗씠?곕쿋?댁뒪 ?ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 500, 'DATABASE_ERROR');
+                return buildApiError('?�이?�베?�스 ?�류가 발생?�습?�다.', 500, 'DATABASE_ERROR');
         }
     }
 
     if (error instanceof Prisma.PrismaClientValidationError) {
-        return buildApiError('?곗씠??寃利??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 400, 'VALIDATION_ERROR');
+        return buildApiError('?�이??검�??�류가 발생?�습?�다.', 400, 'VALIDATION_ERROR');
     }
 
     if (error instanceof Error) {
         console.error('Unexpected error:', error);
-        return buildApiError('?쒕쾭 ?대? ?ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 500, 'INTERNAL_ERROR');
+        return buildApiError('?�버 ?��? ?�류가 발생?�습?�다.', 500, 'INTERNAL_ERROR');
     }
 
-    return buildApiError('?????녿뒗 ?ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', 500, 'UNKNOWN_ERROR');
+    return buildApiError('?????�는 ?�류가 발생?�습?�다.', 500, 'UNKNOWN_ERROR');
 }
 
 export async function withErrorHandling<T>(

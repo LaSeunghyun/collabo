@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { SettlementStakeholderType } from '@/types/drizzle';
 import { requireApiUser } from '@/lib/auth/guards';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/drizzle';
 import { GuardRequirement } from '@/lib/auth/session';
 
 export async function GET(request: NextRequest) {
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 권한 확인 (프로젝트 소유자 또는 관리자만)
+    // 권한 확인 (프로젝트 소유자 또는 관리자)
     if (settlement.project.owner.id !== user.id && user.role !== 'ADMIN') {
       return NextResponse.json(
         { message: 'Unauthorized' },

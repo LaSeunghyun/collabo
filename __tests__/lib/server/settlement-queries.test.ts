@@ -1,4 +1,4 @@
-﻿import { SettlementPayoutStatus } from '@/types/prisma';
+import { SettlementPayoutStatus } from '@/types/prisma';
 import { getSettlementsPendingPayout } from '@/lib/server/settlement-queries';
 import { type MockPrisma, createPrismaMock } from '../../helpers/prisma-mock';
 

@@ -42,7 +42,7 @@ export default function HomePage() {
     staleTime: 1000 * 60
   });
 
-  // 안전하게 배열인지 확인
+  // ?�전?�게 배열?��? ?�인
   const safeProjects = useMemo(() => {
     return Array.isArray(projects) ? projects : [];
   }, [projects]);

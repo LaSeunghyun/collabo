@@ -1,4 +1,4 @@
-﻿import { calculateSettlementBreakdown } from '@/lib/server/settlements';
+import { calculateSettlementBreakdown } from '@/lib/server/settlements';
 
 const buildParams = () => ({
   totalRaised: 100000,

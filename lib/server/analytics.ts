@@ -1,6 +1,6 @@
-﻿import { createHash } from 'crypto';
+import { createHash } from 'crypto';
 
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/drizzle';
 import { evaluateAuthorization } from '@/lib/auth/session';
 
 export const VISIT_LOOKBACK_DAYS = 30;

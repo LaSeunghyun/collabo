@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import { getServerAuthSession } from '@/lib/auth/session';
 import { getAnnouncements, createAnnouncement } from '@/lib/server/announcements';
-import { UserRole } from '@/types/drizzle';
 
 const parseCategory = (value: string | null): string | null => {
   if (!value) {
@@ -27,7 +26,7 @@ export async function GET(request: NextRequest) {
     const { announcements, unreadCount } = await getAnnouncements({
       userId,
       category,
-      includeScheduled: includeScheduled && userRole === UserRole.ADMIN
+      includeScheduled: includeScheduled && userRole === 'ADMIN'
     });
 
     if (meta === 'unread-count') {
@@ -46,7 +45,7 @@ export async function POST(request: NextRequest) {
   let admin;
 
   try {
-    admin = await requireApiUser({ roles: [UserRole.ADMIN] }, authContext);
+    admin = await requireApiUser({ roles: ['ADMIN'] }, authContext);
   } catch (error) {
     const response = handleAuthorizationError(error);
 
@@ -62,7 +61,7 @@ export async function POST(request: NextRequest) {
 
     if (!payload?.title || !payload?.content) {
       return NextResponse.json(
-        { message: '제목과 내용을 모두 입력해 주세요.' },
+        { message: '?�목�??�용??모두 ?�력??주세??' },
         { status: 400 }
       );
     }

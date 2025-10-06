@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
     const body = await req.json();
     const { projectId, netAmount, platformFee, stakeholders, metadata } = body;
 
-    // 자동 정산 생성인지 확인
+    // ?�동 ?�산 ?�성?��? ?�인
     if (body.autoCreate && projectId) {
       return await autoCreateSettlement(projectId);
     }

@@ -7,7 +7,7 @@ import { config } from 'dotenv';
 config({ path: '.env.local' });
 
 async function testDrizzleMigration() {
-  console.log('üöÄ Starting Drizzle migration test...');
+  console.log('?? Starting Drizzle migration test...');
   
   try {
     // Create connection
@@ -16,17 +16,17 @@ async function testDrizzleMigration() {
       throw new Error('DATABASE_URL is not defined in environment variables');
     }
 
-    console.log('üì° Connecting to Supabase database...');
+    console.log('?ì° Connecting to Supabase database...');
     const client = postgres(connectionString, { prepare: false });
     const db = drizzle(client);
 
     // Test basic connection
-    console.log('üîç Testing database connection...');
+    console.log('?îç Testing database connection...');
     const result = await db.execute('SELECT NOW() as current_time');
-    console.log('‚úÖ Database connection successful:', result[0]);
+    console.log('??Database connection successful:', result[0]);
 
     // Test schema introspection
-    console.log('üìã Testing schema introspection...');
+    console.log('?ìã Testing schema introspection...');
     const tables = await db.execute(`
       SELECT table_name 
       FROM information_schema.tables 
@@ -34,18 +34,18 @@ async function testDrizzleMigration() {
       AND table_type = 'BASE TABLE'
       ORDER BY table_name
     `);
-    console.log('üìä Existing tables:', tables.map((t: any) => t.table_name));
+    console.log('?ìä Existing tables:', tables.map((t: any) => t.table_name));
 
     // Test a simple query on users table (if it exists)
     try {
       const userCount = await db.execute('SELECT COUNT(*) as count FROM users');
-      console.log('üë• Users count:', userCount[0]);
+      console.log('?ë• Users count:', userCount[0]);
     } catch (error) {
-      console.log('‚ÑπÔ∏è  Users table does not exist yet (expected for first migration)');
+      console.log('?πÔ∏è  Users table does not exist yet (expected for first migration)');
     }
 
     // Test enum creation
-    console.log('üîß Testing enum creation...');
+    console.log('?îß Testing enum creation...');
     try {
       await db.execute(`
         DO $$ BEGIN
@@ -54,13 +54,13 @@ async function testDrizzleMigration() {
           WHEN duplicate_object THEN null;
         END $$;
       `);
-      console.log('‚úÖ User role enum created/verified');
+      console.log('??User role enum created/verified');
     } catch (error) {
-      console.log('‚ö†Ô∏è  Enum creation error (may already exist):', error);
+      console.log('?†Ô∏è  Enum creation error (may already exist):', error);
     }
 
     // Test table creation
-    console.log('üèóÔ∏è  Testing table creation...');
+    console.log('?èóÔ∏? Testing table creation...');
     try {
       await db.execute(`
         CREATE TABLE IF NOT EXISTS test_users (
@@ -72,13 +72,13 @@ async function testDrizzleMigration() {
           updated_at TIMESTAMP DEFAULT NOW()
         );
       `);
-      console.log('‚úÖ Test users table created successfully');
+      console.log('??Test users table created successfully');
     } catch (error) {
-      console.log('‚ö†Ô∏è  Table creation error:', error);
+      console.log('?†Ô∏è  Table creation error:', error);
     }
 
     // Test data insertion
-    console.log('üìù Testing data insertion...');
+    console.log('?ìù Testing data insertion...');
     try {
       const testUser = {
         id: 'test-' + Date.now(),
@@ -93,34 +93,34 @@ async function testDrizzleMigration() {
         ON CONFLICT (email) DO NOTHING
       `);
 
-      console.log('‚úÖ Test user inserted successfully');
+      console.log('??Test user inserted successfully');
 
       // Verify insertion
       const insertedUser = await db.execute(
         `SELECT * FROM test_users WHERE id = '${testUser.id}'`
       );
-      console.log('‚úÖ Test user verification:', insertedUser[0]);
+      console.log('??Test user verification:', insertedUser[0]);
     } catch (error) {
-      console.log('‚ö†Ô∏è  Data insertion error:', error);
+      console.log('?†Ô∏è  Data insertion error:', error);
     }
 
     // Clean up test data
-    console.log('üßπ Cleaning up test data...');
+    console.log('?ßπ Cleaning up test data...');
     try {
       await db.execute('DROP TABLE IF EXISTS test_users CASCADE');
-      console.log('‚úÖ Test data cleaned up');
+      console.log('??Test data cleaned up');
     } catch (error) {
-      console.log('‚ö†Ô∏è  Cleanup error:', error);
+      console.log('?†Ô∏è  Cleanup error:', error);
     }
 
-    console.log('üéâ Drizzle migration test completed successfully!');
-    console.log('üìã Next steps:');
+    console.log('?éâ Drizzle migration test completed successfully!');
+    console.log('?ìã Next steps:');
     console.log('   1. Run: npm run db:generate-migration');
     console.log('   2. Run: npm run db:migrate');
     console.log('   3. Run: npm run db:studio (optional)');
 
   } catch (error) {
-    console.error('‚ùå Migration test failed:', error);
+    console.error('??Migration test failed:', error);
     process.exit(1);
   } finally {
     process.exit(0);

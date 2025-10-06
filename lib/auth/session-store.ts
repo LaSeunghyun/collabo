@@ -1,6 +1,6 @@
 import type { AuthSession, RefreshToken } from '@/types/drizzle';
 
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/drizzle';
 import { UserRole, type UserRoleType } from '@/types/drizzle';
 
 import { issueAccessToken } from './access-token';
@@ -182,13 +182,13 @@ export const rotateRefreshToken = async (
   });
 
   if (!existing) {
-    throw new Error('유효하지 않은 리프레시 토큰입니다.');
+    throw new Error('?�효?��? ?��? 리프?�시 ?�큰?�니??');
   }
 
   const matches = await verifyTokenHash(refreshToken, existing.tokenHash);
 
   if (!matches) {
-    throw new Error('리프레시 토큰 검증에 실패했습니다.');
+    throw new Error('리프?�시 ?�큰 검증에 ?�패?�습?�다.');
   }
 
   if (existing.usedAt || existing.revokedAt) {
@@ -205,7 +205,7 @@ export const rotateRefreshToken = async (
       })
     ]);
 
-    throw new Error('재사용이 감지된 리프레시 토큰입니다.');
+    throw new Error('?�사?�이 감�???리프?�시 ?�큰?�니??');
   }
 
   const session = await prisma.authSession.findUnique({
@@ -214,7 +214,7 @@ export const rotateRefreshToken = async (
   });
 
   if (!session || session.revokedAt) {
-    throw new Error('만료된 세션입니다.');
+    throw new Error('만료???�션?�니??');
   }
 
   const current = now();
@@ -231,7 +231,7 @@ export const rotateRefreshToken = async (
       })
     ]);
 
-    throw new Error('세션이 만료되었습니다. 다시 로그인하세요.');
+    throw new Error('?�션??만료?�었?�니?? ?�시 로그?�하?�요.');
   }
 
   if (existing.inactivityExpiresAt <= current) {
@@ -246,7 +246,7 @@ export const rotateRefreshToken = async (
       })
     ]);
 
-    throw new Error('장시간 활동이 없어 세션이 만료되었습니다.');
+    throw new Error('?�시�??�동???�어 ?�션??만료?�었?�니??');
   }
 
   const ipHash = hashClientHint(ipAddress ?? undefined);

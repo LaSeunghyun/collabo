@@ -43,7 +43,7 @@ export async function GET(
     }
 
     // 삭제된 게시글 처리
-    if (post.status === PostStatus.DELETED) {
+    if (post.status === 'DELETED') {
       return NextResponse.json(
         { message: '삭제된 게시글입니다.' },
         { status: 410 }
@@ -117,7 +117,7 @@ export async function PUT(
     }
 
     // 삭제된 게시글 확인
-    if (existingPost.status === PostStatus.DELETED) {
+    if (existingPost.status === 'DELETED') {
       return NextResponse.json(
         { message: '삭제된 게시글은 수정할 수 없습니다.' },
         { status: 410 }
@@ -230,7 +230,7 @@ export async function DELETE(
       await prisma.post.update({
         where: { id: postId },
         data: {
-          status: PostStatus.DELETED,
+          status: 'DELETED',
           title: '[삭제된 게시글]',
           content: '이 게시글은 작성자에 의해 삭제되었습니다.'
         }

@@ -7,6 +7,19 @@ const nextConfig = {
         hostname: '**'
       }
     ]
+  },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        net: false,
+        tls: false,
+        fs: false,
+        perf_hooks: false,
+        postgres: false
+      };
+    }
+    return config;
   }
 };
 

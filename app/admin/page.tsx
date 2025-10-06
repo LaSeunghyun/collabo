@@ -11,15 +11,15 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="space-y-8">
-      {/* 헤더 */}
+      {/* ?�더 */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">관리자 대시보드</h1>
+        <h1 className="text-3xl font-bold text-gray-900">관리자 ?�?�보??/h1>
         <p className="mt-2 text-gray-600">
-          플랫폼 현황을 한눈에 확인하고 관리하세요.
+          ?�랫???�황???�눈???�인?�고 관리하?�요.
         </p>
       </div>
 
-      {/* 주요 지표 카드 */}
+      {/* 주요 지??카드 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <div className="flex items-center">
@@ -31,7 +31,7 @@ export default async function AdminDashboardPage() {
               </div>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">총 방문자</p>
+              <p className="text-sm font-medium text-gray-500">�?방문??/p>
               <p className="text-2xl font-semibold text-gray-900">{overview.totalVisits.toLocaleString()}</p>
             </div>
           </div>
@@ -47,7 +47,7 @@ export default async function AdminDashboardPage() {
               </div>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">신규 가입자</p>
+              <p className="text-sm font-medium text-gray-500">?�규 가?�자</p>
               <p className="text-2xl font-semibold text-gray-900">{overview.uniqueUsers.toLocaleString()}</p>
             </div>
           </div>
@@ -63,7 +63,7 @@ export default async function AdminDashboardPage() {
               </div>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">활성 프로젝트</p>
+              <p className="text-sm font-medium text-gray-500">?�성 ?�로?�트</p>
               <p className="text-2xl font-semibold text-gray-900">{overview.activeUsers.toLocaleString()}</p>
             </div>
           </div>
@@ -79,14 +79,14 @@ export default async function AdminDashboardPage() {
               </div>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">총 거래액</p>
-              <p className="text-2xl font-semibold text-gray-900">₩0</p>
+              <p className="text-sm font-medium text-gray-500">�?거래??/p>
+              <p className="text-2xl font-semibold text-gray-900">??</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* 섹션들 */}
+      {/* ?�션??*/}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <AnalyticsOverviewSection overview={overview} />
         <ProjectReviewSection />

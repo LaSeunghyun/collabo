@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, boolean, json, uuid, pgEnum, decimal, serial, unique } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, integer, boolean, json, pgEnum, decimal, unique } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 // Enums
@@ -196,6 +196,8 @@ export const posts = pgTable('posts', {
   isAnonymous: boolean('is_anonymous').notNull().default(false),
   status: postStatusEnum('status').notNull().default('ACTIVE'),
   likesCount: integer('likes_count').notNull().default(0),
+  dislikesCount: integer('dislikes_count').notNull().default(0),
+  commentsCount: integer('comments_count').notNull().default(0),
   reportsCount: integer('reports_count').notNull().default(0),
   editedAt: timestamp('edited_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
@@ -253,6 +255,19 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   partner: one(partners),
   orders: many(orders),
   wallet: one(wallets),
+  followers: many(userFollows, {
+    fields: [users.id],
+    references: [userFollows.followingId],
+  }),
+  following: many(userFollows, {
+    fields: [users.id],
+    references: [userFollows.followerId],
+  }),
+  postLikes: many(postLikes),
+  postDislikes: many(postDislikes),
+  moderationReports: many(moderationReports),
+  auditLogs: many(auditLogs),
+  permissions: many(userPermissions),
 }));
 
 export const projectsRelations = relations(projects, ({ one, many }) => ({
@@ -291,11 +306,12 @@ export const fundingsRelations = relations(fundings, ({ one }) => ({
   }),
 }));
 
-export const settlementsRelations = relations(settlements, ({ one }) => ({
+export const settlementsRelations = relations(settlements, ({ one, many }) => ({
   project: one(projects, {
     fields: [settlements.projectId],
     references: [projects.id],
   }),
+  payouts: many(settlementPayouts),
 }));
 
 export const partnersRelations = relations(partners, ({ one, many }) => ({
@@ -345,6 +361,8 @@ export const postsRelations = relations(posts, ({ one, many }) => ({
     references: [users.id],
   }),
   comments: many(comments),
+  likes: many(postLikes),
+  dislikes: many(postDislikes),
 }));
 
 export const commentsRelations = relations(comments, ({ one, many }) => ({
@@ -366,6 +384,160 @@ export const commentsRelations = relations(comments, ({ one, many }) => ({
 export const notificationsRelations = relations(notifications, ({ one }) => ({
   user: one(users, {
     fields: [notifications.userId],
+    references: [users.id],
+  }),
+}));
+
+// User Follows table
+export const userFollows = pgTable('user_follows', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  followerId: text('follower_id').notNull().references(() => users.id),
+  followingId: text('following_id').notNull().references(() => users.id),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (table) => ({
+  uniqueFollow: unique('unique_follow', [table.followerId, table.followingId]),
+}));
+
+// Post Likes table
+export const postLikes = pgTable('post_likes', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  postId: text('post_id').notNull().references(() => posts.id),
+  userId: text('user_id').notNull().references(() => users.id),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (table) => ({
+  uniquePostLike: unique('unique_post_like', [table.postId, table.userId]),
+}));
+
+// Post Dislikes table
+export const postDislikes = pgTable('post_dislikes', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  postId: text('post_id').notNull().references(() => posts.id),
+  userId: text('user_id').notNull().references(() => users.id),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (table) => ({
+  uniquePostDislike: unique('unique_post_dislike', [table.postId, table.userId]),
+}));
+
+// Moderation Reports table
+export const moderationReports = pgTable('moderation_reports', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  reporterId: text('reporter_id').notNull().references(() => users.id),
+  targetType: moderationTargetTypeEnum('target_type').notNull(),
+  targetId: text('target_id').notNull(),
+  reason: text('reason').notNull(),
+  description: text('description'),
+  status: moderationStatusEnum('status').notNull().default('PENDING'),
+  moderatorId: text('moderator_id').references(() => users.id),
+  actionTaken: text('action_taken'),
+  notes: text('notes'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+// Settlement Payouts table
+export const settlementPayouts = pgTable('settlement_payouts', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  settlementId: text('settlement_id').notNull().references(() => settlements.id),
+  stakeholderType: settlementStakeholderTypeEnum('stakeholder_type').notNull(),
+  stakeholderId: text('stakeholder_id').notNull(),
+  amount: integer('amount').notNull(),
+  status: settlementPayoutStatusEnum('status').notNull().default('PENDING'),
+  paymentMethod: text('payment_method'),
+  paymentReference: text('payment_reference'),
+  processedAt: timestamp('processed_at'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+// Audit Logs table
+export const auditLogs = pgTable('audit_logs', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text('user_id').references(() => users.id),
+  action: text('action').notNull(),
+  resourceType: text('resource_type').notNull(),
+  resourceId: text('resource_id').notNull(),
+  oldValues: json('old_values'),
+  newValues: json('new_values'),
+  metadata: json('metadata'),
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+// User Permissions table
+export const userPermissions = pgTable('user_permissions', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text('user_id').notNull().references(() => users.id),
+  permission: text('permission').notNull(),
+  resourceType: text('resource_type'),
+  resourceId: text('resource_id'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (table) => ({
+  uniqueUserPermission: unique('unique_user_permission', [table.userId, table.permission, table.resourceType, table.resourceId]),
+}));
+
+// Relations
+export const userFollowsRelations = relations(userFollows, ({ one }) => ({
+  follower: one(users, {
+    fields: [userFollows.followerId],
+    references: [users.id],
+  }),
+  following: one(users, {
+    fields: [userFollows.followingId],
+    references: [users.id],
+  }),
+}));
+
+export const postLikesRelations = relations(postLikes, ({ one }) => ({
+  post: one(posts, {
+    fields: [postLikes.postId],
+    references: [posts.id],
+  }),
+  user: one(users, {
+    fields: [postLikes.userId],
+    references: [users.id],
+  }),
+}));
+
+export const postDislikesRelations = relations(postDislikes, ({ one }) => ({
+  post: one(posts, {
+    fields: [postDislikes.postId],
+    references: [posts.id],
+  }),
+  user: one(users, {
+    fields: [postDislikes.userId],
+    references: [users.id],
+  }),
+}));
+
+export const moderationReportsRelations = relations(moderationReports, ({ one }) => ({
+  reporter: one(users, {
+    fields: [moderationReports.reporterId],
+    references: [users.id],
+  }),
+  moderator: one(users, {
+    fields: [moderationReports.moderatorId],
+    references: [users.id],
+  }),
+}));
+
+export const settlementPayoutsRelations = relations(settlementPayouts, ({ one }) => ({
+  settlement: one(settlements, {
+    fields: [settlementPayouts.settlementId],
+    references: [settlements.id],
+  }),
+}));
+
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+  user: one(users, {
+    fields: [auditLogs.userId],
+    references: [users.id],
+  }),
+}));
+
+export const userPermissionsRelations = relations(userPermissions, ({ one }) => ({
+  user: one(users, {
+    fields: [userPermissions.userId],
     references: [users.id],
   }),
 }));

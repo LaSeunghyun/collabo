@@ -45,7 +45,7 @@ describe('Community comments API', () => {
   });
 
   it('returns 401 when the user is not authenticated', async () => {
-    requireApiUser.mockRejectedValueOnce(new AuthorizationError('인증이 필요합니다.', 401));
+    requireApiUser.mockRejectedValueOnce(new AuthorizationError('?�증???�요?�니??', 401));
 
     const request = new NextRequest('http://localhost/api/community/post-1/comments', {
       method: 'POST',
@@ -55,7 +55,7 @@ describe('Community comments API', () => {
     const response = await POST(request, { params: { id: 'post-1' } });
 
     expect(response.status).toBe(401);
-    await expect(response.json()).resolves.toEqual({ error: '인증이 필요합니다.' });
+    await expect(response.json()).resolves.toEqual({ error: '?�증???�요?�니??' });
     expect(mockPrisma.comment.create).not.toHaveBeenCalled();
   });
 

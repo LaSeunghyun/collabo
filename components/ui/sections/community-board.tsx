@@ -145,14 +145,14 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
     ? selectedCategories.filter((category) => category !== 'all')
     : selectedCategories;
   const categoriesForQuery = effectiveCategories.includes('all') ? ['all'] : effectiveCategories;
-  // 글쓰기 버튼 클릭 핸들러
+  // 글?�기 버튼 ?�릭 ?�들??
   const handleCreatePost = () => {
     if (!session) {
-      // 로그인되지 않은 경우 로그인 페이지로 리다이렉트
+      // 로그?�되지 ?��? 경우 로그???�이지�?리다?�렉??
       signIn(undefined, { callbackUrl: '/community/new' });
       return;
     }
-    // 로그인된 경우 글쓰기 페이지로 이동
+    // 로그?�된 경우 글?�기 ?�이지�??�동
     if (router) {
       router.push('/community/new');
       return;
@@ -358,7 +358,7 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
             <span className="rounded-full bg-white/10 px-3 py-1 font-semibold uppercase tracking-[0.2em]">
               {t('community.labels.total', { count: totalCount })}
             </span>
-            <span className="hidden md:inline">•</span>
+            <span className="hidden md:inline">??/span>
             <span>{t('community.labels.selectedCategories', { count: categoriesForQuery.length })}</span>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
@@ -414,7 +414,7 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
               >
                 <div className="flex items-center gap-3 text-xs uppercase tracking-[0.25em] text-primary">
                   <span>{t(`community.filters.${post.category}`)}</span>
-                  <span>•</span>
+                  <span>??/span>
                   <span>{t('community.badges.pinned')}</span>
                 </div>
                 <p className="mt-2 text-base font-semibold text-white">{post.title}</p>
@@ -539,9 +539,9 @@ function CommunityPostCard({
           </Link>
           <div className="flex flex-wrap items-center gap-3 text-xs text-white/60">
             <span className="font-semibold text-white">{authorName}</span>
-            <span>•</span>
+            <span>??/span>
             <span>{commentLabel}</span>
-            <span>•</span>
+            <span>??/span>
             <span>{likeLabel}</span>
           </div>
         </div>

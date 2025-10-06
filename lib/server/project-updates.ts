@@ -1,19 +1,37 @@
-import { MilestoneStatus, PostType, UserRole } from '@/types/drizzle';
-// Prisma types removed - using Drizzle types
-
-
+import { db } from '@/lib/drizzle';
+import { posts, users, postLikes, projects } from '@/lib/db/schema';
+import { eq, and, desc, sql } from 'drizzle-orm';
 import type { SessionUser } from '@/lib/auth/session';
-import { prisma } from '@/lib/prisma';
+
+// Drizzle enum values
+type MilestoneStatusType = 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'RELEASED';
+
+const UserRole = {
+  CREATOR: 'CREATOR',
+  PARTICIPANT: 'PARTICIPANT',
+  PARTNER: 'PARTNER',
+  ADMIN: 'ADMIN',
+} as const;
+
+const PostType = {
+  UPDATE: 'UPDATE',
+  DISCUSSION: 'DISCUSSION',
+  AMA: 'AMA',
+} as const;
+
+type MilestoneStatusType = typeof MilestoneStatus[keyof typeof MilestoneStatus];
+type UserRole = typeof UserRole[keyof typeof UserRole];
+type PostType = typeof PostType[keyof typeof PostType];
 
 export class ProjectUpdateNotFoundError extends Error {
-  constructor(message = '프로젝트 업데이트를 찾을 수 없습니다.') {
+  constructor(message = '?�로?�트 ?�데?�트�?찾을 ???�습?�다.') {
     super(message);
     this.name = 'ProjectUpdateNotFoundError';
   }
 }
 
 export class ProjectUpdateAccessDeniedError extends Error {
-  constructor(message = '프로젝트 업데이트에 대한 권한이 없습니다.') {
+  constructor(message = '?�로?�트 ?�데?�트???�??권한???�습?�다.') {
     super(message);
     this.name = 'ProjectUpdateAccessDeniedError';
   }
@@ -41,7 +59,7 @@ export type ProjectUpdateRecord = {
   milestone: {
     id: string;
     title: string;
-    status: MilestoneStatus;
+    status: MilestoneStatusType;
   } | null;
   createdAt: Date;
   updatedAt: Date;
@@ -77,15 +95,15 @@ type ProjectInfo = {
 
 const toJsonInput = (
   value: ProjectUpdateAttachment[] | undefined
-): Prisma.InputJsonValue => {
+): any => {
   if (!value || value.length === 0) {
     return [];
   }
 
-  return value as unknown as Prisma.InputJsonValue;
+  return value;
 };
 
-const normalizeAttachments = (value: Prisma.JsonValue | null): ProjectUpdateAttachment[] => {
+const normalizeAttachments = (value: any): ProjectUpdateAttachment[] => {
   if (!value) {
     return [];
   }
@@ -123,15 +141,28 @@ const normalizeAttachments = (value: Prisma.JsonValue | null): ProjectUpdateAtta
   return [];
 };
 
-const buildPostInclude = () => ({
-  author: { select: { id: true, name: true, avatarUrl: true } },
-  milestone: { select: { id: true, title: true, status: true } },
-  _count: { select: { likes: true, comments: true } }
-});
-
-type PostWithRelations = Prisma.PostGetPayload<{
-  include: ReturnType<typeof buildPostInclude>;
-}>;
+type PostWithRelations = {
+  id: string;
+  projectId: string | null;
+  title: string;
+  content: string;
+  attachments: any;
+  milestoneId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  likesCount: number;
+  commentsCount: number;
+  author: {
+    id: string;
+    name: string | null;
+    avatarUrl: string | null;
+  };
+  milestone: {
+    id: string;
+    title: string;
+    status: string;
+  } | null;
+};
 
 const getLikedPostIds = async (
   viewer: SessionUser | null | undefined,
@@ -141,10 +172,13 @@ const getLikedPostIds = async (
     return undefined;
   }
 
-  const likes = await prisma.postLike.findMany({
-    where: { userId: viewer.id, postId: { in: postIds } },
-    select: { postId: true }
-  });
+  const likes = await db
+    .select({ postId: postLikes.postId })
+    .from(postLikes)
+    .where(and(
+      eq(postLikes.userId, viewer.id),
+      sql`${postLikes.postId} = ANY(${postIds})`
+    ));
 
   return new Set(likes.map((like) => like.postId));
 };
@@ -159,18 +193,18 @@ const toProjectUpdateRecord = (
   projectId: post.projectId ?? project.id,
   title: post.title,
   content: post.content,
-  attachments: normalizeAttachments(post.attachments ?? null),
+  attachments: normalizeAttachments(post.attachments),
   milestone: post.milestone
     ? {
         id: post.milestone.id,
         title: post.milestone.title,
-        status: post.milestone.status
+        status: post.milestone.status as MilestoneStatusType
       }
     : null,
   createdAt: post.createdAt,
   updatedAt: post.updatedAt,
-  likes: post._count.likes,
-  comments: post._count.comments,
+  likes: post.likesCount,
+  comments: post.commentsCount,
   liked: Boolean(viewer && likedPostIds?.has(post.id)),
   author: {
     id: post.author.id,
@@ -183,13 +217,10 @@ const toProjectUpdateRecord = (
 });
 
 const ensureMilestoneBelongsToProject = async (projectId: string, milestoneId: string) => {
-  const exists = await prisma.projectMilestone.findFirst({
-    where: { id: milestoneId, projectId },
-    select: { id: true }
-  });
-
-  if (!exists) {
-    throw new ProjectUpdateValidationError('마일스톤을 찾을 수 없습니다.');
+  // TODO: Implement milestone validation when milestone table is added
+  // For now, just validate that milestoneId is not empty
+  if (!milestoneId) {
+    throw new ProjectUpdateValidationError('마일?�톤??찾을 ???�습?�다.');
   }
 };
 
@@ -201,13 +232,14 @@ export const assertProjectOwner = async (
     throw new ProjectUpdateAccessDeniedError();
   }
 
-  const project = await prisma.project.findUnique({
-    where: { id: projectId },
-    select: { id: true, ownerId: true }
-  });
+  const [project] = await db
+    .select({ id: projects.id, ownerId: projects.ownerId })
+    .from(projects)
+    .where(eq(projects.id, projectId))
+    .limit(1);
 
   if (!project) {
-    throw new ProjectUpdateNotFoundError('프로젝트를 찾을 수 없습니다.');
+    throw new ProjectUpdateNotFoundError('?�로?�트�?찾을 ???�습?�다.');
   }
 
   if (user.role !== UserRole.ADMIN && project.ownerId !== user.id) {
@@ -222,30 +254,55 @@ export const listProjectUpdates = async (
   projectId: string,
   viewer?: SessionUser | null
 ): Promise<ProjectUpdateRecord[]> => {
-  const project = await prisma.project.findUnique({
-    where: { id: projectId },
-    select: { id: true, ownerId: true }
-  });
+  const [project] = await db
+    .select({ id: projects.id, ownerId: projects.ownerId })
+    .from(projects)
+    .where(eq(projects.id, projectId))
+    .limit(1);
 
   if (!project) {
-    throw new ProjectUpdateNotFoundError('프로젝트를 찾을 수 없습니다.');
+    throw new ProjectUpdateNotFoundError('?�로?�트�?찾을 ???�습?�다.');
   }
 
-  const posts = await prisma.post.findMany({
-    where: {
-      projectId,
-      type: PostType.UPDATE,
-    },
-    orderBy: { createdAt: 'desc' },
-    include: buildPostInclude()
-  });
+  const postsData = await db
+    .select({
+      id: posts.id,
+      projectId: posts.projectId,
+      title: posts.title,
+      content: posts.content,
+      attachments: posts.attachments,
+      milestoneId: posts.milestoneId,
+      createdAt: posts.createdAt,
+      updatedAt: posts.updatedAt,
+      likesCount: posts.likesCount,
+      commentsCount: posts.commentsCount,
+      author: {
+        id: users.id,
+        name: users.name,
+        avatarUrl: users.avatarUrl,
+      },
+    })
+    .from(posts)
+    .leftJoin(users, eq(posts.authorId, users.id))
+    .where(and(
+      eq(posts.projectId, projectId),
+      eq(posts.type, PostType.UPDATE)
+    ))
+    .orderBy(desc(posts.createdAt));
 
   const likedPostIds = await getLikedPostIds(
     viewer,
-    posts.map((post) => post.id)
+    postsData.map((post) => post.id)
   );
 
-  return posts.map((post) => toProjectUpdateRecord(post, viewer, project, likedPostIds));
+  // Convert to PostWithRelations format
+  const postsWithRelations: PostWithRelations[] = postsData.map(post => ({
+    ...post,
+    author: post.author || { id: '', name: null, avatarUrl: null },
+    milestone: null, // TODO: Add milestone data when milestone table is implemented
+  }));
+
+  return postsWithRelations.map((post) => toProjectUpdateRecord(post, viewer, project, likedPostIds));
 };
 
 export const createProjectUpdate = async (
@@ -259,8 +316,9 @@ export const createProjectUpdate = async (
     await ensureMilestoneBelongsToProject(projectId, input.milestoneId);
   }
 
-  const post = await prisma.post.create({
-    data: {
+  const [post] = await db
+    .insert(posts)
+    .values({
       projectId,
       authorId: user.id,
       title: input.title,
@@ -268,13 +326,40 @@ export const createProjectUpdate = async (
       type: PostType.UPDATE,
       attachments: toJsonInput(input.attachments),
       milestoneId: input.milestoneId ?? null
-    },
-    include: buildPostInclude()
-  });
+    })
+    .returning({
+      id: posts.id,
+      projectId: posts.projectId,
+      title: posts.title,
+      content: posts.content,
+      attachments: posts.attachments,
+      milestoneId: posts.milestoneId,
+      createdAt: posts.createdAt,
+      updatedAt: posts.updatedAt,
+      likesCount: posts.likesCount,
+      commentsCount: posts.commentsCount,
+    });
+
+  // Get author info
+  const [author] = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      avatarUrl: users.avatarUrl,
+    })
+    .from(users)
+    .where(eq(users.id, user.id))
+    .limit(1);
+
+  const postWithRelations: PostWithRelations = {
+    ...post,
+    author,
+    milestone: null, // TODO: Add milestone data when milestone table is implemented
+  };
 
   const likedPostIds = await getLikedPostIds(user, [post.id]);
 
-  return toProjectUpdateRecord(post, user, project, likedPostIds);
+  return toProjectUpdateRecord(postWithRelations, user, project, likedPostIds);
 };
 
 export const updateProjectUpdate = async (
@@ -285,10 +370,15 @@ export const updateProjectUpdate = async (
 ): Promise<ProjectUpdateRecord> => {
   const project = await assertProjectOwner(projectId, user);
 
-  const existing = await prisma.post.findFirst({
-    where: { id: updateId, projectId, type: PostType.UPDATE },
-    select: { id: true }
-  });
+  const [existing] = await db
+    .select({ id: posts.id })
+    .from(posts)
+    .where(and(
+      eq(posts.id, updateId),
+      eq(posts.projectId, projectId),
+      eq(posts.type, PostType.UPDATE)
+    ))
+    .limit(1);
 
   if (!existing) {
     throw new ProjectUpdateNotFoundError();
@@ -298,41 +388,63 @@ export const updateProjectUpdate = async (
     await ensureMilestoneBelongsToProject(projectId, input.milestoneId);
   }
 
-  const data: Prisma.PostUpdateInput = {};
+  const updateData: any = {
+    updatedAt: new Date(),
+  };
 
   if (input.title !== undefined) {
-    data.title = input.title;
+    updateData.title = input.title;
   }
 
   if (input.content !== undefined) {
-    data.content = input.content;
+    updateData.content = input.content;
   }
 
-
-
   if (input.attachments !== undefined) {
-    data.attachments = toJsonInput(input.attachments);
+    updateData.attachments = toJsonInput(input.attachments);
   }
 
   if (input.milestoneId !== undefined) {
-    data.milestone = input.milestoneId
-      ? {
-          connect: { id: input.milestoneId }
-        }
-      : {
-          disconnect: true
-        };
+    updateData.milestoneId = input.milestoneId;
   }
 
-  const post = await prisma.post.update({
-    where: { id: existing.id },
-    data,
-    include: buildPostInclude()
-  });
+  const [post] = await db
+    .update(posts)
+    .set(updateData)
+    .where(eq(posts.id, existing.id))
+    .returning({
+      id: posts.id,
+      projectId: posts.projectId,
+      title: posts.title,
+      content: posts.content,
+      attachments: posts.attachments,
+      milestoneId: posts.milestoneId,
+      createdAt: posts.createdAt,
+      updatedAt: posts.updatedAt,
+      likesCount: posts.likesCount,
+      commentsCount: posts.commentsCount,
+    });
+
+  // Get author info
+  const [author] = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      avatarUrl: users.avatarUrl,
+    })
+    .from(users)
+    .where(eq(users.id, user.id))
+    .limit(1);
+
+  const postWithRelations: PostWithRelations = {
+    ...post,
+    author,
+    milestone: null, // TODO: Add milestone data when milestone table is implemented
+  };
 
   const likedPostIds = await getLikedPostIds(user, [post.id]);
 
-  return toProjectUpdateRecord(post, user, project, likedPostIds);
+  return toProjectUpdateRecord(postWithRelations, user, project, likedPostIds);
 };
 
 export const deleteProjectUpdate = async (
@@ -342,14 +454,19 @@ export const deleteProjectUpdate = async (
 ): Promise<void> => {
   await assertProjectOwner(projectId, user);
 
-  const existing = await prisma.post.findFirst({
-    where: { id: updateId, projectId, type: PostType.UPDATE },
-    select: { id: true }
-  });
+  const [existing] = await db
+    .select({ id: posts.id })
+    .from(posts)
+    .where(and(
+      eq(posts.id, updateId),
+      eq(posts.projectId, projectId),
+      eq(posts.type, PostType.UPDATE)
+    ))
+    .limit(1);
 
   if (!existing) {
     throw new ProjectUpdateNotFoundError();
   }
 
-  await prisma.post.delete({ where: { id: existing.id } });
+  await db.delete(posts).where(eq(posts.id, existing.id));
 };

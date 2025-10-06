@@ -46,7 +46,7 @@ export function DataTable<T extends Record<string, any>>({
   onFilter,
   onPageChange,
   loading = false,
-  emptyMessage = '데이터가 없습니다.'
+  emptyMessage = '?�이?��? ?�습?�다.'
 }: DataTableProps<T>) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<Record<string, string>>({});
@@ -94,7 +94,7 @@ export function DataTable<T extends Record<string, any>>({
       </CardHeader>
       
       <CardContent>
-        {/* 검색 및 필터 */}
+        {/* 검??�??�터 */}
         {(searchable || filterable) && (
           <div className="mb-6 space-y-4">
             <div className="flex flex-col md:flex-row gap-4">
@@ -102,7 +102,7 @@ export function DataTable<T extends Record<string, any>>({
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <Input
-                    placeholder="검색..."
+                    placeholder="검??.."
                     value={searchQuery}
                     onChange={(e) => handleSearch(e.target.value)}
                     className="pl-10"
@@ -114,18 +114,18 @@ export function DataTable<T extends Record<string, any>>({
                 <div className="flex gap-2">
                   <Select value={filters.status || ''} onValueChange={(value) => handleFilterChange('status', value)}>
                     <SelectTrigger className="w-32">
-                      <SelectValue placeholder="상태" />
+                      <SelectValue placeholder="?�태" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">전체</SelectItem>
-                      <SelectItem value="active">활성</SelectItem>
-                      <SelectItem value="inactive">비활성</SelectItem>
+                      <SelectItem value="">?�체</SelectItem>
+                      <SelectItem value="active">?�성</SelectItem>
+                      <SelectItem value="inactive">비활??/SelectItem>
                     </SelectContent>
                   </Select>
                   
                   <Button variant="outline" size="sm">
                     <Filter className="h-4 w-4 mr-2" />
-                    필터
+                    ?�터
                   </Button>
                 </div>
               )}
@@ -133,7 +133,7 @@ export function DataTable<T extends Record<string, any>>({
           </div>
         )}
 
-        {/* 데이터 테이블 */}
+        {/* ?�이???�이�?*/}
         {data.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-500">{emptyMessage}</p>
@@ -170,11 +170,11 @@ export function DataTable<T extends Record<string, any>>({
               </table>
             </div>
 
-            {/* 페이지네이션 */}
+            {/* ?�이지?�이??*/}
             {pagination && pagination.pages > 1 && (
               <div className="flex items-center justify-between mt-6">
                 <div className="text-sm text-gray-600">
-                  총 {pagination.total}개 중 {((pagination.page - 1) * pagination.limit) + 1}-{Math.min(pagination.page * pagination.limit, pagination.total)}개
+                  �?{pagination.total}�?�?{((pagination.page - 1) * pagination.limit) + 1}-{Math.min(pagination.page * pagination.limit, pagination.total)}�?
                 </div>
                 
                 <div className="flex items-center space-x-2">
@@ -185,7 +185,7 @@ export function DataTable<T extends Record<string, any>>({
                     disabled={pagination.page === 1}
                   >
                     <ChevronLeft className="h-4 w-4" />
-                    이전
+                    ?�전
                   </Button>
                   
                   <span className="text-sm">
@@ -198,7 +198,7 @@ export function DataTable<T extends Record<string, any>>({
                     onClick={() => handlePageChange(pagination.page + 1)}
                     disabled={pagination.page === pagination.pages}
                   >
-                    다음
+                    ?�음
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>

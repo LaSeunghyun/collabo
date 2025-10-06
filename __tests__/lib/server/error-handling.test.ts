@@ -1,4 +1,4 @@
-ï»¿import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { Prisma } from '@/types/prisma';
 import {
   buildApiError,
@@ -16,13 +16,13 @@ describe('error handling utilities', () => {
 
   it('formats funding settlement errors', async () => {
     const response = handleFundingSettlementError(
-      new FundingSettlementError('ì •ì‚° ì˜¤ë¥˜', 'SETTLEMENT_FAILED', 400, { issue: 'test' })
+      new FundingSettlementError('Á¤»ê ¿À·ù', 'SETTLEMENT_FAILED', 400, { issue: 'test' })
     );
 
     await expect(readJson(response)).resolves.toEqual({
       status: 400,
       body: {
-        error: 'ì •ì‚° ì˜¤ë¥˜',
+        error: 'Á¤»ê ¿À·ù',
         code: 'SETTLEMENT_FAILED',
         details: { issue: 'test' }
       }

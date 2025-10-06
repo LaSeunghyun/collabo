@@ -5,7 +5,7 @@ import {
   DEFAULT_ANNOUNCEMENT_CATEGORY,
   type AnnouncementCategory
 } from '@/lib/constants/announcements';
-// import { prisma } from '@/lib/prisma';
+// import { prisma } from '@/lib/drizzle';
 
 export interface AnnouncementListItem {
   id: string;

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireApiUser } from '@/lib/auth/guards';
-import { UserRole, ModerationStatus } from '@/types/drizzle';
+import { ModerationStatus } from '@/types/drizzle';
 import { getReportedPostDetails, updateModerationStatus } from '@/lib/server/moderation';
 
 export async function GET(request: NextRequest) {
   try {
-    await requireApiUser({ roles: [UserRole.ADMIN] });
+    await requireApiUser({ roles: ['ADMIN'] });
     const { searchParams } = new URL(request.url);
     const postId = searchParams.get('postId');
 
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const user = await requireApiUser({ roles: [UserRole.ADMIN] });
+    const user = await requireApiUser({ roles: ['ADMIN'] });
     const body = await request.json();
     const { reportId, status, actionNote } = body;
 
@@ -37,7 +37,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    // 유효한 상태인지 확인
+    // ?�효???�태?��? ?�인
     if (!Object.values(ModerationStatus).includes(status)) {
       return NextResponse.json(
         { message: 'Invalid status' },

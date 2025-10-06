@@ -112,7 +112,7 @@ const useProjectUpdates = (projectId: string) =>
     queryFn: async () => {
       const res = await fetch(`/api/projects/${projectId}/updates`);
       if (!res.ok) {
-        throw new Error('업데이트를 불러오지 못했습니다.');
+        throw new Error('?�데?�트�?불러?��? 못했?�니??');
       }
 
       const data = await res.json();
@@ -186,7 +186,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
       });
 
       if (!res.ok) {
-        throw new Error('좋아요를 변경하지 못했습니다.');
+        throw new Error('좋아?��? 변경하지 못했?�니??');
       }
 
       return (await res.json()) as CommunityPost;
@@ -242,7 +242,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
 
       if (!res.ok) {
         const errorBody = await res.json().catch(() => ({}));
-        throw new Error(errorBody?.message ?? '업데이트를 생성하지 못했습니다.');
+        throw new Error(errorBody?.message ?? '?�데?�트�??�성?��? 못했?�니??');
       }
 
       const json = await res.json();
@@ -272,7 +272,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
 
       if (!res.ok) {
         const errorBody = await res.json().catch(() => ({}));
-        throw new Error(errorBody?.message ?? '업데이트를 수정하지 못했습니다.');
+        throw new Error(errorBody?.message ?? '?�데?�트�??�정?��? 못했?�니??');
       }
 
       const json = await res.json();
@@ -330,7 +330,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
 
       if (!res.ok) {
         const errorBody = await res.json().catch(() => ({}));
-        throw new Error(errorBody?.message ?? '업데이트를 삭제하지 못했습니다.');
+        throw new Error(errorBody?.message ?? '?�데?�트�???��?��? 못했?�니??');
       }
     },
     onMutate: async ({ updateId }) => {
@@ -387,7 +387,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
 
   const submitCreate = () => {
     if (!composerState.title.trim() || !composerState.content.trim()) {
-      setComposerError('제목과 내용을 입력해주세요.');
+      setComposerError('?�목�??�용???�력?�주?�요.');
       return;
     }
 
@@ -408,7 +408,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
     }
 
     if (!editState.title.trim() || !editState.content.trim()) {
-      setEditError('제목과 내용을 입력해주세요.');
+      setEditError('?�목�??�용???�력?�주?�요.');
       return;
     }
 
@@ -428,7 +428,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
       {canManageUpdates ? (
         <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-xl shadow-black/20">
           <header className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-white">프로젝트 업데이트</h3>
+            <h3 className="text-lg font-semibold text-white">?�로?�트 ?�데?�트</h3>
             <button
               type="button"
               onClick={() => {
@@ -440,12 +440,12 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
               {composerOpen ? (
                 <>
                   <X className="h-4 w-4" />
-                  닫기
+                  ?�기
                 </>
               ) : (
                 <>
                   <Plus className="h-4 w-4" />
-                  새 업데이트 작성
+                  ???�데?�트 ?�성
                 </>
               )}
             </button>
@@ -455,7 +455,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
             <div className="mt-6 space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-white/80" htmlFor="update-title">
-                  제목
+                  ?�목
                 </label>
                 <input
                   id="update-title"
@@ -465,13 +465,13 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                     setComposerState({ ...composerState, title: event.target.value })
                   }
                   className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
-                  placeholder="팬들에게 공유할 소식을 적어주세요"
+                  placeholder="?�들?�게 공유???�식???�어주세??
                 />
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-white/80" htmlFor="update-content">
-                  내용
+                  ?�용
                 </label>
                 <textarea
                   id="update-content"
@@ -480,7 +480,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                     setComposerState({ ...composerState, content: event.target.value })
                   }
                   className="min-h-[140px] w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
-                  placeholder="업데이트 내용을 상세히 작성해주세요"
+                  placeholder="?�데?�트 ?�용???�세???�성?�주?�요"
                 />
               </div>
 
@@ -495,7 +495,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                       setComposerState({ ...composerState, visibility: 'PUBLIC' })
                     }
                   />
-                  전체 공개
+                  ?�체 공개
                 </label>
                 <label className="flex items-center gap-2">
                   <input
@@ -507,16 +507,16 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                       setComposerState({ ...composerState, visibility: 'SUPPORTERS' })
                     }
                   />
-                  후원자 전용
+                  ?�원???�용
                 </label>
               </div>
 
               <div className="space-y-3">
-                <p className="text-sm font-medium text-white/80">첨부 자료</p>
+                <p className="text-sm font-medium text-white/80">첨�? ?�료</p>
                 <div className="flex flex-col gap-3 sm:flex-row">
                   <input
                     type="url"
-                    placeholder="자료 링크"
+                    placeholder="?�료 링크"
                     value={composerState.attachmentDraft.url}
                     onChange={(event) =>
                       setComposerState({
@@ -531,7 +531,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                   />
                   <input
                     type="text"
-                    placeholder="표시 이름 (선택)"
+                    placeholder="?�시 ?�름 (?�택)"
                     value={composerState.attachmentDraft.label}
                     onChange={(event) =>
                       setComposerState({
@@ -549,7 +549,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                     onClick={() => handleAddAttachment(composerState, setComposerState)}
                     className="inline-flex items-center gap-2 rounded-full border border-primary/40 px-4 py-2 text-sm text-primary"
                   >
-                    <Plus className="h-4 w-4" /> 추가
+                    <Plus className="h-4 w-4" /> 추�?
                   </button>
                 </div>
                 {composerState.attachments.length ? (
@@ -565,7 +565,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                           onClick={() => handleRemoveAttachment(composerState, setComposerState, index)}
                           className="text-xs text-red-300"
                         >
-                          삭제
+                          ??��
                         </button>
                       </li>
                     ))}
@@ -575,7 +575,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-white/80" htmlFor="update-milestone">
-                  연결된 마일스톤 (선택)
+                  ?�결??마일?�톤 (?�택)
                 </label>
                 <input
                   id="update-milestone"
@@ -585,7 +585,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                     setComposerState({ ...composerState, milestoneId: event.target.value })
                   }
                   className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-sm text-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
-                  placeholder="마일스톤 ID를 입력하세요"
+                  placeholder="마일?�톤 ID�??�력?�세??
                 />
               </div>
 
@@ -598,7 +598,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                   disabled={createMutation.isPending}
                   className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
                 >
-                  {createMutation.isPending ? '작성 중...' : '업데이트 등록'}
+                  {createMutation.isPending ? '?�성 �?..' : '?�데?�트 ?�록'}
                 </button>
               </div>
             </div>
@@ -606,8 +606,8 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
         </div>
       ) : null}
 
-      {isLoading ? <p className="text-sm text-white/60">불러오는 중입니다...</p> : null}
-      {isError ? <p className="text-sm text-red-400">업데이트를 불러오지 못했습니다.</p> : null}
+      {isLoading ? <p className="text-sm text-white/60">불러?�는 중입?�다...</p> : null}
+      {isError ? <p className="text-sm text-red-400">?�데?�트�?불러?��? 못했?�니??</p> : null}
 
       <ol className="relative ml-2 space-y-8 border-l border-white/10 pl-6">
         {visibleUpdates.map((update) => {
@@ -629,7 +629,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                 <div className="flex flex-wrap items-center gap-2">
                   {update.visibility === 'SUPPORTERS' ? (
                     <span className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white/80">
-                      <ShieldCheck className="h-3 w-3" /> 후원자 전용
+                      <ShieldCheck className="h-3 w-3" /> ?�원???�용
                     </span>
                   ) : null}
                   {update.milestone ? (
@@ -644,7 +644,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                 <div className="mt-4 space-y-4 rounded-2xl border border-white/10 bg-black/30 p-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-white/80" htmlFor={`edit-title-${update.id}`}>
-                      제목
+                      ?�목
                     </label>
                     <input
                       id={`edit-title-${update.id}`}
@@ -658,7 +658,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-white/80" htmlFor={`edit-content-${update.id}`}>
-                      내용
+                      ?�용
                     </label>
                     <textarea
                       id={`edit-content-${update.id}`}
@@ -681,7 +681,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                           setEditState({ ...editState, visibility: 'PUBLIC' })
                         }
                       />
-                      전체 공개
+                      ?�체 공개
                     </label>
                     <label className="flex items-center gap-2">
                       <input
@@ -693,16 +693,16 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                           setEditState({ ...editState, visibility: 'SUPPORTERS' })
                         }
                       />
-                      후원자 전용
+                      ?�원???�용
                     </label>
                   </div>
 
                   <div className="space-y-3">
-                    <p className="text-sm font-medium text-white/80">첨부 자료</p>
+                    <p className="text-sm font-medium text-white/80">첨�? ?�료</p>
                     <div className="flex flex-col gap-3 sm:flex-row">
                       <input
                         type="url"
-                        placeholder="자료 링크"
+                        placeholder="?�료 링크"
                         value={editState.attachmentDraft.url}
                         onChange={(event) =>
                           setEditState({
@@ -717,7 +717,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                       />
                       <input
                         type="text"
-                        placeholder="표시 이름 (선택)"
+                        placeholder="?�시 ?�름 (?�택)"
                         value={editState.attachmentDraft.label}
                         onChange={(event) =>
                           setEditState({
@@ -737,7 +737,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                         }
                         className="inline-flex items-center gap-2 rounded-full border border-primary/40 px-4 py-2 text-sm text-primary"
                       >
-                        <Plus className="h-4 w-4" /> 추가
+                        <Plus className="h-4 w-4" /> 추�?
                       </button>
                     </div>
                     {editState.attachments.length ? (
@@ -756,7 +756,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                               }
                               className="text-xs text-red-300"
                             >
-                              삭제
+                              ??��
                             </button>
                           </li>
                         ))}
@@ -766,7 +766,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
 
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-white/80" htmlFor={`edit-milestone-${update.id}`}>
-                      연결된 마일스톤 (선택)
+                      ?�결??마일?�톤 (?�택)
                     </label>
                     <input
                       id={`edit-milestone-${update.id}`}
@@ -776,7 +776,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                         setEditState({ ...editState, milestoneId: event.target.value })
                       }
                       className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
-                      placeholder="마일스톤 ID를 입력하세요"
+                      placeholder="마일?�톤 ID�??�력?�세??
                     />
                   </div>
 
@@ -800,7 +800,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                       disabled={updateMutation.isPending}
                       className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
                     >
-                      {updateMutation.isPending ? '저장 중...' : '변경 사항 저장'}
+                      {updateMutation.isPending ? '?�??�?..' : '변�??�항 ?�??}
                     </button>
                   </div>
                 </div>
@@ -809,7 +809,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                   {update.attachments.length ? (
                     <div className="space-y-2">
                       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/60">
-                        첨부 자료
+                        첨�? ?�료
                       </p>
                       <ul className="space-y-2">
                         {update.attachments.map((attachment, index) => (
@@ -850,7 +850,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                         }}
                         className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-white/70 hover:text-white"
                       >
-                        <Edit3 className="h-3 w-3" /> 수정
+                        <Edit3 className="h-3 w-3" /> ?�정
                       </button>
                       <button
                         type="button"
@@ -858,7 +858,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                         disabled={deleteMutation.isPending}
                         className="inline-flex items-center gap-2 rounded-full border border-red-400/40 px-4 py-2 text-red-300 hover:text-red-200 disabled:opacity-60"
                       >
-                        <Trash2 className="h-3 w-3" /> 삭제
+                        <Trash2 className="h-3 w-3" /> ??��
                       </button>
                     </div>
                   ) : null}

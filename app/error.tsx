@@ -11,7 +11,7 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    // 에러를 로깅 서비스에 전송
+    // 에러 로깅 서비스에 전송
     console.error('Application error:', {
       message: error.message,
       stack: error.stack,
@@ -61,7 +61,3 @@ export default function Error({
     </div>
   );
 }
-
-
-
-

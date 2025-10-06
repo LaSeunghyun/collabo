@@ -34,7 +34,7 @@ describe('calculateSettlementBreakdown', () => {
         partnerShares: [{ stakeholderId: 'partner-a', share: 0.8 }],
         collaboratorShares: [{ stakeholderId: 'collab-a', share: 0.3 }]
       })
-    ).toThrow('파트너와 협력자 배분 비율의 합이 100%를 초과했습니다.');
+    ).toThrow('?�트?��? ?�력??배분 비율???�이 100%�?초과?�습?�다.');
   });
 
   it('handles rounding so that totals equal the net amount', () => {

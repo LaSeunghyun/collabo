@@ -74,15 +74,15 @@ const mockEvaluateAuthorization = evaluateAuthorization as jest.MockedFunction<t
 
 const mockNotificationCreateMany = mockPrisma.notification.createMany as jest.Mock;
 
-const viewer = { id: 'viewer-1', name: '테스터', email: 'test@example.com', role: 'PARTICIPANT', permissions: [] };
-const ownerUser = { id: 'owner-1', name: '오너', email: 'owner@example.com', role: 'CREATOR', permissions: [] };
+const viewer = { id: 'viewer-1', name: '?�스??, email: 'test@example.com', role: 'PARTICIPANT', permissions: [] };
+const ownerUser = { id: 'owner-1', name: '?�너', email: 'owner@example.com', role: 'CREATOR', permissions: [] };
 
 describe('Project updates API routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockEvaluateAuthorization.mockResolvedValue({ status: 'authorized', session: null, user: viewer });
     mockRequireApiUser.mockResolvedValue(ownerUser);
-    mockPrisma.project.findUnique.mockResolvedValue({ id: 'project-1', ownerId: 'owner-1', title: '테스트 프로젝트' });
+    mockPrisma.project.findUnique.mockResolvedValue({ id: 'project-1', ownerId: 'owner-1', title: '?�스???�로?�트' });
     mockPrisma.userFollow.findMany.mockResolvedValue([{ followerId: 'fan-1' }]);
     mockPrisma.funding.findMany.mockResolvedValue([{ userId: 'backer-1' }]);
     mockNotificationCreateMany.mockResolvedValue({ count: 2 });
@@ -91,8 +91,8 @@ describe('Project updates API routes', () => {
   const sampleUpdate = (): ProjectUpdateRecord => ({
     id: 'update-1',
     projectId: 'project-1',
-    title: '새 소식',
-    content: '내용',
+    title: '???�식',
+    content: '?�용',
     visibility: 'PUBLIC',
     attachments: [],
     milestone: null,
@@ -101,7 +101,7 @@ describe('Project updates API routes', () => {
     likes: 0,
     comments: 0,
     liked: false,
-    author: { id: 'author-1', name: '테스터', avatarUrl: null },
+    author: { id: 'author-1', name: '?�스??, avatarUrl: null },
     canEdit: true
   });
 
@@ -125,29 +125,29 @@ describe('Project updates API routes', () => {
   });
 
   it('returns 404 when the project is not found', async () => {
-    mockListProjectUpdates.mockRejectedValueOnce(new ProjectUpdateNotFoundError('없음'));
+    mockListProjectUpdates.mockRejectedValueOnce(new ProjectUpdateNotFoundError('?�음'));
 
     const response = await getUpdates(new NextRequest('http://localhost/api/projects/project-1/updates'), {
       params: { id: 'project-1' }
     });
 
     expect(response.status).toBe(404);
-    expect(await response.json()).toEqual({ message: '없음' });
+    expect(await response.json()).toEqual({ message: '?�음' });
   });
 
   it('rejects creating updates when unauthorized', async () => {
-    mockRequireApiUser.mockRejectedValueOnce(new AuthorizationError('인증 필요', 401));
+    mockRequireApiUser.mockRejectedValueOnce(new AuthorizationError('?�증 ?�요', 401));
 
     const response = await createUpdate(
       new NextRequest('http://localhost/api/projects/project-1/updates', {
         method: 'POST',
-        body: JSON.stringify({ title: '제목', content: '본문' })
+        body: JSON.stringify({ title: '?�목', content: '본문' })
       }),
       { params: { id: 'project-1' } }
     );
 
     expect(response.status).toBe(401);
-    expect(await response.json()).toEqual({ error: '인증 필요' });
+    expect(await response.json()).toEqual({ error: '?�증 ?�요' });
     expect(mockCreateProjectUpdate).not.toHaveBeenCalled();
   });
 
@@ -157,7 +157,7 @@ describe('Project updates API routes', () => {
     const response = await createUpdate(
       new NextRequest('http://localhost/api/projects/project-1/updates', {
         method: 'POST',
-        body: JSON.stringify({ title: '제목', content: '본문', visibility: 'PUBLIC' }),
+        body: JSON.stringify({ title: '?�목', content: '본문', visibility: 'PUBLIC' }),
         headers: { 'Content-Type': 'application/json' }
       }),
       { params: { id: 'project-1' } }
@@ -165,7 +165,7 @@ describe('Project updates API routes', () => {
 
     expect(response.status).toBe(201);
     expect(mockCreateProjectUpdate).toHaveBeenCalledWith('project-1', {
-      title: '제목',
+      title: '?�목',
       content: '본문',
       visibility: 'PUBLIC',
       attachments: undefined,
@@ -188,18 +188,18 @@ describe('Project updates API routes', () => {
   });
 
   it('returns 400 when project update validation fails', async () => {
-    mockCreateProjectUpdate.mockRejectedValueOnce(new ProjectUpdateValidationError('잘못된 입력'));
+    mockCreateProjectUpdate.mockRejectedValueOnce(new ProjectUpdateValidationError('?�못???�력'));
 
     const response = await createUpdate(
       new NextRequest('http://localhost/api/projects/project-1/updates', {
         method: 'POST',
-        body: JSON.stringify({ title: '제목', content: '본문' })
+        body: JSON.stringify({ title: '?�목', content: '본문' })
       }),
       { params: { id: 'project-1' } }
     );
 
     expect(response.status).toBe(400);
-    expect(await response.json()).toEqual({ message: '잘못된 입력' });
+    expect(await response.json()).toEqual({ message: '?�못???�력' });
   });
 
   it('updates an existing project update', async () => {
@@ -208,7 +208,7 @@ describe('Project updates API routes', () => {
     const response = await patchUpdate(
       new NextRequest('http://localhost/api/projects/project-1/updates/update-1', {
         method: 'PATCH',
-        body: JSON.stringify({ title: '수정 제목' }),
+        body: JSON.stringify({ title: '?�정 ?�목' }),
         headers: { 'Content-Type': 'application/json' }
       }),
       { params: { id: 'project-1', updateId: 'update-1' } }
@@ -219,7 +219,7 @@ describe('Project updates API routes', () => {
       'project-1',
       'update-1',
       {
-        title: '수정 제목',
+        title: '?�정 ?�목',
         content: undefined,
         visibility: undefined,
         attachments: undefined,

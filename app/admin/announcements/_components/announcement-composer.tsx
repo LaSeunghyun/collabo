@@ -41,8 +41,8 @@ async function createAnnouncementRequest(payload: AnnouncementFormState) {
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: '공지 작성에 실패했습니다.' }));
-    throw new Error(error.message ?? '공지 작성에 실패했습니다.');
+    const error = await response.json().catch(() => ({ message: '공�? ?�성???�패?�습?�다.' }));
+    throw new Error(error.message ?? '공�? ?�성???�패?�습?�다.');
   }
 
   return response.json();
@@ -67,7 +67,7 @@ export function AnnouncementComposer() {
     setError(null);
 
     if (!formState.title.trim() || !formState.content.trim()) {
-      setError('제목과 내용을 모두 입력해 주세요.');
+      setError('?�목�??�용??모두 ?�력??주세??');
       return;
     }
 
@@ -77,7 +77,7 @@ export function AnnouncementComposer() {
       if (submissionError instanceof Error) {
         setError(submissionError.message);
       } else {
-        setError('공지 작성 중 오류가 발생했습니다.');
+        setError('공�? ?�성 �??�류가 발생?�습?�다.');
       }
     }
   };
@@ -95,16 +95,16 @@ export function AnnouncementComposer() {
 
   return (
     <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-8 shadow-lg shadow-blue-500/5">
-      <h2 className="text-xl font-semibold text-white">새 공지 작성</h2>
+      <h2 className="text-xl font-semibold text-white">??공�? ?�성</h2>
       <p className="mt-1 text-sm text-white/60">
-        공지 제목, 카테고리, 발행 시각을 설정하고 실시간으로 미리보기를 확인하세요.
+        공�? ?�목, 카테고리, 발행 ?�각???�정?�고 ?�시간으�?미리보기�??�인?�세??
       </p>
 
       <form onSubmit={handleSubmit} className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="space-y-4">
           <div className="space-y-2">
             <label htmlFor="title" className="text-sm font-medium text-white/80">
-              제목
+              ?�목
             </label>
             <input
               id="title"
@@ -112,7 +112,7 @@ export function AnnouncementComposer() {
               value={formState.title}
               onChange={(event) => handleChange('title', event.target.value)}
               className="w-full rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-white/40 focus:border-blue-400 focus:outline-none"
-              placeholder="예: 8월 정기 점검 안내"
+              placeholder="?? 8???�기 ?��? ?�내"
               required
             />
           </div>
@@ -138,7 +138,7 @@ export function AnnouncementComposer() {
 
             <div className="space-y-2">
               <label htmlFor="publishedAt" className="text-sm font-medium text-white/80">
-                발행 시각 (비워두면 즉시 발행)
+                발행 ?�각 (비워?�면 즉시 발행)
               </label>
               <input
                 id="publishedAt"
@@ -159,20 +159,20 @@ export function AnnouncementComposer() {
               className="h-4 w-4 rounded border border-white/30 bg-white/5 text-blue-400 focus:ring-blue-400"
             />
             <label htmlFor="isPinned" className="text-sm text-white/70">
-              공지를 상단에 고정합니다.
+              공�?�??�단??고정?�니??
             </label>
           </div>
 
           <div className="space-y-2">
             <label htmlFor="content" className="text-sm font-medium text-white/80">
-              내용
+              ?�용
             </label>
             <textarea
               id="content"
               value={formState.content}
               onChange={(event) => handleChange('content', event.target.value)}
               className="h-48 w-full rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-white/40 focus:border-blue-400 focus:outline-none"
-              placeholder="공지 내용을 작성해 주세요."
+              placeholder="공�? ?�용???�성??주세??"
               required
             />
           </div>
@@ -184,20 +184,20 @@ export function AnnouncementComposer() {
             disabled={mutation.isPending}
             className="inline-flex items-center justify-center rounded-lg bg-blue-500 px-5 py-3 text-sm font-medium text-white transition hover:bg-blue-400 disabled:cursor-not-allowed disabled:bg-blue-500/50"
           >
-            {mutation.isPending ? '등록 중…' : '공지 발행' }
+            {mutation.isPending ? '?�록 중�? : '공�? 발행' }
           </button>
         </div>
 
         <aside className="hidden rounded-2xl border border-white/10 bg-white/[0.02] p-6 text-sm text-white/70 shadow-inner lg:block">
           <h3 className="text-sm font-semibold text-white">미리보기</h3>
           <p className="mt-1 text-xs text-white/50">
-            {formState.publishedAt ? `예약 발행: ${new Date(formState.publishedAt).toLocaleString('ko-KR')}` : '즉시 발행 예정'}
+            {formState.publishedAt ? `?�약 발행: ${new Date(formState.publishedAt).toLocaleString('ko-KR')}` : '즉시 발행 ?�정'}
           </p>
           <div className="mt-5 space-y-3">
             <div className="flex items-center gap-2 text-xs text-white/60">
               {formState.isPinned ? (
                 <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-amber-300">
-                  📌 상단 고정
+                  ?�� ?�단 고정
                 </span>
               ) : null}
               <span className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2 py-0.5 text-white/70">
@@ -207,10 +207,10 @@ export function AnnouncementComposer() {
                 }
               </span>
             </div>
-            <h4 className="text-lg font-semibold text-white">{formState.title || '미리보기 제목'}</h4>
+            <h4 className="text-lg font-semibold text-white">{formState.title || '미리보기 ?�목'}</h4>
             <p className="text-white/60">
-              {formState.content ? formState.content.slice(0, 160) : '공지 내용을 입력하면 여기에서 미리보기가 업데이트됩니다.'}
-              {formState.content.length > 160 ? '…' : ''}
+              {formState.content ? formState.content.slice(0, 160) : '공�? ?�용???�력?�면 ?�기?�서 미리보기가 ?�데?�트?�니??'}
+              {formState.content.length > 160 ? '?? : ''}
             </p>
             <p className="text-xs text-white/40">{previewDate.toLocaleString('ko-KR')}</p>
           </div>

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { requireApiUser } from '@/lib/auth/guards';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/drizzle';
 import { GuardRequirement } from '@/lib/auth/session';
 
 export async function GET(request: NextRequest) {

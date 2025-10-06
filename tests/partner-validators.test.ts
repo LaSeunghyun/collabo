@@ -8,11 +8,11 @@ describe('createPartnerSchema', () => {
       name: 'Studio Aurora',
       type: PartnerType.STUDIO,
       contactInfo: 'hello@aurora.studio',
-      services: [' 녹음 ', '믹싱', '녹음']
+      services: [' ?�음 ', '믹싱', '?�음']
     };
 
     const parsed = createPartnerSchema.parse(payload);
-    expect(parsed.services).toEqual(['녹음', '믹싱']);
+    expect(parsed.services).toEqual(['?�음', '믹싱']);
   });
 
   it('rejects invalid URLs', () => {

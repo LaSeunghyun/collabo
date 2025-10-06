@@ -1,13 +1,13 @@
-import { PartnerType, type PartnerTypeType } from '@/types/drizzle';
+import { type PartnerTypeType } from '@/types/drizzle';
 
 import { getPartnersAwaitingApproval } from '@/lib/server/partners';
 
 const partnerTypeLabels: Record<PartnerTypeType, string> = {
-  [PartnerType.STUDIO]: '스튜디오',
-  [PartnerType.VENUE]: '공연장',
-  [PartnerType.PRODUCTION]: '제작사',
-  [PartnerType.MERCHANDISE]: '굿즈',
-  [PartnerType.OTHER]: '기타'
+  'STUDIO': '?�튜?�오',
+  'VENUE': '공연??,
+  'PRODUCTION': '?�작??,
+  'MERCHANDISE': '굿즈',
+  'OTHER': '기�?'
 };
 
 const dateFormatter = new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium' });
@@ -22,10 +22,10 @@ export async function PartnerApprovalSection() {
         className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 shadow-lg shadow-black/5"
       >
         <header>
-          <p className="text-xs uppercase tracking-wider text-primary/60">파트너 승인</p>
-          <h2 className="mt-1 text-lg font-semibold text-white">승인 대기 중인 파트너 프로필</h2>
+          <p className="text-xs uppercase tracking-wider text-primary/60">?�트???�인</p>
+          <h2 className="mt-1 text-lg font-semibold text-white">?�인 ?��?중인 ?�트???�로??/h2>
           <p className="mt-2 text-sm text-white/60">
-            검증을 기다리는 파트너들을 검토하고 협업 준비가 된 파트너들을 승인해주세요.
+            검증을 기다리는 ?�트?�들??검?�하�??�업 준비�? ???�트?�들???�인?�주?�요.
           </p>
         </header>
 
@@ -39,18 +39,18 @@ export async function PartnerApprovalSection() {
                 <div>
                   <p className="text-sm font-medium text-white">{partner.name}</p>
                   <p className="text-xs text-white/50">
-                    {partnerTypeLabels[partner.type]} | 가입일 {dateFormatter.format(partner.createdAt)}
+                    {partnerTypeLabels[partner.type]} | 가?�일 {dateFormatter.format(partner.createdAt)}
                   </p>
                 </div>
                 <span className="rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-white/80">
-                  대기중
+                  ?�기중
                 </span>
               </li>
             ))}
           </ul>
         ) : (
           <p className="mt-6 rounded-2xl border border-dashed border-white/10 bg-white/5 px-4 py-6 text-center text-sm text-white/60">
-            검토 대기 중인 파트너 신청이 없습니다.
+            검???��?중인 ?�트???�청???�습?�다.
           </p>
         )}
       </section>
@@ -62,8 +62,8 @@ export async function PartnerApprovalSection() {
         id="partner-approvals"
         className="rounded-3xl border border-red-500/30 bg-red-500/10 p-6 text-sm text-red-100"
       >
-        <h2 className="text-lg font-semibold text-red-100">파트너 승인</h2>
-        <p className="mt-2">파트너 신청을 불러올 수 없습니다. 잠시 후 다시 시도해주세요.</p>
+        <h2 className="text-lg font-semibold text-red-100">?�트???�인</h2>
+        <p className="mt-2">?�트???�청??불러?????�습?�다. ?�시 ???�시 ?�도?�주?�요.</p>
       </section>
     );
   }

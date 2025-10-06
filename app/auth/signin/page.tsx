@@ -36,8 +36,8 @@ export default function SignInPage() {
       });
 
       if (!loginResponse.ok) {
-        const payload = await loginResponse.json().catch(() => ({ error: '로그인에 실패했습니다.' }));
-        setError(payload.error ?? '로그인에 실패했습니다.');
+        const payload = await loginResponse.json().catch(() => ({ error: '로그?�에 ?�패?�습?�다.' }));
+        setError(payload.error ?? '로그?�에 ?�패?�습?�다.');
         return;
       }
 
@@ -48,7 +48,7 @@ export default function SignInPage() {
       });
 
       if (result?.error) {
-        setError('이메일 또는 비밀번호가 올바르지 않습니다.');
+        setError('?�메???�는 비�?번호가 ?�바르�? ?�습?�다.');
         return;
       }
 
@@ -62,7 +62,7 @@ export default function SignInPage() {
       }
     } catch (error) {
       console.error(error);
-      setError('로그인 중 오류가 발생했습니다.');
+      setError('로그??�??�류가 발생?�습?�다.');
     } finally {
       setIsLoading(false);
     }
@@ -72,15 +72,15 @@ export default function SignInPage() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
       <div className="w-full max-w-md space-y-8 p-8">
         <div className="text-center">
-          <h2 className="mt-6 text-3xl font-bold text-white">로그인</h2>
-          <p className="mt-2 text-sm text-gray-300">아티스트 펀딩 협업 플랫폼에 오신 것을 환영합니다</p>
+          <h2 className="mt-6 text-3xl font-bold text-white">로그??/h2>
+          <p className="mt-2 text-sm text-gray-300">?�티?�트 ?�???�업 ?�랫?�에 ?�신 것을 ?�영?�니??/p>
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-300">
-                이메일
+                ?�메??
               </label>
               <input
                 id="email"
@@ -90,13 +90,13 @@ export default function SignInPage() {
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 className="mt-1 block w-full rounded-md border border-gray-600 bg-gray-800 px-3 py-2 text-white shadow-sm placeholder-gray-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="이메일을 입력하세요"
+                placeholder="?�메?�을 ?�력?�세??
               />
             </div>
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-300">
-                비밀번호
+                비�?번호
               </label>
               <input
                 id="password"
@@ -106,7 +106,7 @@ export default function SignInPage() {
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 className="mt-1 block w-full rounded-md border border-gray-600 bg-gray-800 px-3 py-2 text-white shadow-sm placeholder-gray-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="비밀번호를 입력하세요"
+                placeholder="비�?번호�??�력?�세??
               />
             </div>
 
@@ -119,7 +119,7 @@ export default function SignInPage() {
                   onChange={(event) => setRememberMe(event.target.checked)}
                   className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-purple-500 focus:ring-purple-500"
                 />
-                <span>이 브라우저 기억하기</span>
+                <span>??브라?��? 기억?�기</span>
               </label>
 
               <button
@@ -127,7 +127,7 @@ export default function SignInPage() {
                 disabled={isLoading}
                 className="flex items-center justify-center rounded-md border border-transparent bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {isLoading ? '로그인 중...' : '로그인'}
+                {isLoading ? '로그??�?..' : '로그??}
               </button>
             </div>
           </div>
@@ -135,9 +135,9 @@ export default function SignInPage() {
           {error && <div className="text-center text-sm text-red-400">{error}</div>}
 
           <div className="text-center text-sm text-gray-300">
-            계정이 없으신가요?{' '}
+            계정???�으?��???{' '}
             <Link href="/auth/signup" className="font-medium text-purple-400 hover:text-purple-300">
-              회원가입하기
+              ?�원가?�하�?
             </Link>
           </div>
         </form>

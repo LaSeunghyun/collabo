@@ -1,4 +1,4 @@
-﻿import { DEFAULT_ANNOUNCEMENT_CATEGORY } from '@/lib/constants/announcements';
+import { DEFAULT_ANNOUNCEMENT_CATEGORY } from '@/lib/constants/announcements';
 import { createAnnouncement, getAnnouncements } from '@/lib/server/announcements';
 
 describe('announcement domain service', () => {

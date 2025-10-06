@@ -60,9 +60,9 @@ export default function ProjectsPage() {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'LIVE': return '진행중';
-      case 'SUCCEEDED': return '성공';
-      case 'FAILED': return '실패';
+      case 'LIVE': return '진행�?;
+      case 'SUCCEEDED': return '?�공';
+      case 'FAILED': return '?�패';
       case 'DRAFT': return '준비중';
       default: return status;
     }
@@ -72,9 +72,9 @@ export default function ProjectsPage() {
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-4">프로젝트</h1>
+          <h1 className="text-4xl font-bold text-white mb-4">?�로?�트</h1>
           <p className="text-white/60 mb-6">
-            아티스트들의 창작 프로젝트를 둘러보고 후원해보세요.
+            ?�티?�트?�의 창작 ?�로?�트�??�러보고 ?�원?�보?�요.
           </p>
           
           <div className="flex gap-4 mb-6">
@@ -82,15 +82,15 @@ export default function ProjectsPage() {
               href="/projects/create"
               className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/80 transition-colors"
             >
-              프로젝트 생성
+              ?�로?�트 ?�성
             </Link>
             
             <div className="flex gap-2">
               {[
-                { key: 'all', label: '전체' },
-                { key: 'LIVE', label: '진행중' },
-                { key: 'SUCCEEDED', label: '성공' },
-                { key: 'FAILED', label: '실패' }
+                { key: 'all', label: '?�체' },
+                { key: 'LIVE', label: '진행�? },
+                { key: 'SUCCEEDED', label: '?�공' },
+                { key: 'FAILED', label: '?�패' }
               ].map(({ key, label }) => (
                 <button
                   key={key}
@@ -155,7 +155,7 @@ export default function ProjectsPage() {
                   
                   <div className="mb-4">
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-white/80 text-sm">진행률</span>
+                      <span className="text-white/80 text-sm">진행�?/span>
                       <span className="text-white font-semibold text-sm">{progress.toFixed(1)}%</span>
                     </div>
                     <div className="w-full bg-white/20 rounded-full h-2">
@@ -168,15 +168,15 @@ export default function ProjectsPage() {
                   
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <div className="text-white/60">모금액</div>
+                      <div className="text-white/60">모금??/div>
                       <div className="text-white font-semibold">
-                        {project.currentAmount.toLocaleString()}원
+                        {project.currentAmount.toLocaleString()}??
                       </div>
                     </div>
                     <div>
-                      <div className="text-white/60">목표액</div>
+                      <div className="text-white/60">목표??/div>
                       <div className="text-white font-semibold">
-                        {project.targetAmount.toLocaleString()}원
+                        {project.targetAmount.toLocaleString()}??
                       </div>
                     </div>
                   </div>
@@ -201,7 +201,7 @@ export default function ProjectsPage() {
                       <span className="text-white/80 text-sm">{project.owner.name}</span>
                     </div>
                     <div className="text-white/60 text-sm">
-                      {daysLeft > 0 ? `${daysLeft}일 남음` : '종료'}
+                      {daysLeft > 0 ? `${daysLeft}???�음` : '종료'}
                     </div>
                   </div>
                 </Link>
@@ -212,7 +212,7 @@ export default function ProjectsPage() {
         
         {!loading && projects.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-white/60">프로젝트가 없습니다.</p>
+            <p className="text-white/60">?�로?�트가 ?�습?�다.</p>
           </div>
         )}
       </div>

@@ -1,4 +1,4 @@
-﻿import { ProjectStatus, UserRole } from '@/types/prisma';
+import { ProjectStatus, UserRole } from '@/types/prisma';
 import { type MockPrisma, createPrismaMock } from '../../helpers/prisma-mock';
 
 jest.mock('next/cache', () => ({

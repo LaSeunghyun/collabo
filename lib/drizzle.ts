@@ -6,7 +6,7 @@ const globalForDrizzle = globalThis as unknown as {
   drizzle?: ReturnType<typeof drizzle>;
 };
 
-// Vercel 서버리스 환경을 위한 Drizzle 설정
+// Vercel ?�버리스 ?�경???�한 Drizzle ?�정
 const normalizeServerlessConnectionString = (databaseUrl: string) => {
   try {
     const url = new URL(databaseUrl);
@@ -97,7 +97,7 @@ if (process.env.NODE_ENV !== 'production') {
   globalForDrizzle.drizzle = db;
 }
 
-// 서버리스 환경에서 연결 정리
+// ?�버리스 ?�경?�서 ?�결 ?�리
 if (typeof window === 'undefined' && typeof process !== 'undefined' && typeof process.on === 'function') {
   process.on('beforeExit', async () => {
     // Drizzle doesn't need explicit disconnect for postgres-js

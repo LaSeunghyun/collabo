@@ -18,7 +18,7 @@ export function ReportStatsSection({ stats }: ReportStatsSectionProps) {
 
   const statCards = [
     {
-      title: '전체 신고',
+      title: '?�체 ?�고',
       value: stats.total,
       icon: FileText,
       color: 'text-blue-400',
@@ -26,7 +26,7 @@ export function ReportStatsSection({ stats }: ReportStatsSectionProps) {
       borderColor: 'border-blue-500/20'
     },
     {
-      title: '처리 대기중',
+      title: '처리 ?�기중',
       value: stats.pending,
       icon: Clock,
       color: 'text-yellow-400',
@@ -34,7 +34,7 @@ export function ReportStatsSection({ stats }: ReportStatsSectionProps) {
       borderColor: 'border-yellow-500/20'
     },
     {
-      title: '처리 완료',
+      title: '처리 ?�료',
       value: stats.completed,
       icon: CheckCircle,
       color: 'text-green-400',
@@ -51,7 +51,7 @@ export function ReportStatsSection({ stats }: ReportStatsSectionProps) {
           <div
             key={card.title}
             className={`rounded-2xl border ${card.borderColor} ${card.bgColor} p-6 cursor-pointer hover:scale-105 transition-transform`}
-            onClick={() => router.push(`/admin/reports?status=${card.title === '전체 신고' ? 'all' : card.title === '처리 대기중' ? 'pending' : 'completed'}`)}
+            onClick={() => router.push(`/admin/reports?status=${card.title === '?�체 ?�고' ? 'all' : card.title === '처리 ?�기중' ? 'pending' : 'completed'}`)}
           >
             <div className="flex items-center justify-between">
               <div>
@@ -64,7 +64,7 @@ export function ReportStatsSection({ stats }: ReportStatsSectionProps) {
             </div>
             <div className="mt-4">
               <button className="text-sm font-medium text-white/80 hover:text-white transition-colors">
-                상세 보기 →
+                ?�세 보기 ??
               </button>
             </div>
           </div>

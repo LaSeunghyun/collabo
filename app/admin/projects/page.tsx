@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ProjectStatus } from '@/types/drizzle';
+import { type ProjectStatusType } from '@/types/drizzle';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/cards';
 import { Badge } from '@/components/ui/badge';
@@ -26,7 +26,7 @@ interface Project {
   id: string;
   title: string;
   description: string;
-  status: ProjectStatus;
+  status: ProjectStatusType;
   targetAmount: number;
   currentAmount: number;
   createdAt: string;
@@ -53,27 +53,27 @@ interface ProjectsResponse {
 }
 
 const STATUS_LABELS = {
-  [ProjectStatus.DRAFT]: '초안/검토 대기중',
-  [ProjectStatus.PRELAUNCH]: '프리런치',
-  [ProjectStatus.LIVE]: '진행중',
-  [ProjectStatus.SUCCEEDED]: '성공',
-  [ProjectStatus.FAILED]: '실패',
-  [ProjectStatus.SETTLING]: '정산중',
-  [ProjectStatus.EXECUTING]: '실행중',
-  [ProjectStatus.COMPLETED]: '완료',
-  [ProjectStatus.CANCELLED]: '취소됨'
+  'DRAFT': '초안/검???�기중',
+  'PRELAUNCH': '?�리?�치',
+  'LIVE': '진행�?,
+  'SUCCEEDED': '?�공',
+  'FAILED': '?�패',
+  'SETTLING': '?�산�?,
+  'EXECUTING': '?�행�?,
+  'COMPLETED': '?�료',
+  'CANCELLED': '취소??
 };
 
 const STATUS_COLORS = {
-  [ProjectStatus.DRAFT]: 'bg-yellow-100 text-yellow-800',
-  [ProjectStatus.PRELAUNCH]: 'bg-blue-100 text-blue-800',
-  [ProjectStatus.LIVE]: 'bg-green-100 text-green-800',
-  [ProjectStatus.SUCCEEDED]: 'bg-emerald-100 text-emerald-800',
-  [ProjectStatus.FAILED]: 'bg-red-100 text-red-800',
-  [ProjectStatus.SETTLING]: 'bg-purple-100 text-purple-800',
-  [ProjectStatus.EXECUTING]: 'bg-orange-100 text-orange-800',
-  [ProjectStatus.COMPLETED]: 'bg-indigo-100 text-indigo-800',
-  [ProjectStatus.CANCELLED]: 'bg-gray-100 text-gray-800'
+  'DRAFT': 'bg-yellow-100 text-yellow-800',
+  'PRELAUNCH': 'bg-blue-100 text-blue-800',
+  'LIVE': 'bg-green-100 text-green-800',
+  'SUCCEEDED': 'bg-emerald-100 text-emerald-800',
+  'FAILED': 'bg-red-100 text-red-800',
+  'SETTLING': 'bg-purple-100 text-purple-800',
+  'EXECUTING': 'bg-orange-100 text-orange-800',
+  'COMPLETED': 'bg-indigo-100 text-indigo-800',
+  'CANCELLED': 'bg-gray-100 text-gray-800'
 };
 
 export default function AdminProjectsPage() {
@@ -95,7 +95,7 @@ export default function AdminProjectsPage() {
 
       const response = await fetch(`/api/projects?${params}`);
       if (!response.ok) {
-        throw new Error('프로젝트 목록을 불러올 수 없습니다.');
+        throw new Error('?�로?�트 목록??불러?????�습?�다.');
       }
       return response.json();
     }
@@ -106,7 +106,7 @@ export default function AdminProjectsPage() {
     setPage(1);
   };
 
-  const handleStatusUpdate = async (projectId: string, status: ProjectStatus) => {
+  const handleStatusUpdate = async (projectId: string, status: ProjectStatusType) => {
     try {
       const response = await fetch(`/api/projects/${projectId}`, {
         method: 'PATCH',
@@ -117,20 +117,20 @@ export default function AdminProjectsPage() {
       });
 
       if (!response.ok) {
-        throw new Error('프로젝트 상태 변경에 실패했습니다.');
+        throw new Error('?�로?�트 ?�태 변경에 ?�패?�습?�다.');
       }
 
       toast({
-        title: '상태 변경 완료',
-        description: '프로젝트 상태가 변경되었습니다.',
+        title: '?�태 변�??�료',
+        description: '?�로?�트 ?�태가 변경되?�습?�다.',
       });
 
       refetch();
     } catch (error) {
-      console.error('프로젝트 상태 변경 실패:', error);
+      console.error('?�로?�트 ?�태 변�??�패:', error);
       toast({
-        title: '상태 변경 실패',
-        description: error instanceof Error ? error.message : '프로젝트 상태 변경에 실패했습니다.',
+        title: '?�태 변�??�패',
+        description: error instanceof Error ? error.message : '?�로?�트 ?�태 변경에 ?�패?�습?�다.',
         variant: 'destructive'
       });
     }
@@ -162,8 +162,8 @@ export default function AdminProjectsPage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">오류 발생</h2>
-          <p className="text-gray-600">프로젝트 목록을 불러오는 중 오류가 발생했습니다.</p>
+          <h2 className="text-2xl font-bold text-red-600 mb-4">?�류 발생</h2>
+          <p className="text-gray-600">?�로?�트 목록??불러?�는 �??�류가 발생?�습?�다.</p>
         </div>
       </div>
     );
@@ -172,19 +172,19 @@ export default function AdminProjectsPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-4">프로젝트 검수</h1>
+        <h1 className="text-3xl font-bold mb-4">?�로?�트 검??/h1>
         <p className="text-gray-600">
-          검토 대기 중인 프로젝트를 확인하고 승인/거부를 처리하세요.
+          검???��?중인 ?�로?�트�??�인?�고 ?�인/거�?�?처리?�세??
         </p>
       </div>
 
-      {/* 필터 */}
+      {/* ?�터 */}
       <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="프로젝트 검색..."
+              placeholder="?�로?�트 검??.."
               value={filters.search}
               onChange={(e) => handleFilterChange('search', e.target.value)}
               className="pl-10"
@@ -193,10 +193,10 @@ export default function AdminProjectsPage() {
           
           <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
             <SelectTrigger>
-              <SelectValue placeholder="상태" />
+              <SelectValue placeholder="?�태" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">전체</SelectItem>
+              <SelectItem value="">?�체</SelectItem>
               {Object.entries(STATUS_LABELS).map(([key, label]) => (
                 <SelectItem key={key} value={key}>
                   {label}
@@ -207,12 +207,12 @@ export default function AdminProjectsPage() {
 
           <Button variant="outline" onClick={() => refetch()}>
             <Filter className="h-4 w-4 mr-2" />
-            새로고침
+            ?�로고침
           </Button>
         </div>
       </div>
 
-      {/* 프로젝트 목록 */}
+      {/* ?�로?�트 목록 */}
       <div className="space-y-4">
         {data?.projects.map((project) => (
           <Card key={project.id} className="hover:shadow-lg transition-shadow">
@@ -237,7 +237,7 @@ export default function AdminProjectsPage() {
                   <div>
                     <CardTitle className="text-lg">{project.title}</CardTitle>
                     <CardDescription>
-                      {project.owner.name} • {new Date(project.createdAt).toLocaleDateString('ko-KR')}
+                      {project.owner.name} ??{new Date(project.createdAt).toLocaleDateString('ko-KR')}
                     </CardDescription>
                   </div>
                 </div>
@@ -257,10 +257,10 @@ export default function AdminProjectsPage() {
                 <p className="text-gray-700 line-clamp-2">{project.description}</p>
               </div>
 
-              {/* 진행률 바 */}
+              {/* 진행�?�?*/}
               <div className="mb-4">
                 <div className="flex justify-between text-sm text-gray-600 mb-2">
-                  <span>진행률</span>
+                  <span>진행�?/span>
                   <span>{getProgressPercentage(project.currentAmount, project.targetAmount).toFixed(1)}%</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
@@ -271,13 +271,13 @@ export default function AdminProjectsPage() {
                 </div>
               </div>
 
-              {/* 통계 */}
+              {/* ?�계 */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-green-600">
                     {formatCurrency(project.currentAmount)}
                   </div>
-                  <div className="text-sm text-gray-600">현재 모금액</div>
+                  <div className="text-sm text-gray-600">?�재 모금??/div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-blue-600">
@@ -289,50 +289,50 @@ export default function AdminProjectsPage() {
                   <div className="text-2xl font-bold text-purple-600">
                     {project._count.fundings}
                   </div>
-                  <div className="text-sm text-gray-600">펀딩 참여자</div>
+                  <div className="text-sm text-gray-600">?�??참여??/div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-orange-600">
                     {project._count.orders}
                   </div>
-                  <div className="text-sm text-gray-600">주문 수</div>
+                  <div className="text-sm text-gray-600">주문 ??/div>
                 </div>
               </div>
 
-              {/* 액션 버튼 */}
+              {/* ?�션 버튼 */}
               <div className="flex justify-end space-x-2">
                 <Button variant="outline" asChild>
                   <Link href={`/projects/${project.id}`}>
                     <Eye className="h-4 w-4 mr-2" />
-                    상세보기
+                    ?�세보기
                   </Link>
                 </Button>
                 
-                {project.status === ProjectStatus.DRAFT && (
+                {project.status === 'DRAFT' && (
                   <>
                     <Button
                       variant="outline"
-                      onClick={() => handleStatusUpdate(project.id, ProjectStatus.PRELAUNCH)}
+                      onClick={() => handleStatusUpdate(project.id, 'PRELAUNCH')}
                     >
                       <CheckCircle className="h-4 w-4 mr-2" />
-                      승인
+                      ?�인
                     </Button>
                     <Button
                       variant="destructive"
-                      onClick={() => handleStatusUpdate(project.id, ProjectStatus.CANCELLED)}
+                      onClick={() => handleStatusUpdate(project.id, 'CANCELLED')}
                     >
                       <XCircle className="h-4 w-4 mr-2" />
-                      거부
+                      거�?
                     </Button>
                   </>
                 )}
                 
-                {project.status === ProjectStatus.PRELAUNCH && (
+                {project.status === 'PRELAUNCH' && (
                   <Button
-                    onClick={() => handleStatusUpdate(project.id, ProjectStatus.LIVE)}
+                    onClick={() => handleStatusUpdate(project.id, 'LIVE')}
                   >
                     <Clock className="h-4 w-4 mr-2" />
-                    런칭
+                    ?�칭
                   </Button>
                 )}
               </div>
@@ -341,7 +341,7 @@ export default function AdminProjectsPage() {
         ))}
       </div>
 
-      {/* 페이지네이션 */}
+      {/* ?�이지?�이??*/}
       {data && data.pagination.pages > 1 && (
         <div className="flex justify-center space-x-2 mt-8">
           <Button
@@ -349,7 +349,7 @@ export default function AdminProjectsPage() {
             onClick={() => setPage(prev => Math.max(1, prev - 1))}
             disabled={page === 1}
           >
-            이전
+            ?�전
           </Button>
           
           <span className="flex items-center px-4">
@@ -361,7 +361,7 @@ export default function AdminProjectsPage() {
             onClick={() => setPage(prev => Math.min(data.pagination.pages, prev + 1))}
             disabled={page === data.pagination.pages}
           >
-            다음
+            ?�음
           </Button>
         </div>
       )}
@@ -372,10 +372,10 @@ export default function AdminProjectsPage() {
             <FileText className="h-16 w-16 mx-auto" />
           </div>
           <h3 className="text-lg font-semibold text-gray-600 mb-2">
-            검토할 프로젝트가 없습니다
+            검?�할 ?�로?�트가 ?�습?�다
           </h3>
           <p className="text-gray-500">
-            현재 검토 대기 중인 프로젝트가 없습니다.
+            ?�재 검???��?중인 ?�로?�트가 ?�습?�다.
           </p>
         </div>
       )}

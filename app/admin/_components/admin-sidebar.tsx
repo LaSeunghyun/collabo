@@ -17,47 +17,47 @@ import {
 
 const navigation = [
   {
-    name: '대시보드',
+    name: '?�?�보??,
     href: '/admin',
     icon: LayoutDashboard,
   },
   {
-    name: '프로젝트 검수',
+    name: '?�로?�트 검??,
     href: '/admin/projects',
     icon: FileText,
   },
   {
-    name: '파트너 승인',
+    name: '?�트???�인',
     href: '/admin/partners',
     icon: Users,
   },
   {
-    name: '신고 관리',
+    name: '?�고 관�?,
     href: '/admin/reports',
     icon: Flag,
   },
   {
-    name: '정산 관리',
+    name: '?�산 관�?,
     href: '/admin/settlements',
     icon: DollarSign,
   },
   {
-    name: '공지 관리',
+    name: '공�? 관�?,
     href: '/admin/announcements',
     icon: Megaphone,
   },
   {
-    name: '이행 관리',
+    name: '?�행 관�?,
     href: '/admin/fulfillment',
     icon: Package,
   },
   {
-    name: '분석 도구',
+    name: '분석 ?�구',
     href: '/admin/analytics',
     icon: BarChart3,
   },
   {
-    name: '설정',
+    name: '?�정',
     href: '/admin/settings',
     icon: Settings,
   },

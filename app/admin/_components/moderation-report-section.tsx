@@ -1,6 +1,4 @@
 import {
-  ModerationStatus,
-  ModerationTargetType,
   type ModerationStatusValue,
   type ModerationTargetTypeValue
 } from '@/types/drizzle';
@@ -8,15 +6,15 @@ import { getModerationStats, getOpenModerationReports } from '@/lib/server/moder
 import Link from 'next/link';
 
 const statusLabels: Record<ModerationStatusValue, string> = {
-  [ModerationStatus.PENDING]: '대기중',
-  [ModerationStatus.REVIEWING]: '검토중',
-  [ModerationStatus.ACTION_TAKEN]: '조치완료',
-  [ModerationStatus.DISMISSED]: '기각됨'
+  'PENDING': '?�기중',
+  'REVIEWING': '검?�중',
+  'ACTION_TAKEN': '조치?�료',
+  'DISMISSED': '기각??
 };
 
 const targetLabels: Record<ModerationTargetTypeValue, string> = {
-  [ModerationTargetType.POST]: '게시글',
-  [ModerationTargetType.COMMENT]: '댓글'
+  'POST': '게시글',
+  'COMMENT': '?��?'
 } as const satisfies Record<ModerationTargetTypeValue, string>;
 
 const getTargetLabel = (type: ModerationTargetTypeValue) => targetLabels[type];
@@ -30,7 +28,7 @@ export async function ModerationReportSection() {
   try {
     const [stats, reports] = await Promise.all([
       getModerationStats(),
-      getOpenModerationReports(5) // 최근 5개만 표시
+      getOpenModerationReports(5) // 최근 5개만 ?�시
     ]);
 
   return (
@@ -40,26 +38,26 @@ export async function ModerationReportSection() {
     >
       <header className="flex items-center justify-between">
         <div>
-          <p className="text-xs uppercase tracking-wider text-primary/60">신고 대응</p>
-          <h2 className="mt-1 text-lg font-semibold text-white">신고 현황</h2>
+          <p className="text-xs uppercase tracking-wider text-primary/60">?�고 ?�??/p>
+          <h2 className="mt-1 text-lg font-semibold text-white">?�고 ?�황</h2>
           <p className="mt-2 text-sm text-white/60">
-            커뮤니티 신고 현황을 한눈에 확인하고 관리하세요.
+            커�??�티 ?�고 ?�황???�눈???�인?�고 관리하?�요.
           </p>
         </div>
         <Link
           href="/admin/reports"
           className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/80 transition-colors"
         >
-          전체 보기
+          ?�체 보기
         </Link>
       </header>
 
-      {/* 신고 통계 카드 */}
+      {/* ?�고 ?�계 카드 */}
       <div className="mt-6 grid grid-cols-3 gap-4">
         <div className="rounded-xl border border-white/5 bg-white/5 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-white/60">전체 신고</p>
+              <p className="text-xs text-white/60">?�체 ?�고</p>
               <p className="mt-1 text-2xl font-bold text-white">{stats.total}</p>
             </div>
             <div className="rounded-full bg-blue-500/10 p-2">
@@ -73,7 +71,7 @@ export async function ModerationReportSection() {
         <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-white/60">처리 대기중</p>
+              <p className="text-xs text-white/60">처리 ?�기중</p>
               <p className="mt-1 text-2xl font-bold text-yellow-400">{stats.pending}</p>
             </div>
             <div className="rounded-full bg-yellow-500/10 p-2">
@@ -87,7 +85,7 @@ export async function ModerationReportSection() {
         <div className="rounded-xl border border-green-500/20 bg-green-500/5 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-white/60">처리 완료</p>
+              <p className="text-xs text-white/60">처리 ?�료</p>
               <p className="mt-1 text-2xl font-bold text-green-400">{stats.completed}</p>
             </div>
             <div className="rounded-full bg-green-500/10 p-2">
@@ -99,12 +97,12 @@ export async function ModerationReportSection() {
         </div>
       </div>
 
-      {/* 최근 신고 목록 */}
+      {/* 최근 ?�고 목록 */}
       <div className="mt-6">
-        <h3 className="text-sm font-semibold text-white mb-4">최근 신고</h3>
+        <h3 className="text-sm font-semibold text-white mb-4">최근 ?�고</h3>
         {reports.length > 0 ? (
           <ul className="space-y-3">
-            {reports.map((report) => (
+            {reports.map((report: any) => (
               <li
                 key={report.id}
                 className="flex items-start justify-between rounded-xl border border-white/5 bg-white/5 px-4 py-3"
@@ -114,10 +112,10 @@ export async function ModerationReportSection() {
                     {getTargetLabel(report.targetType)} #{report.targetId}
                   </p>
                   <p className="mt-1 text-xs text-white/60">
-                    제출일 {dateFormatter.format(report.createdAt)}
+                    ?�출??{dateFormatter.format(report.createdAt)}
                     {report.reporter ? (
                       <span className="whitespace-nowrap">
-                        {' | 신고자 '}
+                        {' | ?�고??'}
                         {report.reporter.name ?? report.reporter.id}
                       </span>
                     ) : null}
@@ -127,28 +125,28 @@ export async function ModerationReportSection() {
                   ) : null}
                 </div>
                 <span className="shrink-0 rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-white/80">
-                  {statusLabels[report.status]}
+                  {statusLabels[report.status as ModerationStatusValue]}
                 </span>
               </li>
             ))}
           </ul>
         ) : (
           <p className="rounded-xl border border-dashed border-white/10 bg-white/5 px-4 py-6 text-center text-sm text-white/60">
-            최근 신고가 없습니다.
+            최근 ?�고가 ?�습?�다.
           </p>
         )}
       </div>
     </section>
   );
   } catch (error) {
-    console.error('신고 목록 로드 실패:', error);
+    console.error('?�고 목록 로드 ?�패:', error);
     return (
       <section
         id="moderation"
         className="rounded-3xl border border-red-500/30 bg-red-500/10 p-6 text-sm text-red-100"
       >
-        <h2 className="text-lg font-semibold text-red-100">신고 대응</h2>
-        <p className="mt-2">신고 목록을 불러올 수 없습니다. 잠시 후 다시 시도해주세요.</p>
+        <h2 className="text-lg font-semibold text-red-100">?�고 ?�??/h2>
+        <p className="mt-2">?�고 목록??불러?????�습?�다. ?�시 ???�시 ?�도?�주?�요.</p>
       </section>
     );
   }

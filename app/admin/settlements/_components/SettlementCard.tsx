@@ -35,11 +35,11 @@ interface Settlement {
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  PENDING: '대기중',
-  PROCESSING: '처리중',
-  COMPLETED: '완료',
-  FAILED: '실패',
-  CANCELLED: '취소됨',
+  PENDING: '?�기중',
+  PROCESSING: '처리�?,
+  COMPLETED: '?�료',
+  FAILED: '?�패',
+  CANCELLED: '취소??,
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -83,7 +83,7 @@ export function SettlementCard({ settlement, onStatusUpdate }: SettlementCardPro
             <div>
               <CardTitle className="text-lg">{settlement.project.title}</CardTitle>
               <CardDescription>
-                {settlement.project.owner.name} • {new Date(settlement.createdAt).toLocaleDateString('ko-KR')}
+                {settlement.project.owner.name} ??{new Date(settlement.createdAt).toLocaleDateString('ko-KR')}
               </CardDescription>
             </div>
           </div>
@@ -102,24 +102,24 @@ export function SettlementCard({ settlement, onStatusUpdate }: SettlementCardPro
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
           <div className="text-center">
             <div className="text-2xl font-bold text-green-600">{formatCurrency(settlement.netAmount)}</div>
-            <div className="text-sm text-gray-600">총 금액</div>
+            <div className="text-sm text-gray-600">�?금액</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-blue-600">{formatCurrency(settlement.platformFee)}</div>
-            <div className="text-sm text-gray-600">플랫폼 수수료</div>
+            <div className="text-sm text-gray-600">?�랫???�수�?/div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-purple-600">{formatCurrency(settlement.netAmount)}</div>
-            <div className="text-sm text-gray-600">정산 금액</div>
+            <div className="text-sm text-gray-600">?�산 금액</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-orange-600">{settlement.payouts.length}</div>
-            <div className="text-sm text-gray-600">이해관계자</div>
+            <div className="text-sm text-gray-600">?�해관계자</div>
           </div>
         </div>
 
         <div className="space-y-2">
-          <h4 className="font-semibold text-gray-700">이해관계자</h4>
+          <h4 className="font-semibold text-gray-700">?�해관계자</h4>
           {settlement.payouts.map((payout) => (
             <div key={payout.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
               <div className="flex items-center space-x-3">
@@ -153,7 +153,7 @@ export function SettlementCard({ settlement, onStatusUpdate }: SettlementCardPro
           <Button variant="outline" asChild>
             <Link href={`/admin/settlements/${settlement.id}`}>
               <Eye className="h-4 w-4 mr-2" />
-              상세보기
+              ?�세보기
             </Link>
           </Button>
 
@@ -161,19 +161,18 @@ export function SettlementCard({ settlement, onStatusUpdate }: SettlementCardPro
             <>
               <Button variant="outline" onClick={() => onStatusUpdate(settlement.id, 'PROCESSING')}>
                 <Clock className="h-4 w-4 mr-2" />
-                처리중
-              </Button>
+                처리�?              </Button>
               <Button onClick={() => onStatusUpdate(settlement.id, 'COMPLETED')}>
                 <CheckCircle className="h-4 w-4 mr-2" />
-                완료
+                ?�료
               </Button>
             </>
           )}
 
-          {settlement.status === 'PROCESSING' && (
+          {settlement.status === 'IN_PROGRESS' && (
             <Button onClick={() => onStatusUpdate(settlement.id, 'COMPLETED')}>
               <CheckCircle className="h-4 w-4 mr-2" />
-              완료
+              ?�료
             </Button>
           )}
         </div>

@@ -1,4 +1,4 @@
-ï»¿import { SettlementPayoutStatus } from '@/types/prisma';
+import { SettlementPayoutStatus } from '@/types/prisma';
 import { createPrismaMock, type MockPrisma } from '../../helpers/prisma-mock';
 
 jest.mock('@/lib/server/settlements', () => ({
@@ -165,7 +165,7 @@ describe('funding settlement domain', () => {
       expect(result.issues).toEqual(
         expect.arrayContaining([
           expect.stringContaining('currentAmount'),
-          expect.stringContaining('ì •ì‚°')
+          expect.stringContaining('Á¤»ê')
         ])
       );
     });

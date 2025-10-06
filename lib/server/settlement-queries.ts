@@ -1,6 +1,6 @@
 import { SettlementPayoutStatus, type SettlementPayoutStatusType } from '@/types/drizzle';
 
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/drizzle';
 
 export interface SettlementSummary {
   id: string;

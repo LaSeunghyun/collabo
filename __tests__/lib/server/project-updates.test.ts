@@ -1,4 +1,4 @@
-﻿import { MilestoneStatus, PostType, UserRole } from '@/types/prisma';
+import { MilestoneStatus, PostType, UserRole } from '@/types/prisma';
 import {
   assertProjectOwner,
   createProjectUpdate,

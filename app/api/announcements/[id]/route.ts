@@ -8,7 +8,6 @@ import {
   markAnnouncementAsRead,
   updateAnnouncement
 } from '@/lib/server/announcements';
-import { UserRole } from '@/types/drizzle';
 
 export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -58,7 +57,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   }
 
   try {
-    await requireApiUser({ roles: [UserRole.ADMIN] }, authContext);
+    await requireApiUser({ roles: ['ADMIN'] }, authContext);
   } catch (error) {
     const response = handleAuthorizationError(error);
 
@@ -99,7 +98,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   const authContext = { headers: request.headers };
   try {
-    await requireApiUser({ roles: [UserRole.ADMIN] }, authContext);
+    await requireApiUser({ roles: ['ADMIN'] }, authContext);
   } catch (error) {
     const response = handleAuthorizationError(error);
 
