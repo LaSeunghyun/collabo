@@ -212,6 +212,7 @@ export async function POST(request: NextRequest) {
     const created = await tx.settlement.create({
       data: {
         projectId,
+        totalAmount: breakdown.totalRaised,
         netAmount: breakdown.netAmount,
         platformFee: breakdown.platformFee,
         status: "PENDING",
