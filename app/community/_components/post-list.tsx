@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Heart, MessageCircle, Eye, Flag } from 'lucide-react';
+import { Heart, MessageCircle, Eye, Flag, ThumbsDown } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
@@ -29,6 +29,7 @@ interface Post {
   };
   _count: {
     likes: number;
+    dislikes: number;
     comments: number;
   };
 }
@@ -62,9 +63,12 @@ const categoryColors: Record<string, string> = {
 };
 
 export function PostList({ posts, onMutation }: PostListProps) {
-  const { likePost, reportPost, likeState } = usePostMutations();
+  const { likePost, dislikePost, reportPost, likeState, dislikeState } = usePostMutations();
   const [likedPosts, setLikedPosts] = useState<Set<string>>(() => 
     new Set(posts.filter(p => (p as any).liked).map(p => p.id))
+  );
+  const [dislikedPosts, setDislikedPosts] = useState<Set<string>>(() => 
+    new Set(posts.filter(p => (p as any).disliked).map(p => p.id))
   );
 
   const handleLike = async (postId: string) => {
@@ -97,89 +101,81 @@ export function PostList({ posts, onMutation }: PostListProps) {
     }
   };
 
+  const handleDislike = async (postId: string) => {
+    const isDisliked = dislikedPosts.has(postId);
+    // Optimistic UI update
+    setDislikedPosts(prev => {
+      const newSet = new Set(prev);
+      if (isDisliked) {
+        newSet.delete(postId);
+      } else {
+        newSet.add(postId);
+      }
+      return newSet;
+    });
+
+    try {
+      await dislikePost(postId, isDisliked);
+      onMutation?.(); // Notify parent to refetch if needed
+    } catch {
+      // Revert optimistic update on error
+      setDislikedPosts(prev => {
+        const newSet = new Set(prev);
+        if (isDisliked) {
+          newSet.add(postId);
+        } else {
+          newSet.delete(postId);
+        }
+        return newSet;
+      });
+    }
+  };
+
   const handleReport = async (postId: string) => {
     await reportPost(postId);
     onMutation?.();
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       {posts.map((post) => (
         <article
           key={post.id}
-          className={`bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow ${
+          className={`bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow ${
             post.isPinned ? 'border-l-4 border-l-blue-500' : ''
           }`}
         >
-          {/* Header */}
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-2">
-                <span
-                  className={`px-2 py-1 text-xs font-medium rounded-full ${
-                    categoryColors[post.category] || categoryColors.GENERAL
-                  }`}
-                >
-                  {categoryLabels[post.category] || post.category}
-                </span>
-                {post.isPinned && (
-                  <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                    고정
-                  </span>
-                )}
-                {post.project && (
-                  <span className="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded-full">
-                    {post.project.title}
-                  </span>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => handleReport(post.id)}
-                className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                title="신고"
+          {/* 간단한 한 줄 레이아웃: 카테고리 / 제목[댓글수] / 작성자 / 좋아요 / 싫어요 / 게재 시간 */}
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center space-x-3 flex-1 min-w-0">
+              {/* 카테고리 */}
+              <span
+                className={`px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap ${
+                  categoryColors[post.category] || categoryColors.GENERAL
+                }`}
               >
-                <Flag className="h-4 w-4" />
-              </button>
-              {/* More options dropdown can be added here */}
-            </div>
-          </div>
-
-          {/* Title */}
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">
-            <Link href={`/community/${post.id}`} className="hover:text-blue-600">
-              {post.title}
-            </Link>
-          </h2>
-
-          {/* Content Preview */}
-          <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-            {post.content}
-          </p>
-
-          {/* Meta Info */}
-          <div className="flex items-center justify-between text-sm text-gray-500">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-1">
-                <img
-                  src={post.author.avatarUrl || '/default-avatar.png'}
-                  alt={post.author.name || '익명'}
-                  className="w-6 h-6 rounded-full"
-                />
-                <span>
-                  {post.isAnonymous ? '익명' : post.author.name || '익명'}
+                {categoryLabels[post.category] || post.category}
+              </span>
+              
+              {/* 제목[댓글수] */}
+              <Link 
+                href={`/community/${post.id}`} 
+                className="font-semibold text-gray-900 hover:text-blue-600 truncate flex-1 min-w-0"
+              >
+                {post.title}
+                <span className="text-gray-500 font-normal ml-1">
+                  [{post._count.comments}]
                 </span>
-              </div>
-              <span>
-                {formatDistanceToNow(new Date(post.createdAt), {
-                  addSuffix: true,
-                  locale: ko,
-                })}
+              </Link>
+              
+              {/* 작성자 */}
+              <span className="text-gray-600 whitespace-nowrap">
+                {post.isAnonymous ? '익명' : post.author.name || '익명'}
               </span>
             </div>
 
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-4 ml-4">
+              {/* 좋아요 */}
               <button
                 onClick={() => handleLike(post.id)}
                 disabled={likeState.isLoading}
@@ -190,17 +186,39 @@ export function PostList({ posts, onMutation }: PostListProps) {
                 }`}
               >
                 <Heart className="h-4 w-4" />
-                {/* This count should ideally be updated based on API response */}
-                <span>{post._count.likes + (likedPosts.has(post.id) ? 1 : 0) - ((post as any).liked ? 1 : 0) }</span>
+                <span>{post._count.likes + (likedPosts.has(post.id) ? 1 : 0) - ((post as any).liked ? 1 : 0)}</span>
               </button>
-              <div className="flex items-center space-x-1 text-gray-400">
-                <MessageCircle className="h-4 w-4" />
-                <span>{post._count.comments}</span>
-              </div>
-              <div className="flex items-center space-x-1 text-gray-400">
-                <Eye className="h-4 w-4" />
-                <span>0</span>{/* View count not available in data */}
-              </div>
+              
+              {/* 싫어요 */}
+              <button
+                onClick={() => handleDislike(post.id)}
+                disabled={dislikeState.isLoading}
+                className={`flex items-center space-x-1 transition-colors ${
+                  dislikedPosts.has(post.id)
+                    ? 'text-blue-500'
+                    : 'text-gray-400 hover:text-blue-500'
+                }`}
+              >
+                <ThumbsDown className="h-4 w-4" />
+                <span>{post._count.dislikes || 0}</span>
+              </button>
+              
+              {/* 게재 시간 */}
+              <span className="text-gray-500 whitespace-nowrap">
+                {formatDistanceToNow(new Date(post.createdAt), {
+                  addSuffix: true,
+                  locale: ko,
+                })}
+              </span>
+              
+              {/* 신고 버튼 */}
+              <button
+                onClick={() => handleReport(post.id)}
+                className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                title="신고"
+              >
+                <Flag className="h-4 w-4" />
+              </button>
             </div>
           </div>
         </article>
@@ -208,3 +226,8 @@ export function PostList({ posts, onMutation }: PostListProps) {
     </div>
   );
 }
+
+
+
+
+

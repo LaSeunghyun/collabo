@@ -27,6 +27,7 @@ interface Post {
   };
   _count: {
     likes: number;
+    dislikes: number;
     comments: number;
   };
 }

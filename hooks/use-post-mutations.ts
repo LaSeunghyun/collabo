@@ -12,6 +12,7 @@ interface MutationState<T> {
 export function usePostMutations() {
   const { data: session } = useSession();
   const [likeState, setLikeState] = useState<MutationState<void>>({ isLoading: false, error: null, data: null });
+  const [dislikeState, setDislikeState] = useState<MutationState<void>>({ isLoading: false, error: null, data: null });
   const [reportState, setReportState] = useState<MutationState<void>>({ isLoading: false, error: null, data: null });
 
   const ensureAuthenticated = () => {
@@ -48,6 +49,35 @@ export function usePostMutations() {
     }
   };
 
+  const dislikePost = async (postId: string, isCurrentlyDisliked: boolean) => {
+    try {
+      ensureAuthenticated();
+      setDislikeState({ isLoading: true, error: null, data: null });
+
+      const response = await fetch(`/api/posts/${postId}/interactions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          action: isCurrentlyDisliked ? 'undislike' : 'dislike' 
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update dislike status');
+      }
+
+      setDislikeState({ isLoading: false, error: null, data: null });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      if (errorMessage !== 'User not authenticated') {
+        alert(errorMessage);
+      }
+      setDislikeState({ isLoading: false, error: errorMessage, data: null });
+      throw error; // Re-throw to allow caller to handle if needed
+    }
+  };
+
   const reportPost = async (postId: string) => {
     try {
       ensureAuthenticated();
@@ -80,8 +110,10 @@ export function usePostMutations() {
 
   return {
     likePost,
+    dislikePost,
     reportPost,
     likeState,
+    dislikeState,
     reportState,
   };
 }
