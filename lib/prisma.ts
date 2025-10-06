@@ -57,6 +57,15 @@ const createDisabledPrismaClient = (reason: string) => {
         return 'PrismaClientStub';
       }
 
+      // Return a proxy for nested properties to avoid immediate errors
+      if (typeof prop === 'string') {
+        return new Proxy({}, {
+          get() {
+            throw new Error(message);
+          }
+        });
+      }
+
       return () => {
         throw new Error(message);
       };

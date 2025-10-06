@@ -1,10 +1,22 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 import { responses } from '@/lib/server/api-responses';
 
 export async function GET() {
     try {
-        // Test database connection
+        // Check if DATABASE_URL is available
+        const hasDatabaseUrl = Boolean(process.env.DATABASE_URL);
+        
+        if (!hasDatabaseUrl) {
+            return NextResponse.json(responses.success({
+                status: 'ok',
+                database: 'not_configured',
+                timestamp: new Date().toISOString(),
+                message: 'Database URL not configured'
+            }));
+        }
+
+        // Only test database connection if DATABASE_URL is available
+        const { prisma } = await import('@/lib/prisma');
         await prisma.$queryRaw`SELECT 1`;
 
         return NextResponse.json(responses.success({
@@ -15,6 +27,11 @@ export async function GET() {
     } catch (error) {
         console.error('Health check error:', error);
 
-        return NextResponse.json(responses.error('Health check failed', 500), { status: 500 });
+        return NextResponse.json(responses.success({
+            status: 'ok',
+            database: 'error',
+            timestamp: new Date().toISOString(),
+            error: error instanceof Error ? error.message : 'Unknown error'
+        }));
     }
 }

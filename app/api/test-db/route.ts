@@ -1,10 +1,22 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
-    // 간단한 데이터베이스 연결 테스트
+    // Check if DATABASE_URL is available
+    const hasDatabaseUrl = Boolean(process.env.DATABASE_URL);
+    
+    if (!hasDatabaseUrl) {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Database URL not configured',
+        error: 'DATABASE_URL environment variable is not set'
+      });
+    }
+
+    // Only test database connection if DATABASE_URL is available
+    const { prisma } = await import('@/lib/prisma');
     const result = await prisma.$queryRaw`SELECT 1 as test`;
+    
     return NextResponse.json({ 
       success: true, 
       message: 'Database connection successful',

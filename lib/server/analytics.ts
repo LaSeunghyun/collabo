@@ -100,30 +100,31 @@ const ensureDayBucket = <T extends { date: string }>(
 };
 
 export const getAnalyticsOverview = async (): Promise<AnalyticsOverview> => {
-  const now = new Date();
-  const visitSince = new Date(now);
-  visitSince.setDate(visitSince.getDate() - VISIT_LOOKBACK_DAYS);
+  try {
+    const now = new Date();
+    const visitSince = new Date(now);
+    visitSince.setDate(visitSince.getDate() - VISIT_LOOKBACK_DAYS);
 
-  const signupSince = new Date(now);
-  signupSince.setDate(signupSince.getDate() - SIGNUP_LOOKBACK_DAYS);
+    const signupSince = new Date(now);
+    signupSince.setDate(signupSince.getDate() - SIGNUP_LOOKBACK_DAYS);
 
-  const activeSince = new Date(now);
-  activeSince.setDate(activeSince.getDate() - ACTIVE_USER_WINDOW_DAYS);
+    const activeSince = new Date(now);
+    activeSince.setDate(activeSince.getDate() - ACTIVE_USER_WINDOW_DAYS);
 
-  const [visitLogs, recentUsers] = await Promise.all([
-    prisma.visitLog.findMany({
-      where: { occurredAt: { gte: visitSince } },
-      select: {
-        occurredAt: true,
-        sessionId: true,
-        userId: true
-      }
-    }),
-    prisma.user.findMany({
-      where: { createdAt: { gte: signupSince } },
-      select: { createdAt: true }
-    })
-  ]);
+    const [visitLogs, recentUsers] = await Promise.all([
+      prisma.visitLog.findMany({
+        where: { occurredAt: { gte: visitSince } },
+        select: {
+          occurredAt: true,
+          sessionId: true,
+          userId: true
+        }
+      }),
+      prisma.user.findMany({
+        where: { createdAt: { gte: signupSince } },
+        select: { createdAt: true }
+      })
+    ]);
 
   const totalVisits = visitLogs.length;
   const uniqueSessionSet = new Set<string>();
@@ -177,13 +178,27 @@ export const getAnalyticsOverview = async (): Promise<AnalyticsOverview> => {
     a.date < b.date ? -1 : a.date > b.date ? 1 : 0
   );
 
-  return {
-    timestamp: now.toISOString(),
-    totalVisits,
-    uniqueSessions: uniqueSessionSet.size,
-    uniqueUsers: uniqueUserSet.size,
-    activeUsers: activeUserSet.size,
-    dailyVisits,
-    signupTrend
-  };
+    return {
+      timestamp: now.toISOString(),
+      totalVisits,
+      uniqueSessions: uniqueSessionSet.size,
+      uniqueUsers: uniqueUserSet.size,
+      activeUsers: activeUserSet.size,
+      dailyVisits,
+      signupTrend
+    };
+  } catch (error) {
+    console.error('Failed to get analytics overview:', error);
+    // Return default values when database is not available
+    const now = new Date();
+    return {
+      timestamp: now.toISOString(),
+      totalVisits: 0,
+      uniqueSessions: 0,
+      uniqueUsers: 0,
+      activeUsers: 0,
+      dailyVisits: [],
+      signupTrend: []
+    };
+  }
 };

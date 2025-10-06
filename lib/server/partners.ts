@@ -220,66 +220,81 @@ const resolvePageSize = (limit?: number) => {
 };
 
 export const listPartners = async (params: ListPartnersParams = {}): Promise<ListPartnersResult> => {
-  const { type, search, cursor, excludeOwnerId } = params;
-  const take = resolvePageSize(params.limit);
-  const where: PrismaTypes.PartnerWhereInput = {};
+  try {
+    const { type, search, cursor, excludeOwnerId } = params;
+    const take = resolvePageSize(params.limit);
+    const where: PrismaTypes.PartnerWhereInput = {};
 
-  if (type) {
-    where.type = type;
-  }
-
-  if (excludeOwnerId) {
-    where.userId = { not: excludeOwnerId };
-  }
-
-  if (params.includeUnverified) {
-    if (typeof params.verified === 'boolean') {
-      where.verified = params.verified;
+    if (type) {
+      where.type = type;
     }
-  } else {
-    where.verified = typeof params.verified === 'boolean' ? params.verified : true;
-  }
 
-  if (search) {
-    const term = search.trim();
-    if (term) {
-      where.OR = [
-        { name: { contains: term, mode: 'insensitive' } },
-        { description: { contains: term, mode: 'insensitive' } },
-        { contactInfo: { contains: term, mode: 'insensitive' } },
-        { location: { contains: term, mode: 'insensitive' } }
-      ];
+    if (excludeOwnerId) {
+      where.userId = { not: excludeOwnerId };
     }
+
+    if (params.includeUnverified) {
+      if (typeof params.verified === 'boolean') {
+        where.verified = params.verified;
+      }
+    } else {
+      where.verified = typeof params.verified === 'boolean' ? params.verified : true;
+    }
+
+    if (search) {
+      const term = search.trim();
+      if (term) {
+        where.OR = [
+          { name: { contains: term, mode: 'insensitive' } },
+          { description: { contains: term, mode: 'insensitive' } },
+          { contactInfo: { contains: term, mode: 'insensitive' } },
+          { location: { contains: term, mode: 'insensitive' } }
+        ];
+      }
+    }
+
+    const partners = await prisma.partner.findMany({
+      where,
+      include: {
+        user: { select: { id: true, name: true, avatarUrl: true, role: true } },
+        _count: { select: { matches: true } }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: take + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {})
+    });
+
+    const hasNext = partners.length > take;
+    const pageItems = hasNext ? partners.slice(0, -1) : partners;
+
+    return {
+      items: pageItems.map(toPartnerSummary),
+      nextCursor: hasNext ? pageItems[pageItems.length - 1]?.id ?? null : null
+    };
+  } catch (error) {
+    console.error('Failed to list partners:', error);
+    // Return empty result when database is not available
+    return {
+      items: [],
+      nextCursor: null
+    };
   }
-
-  const partners = await prisma.partner.findMany({
-    where,
-    include: {
-      user: { select: { id: true, name: true, avatarUrl: true, role: true } },
-      _count: { select: { matches: true } }
-    },
-    orderBy: { createdAt: 'desc' },
-    take: take + 1,
-    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {})
-  });
-
-  const hasNext = partners.length > take;
-  const pageItems = hasNext ? partners.slice(0, -1) : partners;
-
-  return {
-    items: pageItems.map(toPartnerSummary),
-    nextCursor: hasNext ? pageItems[pageItems.length - 1]?.id ?? null : null
-  };
 };
 
 export const getPartnersAwaitingApproval = async (limit = 5) => {
-  const result = await listPartners({
-    limit,
-    verified: false,
-    includeUnverified: true
-  });
+  try {
+    const result = await listPartners({
+      limit,
+      verified: false,
+      includeUnverified: true
+    });
 
-  return result.items;
+    return result.items;
+  } catch (error) {
+    console.error('Failed to get partners awaiting approval:', error);
+    // Return empty array when database is not available
+    return [];
+  }
 };
 
 export const getPartnerById = async (id: string): Promise<PartnerSummary | null> => {

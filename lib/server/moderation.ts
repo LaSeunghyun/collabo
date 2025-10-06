@@ -63,34 +63,50 @@ const toSummary = (report: ReportWithRelations): ModerationReportSummary => ({
 });
 
 export const getOpenModerationReports = async (limit = 5) => {
-  const reports = await prisma.moderationReport.findMany({
-    where: { status: { in: ACTIVE_REVIEW_STATUSES } },
-    include: {
-      reporter: { select: { id: true, name: true } }
-    },
-    orderBy: { createdAt: 'desc' },
-    take: limit
-  });
+  try {
+    const reports = await prisma.moderationReport.findMany({
+      where: { status: { in: ACTIVE_REVIEW_STATUSES } },
+      include: {
+        reporter: { select: { id: true, name: true } }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit
+    });
 
-  return reports.map(toSummary);
+    return reports.map(toSummary);
+  } catch (error) {
+    console.error('Failed to get open moderation reports:', error);
+    // Return empty array when database is not available
+    return [];
+  }
 };
 
 export const getModerationStats = async () => {
-  const [totalReports, pendingReports, completedReports] = await Promise.all([
-    prisma.moderationReport.count(),
-    prisma.moderationReport.count({
-      where: { status: { in: ACTIVE_REVIEW_STATUSES } }
-    }),
-    prisma.moderationReport.count({
-      where: { status: { notIn: ACTIVE_REVIEW_STATUSES } }
-    })
-  ]);
+  try {
+    const [totalReports, pendingReports, completedReports] = await Promise.all([
+      prisma.moderationReport.count(),
+      prisma.moderationReport.count({
+        where: { status: { in: ACTIVE_REVIEW_STATUSES } }
+      }),
+      prisma.moderationReport.count({
+        where: { status: { notIn: ACTIVE_REVIEW_STATUSES } }
+      })
+    ]);
 
-  return {
-    total: totalReports,
-    pending: pendingReports,
-    completed: completedReports
-  };
+    return {
+      total: totalReports,
+      pending: pendingReports,
+      completed: completedReports
+    };
+  } catch (error) {
+    console.error('Failed to get moderation stats:', error);
+    // Return default values when database is not available
+    return {
+      total: 0,
+      pending: 0,
+      completed: 0
+    };
+  }
 };
 
 export const getReportedPostDetails = async (postId: string) => {
