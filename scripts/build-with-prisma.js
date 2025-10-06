@@ -47,22 +47,11 @@ if (!hasDatabaseUrl) {
 }
 */
 
-/*
-console.log('[build] Generating Prisma client...');
-const prismaResult = spawnSync('npx', ['prisma', 'generate'], { stdio: 'inherit' });
-if (prismaResult.status !== 0) {
-  console.error('[build] Prisma generate failed with status:', prismaResult.status);
-  console.error('[build] Signal:', prismaResult.signal);
-  process.exit(1);
-}
-console.log('[build] Prisma client generated successfully');
-*/
-
 console.log('[build] Building Next.js application...');
-const buildResult = spawnSync('next', ['build'], { stdio: 'inherit' });
-if (buildResult.status !== 0) {
-  console.error('[build] Next.js build failed with status:', buildResult.status);
-  console.error('[build] Signal:', buildResult.signal);
+try {
+  run('next', ['build']);
+  console.log('[build] Next.js build completed successfully');
+} catch (error) {
+  console.error('[build] Next.js build failed:', error.message);
   process.exit(1);
 }
-console.log('[build] Next.js build completed successfully');
