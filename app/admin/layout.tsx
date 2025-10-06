@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/options';
-import { UserRole } from '@prisma/client';
+import { UserRole } from '@/types/drizzle';
 import { AdminSidebar } from './_components/admin-sidebar';
 import { AdminHeader } from './_components/admin-header';
 

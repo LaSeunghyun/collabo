@@ -1,4 +1,4 @@
-﻿import { PROJECT_STATUS_LABELS } from '@/types/prisma';
+﻿import { PROJECT_STATUS_LABELS } from '@/types/drizzle';
 
 import { getProjectsPendingReview } from '@/lib/server/projects';
 

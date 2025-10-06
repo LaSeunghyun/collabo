@@ -1,7 +1,7 @@
 import {
   SettlementPayoutStatus,
   type SettlementPayoutStatusType
-} from '@/types/prisma';
+} from '@/types/drizzle';
 
 import { getSettlementsPendingPayout } from '@/lib/server/settlement-queries';
 

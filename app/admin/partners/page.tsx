@@ -1,5 +1,5 @@
 import { getPartnersAwaitingApproval } from '@/lib/server/partners';
-import { PartnerType, type PartnerTypeType } from '@/types/prisma';
+import { PartnerType, type PartnerTypeType } from '@/types/drizzle';
 
 const partnerTypeLabels: Record<PartnerTypeType, string> = {
   [PartnerType.STUDIO]: '스튜디오',

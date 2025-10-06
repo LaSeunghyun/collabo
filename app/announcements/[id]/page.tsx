@@ -7,7 +7,7 @@ import {
 } from '@/lib/constants/announcements';
 import { getServerAuthSession } from '@/lib/auth/session';
 import { getAnnouncementDetail } from '@/lib/server/announcements';
-import { UserRole } from '@/types/prisma';
+import { UserRole } from '@/types/drizzle';
 
 import { AnnouncementReadTracker } from './read-tracker';
 
