@@ -102,7 +102,7 @@ type PartnerWithRelations = PrismaTypes.PartnerGetPayload<{
   };
 }>;
 
-// PartnerSummary???댁젣 @/types/prisma?먯꽌 import??
+// PartnerSummary 타입은 @/types/prisma에서 import합니다
 
 const toPartnerSummary = (partner: PartnerWithRelations): PartnerSummary => {
   // const services = Array.isArray(partner.services)
@@ -167,32 +167,32 @@ export class PartnerValidationError extends Error {
   issues: string[];
 
   constructor(error: ZodError) {
-    super('?뚰듃???뺣낫媛 ?좏슚?섏? ?딆뒿?덈떎.');
+    super('파트너 정보가 유효하지 않습니다.');
     this.issues = error.issues.map((issue) => issue.message);
   }
 }
 
 export class PartnerProfileExistsError extends Error {
   constructor() {
-    super('?대? ?깅줉???뚰듃???꾨줈?꾩씠 ?덉뒿?덈떎.');
+    super('이미 등록된 파트너 프로필이 있습니다.');
   }
 }
 
 export class PartnerOwnerNotFoundError extends Error {
   constructor() {
-    super('?뚰듃???뚯쑀???뺣낫瑜?李얠쓣 ???놁뒿?덈떎.');
+    super('파트너 소유자 정보를 찾을 수 없습니다.');
   }
 }
 
 export class PartnerNotFoundError extends Error {
   constructor() {
-    super('?뚰듃???뺣낫瑜?李얠쓣 ???놁뒿?덈떎.');
+    super('파트너 정보를 찾을 수 없습니다.');
   }
 }
 
 export class PartnerAccessDeniedError extends Error {
   constructor() {
-    super('?뚰듃???뺣낫瑜??섏젙??沅뚰븳???놁뒿?덈떎.');
+    super('파트너 정보를 수정할 권한이 없습니다.');
   }
 }
 
