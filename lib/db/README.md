@@ -17,3 +17,4 @@ Phase 3 진입 이후 `lib/db`는 스키마 정의뿐만 아니라 런타임에�
 1. `lib/auth/session-store` 및 관련 NextAuth 어댑터 계층을 Drizzle 트랜잭션 API로 재작성합니다.
 2. 프로젝트/커뮤니티/정산 등 서버 서비스 모듈에서 Prisma 의존을 제거하고, 공통 where/정렬 빌더 유틸리티를 추가합니다.
 3. `drizzle/` 마이그레이션 생성 및 배포 파이프라인을 통합하고, Phase 0에서 확보한 Prisma 베이스라인과 SQL diff를 비교 검증합니다.
+4. `npm run test:regression`으로 lint → unit/integration 순의 회귀 플로우를 실행해 데이터 계층 변경을 검증합니다.
