@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { sql } from 'drizzle-orm';
+
+import { db } from '@/lib/db/client';
 
 export async function GET() {
     try {
         // 데이터베이스 연결 테스트
-        await prisma.$queryRaw`SELECT 1`;
+        await db.execute(sql`select 1`);
 
         return NextResponse.json({
             status: 'ok',

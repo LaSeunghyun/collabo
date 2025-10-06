@@ -1,14 +1,16 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { sql } from 'drizzle-orm';
+
+import { db } from '@/lib/db/client';
 
 export async function GET() {
   try {
     // 간단한 데이터베이스 연결 테스트
-    const result = await prisma.$queryRaw`SELECT 1 as test`;
-    return NextResponse.json({ 
-      success: true, 
+    const { rows } = await db.execute(sql`select 1 as test`);
+    return NextResponse.json({
+      success: true,
       message: 'Database connection successful',
-      result 
+      result: rows
     });
   } catch (error) {
     console.error('Database connection failed:', error);

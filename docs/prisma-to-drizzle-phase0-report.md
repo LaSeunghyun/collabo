@@ -68,5 +68,9 @@ The following tables group every Prisma dependency discovered via static analysi
 <<<<<<< HEAD
 Pending follow-ups are tracked in Linear project `PLAT-221 (Prisma → Drizzle)`.
 =======
+<<<<<<< HEAD
 Pending follow-ups are tracked in Linear project `PLAT-221 (Prisma → Drizzle)`.
+=======
+Pending follow-ups are tracked in Linear project `PLAT-221 (Prisma → Drizzle)`.
+>>>>>>> origin/main
 >>>>>>> origin/main
