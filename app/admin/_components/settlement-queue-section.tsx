@@ -1,14 +1,14 @@
 import {
   SettlementPayoutStatus,
   type SettlementPayoutStatusType
-} from '@/types/prisma';
+} from '@/types/auth';
 
 import { getSettlementsPendingPayout } from '@/lib/server/settlement-queries';
 
 const statusLabels: Record<SettlementPayoutStatusType, string> = {
-  [SettlementPayoutStatus.PENDING]: '대기중',
-  [SettlementPayoutStatus.IN_PROGRESS]: '진행중',
-  [SettlementPayoutStatus.PAID]: '완료'
+  [SettlementPayoutStatus.PENDING]: '?�기중',
+  [SettlementPayoutStatus.IN_PROGRESS]: '진행�?,
+  [SettlementPayoutStatus.PAID]: '?�료'
 };
 
 const currencyFormatter = new Intl.NumberFormat('ko-KR', {
@@ -29,10 +29,10 @@ export async function SettlementQueueSection() {
         className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 shadow-lg shadow-black/5"
       >
         <header>
-          <p className="text-xs uppercase tracking-wider text-primary/60">정산 관리</p>
-          <h2 className="mt-1 text-lg font-semibold text-white">예정된 지급</h2>
+          <p className="text-xs uppercase tracking-wider text-primary/60">?�산 관�?/p>
+          <h2 className="mt-1 text-lg font-semibold text-white">?�정??지�?/h2>
           <p className="mt-2 text-sm text-white/60">
-            성공한 프로젝트의 지급을 추적하고 창작자들이 일정에 맞게 자금을 받을 수 있도록 해주세요.
+            ?�공???�로?�트??지급을 추적?�고 창작?�들???�정??맞게 ?�금??받을 ???�도�??�주?�요.
           </p>
         </header>
 
@@ -46,7 +46,7 @@ export async function SettlementQueueSection() {
                 <div>
                   <p className="text-sm font-medium text-white">{settlement.projectTitle}</p>
                   <p className="text-xs text-white/50">
-                    총 모금액 {currencyFormatter.format(settlement.totalRaised)} | 업데이트 {dateFormatter.format(settlement.updatedAt)}
+                    �?모금??{currencyFormatter.format(settlement.totalRaised)} | ?�데?�트 {dateFormatter.format(settlement.updatedAt)}
                   </p>
                 </div>
                 <span className="rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-white/80">
@@ -57,7 +57,7 @@ export async function SettlementQueueSection() {
           </ul>
         ) : (
           <p className="mt-6 rounded-2xl border border-dashed border-white/10 bg-white/5 px-4 py-6 text-center text-sm text-white/60">
-            지급 대기 중인 정산이 없습니다.
+            지�??��?중인 ?�산???�습?�다.
           </p>
         )}
       </section>
@@ -69,8 +69,8 @@ export async function SettlementQueueSection() {
         id="settlements"
         className="rounded-3xl border border-red-500/30 bg-red-500/10 p-6 text-sm text-red-100"
       >
-        <h2 className="text-lg font-semibold text-red-100">정산 관리</h2>
-        <p className="mt-2">정산 데이터를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.</p>
+        <h2 className="text-lg font-semibold text-red-100">?�산 관�?/h2>
+        <p className="mt-2">?�산 ?�이?��? 불러?????�습?�다. ?�시 ???�시 ?�도?�주?�요.</p>
       </section>
     );
   }

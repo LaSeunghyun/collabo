@@ -1,4 +1,4 @@
-﻿import { I18nextProvider } from 'react-i18next';
+import { I18nextProvider } from 'react-i18next';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -20,8 +20,8 @@ describe('CommunityBoard interactions', () => {
     posts: [
       {
         id: 'post-1',
-        title: '테스트 게시글',
-        content: '게시글 내용',
+        title: '�׽�Ʈ �Խñ�',
+        content: '�Խñ� ����',
         likes: 0,
         comments: 0,
         liked: false,
@@ -119,7 +119,7 @@ describe('CommunityBoard interactions', () => {
 
     renderComponent();
 
-    await screen.findByText('테스트 게시글');
+    await screen.findByText('�׽�Ʈ �Խñ�');
     expect(document.querySelector('textarea')).toBeNull();
   });
 
@@ -128,7 +128,7 @@ describe('CommunityBoard interactions', () => {
       data: {
         user: {
           id: 'user-1',
-          name: '홍길동'
+          name: 'ȫ�浿'
         }
       },
       status: 'authenticated'
@@ -136,7 +136,7 @@ describe('CommunityBoard interactions', () => {
 
     renderComponent();
 
-    await screen.findByText('테스트 게시글');
+    await screen.findByText('�׽�Ʈ �Խñ�');
     expect(document.querySelector('textarea')).toBeNull();
   });
 
@@ -145,8 +145,8 @@ describe('CommunityBoard interactions', () => {
 
     renderComponent();
 
-    await screen.findByText('테스트 게시글');
-    await userEvent.click(screen.getByRole('button', { name: '공지' }));
+    await screen.findByText('�׽�Ʈ �Խñ�');
+    await userEvent.click(screen.getByRole('button', { name: '����' }));
 
     await waitFor(() => {
       expect((global.fetch as jest.Mock).mock.calls.some(([request]) => {

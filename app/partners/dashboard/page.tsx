@@ -19,13 +19,13 @@ const dateFormatter = new Intl.DateTimeFormat('ko-KR', {
 });
 
 const statusLabel = (verified: boolean | null | undefined) =>
-  verified ? '승인 완료' : '검수 중';
+  verified ? '?�인 ?�료' : '검??�?;
 
 export default async function PartnerDashboardPage() {
   const session = await getServerAuthSession();
 
   if (!session?.user?.id) {
-    throw new Error('파트너 정보를 확인하려면 로그인이 필요합니다.');
+    throw new Error('?�트???�보�??�인?�려�?로그?�이 ?�요?�니??');
   }
 
   const partnerProfile = await getPartnerProfileForUser(session.user.id);
@@ -38,22 +38,22 @@ export default async function PartnerDashboardPage() {
   const hasProfile = Boolean(partnerProfile);
   const overviewItems = [
     {
-      label: '프로필 상태',
-      value: hasProfile ? statusLabel(partnerProfile?.verified) : '등록 필요',
+      label: '?�로???�태',
+      value: hasProfile ? statusLabel(partnerProfile?.verified) : '?�록 ?�요',
       icon: CheckCircle2,
       accent: hasProfile && partnerProfile?.verified ? 'text-emerald-300' : 'text-amber-300'
     },
     {
-      label: '누적 매칭',
-      value: hasProfile ? `${partnerProfile?.matchCount ?? 0}건` : '0건',
+      label: '?�적 매칭',
+      value: hasProfile ? `${partnerProfile?.matchCount ?? 0}�? : '0�?,
       icon: Users2,
       accent: 'text-sky-300'
     },
     {
-      label: '최근 업데이트',
+      label: '최근 ?�데?�트',
       value: hasProfile
         ? dateFormatter.format(partnerProfile?.updatedAt ?? partnerProfile?.createdAt ?? new Date())
-        : '미등록',
+        : '미등�?,
       icon: CalendarDays,
       accent: 'text-violet-300'
     }
@@ -67,17 +67,17 @@ export default async function PartnerDashboardPage() {
       >
         <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-wider text-primary/60">파트너 현황</p>
-            <h2 className="mt-1 text-lg font-semibold text-white">이번 주 활동 요약</h2>
+            <p className="text-xs uppercase tracking-wider text-primary/60">?�트???�황</p>
+            <h2 className="mt-1 text-lg font-semibold text-white">?�번 �??�동 ?�약</h2>
             <p className="mt-2 text-sm text-white/60">
-              매칭 요청과 검수 상태를 한 곳에서 관리하세요. 프로필을 최신으로 유지할수록 추천 우선순위가 높아집니다.
+              매칭 ?�청�?검???�태�???곳에??관리하?�요. ?�로?�을 최신?�로 ?��??�수�?추천 ?�선?�위가 ?�아집니??
             </p>
           </div>
           <Link
             href="/partners"
             className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-xs font-semibold text-white/80 transition hover:border-white/40 hover:text-white"
           >
-            공개 파트너 보기
+            공개 ?�트??보기
             <ArrowUpRight className="h-4 w-4" />
           </Link>
         </header>
@@ -99,9 +99,9 @@ export default async function PartnerDashboardPage() {
 
         {!hasProfile ? (
           <div className="mt-6 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-100">
-            <p className="font-semibold text-amber-200">파트너 프로필이 아직 등록되지 않았어요.</p>
+            <p className="font-semibold text-amber-200">?�트???�로?�이 ?�직 ?�록?��? ?�았?�요.</p>
             <p className="mt-1 text-amber-100/80">
-              검수 대기 중인 경우 운영팀에서 별도로 연락드리고 있어요. 바로 등록을 시작하려면 아래 안내를 확인하세요.
+              검???��?중인 경우 ?�영?�?�서 별도�??�락?�리�??�어?? 바로 ?�록???�작?�려�??�래 ?�내�??�인?�세??
             </p>
           </div>
         ) : null}
@@ -113,17 +113,17 @@ export default async function PartnerDashboardPage() {
       >
         <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-wider text-primary/60">프로필 관리</p>
-            <h2 className="mt-1 text-lg font-semibold text-white">협업 준비 상태 점검</h2>
+            <p className="text-xs uppercase tracking-wider text-primary/60">?�로??관�?/p>
+            <h2 className="mt-1 text-lg font-semibold text-white">?�업 준�??�태 ?��?</h2>
             <p className="mt-2 text-sm text-white/60">
-              파트너 프로필과 연락처 정보를 최신으로 유지하면 프로젝트 추천과 매칭 확률이 높아집니다.
+              ?�트???�로?�과 ?�락�??�보�?최신?�로 ?��??�면 ?�로?�트 추천�?매칭 ?�률???�아집니??
             </p>
           </div>
           <Link
             href="/partners"
             className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition hover:bg-primary/90"
           >
-            프로필 업데이트하기
+            ?�로???�데?�트?�기
             <ClipboardList className="h-4 w-4" />
           </Link>
         </header>
@@ -132,7 +132,7 @@ export default async function PartnerDashboardPage() {
           <div className="mt-6 space-y-5">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-5">
-                <p className="text-xs uppercase tracking-[0.3em] text-white/50">파트너명</p>
+                <p className="text-xs uppercase tracking-[0.3em] text-white/50">?�트?�명</p>
                 <p className="mt-3 text-lg font-semibold text-white">{partnerProfile.name}</p>
                 <p className="mt-1 text-sm text-white/60">
                   {PARTNER_TYPE_LABELS[partnerProfile.type]}
@@ -140,36 +140,36 @@ export default async function PartnerDashboardPage() {
               </div>
 
               <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-5">
-                <p className="text-xs uppercase tracking-[0.3em] text-white/50">연락 채널</p>
+                <p className="text-xs uppercase tracking-[0.3em] text-white/50">?�락 채널</p>
                 <p className="mt-3 text-lg font-semibold text-white">{partnerProfile.contactInfo}</p>
                 {partnerProfile.location ? (
-                  <p className="mt-1 text-sm text-white/60">활동 지역 · {partnerProfile.location}</p>
+                  <p className="mt-1 text-sm text-white/60">?�동 지??· {partnerProfile.location}</p>
                 ) : null}
               </div>
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-5">
-              <p className="text-xs uppercase tracking-[0.3em] text-white/50">소개</p>
+              <p className="text-xs uppercase tracking-[0.3em] text-white/50">?�개</p>
               <p className="mt-3 text-sm leading-relaxed text-white/70">
-                {partnerProfile.description ?? '소개 문구가 아직 등록되지 않았어요. 핵심 역량과 협업 성과를 입력해 주세요.'}
+                {partnerProfile.description ?? '?�개 문구가 ?�직 ?�록?��? ?�았?�요. ?�심 ??���??�업 ?�과�??�력??주세??'}
               </p>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-5">
-                <p className="text-xs uppercase tracking-[0.3em] text-white/50">승인 상태</p>
+                <p className="text-xs uppercase tracking-[0.3em] text-white/50">?�인 ?�태</p>
                 <div className="mt-3 flex items-center gap-2 text-sm text-white/70">
                   <Clock4 className={`h-4 w-4 ${partnerProfile.verified ? 'text-emerald-300' : 'text-amber-300'}`} />
                   <span>
                     {partnerProfile.verified
-                      ? '승인 완료 – 신규 프로젝트 매칭 알림을 받아볼 수 있어요.'
-                      : '운영팀 검수 중입니다. 승인 시 알림으로 안내드릴게요.'}
+                      ? '?�인 ?�료 ???�규 ?�로?�트 매칭 ?�림??받아�????�어??'
+                      : '?�영?� 검??중입?�다. ?�인 ???�림?�로 ?�내?�릴게요.'}
                   </span>
                 </div>
               </div>
 
               <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-5">
-                <p className="text-xs uppercase tracking-[0.3em] text-white/50">포트폴리오</p>
+                <p className="text-xs uppercase tracking-[0.3em] text-white/50">?�트?�리??/p>
                 {partnerProfile.portfolioUrl ? (
                   <Link
                     href={partnerProfile.portfolioUrl}
@@ -177,12 +177,12 @@ export default async function PartnerDashboardPage() {
                     target="_blank"
                     rel="noreferrer"
                   >
-                    포트폴리오 열기
+                    ?�트?�리???�기
                     <ArrowUpRight className="h-4 w-4" />
                   </Link>
                 ) : (
                   <p className="mt-3 text-sm text-white/60">
-                    포트폴리오 링크가 등록되지 않았습니다. 대표 작업물을 연결하면 신뢰도를 높일 수 있어요.
+                    ?�트?�리??링크가 ?�록?��? ?�았?�니?? ?�???�업물을 ?�결?�면 ?�뢰?��? ?�일 ???�어??
                   </p>
                 )}
               </div>
@@ -190,13 +190,13 @@ export default async function PartnerDashboardPage() {
           </div>
         ) : (
           <div className="mt-6 rounded-2xl border border-dashed border-white/15 bg-white/[0.02] p-6 text-sm text-white/60">
-            <p className="font-semibold text-white">등록된 파트너 프로필이 없습니다.</p>
+            <p className="font-semibold text-white">?�록???�트???�로?�이 ?�습?�다.</p>
             <p className="mt-2">
-              간단한 소개와 연락처, 제공 가능한 서비스를 입력하면 추천 큐레이션에 노출되고 프로젝트 매칭 제안을 받을 수 있습니다.
+              간단???�개?� ?�락�? ?�공 가?�한 ?�비?��? ?�력?�면 추천 ?�레?�션???�출?�고 ?�로?�트 매칭 ?�안??받을 ???�습?�다.
             </p>
             <div className="mt-4 inline-flex items-center gap-2 text-xs text-white/50">
               <Sparkles className="h-4 w-4" />
-              <span>승인 완료 후에는 매칭 요청과 정산 현황을 여기에서 바로 확인할 수 있어요.</span>
+              <span>?�인 ?�료 ?�에??매칭 ?�청�??�산 ?�황???�기?�서 바로 ?�인?????�어??</span>
             </div>
           </div>
         )}
@@ -207,10 +207,10 @@ export default async function PartnerDashboardPage() {
         className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 shadow-lg shadow-black/5"
       >
         <header>
-          <p className="text-xs uppercase tracking-wider text-primary/60">추천 인사이트</p>
-          <h2 className="mt-1 text-lg font-semibold text-white">함께 보면 좋은 파트너</h2>
+          <p className="text-xs uppercase tracking-wider text-primary/60">추천 ?�사?�트</p>
+          <h2 className="mt-1 text-lg font-semibold text-white">?�께 보면 좋�? ?�트??/h2>
           <p className="mt-2 text-sm text-white/60">
-            비슷한 분야의 파트너를 확인하고 협업 네트워크를 확장해 보세요. 프로젝트 제안 시 참고 자료로 활용할 수 있습니다.
+            비슷??분야???�트?��? ?�인?�고 ?�업 ?�트?�크�??�장??보세?? ?�로?�트 ?�안 ??참고 ?�료�??�용?????�습?�다.
           </p>
         </header>
 
@@ -225,7 +225,7 @@ export default async function PartnerDashboardPage() {
                   <div>
                     <p className="text-sm font-semibold text-white">{partner.name}</p>
                     <p className="mt-1 text-xs text-white/60">
-                      {PARTNER_TYPE_LABELS[partner.type]} · 매칭 {partner.matchCount}건
+                      {PARTNER_TYPE_LABELS[partner.type]} · 매칭 {partner.matchCount}�?
                     </p>
                   </div>
                   <span className="rounded-full border border-white/20 px-3 py-1 text-xs text-white/60">
@@ -234,14 +234,14 @@ export default async function PartnerDashboardPage() {
                 </div>
 
                 {partner.location ? (
-                  <p className="mt-4 text-xs text-white/50">활동 지역 · {partner.location}</p>
+                  <p className="mt-4 text-xs text-white/50">?�동 지??· {partner.location}</p>
                 ) : null}
 
                 <Link
                   href={`/partners?highlight=${partner.id}`}
                   className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-primary transition hover:text-primary/80"
                 >
-                  프로필 살펴보기
+                  ?�로???�펴보기
                   <ArrowUpRight className="h-4 w-4" />
                 </Link>
               </li>
@@ -249,7 +249,7 @@ export default async function PartnerDashboardPage() {
           </ul>
         ) : (
           <div className="mt-6 rounded-2xl border border-dashed border-white/15 bg-white/[0.02] p-6 text-sm text-white/60">
-            추천할 파트너가 아직 없습니다. 프로필을 보강하면 관련 분야의 파트너와 프로젝트를 추천해 드릴게요.
+            추천???�트?��? ?�직 ?�습?�다. ?�로?�을 보강?�면 관??분야???�트?��? ?�로?�트�?추천???�릴게요.
           </div>
         )}
       </section>

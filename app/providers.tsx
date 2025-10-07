@@ -1,4 +1,4 @@
-ï»¿'use client';
+'use client';
 
 import { ReactNode, useEffect, useLayoutEffect } from 'react';
 import { I18nextProvider } from 'react-i18next';
@@ -30,7 +30,7 @@ function SessionPersistenceManager() {
     const flag = window.sessionStorage.getItem(SESSION_PERSISTENCE_KEY);
 
     if (status === 'authenticated') {
-      // ì„¸ì…˜ ì§€ì†ì„± í”Œë˜ê·¸ê°€ ì—†ìœ¼ë©´ í™œì„±ìœ¼ë¡œ ì„¤ì • (ë¡œê·¸ì•„ì›ƒí•˜ì§€ ì•ŠìŒ)
+      // ¼¼¼Ç Áö¼Ó¼º ÇÃ·¡±×°¡ ¾øÀ¸¸é È°¼ºÀ¸·Î ¼³Á¤ (·Î±×¾Æ¿ôÇÏÁö ¾ÊÀ½)
       if (!flag) {
         window.sessionStorage.setItem(SESSION_PERSISTENCE_KEY, SESSION_PERSISTENCE_ACTIVE);
         return;

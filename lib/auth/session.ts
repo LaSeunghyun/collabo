@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth';
 import type { Session } from 'next-auth';
 import { prisma } from '@/lib/prisma';
-import type { UserRoleType } from '@/types/prisma';
+import type { UserRoleType } from '@/types/auth';
 
 import { verifyAccessToken } from './access-token';
 import { authOptions } from './options';
@@ -150,7 +150,7 @@ const evaluateBearerToken = async (
       }
     };
   } catch (error) {
-    console.warn('Bearer 토큰 검증 실패', error);
+    console.warn('Bearer ?�큰 검�??�패', error);
     return {
       status: AuthorizationStatus.UNAUTHENTICATED,
       session: null,

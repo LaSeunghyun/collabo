@@ -16,8 +16,8 @@ describe('ProjectUpdatesBoard', () => {
 
   const baseUpdate = {
     id: 'update-1',
-    title: '새 소식',
-    content: '업데이트 내용',
+    title: '???�식',
+    content: '?�데?�트 ?�용',
     visibility: 'SUPPORTERS',
     attachments: [],
     milestone: null,
@@ -26,7 +26,7 @@ describe('ProjectUpdatesBoard', () => {
     likes: 0,
     comments: 0,
     liked: false,
-    author: { id: 'author-1', name: '테스터', avatarUrl: null },
+    author: { id: 'author-1', name: '?�스??, avatarUrl: null },
     canEdit: true
   };
 
@@ -86,16 +86,16 @@ describe('ProjectUpdatesBoard', () => {
   it('hides the composer button when the viewer cannot manage updates', async () => {
     renderBoard(false);
 
-    await screen.findByText('새 소식');
-    expect(screen.queryByText('새 업데이트 작성')).not.toBeInTheDocument();
+    await screen.findByText('???�식');
+    expect(screen.queryByText('???�데?�트 ?�성')).not.toBeInTheDocument();
   });
 
   it('shows the composer button and supporter badge for project owners', async () => {
     renderBoard(true);
 
-    await screen.findByText('새 소식');
-    expect(screen.getByText('새 업데이트 작성')).toBeInTheDocument();
-    expect(screen.getByText('후원자 전용')).toBeInTheDocument();
+    await screen.findByText('???�식');
+    expect(screen.getByText('???�데?�트 ?�성')).toBeInTheDocument();
+    expect(screen.getByText('?�원???�용')).toBeInTheDocument();
   });
 
   it('optimistically removes updates when delete is triggered', async () => {
@@ -123,14 +123,14 @@ describe('ProjectUpdatesBoard', () => {
 
     renderBoard(true);
 
-    await screen.findByText('새 소식');
+    await screen.findByText('???�식');
 
-    const deleteButton = await screen.findByRole('button', { name: /삭제/ });
+    const deleteButton = await screen.findByRole('button', { name: /??��/ });
     await act(async () => {
       fireEvent.click(deleteButton);
     });
 
-    await waitFor(() => expect(screen.queryByText('새 소식')).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByText('???�식')).not.toBeInTheDocument());
 
     await act(async () => {
       resolveDelete?.({

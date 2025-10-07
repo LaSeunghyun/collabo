@@ -47,11 +47,11 @@ describe('FollowButton', () => {
 
     renderComponent({ artistId: 'artist-1', initialIsFollowing: false, isAuthenticated: true, onFollowerChange: callback });
 
-    const button = screen.getByRole('button', { name: '팔로우' });
+    const button = screen.getByRole('button', { name: '?�로?? });
     fireEvent.click(button);
 
     await waitFor(() => expect(button).toHaveAttribute('aria-pressed', 'true'));
-    expect(button).toHaveTextContent('팔로잉');
+    expect(button).toHaveTextContent('?�로??);
     expect(callback).toHaveBeenCalledWith(5);
 
     fireEvent.click(button);
@@ -62,7 +62,7 @@ describe('FollowButton', () => {
 
   it('prompts sign in when unauthenticated', async () => {
     renderComponent({ artistId: 'artist-1', initialIsFollowing: false, isAuthenticated: false });
-    const button = screen.getByRole('button', { name: '팔로우' });
+    const button = screen.getByRole('button', { name: '?�로?? });
     fireEvent.click(button);
     await waitFor(() => expect(signIn).toHaveBeenCalled());
   });

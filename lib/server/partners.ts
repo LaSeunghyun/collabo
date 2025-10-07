@@ -1,10 +1,10 @@
-ï»¿import { revalidatePath } from 'next/cache';
+import { revalidatePath } from 'next/cache';
 import { Prisma, type Prisma as PrismaTypes } from '@prisma/client';
 import {
   UserRole,
   PartnerSummary,
   type PartnerTypeType
-} from '@/types/prisma';
+} from '@/types/auth';
 import { ZodError } from 'zod';
 
 import type { SessionUser } from '@/lib/auth/session';
@@ -102,7 +102,7 @@ type PartnerWithRelations = PrismaTypes.PartnerGetPayload<{
   };
 }>;
 
-// PartnerSummary íƒ€ì…ì€ @/types/prismaì—ì„œ importí•©ë‹ˆë‹¤
+// PartnerSummary Å¸ÀÔÀº @/types/auth¿¡¼­ importÇÕ´Ï´Ù
 
 const toPartnerSummary = (partner: PartnerWithRelations): PartnerSummary => {
   // const services = Array.isArray(partner.services)
@@ -167,32 +167,32 @@ export class PartnerValidationError extends Error {
   issues: string[];
 
   constructor(error: ZodError) {
-    super('íŒŒíŠ¸ë„ˆ ì •ë³´ê°€ ìœ íš¨í•˜ì§€ ì•ŠìŠµë‹ˆë‹¤.');
+    super('ÆÄÆ®³Ê Á¤º¸°¡ À¯È¿ÇÏÁö ¾Ê½À´Ï´Ù.');
     this.issues = error.issues.map((issue) => issue.message);
   }
 }
 
 export class PartnerProfileExistsError extends Error {
   constructor() {
-    super('ì´ë¯¸ ë“±ë¡ëœ íŒŒíŠ¸ë„ˆ í”„ë¡œí•„ì´ ìˆìŠµë‹ˆë‹¤.');
+    super('ÀÌ¹Ì µî·ÏµÈ ÆÄÆ®³Ê ÇÁ·ÎÇÊÀÌ ÀÖ½À´Ï´Ù.');
   }
 }
 
 export class PartnerOwnerNotFoundError extends Error {
   constructor() {
-    super('íŒŒíŠ¸ë„ˆ ì†Œìœ ì ì •ë³´ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤.');
+    super('ÆÄÆ®³Ê ¼ÒÀ¯ÀÚ Á¤º¸¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù.');
   }
 }
 
 export class PartnerNotFoundError extends Error {
   constructor() {
-    super('íŒŒíŠ¸ë„ˆ ì •ë³´ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤.');
+    super('ÆÄÆ®³Ê Á¤º¸¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù.');
   }
 }
 
 export class PartnerAccessDeniedError extends Error {
   constructor() {
-    super('íŒŒíŠ¸ë„ˆ ì •ë³´ë¥¼ ìˆ˜ì •í•  ê¶Œí•œì´ ì—†ìŠµë‹ˆë‹¤.');
+    super('ÆÄÆ®³Ê Á¤º¸¸¦ ¼öÁ¤ÇÒ ±ÇÇÑÀÌ ¾ø½À´Ï´Ù.');
   }
 }
 

@@ -1,4 +1,4 @@
-ï»¿import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 
 export interface ApiError {
@@ -41,26 +41,26 @@ export function handleFundingSettlementError(error: unknown): NextResponse {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
         switch (error.code) {
             case 'P2002':
-                return buildApiError('ë°ì´í„° ì¤‘ë³µ ì˜¤ë¥˜ê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤.', 409, 'DUPLICATE_ENTRY');
+                return buildApiError('µ¥ÀÌÅÍ Áßº¹ ¿À·ù°¡ ¹ß»ıÇß½À´Ï´Ù.', 409, 'DUPLICATE_ENTRY');
             case 'P2025':
-                return buildApiError('ìš”ì²­í•œ ë°ì´í„°ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤.', 404, 'NOT_FOUND');
+                return buildApiError('¿äÃ»ÇÑ µ¥ÀÌÅÍ¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù.', 404, 'NOT_FOUND');
             case 'P2003':
-                return buildApiError('ì°¸ì¡° ë¬´ê²°ì„± ì˜¤ë¥˜ê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤.', 400, 'FOREIGN_KEY_CONSTRAINT');
+                return buildApiError('ÂüÁ¶ ¹«°á¼º ¿À·ù°¡ ¹ß»ıÇß½À´Ï´Ù.', 400, 'FOREIGN_KEY_CONSTRAINT');
             default:
-                return buildApiError('ë°ì´í„°ë² ì´ìŠ¤ ì˜¤ë¥˜ê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤.', 500, 'DATABASE_ERROR');
+                return buildApiError('µ¥ÀÌÅÍº£ÀÌ½º ¿À·ù°¡ ¹ß»ıÇß½À´Ï´Ù.', 500, 'DATABASE_ERROR');
         }
     }
 
     if (error instanceof Prisma.PrismaClientValidationError) {
-        return buildApiError('ë°ì´í„° ê²€ì¦ ì˜¤ë¥˜ê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤.', 400, 'VALIDATION_ERROR');
+        return buildApiError('µ¥ÀÌÅÍ °ËÁõ ¿À·ù°¡ ¹ß»ıÇß½À´Ï´Ù.', 400, 'VALIDATION_ERROR');
     }
 
     if (error instanceof Error) {
         console.error('Unexpected error:', error);
-        return buildApiError('ì˜ˆìƒì¹˜ ëª»í•œ ì˜¤ë¥˜ê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤.', 500, 'INTERNAL_ERROR');
+        return buildApiError('¿¹»óÄ¡ ¸øÇÑ ¿À·ù°¡ ¹ß»ıÇß½À´Ï´Ù.', 500, 'INTERNAL_ERROR');
     }
 
-    return buildApiError('ì•Œ ìˆ˜ ì—†ëŠ” ì˜¤ë¥˜ê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤.', 500, 'UNKNOWN_ERROR');
+    return buildApiError('¾Ë ¼ö ¾ø´Â ¿À·ù°¡ ¹ß»ıÇß½À´Ï´Ù.', 500, 'UNKNOWN_ERROR');
 }
 
 export async function withErrorHandling<T>(

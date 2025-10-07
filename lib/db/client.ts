@@ -141,6 +141,8 @@ const instantiateDrizzle = (): DrizzleInstance => {
     throw new Error('DATABASE_URL is not set.');
   }
 
+  console.log('[db] DATABASE_URL found:', databaseUrl.substring(0, 50) + '...');
+
   const normalizedUrl = normalizeServerlessConnectionString(databaseUrl);
 
   if (normalizedUrl.startsWith('prisma://')) {
@@ -149,6 +151,8 @@ const instantiateDrizzle = (): DrizzleInstance => {
 
   const preferHttpDriver =
     process.env.DRIZZLE_DRIVER === 'http' || process.env.NEXT_RUNTIME === 'edge';
+
+  console.log('[db] Using driver:', preferHttpDriver ? 'http' : 'node');
 
   const instance = preferHttpDriver
     ? createServerlessInstance(normalizedUrl)
@@ -164,6 +168,7 @@ const getDrizzleInstance = (): DrizzleInstance => {
     try {
       globalForDrizzle.drizzle = instantiateDrizzle();
     } catch (error) {
+      console.error('[db] Error instantiating Drizzle:', error);
       const reason = error instanceof Error ? error.message : String(error);
       globalForDrizzle.drizzle = createDisabledInstance(reason);
     }

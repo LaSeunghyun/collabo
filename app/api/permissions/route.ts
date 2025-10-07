@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   try {
     const user = await requireApiUser(request as NextRequest & GuardRequirement);
     
-    // 관리자만 권한 목록 조회 가능
+    // 관리자�?권한 목록 조회 가??
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
         { message: 'Unauthorized' },
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
   try {
     const user = await requireApiUser(request as NextRequest & GuardRequirement);
     
-    // 관리자만 권한 생성 가능
+    // 관리자�?권한 ?�성 가??
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
         { message: 'Unauthorized' },
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 권한 키 중복 확인
+    // 권한 ??중복 ?�인
     const existingPermission = await prisma.permission.findUnique({
       where: { key }
     });
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 권한 생성
+    // 권한 ?�성
     const permission = await prisma.permission.create({
       data: {
         key,

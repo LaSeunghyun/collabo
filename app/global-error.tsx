@@ -4,12 +4,13 @@ import { useEffect } from 'react';
 
 export default function GlobalError({
   error,
+  reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
   useEffect(() => {
-    // 글로벌 에러를 로깅 서비스에 전송
+    // 글로벌 에러 로깅 서비스에 전송
     console.error('Global application error:', {
       message: error.message,
       stack: error.stack,
@@ -29,7 +30,7 @@ export default function GlobalError({
               심각한 문제가 발생했습니다
             </h1>
             <p className="mb-6 text-sm text-white/70">
-              애플리케이션에 심각한 오류가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요.
+              애플리케이션에서 심각한 오류가 발생했습니다. 페이지를 새로고침하거나 다시 시도해 주세요.
             </p>
             <button
               onClick={() => window.location.reload()}

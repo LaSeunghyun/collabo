@@ -1,4 +1,4 @@
-ï»¿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import type { Prisma } from '@prisma/client';
 import {
   FundingStatus,
@@ -7,7 +7,7 @@ import {
   SettlementPayoutStatus,
   SettlementStakeholderType,
   UserRole
-} from '@/types/prisma';
+} from '@/types/auth';
 import { z } from 'zod';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
@@ -17,7 +17,7 @@ import { validateFundingSettlementConsistency } from '@/lib/server/funding-settl
 import { buildApiError } from '@/lib/server/error-handling';
 
 const requestSchema = z.object({
-  projectId: z.string().min(1, 'projectIdëŠ” í•„ìˆ˜ìž…ë‹ˆë‹¤.'),
+  projectId: z.string().min(1, 'projectId´Â ÇÊ¼öÀÔ´Ï´Ù.'),
   platformFeeRate: z.number().min(0).max(1).optional(),
   gatewayFeeOverride: z.number().min(0).optional(),
   notes: z.any().optional()
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
   const projectId = searchParams.get('projectId');
 
   if (!projectId) {
-    return buildError('projectId íŒŒë¼ë¯¸í„°ê°€ í•„ìš”í•©ë‹ˆë‹¤.');
+    return buildError('projectId ÆÄ¶ó¹ÌÅÍ°¡ ÇÊ¿äÇÕ´Ï´Ù.');
   }
 
   const settlements = await prisma.settlement.findMany({
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
       return buildError(error.issues.map((issue) => issue.message).join(', '));
     }
 
-    return buildError('ìš”ì²­ ë³¸ë¬¸ì„ í™•ì¸í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.');
+    return buildError('¿äÃ» º»¹®À» È®ÀÎÇÒ ¼ö ¾ø½À´Ï´Ù.');
   }
 
   const { projectId, platformFeeRate = 0.05, gatewayFeeOverride, notes } = payload;
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
   });
 
   if (!project) {
-    return buildError('í•´ë‹¹ í”„ë¡œì íŠ¸ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤.', 404);
+    return buildError('ÇØ´ç ÇÁ·ÎÁ§Æ®¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù.', 404);
   }
 
   if (
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
     project.status !== ProjectStatus.EXECUTING &&
     project.status !== ProjectStatus.COMPLETED
   ) {
-    return buildError('ì •ì‚°ì´ ê°€ëŠ¥í•œ ìƒíƒœì˜ í”„ë¡œì íŠ¸ë§Œ ì •ì‚°ì„ ìƒì„±í•  ìˆ˜ ìžˆìŠµë‹ˆë‹¤.', 409);
+    return buildError('Á¤»êÀÌ °¡´ÉÇÑ »óÅÂÀÇ ÇÁ·ÎÁ§Æ®¸¸ Á¤»êÀ» »ý¼ºÇÒ ¼ö ÀÖ½À´Ï´Ù.', 409);
   }
 
   const existingPending = await prisma.settlement.findFirst({
@@ -129,15 +129,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(existingPending);
   }
 
-  // ì •ì‚° ë°ì´í„° ì¼ê´€ì„± ê²€ì¦
+  // Á¤»ê µ¥ÀÌÅÍ ÀÏ°ü¼º °ËÁõ
   try {
     const consistencyCheck = await validateFundingSettlementConsistency(projectId);
     if (!consistencyCheck.isValid) {
-      console.warn('ì •ì‚° ë°ì´í„° ì¼ê´€ì„± ë¬¸ì œ:', consistencyCheck.issues);
-      // ë¡œê·¸ë§Œ ë‚¨ê¸°ê³  ê³„ì† ì§„í–‰ (ë°ì´í„° ë¶ˆì¼ì¹˜ ì‹œ í›„ì† ì¡°ì¹˜ í•„ìš”)
+      console.warn('Á¤»ê µ¥ÀÌÅÍ ÀÏ°ü¼º ¹®Á¦:', consistencyCheck.issues);
+      // ·Î±×¸¸ ³²±â°í °è¼Ó ÁøÇà (µ¥ÀÌÅÍ ºÒÀÏÄ¡ ½Ã ÈÄ¼Ó Á¶Ä¡ ÇÊ¿ä)
     }
   } catch (error) {
-    console.warn('ì •ì‚° ë°ì´í„° ê²€ì¦ ì˜¤ë¥˜:', error);
+    console.warn('Á¤»ê µ¥ÀÌÅÍ °ËÁõ ¿À·ù:', error);
   }
 
   const fundings = await prisma.funding.findMany({
@@ -147,22 +147,22 @@ export async function POST(request: NextRequest) {
 
   const totalRaised = fundings.reduce((acc: number, funding: { amount: number }) => acc + funding.amount, 0);
   if (totalRaised <= 0) {
-    return buildError('ëª¨ê¸ˆì•¡ì´ ë¶€ì¡±í•©ë‹ˆë‹¤.', 409);
+    return buildError('¸ð±Ý¾×ÀÌ ºÎÁ·ÇÕ´Ï´Ù.', 409);
   }
 
   if (totalRaised < project.targetAmount) {
-    return buildError('ëª©í‘œ ê¸ˆì•¡ì„ ì•„ì§ ë‹¬ì„±í•˜ì§€ ëª»í–ˆìŠµë‹ˆë‹¤.', 409);
+    return buildError('¸ñÇ¥ ±Ý¾×À» ¾ÆÁ÷ ´Þ¼ºÇÏÁö ¸øÇß½À´Ï´Ù.', 409);
   }
 
-  // í”„ë¡œì íŠ¸ currentAmountì™€ ìµœê·¼ ê²°ì œ ê¸ˆì•¡ ì¼ì¹˜ ì—¬ë¶€ í™•ì¸
+  // ÇÁ·ÎÁ§Æ® currentAmount¿Í ÃÖ±Ù °áÁ¦ ±Ý¾× ÀÏÄ¡ ¿©ºÎ È®ÀÎ
   const projectCurrentAmount = await prisma.project.findUnique({
     where: { id: projectId },
     select: { currentAmount: true }
   });
 
   if (projectCurrentAmount && projectCurrentAmount.currentAmount !== totalRaised) {
-    console.warn(`í”„ë¡œì íŠ¸ currentAmount(${projectCurrentAmount.currentAmount})ì™€ ìµœê·¼ ê²°ì œ ê¸ˆì•¡(${totalRaised})ì´ ì¼ì¹˜í•˜ì§€ ì•ŠìŠµë‹ˆë‹¤.`);
-    // ë°ì´í„° ì¼ê´€ì„±ì„ ìœ„í•´ currentAmountë¥¼ ì—…ë°ì´íŠ¸
+    console.warn(`ÇÁ·ÎÁ§Æ® currentAmount(${projectCurrentAmount.currentAmount})¿Í ÃÖ±Ù °áÁ¦ ±Ý¾×(${totalRaised})ÀÌ ÀÏÄ¡ÇÏÁö ¾Ê½À´Ï´Ù.`);
+    // µ¥ÀÌÅÍ ÀÏ°ü¼ºÀ» À§ÇØ currentAmount¸¦ ¾÷µ¥ÀÌÆ®
     await prisma.project.update({
       where: { id: projectId },
       data: { currentAmount: totalRaised }
@@ -200,7 +200,7 @@ export async function POST(request: NextRequest) {
       collaboratorShares
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'ì •ì‚° ë°°ë¶„ ê³„ì‚°ì— ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤.';
+    const message = error instanceof Error ? error.message : 'Á¤»ê ¹èºÐ °è»ê¿¡ ½ÇÆÐÇß½À´Ï´Ù.';
     return buildError(message, 422);
   }
 

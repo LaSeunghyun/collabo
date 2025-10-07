@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 펀딩 정보 확인
+    // ?�???�보 ?�인
     const funding = await prisma.funding.findUnique({
       where: { id: fundingId },
       include: {
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 기존 결제 거래 확인
+    // 기존 결제 거래 ?�인
     const existingPayment = await prisma.paymentTransaction.findUnique({
       where: { fundingId }
     });
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 결제 거래 생성
+    // 결제 거래 ?�성
     const payment = await prisma.paymentTransaction.create({
       data: {
         fundingId,

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireApiUser } from '@/lib/auth/guards';
-import { UserRole } from '@/types/prisma';
+import { UserRole } from '@/types/auth';
 import { getReportedPostDetails, updateModerationStatus } from '@/lib/server/moderation';
 import { ModerationStatus } from '@prisma/client';
 
@@ -38,7 +38,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    // 유효한 상태인지 확인
+    // ?�효???�태?��? ?�인
     if (!Object.values(ModerationStatus).includes(status)) {
       return NextResponse.json(
         { message: 'Invalid status' },

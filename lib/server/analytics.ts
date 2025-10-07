@@ -1,6 +1,7 @@
-﻿import { createHash } from 'crypto';
+import { createHash } from 'crypto';
 
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db/client';
+import { visitLogs } from '@/lib/db/schema';
 import { evaluateAuthorization } from '@/lib/auth/session';
 
 export const VISIT_LOOKBACK_DAYS = 30;
@@ -63,12 +64,10 @@ export const recordVisit = async ({
       authorization ? { authorization } : undefined
     );
 
-    await prisma.visitLog.create({
-      data: {
-        sessionId: normalizedSessionId,
-        userId: user?.id ?? null,
-        ipHash: hashIp(ipAddress)
-      }
+    await db.insert(visitLogs).values({
+      sessionId: normalizedSessionId,
+      userId: user?.id ?? null,
+      ipHash: hashIp(ipAddress)
     });
   } catch (error) {
     console.error('Failed to record visit analytics', error);

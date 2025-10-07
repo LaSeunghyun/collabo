@@ -1,4 +1,4 @@
-import { UserRole } from '@/types/prisma';
+import { UserRole } from '@/types/auth';
 
 export {};
 

@@ -43,10 +43,10 @@ describe('FundingDialog', () => {
     mockUseSession.mockReturnValue({ data: null, status: 'unauthenticated' } as any);
 
     render(
-      <FundingDialog projectId="project-1" projectTitle="프로젝트" />
+      <FundingDialog projectId="project-1" projectTitle="?�로?�트" />
     );
 
-    const button = screen.getByRole('button', { name: '로그인 후 후원하기' });
+    const button = screen.getByRole('button', { name: '로그?????�원?�기' });
     fireEvent.click(button);
 
     expect(mockSignIn).toHaveBeenCalledWith(undefined, { callbackUrl: 'http://localhost/test' });
@@ -62,30 +62,30 @@ describe('FundingDialog', () => {
     const fetchMock = jest.fn().mockResolvedValue({
       ok: false,
       status: 401,
-      json: async () => ({ error: '인증이 필요합니다.' })
+      json: async () => ({ error: '?�증???�요?�니??' })
     } as any);
     // @ts-expect-error - override fetch for test scenario
     global.fetch = fetchMock;
 
     try {
       render(
-        <FundingDialog projectId="project-1" projectTitle="프로젝트" />
+        <FundingDialog projectId="project-1" projectTitle="?�로?�트" />
       );
 
-      const trigger = screen.getByRole('button', { name: '후원하기' });
+      const trigger = screen.getByRole('button', { name: '?�원?�기' });
       fireEvent.click(trigger);
 
-      const emailInput = await screen.findByLabelText('영수증 이메일');
+      const emailInput = await screen.findByLabelText('?�수�??�메??);
       expect((emailInput as HTMLInputElement).value).toBe('user@example.com');
 
-      const submitButton = screen.getByRole('button', { name: /결제하기/ });
+      const submitButton = screen.getByRole('button', { name: /결제?�기/ });
       fireEvent.click(submitButton);
 
       await waitFor(() => {
-        expect(screen.getByText('후원을 진행하려면 로그인이 필요합니다.')).toBeInTheDocument();
+        expect(screen.getByText('?�원??진행?�려�?로그?�이 ?�요?�니??')).toBeInTheDocument();
       });
 
-      const signInButton = screen.getByRole('button', { name: '로그인하러 가기' });
+      const signInButton = screen.getByRole('button', { name: '로그?�하??가�? });
       fireEvent.click(signInButton);
       expect(mockSignIn).toHaveBeenLastCalledWith(undefined, { callbackUrl: 'http://localhost/test' });
 

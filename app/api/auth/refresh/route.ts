@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   const cookie = req.cookies.get(REFRESH_COOKIE)?.value;
 
   if (!cookie) {
-    return NextResponse.json({ error: '리프레시 토큰이 필요합니다.' }, { status: 401 });
+    return NextResponse.json({ error: '리프?�시 ?�큰???�요?�니??' }, { status: 401 });
   }
 
   const ipAddress = extractClientIp(req);
@@ -62,9 +62,9 @@ export async function POST(req: NextRequest) {
       }
     );
   } catch (error) {
-    console.error('리프레시 토큰 갱신 실패', error);
+    console.error('리프?�시 ?�큰 갱신 ?�패', error);
     return NextResponse.json(
-      { error: '세션이 유효하지 않습니다. 다시 로그인하세요.' },
+      { error: '?�션???�효?��? ?�습?�다. ?�시 로그?�하?�요.' },
       {
         status: 401,
         headers: {

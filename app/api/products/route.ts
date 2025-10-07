@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 프로젝트 소유자인지 확인
+    // ?�로?�트 ?�유?�인지 ?�인
     const project = await prisma.project.findUnique({
       where: { id: projectId },
       select: { ownerId: true }

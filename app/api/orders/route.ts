@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 상품 정보 조회 및 검증
+    // ?�품 ?�보 조회 �?검�?
     const productIds = items.map((item: any) => item.productId);
     const products = await prisma.product.findMany({
       where: { id: { in: productIds } },
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 재고 확인
+    // ?�고 ?�인
     for (const item of items) {
       const product = products.find(p => p.id === item.productId);
       if (!product || (product.inventory && product.inventory < item.quantity)) {
@@ -131,9 +131,9 @@ export async function POST(request: NextRequest) {
       };
     });
 
-    const totalPrice = subtotal; // 배송비 등 추가 가능
+    const totalPrice = subtotal; // 배송�???추�? 가??
 
-    // 주문 생성
+    // 주문 ?�성
     const order = await prisma.order.create({
       data: {
         userId: user.id,
@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // 재고 차감
+    // ?�고 차감
     for (const item of items) {
       await prisma.product.update({
         where: { id: item.productId },

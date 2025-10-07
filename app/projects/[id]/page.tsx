@@ -5,7 +5,7 @@ import { FundingDialog } from '@/components/ui/dialogs/funding-dialog';
 import { ProjectDetailTabs } from '@/components/ui/sections/project-detail-tabs';
 import { getServerAuthSession } from '@/lib/auth/session';
 import { getProjectSummaryById } from '@/lib/server/projects';
-import { UserRole } from '@/types/prisma';
+import { UserRole } from '@/types/auth';
 
 interface ProjectPageProps {
   params: { id: string };

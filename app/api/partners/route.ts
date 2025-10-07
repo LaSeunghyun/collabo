@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { UserRole, type PartnerTypeType } from '@/types/prisma';
+import { UserRole, type PartnerTypeType } from '@/types/auth';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import {

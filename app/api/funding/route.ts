@@ -1,11 +1,11 @@
-ï»¿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import type { Prisma } from '@prisma/client';
 import {
   FundingStatus,
   PaymentProvider,
   ProjectStatus,
   type Funding
-} from '@/types/prisma';
+} from '@/types/auth';
 import Stripe from 'stripe';
 
 import { prisma } from '@/lib/prisma';
@@ -246,7 +246,7 @@ export async function POST(request: NextRequest) {
   try {
     payload = await request.json();
   } catch {
-    return buildError('ìš”ì²­ ë³¸ë¬¸ì„ í™•ì¸í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.');
+    return buildError('¿äÃ» º»¹®À» È®ÀÎÇÒ ¼ö ¾ø½À´Ï´Ù.');
   }
 
   const {
@@ -278,23 +278,23 @@ export async function POST(request: NextRequest) {
     : baseMetadata;
 
   if (!projectId) {
-    return buildError('í”„ë¡œì íŠ¸ ì •ë³´ê°€ ëˆ„ë½ë˜ì—ˆìŠµë‹ˆë‹¤.');
+    return buildError('ÇÁ·ÎÁ§Æ® Á¤º¸°¡ ´©¶ôµÇ¾ú½À´Ï´Ù.');
   }
 
   const project = await prisma.project.findUnique({ where: { id: projectId } });
   if (!project) {
-    return buildError('í•´ë‹¹ í”„ë¡œì íŠ¸ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤.', 404);
+    return buildError('ÇØ´ç ÇÁ·ÎÁ§Æ®¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù.', 404);
   }
 
   if (![ProjectStatus.LIVE, ProjectStatus.EXECUTING].includes(project.status as any)) {
-    return buildError('í˜„ì¬ ìƒíƒœì—ì„œëŠ” ê²°ì œë¥¼ ì§„í–‰í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.', 409);
+    return buildError('ÇöÀç »óÅÂ¿¡¼­´Â °áÁ¦¸¦ ÁøÇàÇÒ ¼ö ¾ø½À´Ï´Ù.', 409);
   }
 
   let stripe: Stripe;
   try {
     stripe = createStripeClient();
   } catch (error) {
-    return buildError(error instanceof Error ? error.message : 'Stripe í´ë¼ì´ì–¸íŠ¸ë¥¼ ìƒì„±í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.', 500);
+    return buildError(error instanceof Error ? error.message : 'Stripe Å¬¶óÀÌ¾ğÆ®¸¦ »ı¼ºÇÒ ¼ö ¾ø½À´Ï´Ù.', 500);
   }
 
   // Verification path
@@ -304,14 +304,14 @@ export async function POST(request: NextRequest) {
         const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
         if (paymentIntent.status !== 'succeeded') {
-          return buildError(`ê²°ì œ ìƒíƒœê°€ ì™„ë£Œë˜ì§€ ì•Šì•˜ìŠµë‹ˆë‹¤ (í˜„ì¬ ìƒíƒœ: ${paymentIntent.status})`, 409);
+          return buildError(`°áÁ¦ »óÅÂ°¡ ¿Ï·áµÇÁö ¾Ê¾Ò½À´Ï´Ù (ÇöÀç »óÅÂ: ${paymentIntent.status})`, 409);
         }
 
         const amountReceived = ensureIntegerAmount(
           paymentIntent.amount_received ?? paymentIntent.amount
         );
         if (!amountReceived) {
-          return buildError('ê²°ì œ ê¸ˆì•¡ì„ í™•ì¸í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.', 422);
+          return buildError('°áÁ¦ ±İ¾×À» È®ÀÎÇÒ ¼ö ¾ø½À´Ï´Ù.', 422);
         }
 
         const funding = await recordSuccessfulFunding({
@@ -323,7 +323,7 @@ export async function POST(request: NextRequest) {
           snapshot: pickStripeIntentSnapshot(paymentIntent)
         });
 
-        // ì •ì‚° ìë™ ìƒì„± ë¡œì§
+        // Á¤»ê ÀÚµ¿ »ı¼º ·ÎÁ÷
         try {
           const settlement = await createSettlementIfTargetReached(projectId);
           return NextResponse.json({
@@ -332,12 +332,12 @@ export async function POST(request: NextRequest) {
             settlement: settlement ? { id: settlement.id, status: settlement.payoutStatus } : null
           });
         } catch (settlementError) {
-          console.warn('ì •ì‚° ìë™ ìƒì„± ì‹¤íŒ¨:', settlementError);
+          console.warn('Á¤»ê ÀÚµ¿ »ı¼º ½ÇÆĞ:', settlementError);
           return NextResponse.json({
             status: 'recorded',
             funding,
             settlement: null,
-            warning: 'ëª©í‘œ ë‹¬ì„± ì—¬ë¶€ í™•ì¸ ì¤‘ ì •ì‚° ìƒì„±ì— ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤.'
+            warning: '¸ñÇ¥ ´Ş¼º ¿©ºÎ È®ÀÎ Áß Á¤»ê »ı¼º¿¡ ½ÇÆĞÇß½À´Ï´Ù.'
           });
         }
       }
@@ -348,12 +348,12 @@ export async function POST(request: NextRequest) {
         });
 
         if (session.payment_status !== 'paid') {
-          return buildError(`ì²´í¬ì•„ì›ƒ ì„¸ì…˜ì´ ì™„ë£Œë˜ì§€ ì•Šì•˜ìŠµë‹ˆë‹¤ (í˜„ì¬ ìƒíƒœ: ${session.payment_status})`, 409);
+          return buildError(`Ã¼Å©¾Æ¿ô ¼¼¼ÇÀÌ ¿Ï·áµÇÁö ¾Ê¾Ò½À´Ï´Ù (ÇöÀç »óÅÂ: ${session.payment_status})`, 409);
         }
 
         const amountPaid = ensureIntegerAmount(session.amount_total);
         if (!amountPaid) {
-          return buildError('ê²°ì œ ê¸ˆì•¡ì„ í™•ì¸í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.', 422);
+          return buildError('°áÁ¦ ±İ¾×À» È®ÀÎÇÒ ¼ö ¾ø½À´Ï´Ù.', 422);
         }
 
         const paymentIntentReference =
@@ -370,7 +370,7 @@ export async function POST(request: NextRequest) {
           snapshot: pickStripeIntentSnapshot(session)
         });
 
-        // ì •ì‚° ìë™ ìƒì„± ë¡œì§
+        // Á¤»ê ÀÚµ¿ »ı¼º ·ÎÁ÷
         try {
           const settlement = await createSettlementIfTargetReached(projectId);
           return NextResponse.json({
@@ -379,31 +379,31 @@ export async function POST(request: NextRequest) {
             settlement: settlement ? { id: settlement.id, status: settlement.payoutStatus } : null
           });
         } catch (settlementError) {
-          console.warn('ì •ì‚° ìë™ ìƒì„± ì‹¤íŒ¨:', settlementError);
+          console.warn('Á¤»ê ÀÚµ¿ »ı¼º ½ÇÆĞ:', settlementError);
           return NextResponse.json({
             status: 'recorded',
             funding,
             settlement: null,
-            warning: 'ëª©í‘œ ë‹¬ì„± ì—¬ë¶€ í™•ì¸ ì¤‘ ì •ì‚° ìƒì„±ì— ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤.'
+            warning: '¸ñÇ¥ ´Ş¼º ¿©ºÎ È®ÀÎ Áß Á¤»ê »ı¼º¿¡ ½ÇÆĞÇß½À´Ï´Ù.'
           });
         }
       }
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'ê²°ì œ ê²€ì¦ ê³¼ì •ì—ì„œ ì˜¤ë¥˜ê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤.';
+        error instanceof Error ? error.message : '°áÁ¦ °ËÁõ °úÁ¤¿¡¼­ ¿À·ù°¡ ¹ß»ıÇß½À´Ï´Ù.';
       return buildError(message, 500);
     }
   }
 
   const normalisedAmount = ensureIntegerAmount(amount);
   if (!normalisedAmount) {
-    return buildError('ê²°ì œ ê¸ˆì•¡ì´ ì˜¬ë°”ë¥´ì§€ ì•ŠìŠµë‹ˆë‹¤.');
+    return buildError('°áÁ¦ ±İ¾×ÀÌ ¿Ã¹Ù¸£Áö ¾Ê½À´Ï´Ù.');
   }
 
   try {
     if (mode === 'checkout') {
       if (!successUrl || !cancelUrl) {
-        return buildError('Checkout ì„¸ì…˜ì—ëŠ” ì„±ê³µ ë° ì·¨ì†Œ URLì´ í•„ìš”í•©ë‹ˆë‹¤.');
+        return buildError('Checkout ¼¼¼Ç¿¡´Â ¼º°ø ¹× Ãë¼Ò URLÀÌ ÇÊ¿äÇÕ´Ï´Ù.');
       }
 
       const session = await stripe.checkout.sessions.create({
@@ -417,7 +417,7 @@ export async function POST(request: NextRequest) {
               unit_amount: normalisedAmount,
               product_data: {
                 name: project.title,
-                description: `Collab Funding â€“ ${project.title}`
+                description: `Collab Funding ? ${project.title}`
               }
             }
           }
@@ -441,7 +441,7 @@ export async function POST(request: NextRequest) {
       automatic_payment_methods: { enabled: true },
       metadata,
       receipt_email: normalisedReceiptEmail,
-      description: `Collab Funding â€“ ${project.title}`
+      description: `Collab Funding ? ${project.title}`
     });
 
     return NextResponse.json({
@@ -450,7 +450,7 @@ export async function POST(request: NextRequest) {
       clientSecret: paymentIntent.client_secret
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'ê²°ì œ ìš”ì²­ ì²˜ë¦¬ ì¤‘ ì˜¤ë¥˜ê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤.';
+    const message = error instanceof Error ? error.message : '°áÁ¦ ¿äÃ» Ã³¸® Áß ¿À·ù°¡ ¹ß»ıÇß½À´Ï´Ù.';
     return buildError(message, 500);
   }
 }

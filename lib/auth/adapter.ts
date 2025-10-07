@@ -27,14 +27,14 @@ const toAdapterUser = (user: UserSelect): AdapterUser => ({
 
 const ensureEmail = (email: string | null | undefined): string => {
   if (!email) {
-    throw new Error('이메일 정보가 없어 NextAuth 사용자 레코드를 생성할 수 없습니다.');
+    throw new Error('?�메???�보가 ?�어 NextAuth ?�용???�코?��? ?�성?????�습?�다.');
   }
 
   return email;
 };
 
 const unsupported = (feature: string): never => {
-  throw new Error(`NextAuth ${feature} 기능은 Drizzle 어댑터에서 아직 지원되지 않습니다.`);
+  throw new Error(`NextAuth ${feature} 기능?� Drizzle ?�댑?�에???�직 지?�되지 ?�습?�다.`);
 };
 
 export const createDrizzleAuthAdapter = (database: DatabaseClient = db): Adapter => {
@@ -69,7 +69,7 @@ export const createDrizzleAuthAdapter = (database: DatabaseClient = db): Adapter
         .returning();
 
       if (!record) {
-        throw new Error('사용자 레코드를 생성하지 못했습니다.');
+        throw new Error('?�용???�코?��? ?�성?��? 못했?�니??');
       }
 
       return toAdapterUser(record);
@@ -85,7 +85,7 @@ export const createDrizzleAuthAdapter = (database: DatabaseClient = db): Adapter
     getUserByAccount: async () => null,
     updateUser: async (user) => {
       if (!user.id) {
-        throw new Error('사용자 업데이트에는 ID가 필요합니다.');
+        throw new Error('?�용???�데?�트?�는 ID가 ?�요?�니??');
       }
 
       const existing = await readUserById(user.id);
@@ -130,35 +130,35 @@ export const createDrizzleAuthAdapter = (database: DatabaseClient = db): Adapter
     },
     linkAccount: async (account: AdapterAccount) => {
       void account;
-      return unsupported('OAuth 계정 연동');
+      return unsupported('OAuth 계정 ?�동');
     },
     unlinkAccount: async (account: AdapterAccount) => {
       void account;
-      return unsupported('OAuth 계정 해제');
+      return unsupported('OAuth 계정 ?�제');
     },
     createSession: async (session: AdapterSession) => {
       void session;
-      return unsupported('세션 저장');
+      return unsupported('?�션 ?�??);
     },
     getSessionAndUser: async (sessionToken: string) => {
       void sessionToken;
-      return unsupported('세션 조회');
+      return unsupported('?�션 조회');
     },
     updateSession: async (session: AdapterSession) => {
       void session;
-      return unsupported('세션 갱신');
+      return unsupported('?�션 갱신');
     },
     deleteSession: async (sessionToken: string) => {
       void sessionToken;
-      return unsupported('세션 삭제');
+      return unsupported('?�션 ??��');
     },
     createVerificationToken: async (token: VerificationToken) => {
       void token;
-      return unsupported('인증 토큰 생성');
+      return unsupported('?�증 ?�큰 ?�성');
     },
     useVerificationToken: async (params: VerificationToken) => {
       void params;
-      return unsupported('인증 토큰 사용');
+      return unsupported('?�증 ?�큰 ?�용');
     }
   } satisfies Adapter;
 };

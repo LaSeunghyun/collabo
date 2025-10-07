@@ -3,7 +3,7 @@ import {
   FundingStatus,
   NotificationType,
   UserRole
-} from '@/types/prisma';
+} from '@/types/auth';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import { evaluateAuthorization } from '@/lib/auth/session';

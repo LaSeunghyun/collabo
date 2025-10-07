@@ -86,12 +86,12 @@ export function FundingDialog({
   const handleDetailsSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!publishableKey) {
-      setErrorMessage('Stripe 공개 키가 설정되어 있지 않습니다. 환경 변수를 확인해주세요.');
+      setErrorMessage('Stripe 공개 ?��? ?�정?�어 ?��? ?�습?�다. ?�경 변?��? ?�인?�주?�요.');
       return;
     }
 
     if (!amountIsValid) {
-      setErrorMessage(`최소 후원 금액은 ${currencyFormatter.format(minimumAmount)} 입니다.`);
+      setErrorMessage(`최소 ?�원 금액?� ${currencyFormatter.format(minimumAmount)} ?�니??`);
       return;
     }
 
@@ -116,22 +116,22 @@ export function FundingDialog({
       if (!response.ok) {
         if (response.status === 401) {
           setRequiresAuth(true);
-          setErrorMessage('후원을 진행하려면 로그인이 필요합니다.');
+          setErrorMessage('?�원??진행?�려�?로그?�이 ?�요?�니??');
           return;
         }
 
-        throw new Error(data.error ?? '결제 준비 중 문제가 발생했습니다.');
+        throw new Error(data.error ?? '결제 준�?�?문제가 발생?�습?�다.');
       }
 
       if (!data.clientSecret) {
-        throw new Error('결제 정보를 가져오지 못했습니다.');
+        throw new Error('결제 ?�보�?가?�오지 못했?�니??');
       }
 
       setRequiresAuth(false);
       setClientSecret(data.clientSecret as string);
       setStage('confirm');
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : '결제 준비에 실패했습니다.');
+      setErrorMessage(error instanceof Error ? error.message : '결제 준비에 ?�패?�습?�다.');
     } finally {
       setIsSubmitting(false);
     }
@@ -152,13 +152,13 @@ export function FundingDialog({
     const data = await response.json();
     if (!response.ok) {
       if (response.status === 401) {
-        throw new Error('로그인이 필요합니다. 다시 로그인해주세요.');
+        throw new Error('로그?�이 ?�요?�니?? ?�시 로그?�해주세??');
       }
 
-      throw new Error(data.error ?? '결제 검증에 실패했습니다.');
+      throw new Error(data.error ?? '결제 검증에 ?�패?�습?�다.');
     }
 
-    setStatusMessage('후원이 완료되었습니다. 감사합니다!');
+    setStatusMessage('?�원???�료?�었?�니?? 감사?�니??');
     setStage('success');
   };
 
@@ -177,10 +177,10 @@ export function FundingDialog({
         disabled={disabled || isLoadingSession}
       >
         {isLoadingSession
-          ? '로그인 상태 확인 중...'
+          ? '로그???�태 ?�인 �?..'
           : disabled
-            ? 'Stripe 키 미설정'
-            : '로그인 후 후원하기'}
+            ? 'Stripe ??미설??
+            : '로그?????�원?�기'}
       </button>
     );
   }
@@ -193,7 +193,7 @@ export function FundingDialog({
           className="w-full rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
           disabled={disabled}
         >
-          {disabled ? 'Stripe 키 미설정' : '후원하기'}
+          {disabled ? 'Stripe ??미설?? : '?�원?�기'}
         </button>
       </Dialog.Trigger>
       <Dialog.Portal>
@@ -203,7 +203,7 @@ export function FundingDialog({
             <div>
               <Dialog.Title className="text-lg font-semibold text-white">{projectTitle}</Dialog.Title>
               <Dialog.Description className="mt-1 text-xs text-white/60">
-                안전한 Stripe 결제로 실시간 후원하세요.
+                ?�전??Stripe 결제�??�시�??�원?�세??
               </Dialog.Description>
             </div>
             <Dialog.Close className="rounded-full p-1 text-white/60 transition hover:bg-white/10 hover:text-white">
@@ -213,43 +213,43 @@ export function FundingDialog({
 
           {!publishableKey ? (
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
-              Stripe 공개 키가 설정되어 있지 않아 결제를 진행할 수 없습니다. <br />
-              <span className="text-white">NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</span> 환경 변수를 추가한 뒤 다시
-              시도해주세요.
+              Stripe 공개 ?��? ?�정?�어 ?��? ?�아 결제�?진행?????�습?�다. <br />
+              <span className="text-white">NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</span> ?�경 변?��? 추�??????�시
+              ?�도?�주?�요.
             </div>
           ) : stage === 'details' ? (
             <form className="space-y-5" onSubmit={handleDetailsSubmit}>
               {requiresAuth ? (
                 <div className="rounded-2xl border border-amber-400/40 bg-amber-400/10 p-4 text-xs text-amber-200">
-                  <p className="font-medium text-amber-100">로그인이 필요한 작업입니다.</p>
-                  <p className="mt-1 text-amber-200/80">보안을 위해 다시 로그인한 뒤 결제를 진행해주세요.</p>
+                  <p className="font-medium text-amber-100">로그?�이 ?�요???�업?�니??</p>
+                  <p className="mt-1 text-amber-200/80">보안???�해 ?�시 로그?�한 ??결제�?진행?�주?�요.</p>
                   <button
                     type="button"
                     className="mt-3 inline-flex items-center justify-center rounded-full bg-amber-400 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-900 transition hover:bg-amber-300"
                     onClick={handleSignIn}
                   >
-                    로그인하러 가기
+                    로그?�하??가�?
                   </button>
                 </div>
               ) : null}
 
               <div className="space-y-2">
                 <label htmlFor="funding-name" className="text-xs font-medium uppercase tracking-[0.2em] text-white/60">
-                  후원자 이름
+                  ?�원???�름
                 </label>
                 <input
                   id="funding-name"
                   type="text"
                   value={customerName}
                   onChange={(event) => setCustomerName(event.target.value)}
-                  placeholder="팬 네임 또는 회사명"
+                  placeholder="???�임 ?�는 ?�사�?
                   className="w-full rounded-2xl border border-white/10 bg-neutral-900/60 px-4 py-3 text-sm text-white outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/40"
                 />
               </div>
 
               <div className="space-y-2">
                 <label htmlFor="funding-email" className="text-xs font-medium uppercase tracking-[0.2em] text-white/60">
-                  영수증 이메일
+                  ?�수�??�메??
                 </label>
                 <input
                   id="funding-email"
@@ -264,7 +264,7 @@ export function FundingDialog({
 
               <div className="space-y-2">
                 <label htmlFor="funding-amount" className="text-xs font-medium uppercase tracking-[0.2em] text-white/60">
-                  후원 금액 (KRW)
+                  ?�원 금액 (KRW)
                 </label>
                 <input
                   id="funding-amount"
@@ -276,7 +276,7 @@ export function FundingDialog({
                   className="w-full rounded-2xl border border-white/10 bg-neutral-900/60 px-4 py-3 text-sm text-white outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/40"
                 />
                 <p className="text-xs text-white/60">
-                  최소 {currencyFormatter.format(minimumAmount)} · 입력 금액은 Stripe 원화 결제로 즉시 청구됩니다.
+                  최소 {currencyFormatter.format(minimumAmount)} · ?�력 금액?� Stripe ?�화 결제�?즉시 �?��?�니??
                 </p>
               </div>
 
@@ -287,7 +287,7 @@ export function FundingDialog({
                 className="w-full rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/40"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? '결제 정보를 준비 중...' : `${currencyFormatter.format(normalizedAmount)} 결제하기`}
+                {isSubmitting ? '결제 ?�보�?준�?�?..' : `${currencyFormatter.format(normalizedAmount)} 결제?�기`}
               </button>
             </form>
           ) : stage === 'confirm' ? (
@@ -307,17 +307,17 @@ export function FundingDialog({
           ) : (
             <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/20 text-primary">
-                ✓
+                ??
               </div>
               <div>
-                <p className="text-lg font-semibold text-white">후원 완료</p>
+                <p className="text-lg font-semibold text-white">?�원 ?�료</p>
                 <p className="mt-1 text-sm text-white/70">
-                  {statusMessage ?? '결제가 정상적으로 승인되었습니다.'}
+                  {statusMessage ?? '결제가 ?�상?�으�??�인?�었?�니??'}
                 </p>
               </div>
               <Dialog.Close asChild>
                 <button className="rounded-full border border-white/20 px-4 py-2 text-sm text-white transition hover:border-primary hover:text-primary">
-                  닫기
+                  ?�기
                 </button>
               </Dialog.Close>
             </div>
@@ -354,14 +354,14 @@ function ConfirmPaymentStep({ amount, onBack, onFinalize }: ConfirmPaymentStepPr
     });
 
     if (result.error) {
-      setError(result.error.message ?? '결제에 실패했습니다.');
+      setError(result.error.message ?? '결제???�패?�습?�다.');
       setIsProcessing(false);
       return;
     }
 
     const paymentIntent = result.paymentIntent;
     if (!paymentIntent) {
-      setError('결제 정보를 확인할 수 없습니다. 다시 시도해주세요.');
+      setError('결제 ?�보�??�인?????�습?�다. ?�시 ?�도?�주?�요.');
       setIsProcessing(false);
       return;
     }
@@ -369,7 +369,7 @@ function ConfirmPaymentStep({ amount, onBack, onFinalize }: ConfirmPaymentStepPr
     try {
       await onFinalize(paymentIntent.id);
     } catch (error) {
-      setError(error instanceof Error ? error.message : '결제 검증에 실패했습니다.');
+      setError(error instanceof Error ? error.message : '결제 검증에 ?�패?�습?�다.');
     } finally {
       setIsProcessing(false);
     }
@@ -378,7 +378,7 @@ function ConfirmPaymentStep({ amount, onBack, onFinalize }: ConfirmPaymentStepPr
   return (
     <div className="flex flex-1 flex-col gap-4">
       <div className="space-y-2">
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-white/60">카드 정보</p>
+        <p className="text-xs font-medium uppercase tracking-[0.2em] text-white/60">카드 ?�보</p>
         <div className="rounded-2xl border border-white/10 bg-neutral-900/60 p-4">
           <PaymentElement options={{ layout: 'tabs' }} />
         </div>
@@ -393,7 +393,7 @@ function ConfirmPaymentStep({ amount, onBack, onFinalize }: ConfirmPaymentStepPr
           className="w-full rounded-full border border-white/20 px-4 py-3 text-sm text-white transition hover:border-primary hover:text-primary"
           disabled={isProcessing}
         >
-          금액 수정
+          금액 ?�정
         </button>
         <button
           type="button"
@@ -401,7 +401,7 @@ function ConfirmPaymentStep({ amount, onBack, onFinalize }: ConfirmPaymentStepPr
           className="w-full rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/40"
           disabled={isProcessing || !stripe || !elements}
         >
-          {isProcessing ? '결제 확인 중...' : `${currencyFormatter.format(amount)} 결제 확정`}
+          {isProcessing ? '결제 ?�인 �?..' : `${currencyFormatter.format(amount)} 결제 ?�정`}
         </button>
       </div>
     </div>

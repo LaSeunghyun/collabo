@@ -1,12 +1,12 @@
 import type { ReactNode } from 'react';
 
 import { requireUser } from '@/lib/auth/guards';
-import { ROLE_LABELS, UserRole } from '@/types/prisma';
+import { ROLE_LABELS, UserRole } from '@/types/auth';
 
 const navigationAnchors = [
-  { href: '#overview', label: '현황 요약' },
-  { href: '#profile', label: '프로필 관리' },
-  { href: '#insights', label: '추천 인사이트' }
+  { href: '#overview', label: '?�황 ?�약' },
+  { href: '#profile', label: '?�로??관�? },
+  { href: '#insights', label: '추천 ?�사?�트' }
 ];
 
 export default async function PartnerDashboardLayout({
@@ -24,10 +24,10 @@ export default async function PartnerDashboardLayout({
     <div className="mx-auto max-w-6xl px-4 pb-20">
       <header className="pb-6 pt-12">
         <p className="text-xs uppercase tracking-[0.2em] text-primary/60">Partner</p>
-        <h1 className="mt-2 text-3xl font-semibold text-white">파트너 허브</h1>
+        <h1 className="mt-2 text-3xl font-semibold text-white">?�트???�브</h1>
         <p className="mt-3 text-sm text-white/60">
-          {user.name ? `${user.name}님, ` : ''}
-          {ROLE_LABELS[user.role]} 권한으로 협업 요청과 프로필 현황을 빠르게 확인하세요.
+          {user.name ? `${user.name}?? ` : ''}
+          {ROLE_LABELS[user.role]} 권한?�로 ?�업 ?�청�??�로???�황??빠르�??�인?�세??
         </p>
         <nav className="mt-6 flex flex-wrap gap-3">
           {navigationAnchors.map((item) => (

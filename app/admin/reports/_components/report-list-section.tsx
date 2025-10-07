@@ -6,19 +6,19 @@ import {
   ModerationTargetType,
   type ModerationStatusValue,
   type ModerationTargetTypeValue 
-} from '@/types/prisma';
+} from '@/types/auth';
 import { ReportDetailModal } from './report-detail-modal';
 
 const statusLabels: Record<ModerationStatusValue, string> = {
-  [ModerationStatus.PENDING]: '대기중',
-  [ModerationStatus.REVIEWING]: '검토중',
-  [ModerationStatus.ACTION_TAKEN]: '조치완료',
-  [ModerationStatus.DISMISSED]: '기각됨'
+  [ModerationStatus.PENDING]: '?�기중',
+  [ModerationStatus.REVIEWING]: '검?�중',
+  [ModerationStatus.ACTION_TAKEN]: '조치?�료',
+  [ModerationStatus.DISMISSED]: '기각??
 };
 
 const targetLabels: Record<ModerationTargetTypeValue, string> = {
   [ModerationTargetType.POST]: '게시글',
-  [ModerationTargetType.COMMENT]: '댓글'
+  [ModerationTargetType.COMMENT]: '?��?'
 };
 
 const statusColors: Record<ModerationStatusValue, string> = {
@@ -79,31 +79,31 @@ export function ReportListSection({ reports }: ReportListSectionProps) {
   };
 
   const handleStatusUpdate = () => {
-    // 모달이 닫힌 후 데이터 새로고침을 위해 페이지 리로드
+    // 모달???�힌 ???�이???�로고침???�해 ?�이지 리로??
     window.location.reload();
   };
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
       <div className="mb-6">
-        <h2 className="text-lg font-semibold text-white">신고 목록</h2>
+        <h2 className="text-lg font-semibold text-white">?�고 목록</h2>
         <p className="mt-1 text-sm text-white/60">
-          신고된 내용을 검토하고 적절한 조치를 취하세요.
+          ?�고???�용??검?�하�??�절??조치�?취하?�요.
         </p>
       </div>
 
-      {/* 필터 버튼 */}
+      {/* ?�터 버튼 */}
       <div className="mb-6 flex gap-2">
         {[
-          { key: 'all', label: '전체', count: reports.length },
+          { key: 'all', label: '?�체', count: reports.length },
           { 
             key: 'pending', 
-            label: '처리 대기중', 
+            label: '처리 ?�기중', 
             count: reports.filter(r => r.status === ModerationStatus.PENDING || r.status === ModerationStatus.REVIEWING).length 
           },
           { 
             key: 'completed', 
-            label: '처리 완료', 
+            label: '처리 ?�료', 
             count: reports.filter(r => r.status === ModerationStatus.ACTION_TAKEN || r.status === ModerationStatus.DISMISSED).length 
           }
         ].map(({ key, label, count }) => (
@@ -121,7 +121,7 @@ export function ReportListSection({ reports }: ReportListSectionProps) {
         ))}
       </div>
 
-      {/* 신고 리스트 */}
+      {/* ?�고 리스??*/}
       <div className="space-y-4">
         {filteredReports.length > 0 ? (
           filteredReports.map((report) => (
@@ -141,9 +141,9 @@ export function ReportListSection({ reports }: ReportListSectionProps) {
                   </div>
                   
                   <div className="text-sm text-white/60 mb-2">
-                    <p>신고일: {formatDate(report.createdAt)}</p>
+                    <p>?�고?? {formatDate(report.createdAt)}</p>
                     {report.reporter && (
-                      <p>신고자: {report.reporter.name || report.reporter.id}</p>
+                      <p>?�고?? {report.reporter.name || report.reporter.id}</p>
                     )}
                   </div>
                   
@@ -159,14 +159,14 @@ export function ReportListSection({ reports }: ReportListSectionProps) {
                     onClick={() => handleViewDetails(report.targetId)}
                     className="px-3 py-1 text-xs font-medium text-white/60 hover:text-white border border-white/20 rounded-lg hover:bg-white/10 transition-colors"
                   >
-                    상세보기
+                    ?�세보기
                   </button>
                   {report.status === ModerationStatus.PENDING && (
                     <button 
                       onClick={() => handleViewDetails(report.targetId)}
                       className="px-3 py-1 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary/80 transition-colors"
                     >
-                      처리하기
+                      처리?�기
                     </button>
                   )}
                 </div>
@@ -176,15 +176,15 @@ export function ReportListSection({ reports }: ReportListSectionProps) {
         ) : (
           <div className="text-center py-12">
             <p className="text-white/60">
-              {filter === 'all' ? '신고가 없습니다.' : 
-               filter === 'pending' ? '처리 대기중인 신고가 없습니다.' : 
-               '처리 완료된 신고가 없습니다.'}
+              {filter === 'all' ? '?�고가 ?�습?�다.' : 
+               filter === 'pending' ? '처리 ?�기중???�고가 ?�습?�다.' : 
+               '처리 ?�료???�고가 ?�습?�다.'}
             </p>
           </div>
         )}
       </div>
 
-      {/* 신고 상세 모달 */}
+      {/* ?�고 ?�세 모달 */}
       {selectedPostId && (
         <ReportDetailModal
           postId={selectedPostId}

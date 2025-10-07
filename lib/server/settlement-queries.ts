@@ -1,4 +1,4 @@
-import { SettlementPayoutStatus, type SettlementPayoutStatusType } from '@/types/prisma';
+import { SettlementPayoutStatus, type SettlementPayoutStatusType } from '@/types/auth';
 
 import { prisma } from '@/lib/prisma';
 

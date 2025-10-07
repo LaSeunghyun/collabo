@@ -11,7 +11,7 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    // 에러를 로깅 서비스에 전송
+    // 에러 로깅 서비스에 전송
     console.error('Application error:', {
       message: error.message,
       stack: error.stack,
@@ -29,7 +29,7 @@ export default function Error({
           문제가 발생했습니다
         </h1>
         <p className="mb-6 text-sm text-white/70">
-          예상치 못한 오류가 발생했습니다. 잠시 후 다시 시도해주세요.
+          예상치 못한 오류가 발생했습니다. 다시 시도해 주세요.
         </p>
         <div className="space-y-3">
           <Button
@@ -61,6 +61,3 @@ export default function Error({
     </div>
   );
 }
-
-
-

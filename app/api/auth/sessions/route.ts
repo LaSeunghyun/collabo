@@ -7,13 +7,13 @@ export async function GET(req: NextRequest) {
   const authorization = req.headers.get('authorization');
 
   if (!authorization?.startsWith('Bearer ')) {
-    return NextResponse.json({ error: '인증 토큰이 필요합니다.' }, { status: 401 });
+    return NextResponse.json({ error: '?�증 ?�큰???�요?�니??' }, { status: 401 });
   }
 
   const token = authorization.slice(7).trim();
 
   if (!token) {
-    return NextResponse.json({ error: '인증 토큰이 필요합니다.' }, { status: 401 });
+    return NextResponse.json({ error: '?�증 ?�큰???�요?�니??' }, { status: 401 });
   }
 
   try {
@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
       }))
     });
   } catch (error) {
-    console.error('세션 조회 실패', error);
-    return NextResponse.json({ error: '인증 토큰이 유효하지 않습니다.' }, { status: 401 });
+    console.error('?�션 조회 ?�패', error);
+    return NextResponse.json({ error: '?�증 ?�큰???�효?��? ?�습?�다.' }, { status: 401 });
   }
 }

@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 정산 정보 확인
+    // ?�산 ?�보 ?�인
     const settlement = await prisma.settlement.findUnique({
       where: { id: settlementId },
       include: {
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 권한 확인 (프로젝트 소유자 또는 관리자만)
+    // 권한 ?�인 (?�로?�트 ?�유???�는 관리자�?
     if (settlement.project.owner.id !== user.id && user.role !== 'ADMIN') {
       return NextResponse.json(
         { message: 'Unauthorized' },
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 정산 지급 생성
+    // ?�산 지�??�성
     const payout = await prisma.settlementPayout.create({
       data: {
         settlementId,

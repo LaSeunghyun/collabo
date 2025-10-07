@@ -171,7 +171,7 @@ export const issueSessionWithTokens = async ({
       .returning();
 
     if (!sessionRow) {
-      throw new Error('세션을 생성하지 못했습니다.');
+      throw new Error('?�션???�성?��? 못했?�니??');
     }
 
     const session = hydrateSessionRow(sessionRow);
@@ -194,7 +194,7 @@ export const issueSessionWithTokens = async ({
       .returning();
 
     if (!refreshRow) {
-      throw new Error('리프레시 토큰을 생성하지 못했습니다.');
+      throw new Error('리프?�시 ?�큰???�성?��? 못했?�니??');
     }
 
     const refreshRecord = hydrateRefreshTokenRow(refreshRow);
@@ -263,19 +263,19 @@ export const rotateRefreshToken = async (
   });
 
   if (!existingRow) {
-    throw new Error('유효하지 않은 리프레시 토큰입니다.');
+    throw new Error('?�효?��? ?��? 리프?�시 ?�큰?�니??');
   }
 
   const existing = hydrateRefreshTokenRow(existingRow);
   const matches = await verifyTokenHash(refreshToken, existing.tokenHash);
 
   if (!matches) {
-    throw new Error('리프레시 토큰 검증에 실패했습니다.');
+    throw new Error('리프?�시 ?�큰 검증에 ?�패?�습?�다.');
   }
 
   if (existing.usedAt || existing.revokedAt) {
     await revokeSessionAndToken(existing.id, existing.sessionId, now());
-    throw new Error('재사용이 감지된 리프레시 토큰입니다.');
+    throw new Error('?�사?�이 감�???리프?�시 ?�큰?�니??');
   }
 
   const sessionRow = await db.query.authSessions.findFirst({
@@ -283,25 +283,25 @@ export const rotateRefreshToken = async (
   });
 
   if (!sessionRow) {
-    throw new Error('만료된 세션입니다.');
+    throw new Error('만료???�션?�니??');
   }
 
   const session = hydrateSessionRow(sessionRow);
 
   if (session.revokedAt) {
-    throw new Error('만료된 세션입니다.');
+    throw new Error('만료???�션?�니??');
   }
 
   const current = now();
 
   if (session.absoluteExpiresAt <= current || existing.absoluteExpiresAt <= current) {
     await revokeSessionAndToken(existing.id, session.id, current);
-    throw new Error('세션이 만료되었습니다. 다시 로그인하세요.');
+    throw new Error('?�션??만료?�었?�니?? ?�시 로그?�하?�요.');
   }
 
   if (existing.inactivityExpiresAt <= current) {
     await revokeSessionAndToken(existing.id, session.id, current);
-    throw new Error('장시간 활동이 없어 세션이 만료되었습니다.');
+    throw new Error('?�시�??�동???�어 ?�션??만료?�었?�니??');
   }
 
   const user = await fetchUserWithPermissions({ id: session.userId });
@@ -334,7 +334,7 @@ export const rotateRefreshToken = async (
       .returning();
 
     if (!sessionUpdate) {
-      throw new Error('세션 갱신에 실패했습니다.');
+      throw new Error('?�션 갱신???�패?�습?�다.');
     }
 
     const [refreshInsert] = await tx
@@ -350,7 +350,7 @@ export const rotateRefreshToken = async (
       .returning();
 
     if (!refreshInsert) {
-      throw new Error('리프레시 토큰 갱신에 실패했습니다.');
+      throw new Error('리프?�시 ?�큰 갱신???�패?�습?�다.');
     }
 
     await tx

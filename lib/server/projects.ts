@@ -1,12 +1,13 @@
-import type { Prisma as PrismaClientNamespace } from '@prisma/client';
+// Prisma imports temporarily disabled
+// import type { Prisma as PrismaClientNamespace } from '@prisma/client';
 
 import { revalidatePath } from 'next/cache';
-import { Prisma } from '@prisma/client';
-import { ProjectStatus, UserRole, ProjectSummary, type ProjectStatusType } from '@/types/prisma';
+// import { Prisma } from '@prisma/client';
+// import { ProjectStatus, UserRole, ProjectSummary, type ProjectStatusType } from '@/types/auth';
 import { ZodError } from 'zod';
 
 import type { SessionUser } from '@/lib/auth/session';
-import { prisma } from '@/lib/prisma';
+// import { prisma } from '@/lib/prisma';
 import {
   createProjectSchema,
   updateProjectSchema,
@@ -21,20 +22,20 @@ export class ProjectValidationError extends Error {
   issues: string[];
 
   constructor(error: ZodError) {
-    super('프로젝트 입력 값이 올바르지 않습니다.');
+    super('?�로?�트 ?�력 값이 ?�바르�? ?�습?�다.');
     this.issues = error.issues.map((issue) => issue.message);
   }
 }
 
 export class ProjectNotFoundError extends Error {
   constructor() {
-    super('프로젝트를 찾을 수 없습니다.');
+    super('?�로?�트�?찾을 ???�습?�다.');
   }
 }
 
 export class ProjectAccessDeniedError extends Error {
   constructor() {
-    super('프로젝트에 접근할 권한이 없습니다.');
+    super('?�로?�트???�근??권한???�습?�다.');
   }
 }
 
@@ -57,6 +58,9 @@ const fetchProjectsFromDb = async (options?: ProjectSummaryOptions) => {
 
   const take = options?.take && options.take > 0 ? options.take : undefined;
 
+  // Temporarily disabled - Prisma removed
+  return [];
+  /*
   return prisma.project.findMany({
     where,
     include: {
@@ -126,6 +130,9 @@ export const getProjectsPendingReview = async (limit = 5) =>
   getProjectSummaries({ statuses: [ProjectStatus.REVIEWING], take: limit });
 
 export const getProjectSummaryById = async (id: string) => {
+  // Temporarily disabled - Prisma removed
+  return null;
+  /*
   const project = await prisma.project.findUnique({
     where: { id },
     include: {
@@ -268,10 +275,15 @@ export const createProject = async (rawInput: unknown, user: SessionUser) => {
 
   const createData = buildProjectCreateData(input, ownerId);
 
+  // Temporarily disabled - Prisma removed
+  throw new Error('Function temporarily disabled');
+  /*
   const project = await prisma.project.create({
     data: createData
   });
 
+  // Temporarily disabled - Prisma removed
+  /*
   await prisma.auditLog.create({
     data: {
       userId: user.id,
@@ -290,6 +302,9 @@ export const createProject = async (rawInput: unknown, user: SessionUser) => {
 export const updateProject = async (id: string, rawInput: unknown, user: SessionUser) => {
   const input = parseUpdateInput(rawInput);
 
+  // Temporarily disabled - Prisma removed
+  return null;
+  /*
   const project = await prisma.project.findUnique({
     where: { id },
     select: { ownerId: true }
@@ -307,11 +322,16 @@ export const updateProject = async (id: string, rawInput: unknown, user: Session
     return getProjectSummaryById(id);
   }
 
+  // Temporarily disabled - Prisma removed
+  throw new Error('Function temporarily disabled');
+  /*
   await prisma.project.update({
     where: { id },
     data
   });
 
+  // Temporarily disabled - Prisma removed
+  /*
   await prisma.auditLog.create({
     data: {
       userId: user.id,
@@ -328,6 +348,9 @@ export const updateProject = async (id: string, rawInput: unknown, user: Session
 };
 
 export const deleteProject = async (id: string, user: SessionUser) => {
+  // Temporarily disabled - Prisma removed
+  return null;
+  /*
   const project = await prisma.project.findUnique({
     where: { id },
     select: { ownerId: true }
@@ -339,10 +362,15 @@ export const deleteProject = async (id: string, user: SessionUser) => {
 
   assertProjectOwnership(project.ownerId, user);
 
+  // Temporarily disabled - Prisma removed
+  throw new Error('Function temporarily disabled');
+  /*
   await prisma.project.delete({
     where: { id }
   });
 
+  // Temporarily disabled - Prisma removed
+  /*
   await prisma.auditLog.create({
     data: {
       userId: user.id,

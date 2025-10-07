@@ -41,21 +41,21 @@ async function seedUsers() {
     }),
     upsertUser({
       email: 'creator@collabo.local',
-      name: '대표 크리에이터',
+      name: '?�???�리?�이??,
       role: UserRole.CREATOR,
       passwordHash: demoPasswordHash,
       language: 'ko'
     }),
     upsertUser({
       email: 'participant@collabo.local',
-      name: '열성 참여자',
+      name: '?�성 참여??,
       role: UserRole.PARTICIPANT,
       passwordHash: demoPasswordHash,
       language: 'ko'
     }),
     upsertUser({
       email: 'partner@collabo.local',
-      name: '믿음직한 파트너',
+      name: '믿음직한 ?�트??,
       role: UserRole.PARTNER,
       passwordHash: demoPasswordHash,
       language: 'ko'
@@ -75,12 +75,12 @@ async function seedPartner(userId: string) {
     create: {
       user: { connect: { id: userId } },
       type: PartnerType.STUDIO,
-      name: '서울 사운드 스튜디오',
-      description: '녹음, 믹싱, 마스터링 풀서비스 스튜디오',
-      services: ['녹음', '믹싱', '마스터링'],
+      name: '?�울 ?�운???�튜?�오',
+      description: '?�음, 믹싱, 마스?�링 ?�?�비???�튜?�오',
+      services: ['?�음', '믹싱', '마스?�링'],
       pricingModel: 'package',
       contactInfo: 'studio@example.com',
-      location: '서울 마포구',
+      location: '?�울 마포�?,
       verified: true,
       availability: ['weekday-evening', 'weekend'],
       portfolioUrl: 'https://example.com/portfolio'
@@ -94,8 +94,8 @@ async function seedProject(creatorId: string) {
     update: {},
     create: {
       id: 'demo-project',
-      title: '콜라보 첫 번째 아티스트 펀딩',
-      description: '첫 싱글 발매를 위한 녹음과 홍보 자금 모금',
+      title: '콜라�?�?번째 ?�티?�트 ?�??,
+      description: '�??��? 발매�??�한 ?�음�??�보 ?�금 모금',
       category: 'music',
       targetAmount: 5000000,
       currentAmount: 2500000,
@@ -104,12 +104,12 @@ async function seedProject(creatorId: string) {
       startDate: new Date(),
       endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
       rewardTiers: [
-        { id: 'tier-1', amount: 10000, title: '디지털 음원', limit: null },
-        { id: 'tier-2', amount: 50000, title: '사인 CD', limit: 200 }
+        { id: 'tier-1', amount: 10000, title: '?��????�원', limit: null },
+        { id: 'tier-2', amount: 50000, title: '?�인 CD', limit: 200 }
       ],
       milestones: [
-        { id: 'ms-1', title: '싱글 녹음 완료', amount: 2000000 },
-        { id: 'ms-2', title: '뮤직비디오 촬영', amount: 3000000 }
+        { id: 'ms-1', title: '?��? ?�음 ?�료', amount: 2000000 },
+        { id: 'ms-2', title: '뮤직비디??촬영', amount: 3000000 }
       ],
       metadata: {
         themeColor: '#ff4971'
@@ -129,8 +129,8 @@ async function seedProjectDetails(projectId: string) {
       category: 'studio',
       minBudget: 2000000,
       maxBudget: 4000000,
-      location: '서울',
-      services: ['녹음', '믹싱'],
+      location: '?�울',
+      services: ['?�음', '믹싱'],
       startDate: new Date(),
       endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30)
     }
@@ -144,8 +144,8 @@ async function seedProjectDetails(projectId: string) {
     create: {
       id: 'demo-project-milestone',
       project: { connect: { id: projectId } },
-      title: '녹음 세션 예약',
-      description: '파트너 스튜디오와 녹음일 확정',
+      title: '?�음 ?�션 ?�약',
+      description: '?�트???�튜?�오?� ?�음???�정',
       dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
       releaseAmount: 1500000,
       status: MilestoneStatus.PLANNED
@@ -160,12 +160,12 @@ async function seedProjectDetails(projectId: string) {
     create: {
       id: 'demo-project-tier',
       project: { connect: { id: projectId } },
-      title: '라이브 쇼케이스 초대',
-      description: '쇼케이스 초대권과 사인 포스터 증정',
+      title: '?�이�??��??�스 초�?',
+      description: '?��??�스 초�?권과 ?�인 ?�스??증정',
       minimumAmount: 100000,
       limit: 200,
       claimed: 40,
-      includes: ['입장권', '사인 포스터'],
+      includes: ['?�장�?, '?�인 ?�스??],
       estimatedDelivery: new Date(Date.now() + 1000 * 60 * 60 * 24 * 60)
     }
   });
@@ -264,7 +264,7 @@ async function seedFunding(
       status: PartnerMatchStatus.ACCEPTED,
       settlementShare: 0.15,
       quote: 3500000,
-      requirements: ['24채널 녹음', '믹싱 2회 수정'],
+      requirements: ['24채널 ?�음', '믹싱 2???�정'],
       acceptedAt: new Date()
     }
   });
@@ -277,7 +277,7 @@ async function seedProducts(projectId: string, participantId: string) {
     create: {
       id: 'demo-product',
       project: { connect: { id: projectId } },
-      name: '콜라보 한정 티셔츠',
+      name: '콜라�??�정 ?�셔�?,
       type: ProductType.PHYSICAL,
       price: 35000,
       currency: 'KRW',
@@ -300,8 +300,8 @@ async function seedProducts(projectId: string, participantId: string) {
       currency: 'KRW',
       orderStatus: OrderStatus.PAID,
       shippingInfo: {
-        recipient: '열성 참여자',
-        address: '서울시 강남구 123-1',
+        recipient: '?�성 참여??,
+        address: '?�울??강남�?123-1',
         contact: '010-0000-0000'
       }
     }
@@ -329,8 +329,8 @@ async function seedCommunity(projectId: string, creatorId: string, participantId
       id: 'demo-post',
       project: { connect: { id: projectId } },
       author: { connect: { id: creatorId } },
-      title: '첫 주 펀딩 현황 공유',
-      content: '여러분의 응원 덕분에 50% 달성! 다음 주는 라이브 방송으로 찾아뵐게요.',
+      title: '�?�??�???�황 공유',
+      content: '?�러분의 ?�원 ?�분??50% ?�성! ?�음 주는 ?�이�?방송?�로 찾아뵐게??',
       type: PostType.UPDATE,
       tags: ['update', 'milestone'],
       publishedAt: new Date(),
@@ -345,7 +345,7 @@ async function seedCommunity(projectId: string, creatorId: string, participantId
       id: 'demo-comment',
       post: { connect: { id: post.id } },
       author: { connect: { id: participantId } },
-      content: '응원합니다! 라이브에서 만나요!'
+      content: '?�원?�니?? ?�이브에??만나??'
     }
   });
 

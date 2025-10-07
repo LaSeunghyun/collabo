@@ -5,14 +5,14 @@ import type { SessionUser } from '@/lib/auth/session';
 import { prisma } from '@/lib/prisma';
 
 export class ProjectUpdateNotFoundError extends Error {
-  constructor(message = '프로젝트 업데이트를 찾을 수 없습니다.') {
+  constructor(message = '?�로?�트 ?�데?�트�?찾을 ???�습?�다.') {
     super(message);
     this.name = 'ProjectUpdateNotFoundError';
   }
 }
 
 export class ProjectUpdateAccessDeniedError extends Error {
-  constructor(message = '프로젝트 업데이트에 대한 권한이 없습니다.') {
+  constructor(message = '?�로?�트 ?�데?�트???�??권한???�습?�다.') {
     super(message);
     this.name = 'ProjectUpdateAccessDeniedError';
   }
@@ -188,7 +188,7 @@ const ensureMilestoneBelongsToProject = async (projectId: string, milestoneId: s
   });
 
   if (!exists) {
-    throw new ProjectUpdateValidationError('마일스톤을 찾을 수 없습니다.');
+    throw new ProjectUpdateValidationError('마일?�톤??찾을 ???�습?�다.');
   }
 };
 
@@ -206,7 +206,7 @@ export const assertProjectOwner = async (
   });
 
   if (!project) {
-    throw new ProjectUpdateNotFoundError('프로젝트를 찾을 수 없습니다.');
+    throw new ProjectUpdateNotFoundError('?�로?�트�?찾을 ???�습?�다.');
   }
 
   if (user.role !== UserRole.ADMIN && project.ownerId !== user.id) {
@@ -227,7 +227,7 @@ export const listProjectUpdates = async (
   });
 
   if (!project) {
-    throw new ProjectUpdateNotFoundError('프로젝트를 찾을 수 없습니다.');
+    throw new ProjectUpdateNotFoundError('?�로?�트�?찾을 ???�습?�다.');
   }
 
   const posts = await prisma.post.findMany({

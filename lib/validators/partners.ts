@@ -1,4 +1,4 @@
-import { PartnerType, PARTNER_TYPE_VALUES, PARTNER_TYPE_LABELS } from '@/types/prisma';
+import { PartnerType, PARTNER_TYPE_VALUES, PARTNER_TYPE_LABELS } from '@/types/auth';
 import { z } from 'zod';
 
 export { PartnerType, PARTNER_TYPE_VALUES, PARTNER_TYPE_LABELS };
@@ -29,7 +29,7 @@ export const partnerAvailabilitySchema = z
 
       return true;
     },
-    { message: '가용 시간대 정보는 타임존 또는 슬롯 중 하나 이상을 포함해야 합니다.' }
+    { message: '가???�간?� ?�보???�?�존 ?�는 ?�롯 �??�나 ?�상???�함?�야 ?�니??' }
   );
 
 const servicesArraySchema = z
@@ -69,7 +69,7 @@ export const updatePartnerSchema = z
     rating: z.number().min(0).max(5).optional()
   })
   .refine((value: z.infer<typeof updatePartnerSchema>) => Object.keys(value).length > 0, {
-    message: '업데이트할 필드를 한 가지 이상 포함해야 합니다.'
+    message: '?�데?�트???�드�???가지 ?�상 ?�함?�야 ?�니??'
   });
 
 export type CreatePartnerInput = z.infer<typeof createPartnerSchema>;

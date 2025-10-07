@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 
 import { getAnalyticsOverview } from '@/lib/server/analytics';
 import { requireApiUser } from '@/lib/auth/guards';
-import { UserRole } from '@/types/prisma';
+import { UserRole } from '@/types/auth';
 
 export const dynamic = 'force-dynamic';
 

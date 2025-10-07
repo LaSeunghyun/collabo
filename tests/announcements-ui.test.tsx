@@ -36,8 +36,8 @@ describe('Announcements UI', () => {
       announcements: [
         {
           id: 'announcement-1',
-          title: '중요 공지',
-          content: '테스트 본문',
+          title: '중요 공�?',
+          content: '?�스??본문',
           category: 'platform',
           isPinned: true,
           publishedAt: new Date().toISOString(),
@@ -47,8 +47,8 @@ describe('Announcements UI', () => {
         },
         {
           id: 'announcement-2',
-          title: '일반 공지',
-          content: '다른 공지',
+          title: '?�반 공�?',
+          content: '?�른 공�?',
           category: 'event',
           isPinned: false,
           publishedAt: new Date().toISOString(),
@@ -64,7 +64,7 @@ describe('Announcements UI', () => {
     const { container } = render(jsx);
 
     const titles = Array.from(container.querySelectorAll('h2')).map((element) => element.textContent);
-    expect(titles[0]).toContain('중요 공지');
+    expect(titles[0]).toContain('중요 공�?');
 
     expect(screen.getByText('NEW')).toBeInTheDocument();
   });

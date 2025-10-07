@@ -12,7 +12,7 @@ export interface HeroSlide {
 
 export async function GET() {
   try {
-    // 실제로는 데이터베이스에서 가져와야 하지만, 일단 하드코딩된 데이터를 반환
+    // ?�제로는 ?�이?�베?�스?�서 가?��????��?�? ?�단 ?�드코딩???�이?��? 반환
     const slides: HeroSlide[] = [
       {
         id: 'banner-1',

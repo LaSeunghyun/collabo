@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!wallet) {
-      // 지갑이 없으면 생성
+      // 지갑이 ?�으�??�성
       const newWallet = await prisma.wallet.create({
         data: {
           userId: user.id,
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 지갑이 없으면 생성
+    // 지갑이 ?�으�??�성
     let wallet = await prisma.wallet.findUnique({
       where: { userId: user.id }
     });
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 잔액 업데이트
+    // ?�액 ?�데?�트
     const newBalance = type === 'WITHDRAW' 
       ? wallet.balance - amount 
       : wallet.balance + amount;
