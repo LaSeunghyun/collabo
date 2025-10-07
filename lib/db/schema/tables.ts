@@ -216,16 +216,22 @@ export const authDevices = pgTable(
     userId: text('userId')
       .notNull()
       .references(() => users.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
-    deviceFingerprint: text('deviceFingerprint').notNull(),
-    firstSeenAt: timestamp('firstSeenAt', { mode: 'string' }).notNull().defaultNow(),
-    lastSeenAt: timestamp('lastSeenAt', { mode: 'string' }).notNull().defaultNow(),
-    label: text('label'),
+    deviceName: text('deviceName'),
+    deviceType: text('deviceType'),
+    os: text('os'),
+    client: text('client').notNull().default('web'),
+    uaHash: text('uaHash'),
+    ipHash: text('ipHash'),
+    fingerprint: text('fingerprint'),
+    trusted: boolean('trusted').notNull().default(false),
+    revokedAt: timestamp('revokedAt', { mode: 'string' }),
+    createdAt: timestamp('createdAt', { mode: 'string' }).notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt', { mode: 'string' }).notNull().defaultNow(),
   },
   (table) => ({
-    userFingerprintUnique: uniqueIndex('AuthDevice_userId_deviceFingerprint_key').on(
-      table.userId,
-      table.deviceFingerprint,
-    ),
+    fingerprintIdx: index('AuthDevice_fingerprint_idx').on(table.fingerprint),
+    lastSeenAtIdx: index('AuthDevice_lastSeenAt_idx').on(table.updatedAt),
+    userIdIdx: index('AuthDevice_userId_idx').on(table.userId),
   }),
 );
 

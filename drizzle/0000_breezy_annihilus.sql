@@ -30,10 +30,17 @@ CREATE TABLE "AuditLog" (
 CREATE TABLE "AuthDevice" (
 	"id" text PRIMARY KEY NOT NULL,
 	"userId" text NOT NULL,
-	"deviceFingerprint" text NOT NULL,
-	"firstSeenAt" timestamp DEFAULT now() NOT NULL,
-	"lastSeenAt" timestamp DEFAULT now() NOT NULL,
-	"label" text
+	"deviceName" text,
+	"deviceType" text,
+	"os" text,
+	"client" text DEFAULT 'web' NOT NULL,
+	"uaHash" text,
+	"ipHash" text,
+	"fingerprint" text,
+	"trusted" boolean DEFAULT false NOT NULL,
+	"revokedAt" timestamp,
+	"createdAt" timestamp DEFAULT now() NOT NULL,
+	"updatedAt" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "AuthSession" (
@@ -472,7 +479,9 @@ ALTER TABLE "UserPermission" ADD CONSTRAINT "UserPermission_userId_User_id_fk" F
 ALTER TABLE "UserPermission" ADD CONSTRAINT "UserPermission_permissionId_Permission_id_fk" FOREIGN KEY ("permissionId") REFERENCES "public"."Permission"("id") ON DELETE restrict ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "VisitLog" ADD CONSTRAINT "VisitLog_userId_User_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "Wallet" ADD CONSTRAINT "Wallet_userId_User_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE restrict ON UPDATE cascade;--> statement-breakpoint
-CREATE UNIQUE INDEX "AuthDevice_userId_deviceFingerprint_key" ON "AuthDevice" USING btree ("userId","deviceFingerprint");--> statement-breakpoint
+CREATE INDEX "AuthDevice_fingerprint_idx" ON "AuthDevice" USING btree ("fingerprint");--> statement-breakpoint
+CREATE INDEX "AuthDevice_lastSeenAt_idx" ON "AuthDevice" USING btree ("updatedAt");--> statement-breakpoint
+CREATE INDEX "AuthDevice_userId_idx" ON "AuthDevice" USING btree ("userId");--> statement-breakpoint
 CREATE INDEX "AuthSession_userId_idx" ON "AuthSession" USING btree ("userId");--> statement-breakpoint
 CREATE INDEX "AuthSession_lastUsedAt_idx" ON "AuthSession" USING btree ("lastUsedAt");--> statement-breakpoint
 CREATE UNIQUE INDEX "CommentReaction_commentId_userId_type_key" ON "CommentReaction" USING btree ("commentId","userId","type");--> statement-breakpoint
