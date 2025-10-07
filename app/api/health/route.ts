@@ -1,10 +1,18 @@
 import { NextResponse } from 'next/server';
 import { sql } from 'drizzle-orm';
 
-import { db } from '@/lib/db/client';
+import { db, isDrizzleAvailable } from '@/lib/db/client';
 
 export async function GET() {
     try {
+        if (!isDrizzleAvailable()) {
+            return NextResponse.json({
+                status: 'degraded',
+                database: 'disabled',
+                timestamp: new Date().toISOString()
+            });
+        }
+
         // 데이터베이스 연결 테스트
         await db.execute(sql`select 1`);
 
