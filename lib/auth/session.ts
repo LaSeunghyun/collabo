@@ -1,6 +1,9 @@
 import { getServerSession } from 'next-auth';
 import type { Session } from 'next-auth';
-import { prisma } from '@/lib/prisma';
+import { eq } from 'drizzle-orm';
+
+import { db } from '@/lib/db/client';
+import { authSessions, userPermissions } from '@/lib/db/schema';
 import type { UserRoleType } from '@/types/prisma';
 
 import { verifyAccessToken } from './access-token';
@@ -85,13 +88,13 @@ const evaluateBearerToken = async (
   try {
     const verified = await verifyAccessToken(token);
 
-    const session = await prisma.authSession.findUnique({
-      where: { id: verified.sessionId },
-      include: {
+    const session = await db.query.authSessions.findFirst({
+      where: eq(authSessions.id, verified.sessionId),
+      with: {
         user: {
-          include: {
+          with: {
             permissions: {
-              include: {
+              with: {
                 permission: true
               }
             }
@@ -100,7 +103,7 @@ const evaluateBearerToken = async (
       }
     });
 
-    if (!session || session.revokedAt) {
+    if (!session || session.revokedAt || !session.user) {
       return {
         status: AuthorizationStatus.UNAUTHENTICATED,
         session: null,
@@ -108,7 +111,11 @@ const evaluateBearerToken = async (
       };
     }
 
-    if (session.absoluteExpiresAt <= new Date()) {
+    const absoluteExpiry = session.absoluteExpiresAt
+      ? new Date(session.absoluteExpiresAt)
+      : null;
+
+    if (!absoluteExpiry || absoluteExpiry <= new Date()) {
       return {
         status: AuthorizationStatus.UNAUTHENTICATED,
         session: null,
@@ -116,9 +123,11 @@ const evaluateBearerToken = async (
       };
     }
 
-    const explicitPermissions = session.user.permissions.map(
-      (entry) => entry.permission.key
-    );
+    const explicitPermissions = session.user.permissions
+      .filter((entry): entry is typeof userPermissions.$inferSelect & { permission: { key: string } } =>
+        Boolean(entry.permission?.key)
+      )
+      .map((entry) => entry.permission.key);
     const role = session.user.role as UserRoleType;
     const permissions = deriveEffectivePermissions(role, explicitPermissions);
 

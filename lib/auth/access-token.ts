@@ -2,7 +2,10 @@ import { randomUUID } from 'crypto';
 
 import { SignJWT, jwtVerify } from 'jose';
 
-import { prisma } from '@/lib/prisma';
+import { eq } from 'drizzle-orm';
+
+import { db } from '@/lib/db/client';
+import { tokenBlacklist } from '@/lib/db/schema';
 import type { UserRoleType } from '@/types/prisma';
 
 export interface AccessTokenContext {
@@ -76,8 +79,8 @@ export const verifyAccessToken = async (token: string): Promise<VerifiedAccessTo
     throw new Error('잘못된 액세스 토큰입니다.');
   }
 
-  const blacklisted = await prisma.tokenBlacklist.findUnique({
-    where: { jti: payload.jti }
+  const blacklisted = await db.query.tokenBlacklist.findFirst({
+    where: eq(tokenBlacklist.jti, payload.jti)
   });
 
   if (blacklisted) {

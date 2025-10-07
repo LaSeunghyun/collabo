@@ -1,15 +1,21 @@
+import { randomUUID } from 'crypto';
+
 import { eq } from 'drizzle-orm';
 
 import { db } from '@/lib/db/client';
 import { permissions, userPermissions, users } from '@/lib/db/schema';
+import { UserRole } from '@/types/prisma';
 
 type UserRecord = typeof users.$inferSelect;
 type UserPermissionRecord = typeof userPermissions.$inferSelect;
 type PermissionRecord = typeof permissions.$inferSelect;
+type UserInsert = typeof users.$inferInsert;
 
 export type UserWithPermissions = UserRecord & {
   permissions: Array<UserPermissionRecord & { permission: PermissionRecord }>;
 };
+
+export type BasicUserSummary = Pick<UserRecord, 'id' | 'name' | 'email' | 'role' | 'createdAt'>;
 
 export type UserIdentifier = { id?: string; email?: string };
 
@@ -54,4 +60,47 @@ export const fetchUserWithPermissions = async (
     ...user,
     permissions: permissionsWithDetails
   };
+};
+
+export const findUserByEmail = async (email: string) =>
+  db.query.users.findFirst({
+    where: eq(users.email, email)
+  });
+
+interface CreateParticipantUserInput {
+  name: string;
+  email: string;
+  passwordHash: string;
+}
+
+const touchTimestamp = () => new Date().toISOString();
+
+export const createParticipantUser = async (
+  input: CreateParticipantUserInput
+): Promise<BasicUserSummary> => {
+  const now = touchTimestamp();
+
+  const [record] = await db
+    .insert(users)
+    .values({
+      id: randomUUID(),
+      name: input.name,
+      email: input.email,
+      passwordHash: input.passwordHash,
+      role: UserRole.PARTICIPANT,
+      updatedAt: now
+    } satisfies UserInsert)
+    .returning({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      role: users.role,
+      createdAt: users.createdAt
+    });
+
+  if (!record) {
+    throw new Error('사용자 생성에 실패했습니다.');
+  }
+
+  return record;
 };
