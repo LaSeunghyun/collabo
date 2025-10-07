@@ -14,37 +14,37 @@ Phase 0부터 Phase 5까지 정리된 전환 시나리오를 기준으로, 품�
 | 목표 | 액션 | 담당 | 산출물 |
 | --- | --- | --- | --- |
 | Prisma 의존성 파악 | `rg "prisma"`와 코드 맵을 이용해 호출 부위를 표로 정리 | 아키텍트 | `docs/prisma-residual-usage.md` 업데이트 |
-| 스키마 기준선 확정 | `npm run db:push`, `npx prisma migrate diff` 실행 후 SQL 스냅샷 보관 | 데이터 엔지니어 | `docs/baselines/prisma-schema.sql` 갱신 |
-| 스테이징 데이터 확보 | 최신 스테이징 덤프 추출 및 민감 정보 마스킹 | 데이터 엔지니어 | `docs/baselines/staging-snapshot.md` |
+| 스키마 기준선 확정 | `npm run db:push`, `npx prisma migrate diff` 실행 후 SQL 스냅샷 보관 | 데이터 엔지니어 | `docs/baselines/prisma-schema-baseline.sql` 갱신 |
+| 스테이징 데이터 확보 | 최신 스테이징 덤프 추출 및 민감 정보 마스킹 | 데이터 엔지니어 | `docs/baselines/staging-snapshot.md` (신규) |
 | 이해관계자 정렬 | API/인증/데이터/DevOps 오너 미팅, 일정 합의 | PM | 킥오프 회의록 |
 
-**개선 포인트:** Prisma 호출 표를 기준으로 리팩터링 난이도(낮음/중간/높음) 태그를 추가해 이후 스프린트 계획에 반영합니다.
+**개선 포인트:** `docs/prisma-residual-usage.md`에 리팩터링 난이도(낮음/중간/높음) 태그를 추가해 이후 스프린트 계획에 반영합니다.
 
 ### Phase 1 – Tooling Bootstrap
 | 목표 | 액션 | 테스트 | 개선 |
 | --- | --- | --- | --- |
 | Drizzle 의존성 설치 | `npm install drizzle-orm drizzle-kit pg` | `npm run lint` | 패키지 설치 후 락파일 충돌 여부 확인 |
 | Drizzle 구성 스캐폴딩 | `drizzle.config.ts`, `drizzle/` 디렉터리 생성 | `npx drizzle-kit introspect` (ReadOnly) | Prisma 연결 옵션과 비교표 작성 |
-| 워크플로우 전환 | npm 스크립트 교체 (`db:push` → `db:migrate`) | `npm run db:migrate -- --dry-run` | 스크립트 설명을 README에 추가 |
+| 워크플로우 전환 | npm 스크립트 교체 (`db:push` → `db:drizzle:push`) | `npm run db:drizzle:push -- --dry-run` | 스크립트 설명을 README에 추가 |
 
 **개선 포인트:** CI 파이프라인에 Drizzle 명령을 추가하고, 실패 시 Slack 알림을 연동합니다.
 
 ### Phase 2 – Schema Translation
 | 목표 | 액션 | 테스트 | 개선 |
 | --- | --- | --- | --- |
-| 모델 변환 | `lib/db/schema/`에 pgTable 정의 추가 | `npm run lint`, `tsc --noEmit` | 열거형/관계 매핑 가이드 작성 |
-| 마이그레이션 생성 | `npx drizzle-kit generate` 후 수동 튜닝 | `npm run db:migrate -- --verify` | Prisma 스키마와 diff 비교 보고 |
-| 타입 내보내기 | `InferModel` 기반 타입 생성 | 타입 테스트(`tests/types/*.test.ts`) | 기존 `@/types/prisma` 참조 파일 목록화 |
+| 모델 변환 | `lib/db/schema/`에 pgTable 정의 추가 | `npm run lint`, `npx tsc --noEmit` | 열거형/관계 매핑 가이드 작성 |
+| 마이그레이션 생성 | `npx drizzle-kit generate` 후 수동 튜닝 | `npm run db:drizzle:generate`, `npm run db:drizzle:push -- --dry-run` | Prisma 스키마와 diff 비교 보고 |
+| 타입 내보내기 | `InferModel` 기반 타입 생성 | `npx tsc --noEmit` | 기존 `@/types/prisma` 참조 파일 목록화 (`docs/prisma-types-usage-inventory.md`) |
 
 **개선 포인트:** Drizzle 스키마 모듈별로 주석에 Prisma 모델 참조 링크를 남겨 추적성을 유지합니다.
 
 ### Phase 3 – Runtime Integration
 | 목표 | 액션 | 테스트 | 개선 |
 | --- | --- | --- | --- |
-| DB 클라이언트 추상화 | `lib/db/client.ts` 작성 | `npm run lint`, `npm run test -- db-client` | Node/Edge 환경별 커넥션 벤치마크 |
+| DB 클라이언트 추상화 | `lib/db/client.ts` 작성 | `npm run lint`, `npm run test` | Node/Edge 환경별 커넥션 벤치마크 |
 | 서비스 모듈 교체 | `app/api/**`, `lib/server/**`에서 Prisma 호출 제거 | 기능별 Jest 스펙 업데이트 | 레포지토리별 코드 리뷰 체크리스트 작성 |
-| 인증 어댑터 전환 | NextAuth 설정을 Drizzle 어댑터로 변경 | `npm run test auth` + 수동 로그인 | 세션/계정 테이블 매핑 문서화 |
-| 검증/직렬화 정비 | Drizzle enum 재사용으로 DTO 교체 | `npm run lint`, `npm run typecheck` | UI 폼에서 enum 옵션 자동 생성 |
+| 인증 어댑터 전환 | NextAuth 설정을 Drizzle 어댑터로 변경 | `npm run test -- auth` + 수동 로그인 | 세션/계정 테이블 매핑 문서화 |
+| 검증/직렬화 정비 | Drizzle enum 재사용으로 DTO 교체 | `npm run lint`, `npx tsc --noEmit` | UI 폼에서 enum 옵션 자동 생성 |
 
 **개선 포인트:** 모듈 교체 시 Prisma 호출과 대응하는 Drizzle SQL 로그를 수집해 성능 변화치를 기록합니다.
 
@@ -61,7 +61,7 @@ Phase 0부터 Phase 5까지 정리된 전환 시나리오를 기준으로, 품�
 | 목표 | 액션 | 테스트 | 개선 |
 | --- | --- | --- | --- |
 | 환경 전환 | 토글 기반 배포 → Prisma 경로 비활성화 | `npm run test`, 스테이징 스모크 | 토글 제거 일정 수립 |
-| 문서화 완료 | README, DEPLOYMENT, 내부 가이드 업데이트 | `npm run lint:docs` (있을 경우) | Drizzle FAQ 추가 |
+| 문서화 완료 | README, DEPLOYMENT, 내부 가이드 업데이트 | `npm run lint` | Drizzle FAQ 추가 |
 | 잔여 Prisma 제거 | 패키지/디렉터리 삭제 후 확인 | `rg "prisma"` | 남은 호출 자동 감지 ESLint 룰 도입 |
 | 운영 모니터링 | 릴리스 1주간 메트릭 감시 | 대시보드 점검 | 회고 미팅 준비 |
 
