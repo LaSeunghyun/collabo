@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { hash } from 'bcryptjs';
-import { prisma } from '@/lib/prisma';
-import { UserRole } from '@/types/prisma';
+
+import { createParticipantUser, findUserByEmail } from '@/lib/auth/user';
 
 export async function POST(request: NextRequest) {
     try {
@@ -24,9 +24,7 @@ export async function POST(request: NextRequest) {
         }
 
         // 이메일 중복 확인
-        const existingUser = await prisma.user.findUnique({
-            where: { email }
-        });
+        const existingUser = await findUserByEmail(email);
 
         if (existingUser) {
             return NextResponse.json(
@@ -39,20 +37,10 @@ export async function POST(request: NextRequest) {
         const hashedPassword = await hash(password, 12);
 
         // 사용자 생성
-        const user = await prisma.user.create({
-            data: {
-                name,
-                email,
-                passwordHash: hashedPassword,
-                role: UserRole.PARTICIPANT,
-            },
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                role: true,
-                createdAt: true,
-            }
+        const user = await createParticipantUser({
+            name,
+            email,
+            passwordHash: hashedPassword,
         });
 
         return NextResponse.json({

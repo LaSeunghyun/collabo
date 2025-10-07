@@ -1,17 +1,13 @@
 ﻿import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { NextRequest } from 'next/server';
 import { POST } from '@/app/api/auth/register/route';
-import { prisma } from '@/lib/prisma';
+import { createParticipantUser, findUserByEmail } from '@/lib/auth/user';
 import { UserRole } from '@/types/prisma';
 import { hash } from 'bcryptjs';
 
-jest.mock('@/lib/prisma', () => ({
-  prisma: {
-    user: {
-      findUnique: jest.fn(),
-      create: jest.fn()
-    }
-  }
+jest.mock('@/lib/auth/user', () => ({
+  findUserByEmail: jest.fn(),
+  createParticipantUser: jest.fn()
 }));
 
 jest.mock('bcryptjs', () => ({
@@ -19,12 +15,8 @@ jest.mock('bcryptjs', () => ({
 }));
 
 describe('POST /api/auth/register', () => {
-  const mockedPrisma = prisma as unknown as {
-    user: {
-      findUnique: jest.Mock;
-      create: jest.Mock;
-    };
-  };
+  const mockedFindUserByEmail = findUserByEmail as unknown as jest.Mock;
+  const mockedCreateParticipantUser = createParticipantUser as unknown as jest.Mock;
   const mockedHash = hash as unknown as jest.Mock;
 
   beforeEach(() => {
@@ -39,8 +31,8 @@ describe('POST /api/auth/register', () => {
     });
 
   it('creates a participant user even when a different role is supplied', async () => {
-    mockedPrisma.user.findUnique.mockResolvedValue(null);
-    mockedPrisma.user.create.mockResolvedValue({
+    mockedFindUserByEmail.mockResolvedValue(null);
+    mockedCreateParticipantUser.mockResolvedValue({
       id: 'user-1',
       name: 'Test User',
       email: 'test@example.com',
@@ -59,11 +51,10 @@ describe('POST /api/auth/register', () => {
     );
 
     expect(response.status).toBe(200);
-    expect(mockedPrisma.user.create).toHaveBeenCalledWith(
+    expect(mockedCreateParticipantUser).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({
-          role: UserRole.PARTICIPANT
-        })
+        name: 'Test User',
+        email: 'test@example.com'
       })
     );
   });
@@ -72,7 +63,7 @@ describe('POST /api/auth/register', () => {
     const response = await POST(buildRequest({ email: 'missing-name@example.com' }));
 
     expect(response.status).toBe(400);
-    expect(mockedPrisma.user.create).not.toHaveBeenCalled();
+    expect(mockedCreateParticipantUser).not.toHaveBeenCalled();
   });
 
   it('rejects short passwords', async () => {
@@ -85,11 +76,11 @@ describe('POST /api/auth/register', () => {
     );
 
     expect(response.status).toBe(400);
-    expect(mockedPrisma.user.create).not.toHaveBeenCalled();
+    expect(mockedCreateParticipantUser).not.toHaveBeenCalled();
   });
 
   it('rejects duplicate email addresses', async () => {
-    mockedPrisma.user.findUnique.mockResolvedValue({ id: 'existing-user' });
+    mockedFindUserByEmail.mockResolvedValue({ id: 'existing-user' });
 
     const response = await POST(
       buildRequest({
@@ -101,6 +92,6 @@ describe('POST /api/auth/register', () => {
 
     expect(response.status).toBe(400);
     expect(mockedHash).not.toHaveBeenCalled();
-    expect(mockedPrisma.user.create).not.toHaveBeenCalled();
+    expect(mockedCreateParticipantUser).not.toHaveBeenCalled();
   });
 });
