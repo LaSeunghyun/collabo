@@ -11,11 +11,23 @@ export type UserWithPermissions = UserRecord & {
   permissions: Array<UserPermissionRecord & { permission: PermissionRecord }>;
 };
 
+export type UserIdentifier = { id?: string; email?: string };
+
 export const fetchUserWithPermissions = async (
-  userId: string
+  identifier: UserIdentifier
 ): Promise<UserWithPermissions | null> => {
+  const where = identifier.id
+    ? eq(users.id, identifier.id)
+    : identifier.email
+    ? eq(users.email, identifier.email)
+    : null;
+
+  if (!where) {
+    return null;
+  }
+
   const user = await db.query.users.findFirst({
-    where: eq(users.id, userId),
+    where,
     with: {
       permissions: {
         with: {

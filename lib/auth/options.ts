@@ -4,13 +4,16 @@ import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 import KakaoProvider from 'next-auth/providers/kakao';
-import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import { compare } from 'bcryptjs';
+import { eq } from 'drizzle-orm';
 
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db/client';
+import { users } from '@/lib/db/schema';
 
 import { AUTH_V3_ENABLED } from './flags';
 import { deriveEffectivePermissions } from './permissions';
+import { createDrizzleAuthAdapter } from './adapter';
+import { fetchUserWithPermissions } from './user';
 
 // Skip OAuth validation during build time
 const isBuildTime = process.env.NODE_ENV === 'production' && process.env.NEXT_PHASE === 'phase-production-build';
@@ -28,30 +31,8 @@ const safeCompare = (a: string, b: string) => {
   return timingSafeEqual(bufferA, bufferB);
 };
 
-const fetchUserWithPermissions = async (identifier: { id?: string; email?: string }) => {
-  if (!identifier.id && !identifier.email) {
-    return null;
-  }
-
-  // Skip database queries during build time
-  if (isBuildTime) {
-    return null;
-  }
-
-  return prisma.user.findUnique({
-    where: identifier.id ? { id: identifier.id } : { email: identifier.email! },
-    include: {
-      permissions: {
-        include: {
-          permission: true
-        }
-      }
-    }
-  });
-};
-
 export const authOptions: NextAuthOptions = {
-  adapter: isBuildTime ? undefined : PrismaAdapter(prisma),
+  adapter: isBuildTime ? undefined : createDrizzleAuthAdapter(db),
   pages: {
     signIn: '/auth/signin',
   },
@@ -75,10 +56,8 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email
-          }
+        const user = await db.query.users.findFirst({
+          where: eq(users.email, credentials.email)
         });
 
         if (!user || !user.passwordHash) {
@@ -145,7 +124,7 @@ export const authOptions: NextAuthOptions = {
           ((user as { role?: string })?.role ?? undefined);
         let explicitPermissions = existingPermissions;
 
-        if (AUTH_V3_ENABLED) {
+        if (AUTH_V3_ENABLED && !isBuildTime) {
           const dbUser = await fetchUserWithPermissions(identifier);
 
           if (dbUser) {

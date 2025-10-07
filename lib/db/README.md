@@ -11,10 +11,11 @@ Phase 3 진입 이후 `lib/db`는 스키마 정의뿐만 아니라 런타임에�
 
 - 헬스체크 및 데이터베이스 연결 진단 API(`app/api/health`, `app/api/test-db`)가 Drizzle 기반으로 동작하며, Prisma 의존성 없이 연결성 검증이 가능합니다.
 - 액세스 토큰 블랙리스트 로직이 Drizzle upsert 패턴으로 전환되어 인증 도메인의 첫 번째 실사용 경로가 마이그레이션 되었습니다.
+- NextAuth 설정이 Drizzle 어댑터와 공용 사용자 조회 헬퍼를 사용하도록 갱신되어, 자격 증명 로그인과 세션 권한 하이드레이션이 Prisma 없이 수행됩니다.
 
 ## 다음 단계
 
-1. `lib/auth/session-store` 및 관련 NextAuth 어댑터 계층을 Drizzle 트랜잭션 API로 재작성합니다.
+1. OAuth 제공자 연동을 위한 계정 테이블/어댑터 확장을 설계하고, Drizzle 기반 구현을 추가합니다.
 2. 프로젝트/커뮤니티/정산 등 서버 서비스 모듈에서 Prisma 의존을 제거하고, 공통 where/정렬 빌더 유틸리티를 추가합니다.
 3. `drizzle/` 마이그레이션 생성 및 배포 파이프라인을 통합하고, Phase 0에서 확보한 Prisma 베이스라인과 SQL diff를 비교 검증합니다.
 4. `npm run test:regression`으로 lint → unit/integration 순의 회귀 플로우를 실행해 데이터 계층 변경을 검증합니다.

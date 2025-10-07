@@ -82,7 +82,7 @@ function hydrateRefreshTokenRow(token: RefreshTokenRow): HydratedRefreshToken {
 }
 
 const loadUserPermissions = async (userId: string, fallbackRole: UserRoleType) => {
-  const user = await fetchUserWithPermissions(userId);
+  const user = await fetchUserWithPermissions({ id: userId });
 
   if (!user) {
     const effectivePermissions = deriveEffectivePermissions(fallbackRole, []);
@@ -304,7 +304,7 @@ export const rotateRefreshToken = async (
     throw new Error('장시간 활동이 없어 세션이 만료되었습니다.');
   }
 
-  const user = await fetchUserWithPermissions(session.userId);
+  const user = await fetchUserWithPermissions({ id: session.userId });
   const baseRole: UserRoleType = session.isAdmin ? ADMIN_ROLE : (user?.role ?? 'PARTICIPANT');
   const explicitPermissions = user?.permissions.map((entry) => entry.permission.key) ?? [];
   const permissions = deriveEffectivePermissions(baseRole, explicitPermissions);
