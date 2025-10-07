@@ -1,7 +1,25 @@
-export type MockPrisma = ReturnType<typeof createPrismaMock>;
+// Drizzle mock을 위한 타입 정의
+export type MockDrizzle = ReturnType<typeof createDrizzleMock>;
 
-export const createPrismaMock = () => {
+export const createDrizzleMock = () => {
   const mock = {
+    select: jest.fn().mockReturnThis(),
+    from: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    innerJoin: jest.fn().mockReturnThis(),
+    leftJoin: jest.fn().mockReturnThis(),
+    orderBy: jest.fn().mockReturnThis(),
+    limit: jest.fn().mockReturnThis(),
+    offset: jest.fn().mockReturnThis(),
+    insert: jest.fn().mockReturnThis(),
+    values: jest.fn().mockReturnThis(),
+    returning: jest.fn().mockReturnThis(),
+    update: jest.fn().mockReturnThis(),
+    set: jest.fn().mockReturnThis(),
+    delete: jest.fn().mockReturnThis(),
+    onConflictDoNothing: jest.fn().mockReturnThis(),
+    onConflictDoUpdate: jest.fn().mockReturnThis(),
+    // Prisma 호환성을 위한 mock 메서드들
     $transaction: jest.fn(),
     project: {
       findMany: jest.fn(),
@@ -130,7 +148,12 @@ const resetMocksRecursively = (input: unknown) => {
   }
 };
 
-export const resetPrismaMock = (mock: MockPrisma) => {
+export const resetDrizzleMock = (mock: MockDrizzle) => {
   resetMocksRecursively(mock);
 };
+
+// 호환성을 위한 별칭
+export const resetPrismaMock = resetDrizzleMock;
+export const createPrismaMock = createDrizzleMock;
+export type MockPrisma = MockDrizzle;
 

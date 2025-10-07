@@ -1,4 +1,5 @@
-import { MilestoneStatus, PostType, Prisma, UserRole } from '@prisma/client';
+import { postTypeEnum } from '@/lib/db/schema';
+import { UserRole } from '@/types/prisma';
 
 
 import type { SessionUser } from '@/lib/auth/session';
@@ -76,15 +77,15 @@ type ProjectInfo = {
 
 const toJsonInput = (
   value: ProjectUpdateAttachment[] | undefined
-): Prisma.InputJsonValue | Prisma.JsonNullValueInput => {
+): any => {
   if (!value || value.length === 0) {
-    return Prisma.JsonNull;
+    return null;
   }
 
-  return value as unknown as Prisma.InputJsonValue;
+  return value;
 };
 
-const normalizeAttachments = (value: Prisma.JsonValue | null): ProjectUpdateAttachment[] => {
+const normalizeAttachments = (value: any | null): ProjectUpdateAttachment[] => {
   if (!value) {
     return [];
   }
@@ -128,9 +129,20 @@ const buildPostInclude = () => ({
   _count: { select: { likes: true, comments: true } }
 });
 
-type PostWithRelations = Prisma.PostGetPayload<{
-  include: ReturnType<typeof buildPostInclude>;
-}>;
+type PostWithRelations = {
+  id: string;
+  title: string;
+  content: string;
+  type: string;
+  projectId: string | null;
+  authorId: string;
+  milestoneId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  author: { id: string; name: string; avatarUrl: string | null };
+  milestone: { id: string; title: string; status: string } | null;
+  _count: { likes: number; comments: number };
+};
 
 const getLikedPostIds = async (
   viewer: SessionUser | null | undefined,
@@ -233,7 +245,7 @@ export const listProjectUpdates = async (
   const posts = await prisma.post.findMany({
     where: {
       projectId,
-      type: PostType.UPDATE,
+      type: postTypeEnum.enumValues.UPDATE,
     },
     orderBy: { createdAt: 'desc' },
     include: buildPostInclude()
@@ -264,7 +276,7 @@ export const createProjectUpdate = async (
       authorId: user.id,
       title: input.title,
       content: input.content,
-      type: PostType.UPDATE,
+      type: postTypeEnum.enumValues.UPDATE,
       attachments: toJsonInput(input.attachments),
       milestoneId: input.milestoneId ?? null
     },
@@ -297,7 +309,7 @@ export const updateProjectUpdate = async (
     await ensureMilestoneBelongsToProject(projectId, input.milestoneId);
   }
 
-  const data: Prisma.PostUpdateInput = {};
+  const data: any = {};
 
   if (input.title !== undefined) {
     data.title = input.title;

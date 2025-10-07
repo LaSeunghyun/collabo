@@ -178,7 +178,7 @@ export async function POST(request: NextRequest) {
   }
 
   // TODO: Drizzle로 전환 필요 - 트랜잭션 구현
-  const settlement = (() => {
+  const settlement = await (async () => {
     const created = {
       id: 'temp-settlement-id',
       projectId,

@@ -1,23 +1,20 @@
-import type {
-  ModerationStatus as ModerationStatusType,
-  ModerationTargetType as ModerationTargetTypeType
-} from '@prisma/client';
-
+import { eq, and, inArray, desc, count } from 'drizzle-orm';
 import {
   ModerationStatus,
   ModerationTargetType,
   type ModerationReport
 } from '@/types/prisma';
 
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db/client';
+import { moderationReports, users, posts } from '@/lib/db/schema';
 
 export interface ModerationReportSummary {
   id: string;
-  targetType: ModerationTargetTypeType;
+  targetType: string;
   targetId: string;
-  status: ModerationStatusType;
+  status: string;
   reason: string | null;
-  createdAt: Date;
+  createdAt: string;
   reporter: {
     id: string;
     name: string | null;
@@ -34,11 +31,11 @@ export interface ModerationHandledPostSummary {
       }
     | null;
   totalReports: number;
-  lastResolvedAt: Date | null;
-  latestStatus: ModerationStatusType;
+  lastResolvedAt: string | null;
+  latestStatus: string;
 }
 
-const ACTIVE_REVIEW_STATUSES: ModerationStatusType[] = [
+const ACTIVE_REVIEW_STATUSES: string[] = [
   ModerationStatus.PENDING,
   ModerationStatus.REVIEWING
 ];
@@ -63,33 +60,41 @@ const toSummary = (report: ReportWithRelations): ModerationReportSummary => ({
 });
 
 export const getOpenModerationReports = async (limit = 5) => {
-  const reports = await prisma.moderationReport.findMany({
-    where: { status: { in: ACTIVE_REVIEW_STATUSES } },
-    include: {
-      reporter: { select: { id: true, name: true } }
-    },
-    orderBy: { createdAt: 'desc' },
-    take: limit
-  });
+  const reports = await db
+    .select({
+      id: moderationReports.id,
+      targetType: moderationReports.targetType,
+      targetId: moderationReports.targetId,
+      status: moderationReports.status,
+      reason: moderationReports.reason,
+      createdAt: moderationReports.createdAt,
+      reporter: {
+        id: users.id,
+        name: users.name
+      }
+    })
+    .from(moderationReports)
+    .leftJoin(users, eq(moderationReports.reporterId, users.id))
+    .where(inArray(moderationReports.status, ACTIVE_REVIEW_STATUSES))
+    .orderBy(desc(moderationReports.createdAt))
+    .limit(limit);
 
   return reports.map(toSummary);
 };
 
 export const getModerationStats = async () => {
-  const [totalReports, pendingReports, completedReports] = await Promise.all([
-    prisma.moderationReport.count(),
-    prisma.moderationReport.count({
-      where: { status: { in: ACTIVE_REVIEW_STATUSES } }
-    }),
-    prisma.moderationReport.count({
-      where: { status: { notIn: ACTIVE_REVIEW_STATUSES } }
-    })
+  const [totalReportsResult, pendingReportsResult, completedReportsResult] = await Promise.all([
+    db.select({ count: count() }).from(moderationReports),
+    db.select({ count: count() }).from(moderationReports).where(inArray(moderationReports.status, ACTIVE_REVIEW_STATUSES)),
+    db.select({ count: count() }).from(moderationReports).where(and(
+      eq(moderationReports.status, ModerationStatus.RESOLVED)
+    ))
   ]);
 
   return {
-    total: totalReports,
-    pending: pendingReports,
-    completed: completedReports
+    total: totalReportsResult[0]?.count || 0,
+    pending: pendingReportsResult[0]?.count || 0,
+    completed: completedReportsResult[0]?.count || 0
   };
 };
 

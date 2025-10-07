@@ -1,13 +1,13 @@
 import { getSettlementsPendingPayout } from '@/lib/server/settlement-queries';
-import {
-  SettlementPayoutStatus,
-  type SettlementPayoutStatusType
-} from '@/types/prisma';
+// import { SettlementPayoutStatus, type SettlementPayoutStatusType } from '@/types/prisma'; // TODO: Drizzle로 전환 필요
 
-const statusLabels: Record<SettlementPayoutStatusType, string> = {
-  [SettlementPayoutStatus.PENDING]: '대기중',
-  [SettlementPayoutStatus.IN_PROGRESS]: '진행중',
-  [SettlementPayoutStatus.PAID]: '완료'
+// 동적 렌더링 강제 - 빌드 시 데이터베이스 접근 방지
+export const dynamic = 'force-dynamic';
+
+const statusLabels: Record<string, string> = {
+  'PENDING': '대기중',
+  'IN_PROGRESS': '진행중',
+  'PAID': '완료'
 };
 
 const currencyFormatter = new Intl.NumberFormat('ko-KR', {
@@ -33,7 +33,7 @@ export default async function AdminSettlementsPage() {
 
         {settlements.length > 0 ? (
           <div className="space-y-4">
-            {settlements.map((settlement) => (
+            {settlements.map((settlement: any) => (
               <div
                 key={settlement.id}
                 className="rounded-2xl border border-white/5 bg-white/[0.05] p-6"
@@ -59,7 +59,7 @@ export default async function AdminSettlementsPage() {
                     <span className="rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-white/80">
                       {statusLabels[settlement.payoutStatus]}
                     </span>
-                    {settlement.payoutStatus === SettlementPayoutStatus.PENDING && (
+                    {settlement.payoutStatus === 'PENDING' && (
                       <div className="flex gap-2">
                         <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
                           지급 시작

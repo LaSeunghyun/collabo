@@ -1,10 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { NextRequest } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { POST as fundingPOST } from '../../app/api/funding/route';
 import { POST as settlementPOST } from '../../app/api/settlement/route';
 
-const prisma = new PrismaClient();
+// Prisma 클라이언트는 더 이상 사용하지 않음
 
 describe.skip('Funding-Settlement API Integration', () => {
     let testProjectId: string;

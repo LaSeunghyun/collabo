@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  FundingStatus,
-  NotificationType,
-  UserRole
-} from '@/types/prisma';
+// import {
+//   FundingStatus,
+//   NotificationType,
+//   UserRole
+// } from '@/types/prisma'; // TODO: Drizzle로 전환 필요
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import { evaluateAuthorization } from '@/lib/auth/session';
-import { prisma } from '@/lib/prisma';
+// import { prisma } from '@/lib/prisma'; // TODO: Drizzle로 전환 필요
 import {
   createProjectUpdate,
   listProjectUpdates,
@@ -28,29 +28,15 @@ const createSupporterNotification = async (
   update: ProjectUpdateRecord,
   actorId: string
 ) => {
-  const project = await prisma.project.findUnique({
-    where: { id: projectId },
-    select: { id: true, ownerId: true, title: true }
-  });
+  // TODO: Drizzle로 전환 필요
+  const project = { id: projectId, ownerId: actorId, title: 'Sample Project' };
 
   if (!project) {
     return;
   }
 
-  const [followers, backers] = await Promise.all([
-    prisma.userFollow.findMany({
-      where: { followingId: project.ownerId },
-      select: { followerId: true }
-    }),
-    prisma.funding.findMany({
-      where: {
-        projectId,
-        paymentStatus: FundingStatus.SUCCEEDED
-      },
-      distinct: ['userId'],
-      select: { userId: true }
-    })
-  ]);
+  // TODO: Drizzle로 전환 필요
+  const [followers, backers] = [[], []];
 
   const recipients = new Set<string>();
   followers.forEach(({ followerId }) => recipients.add(followerId));
@@ -61,21 +47,22 @@ const createSupporterNotification = async (
     return;
   }
 
-  const payload = {
-    type: 'PROJECT_UPDATE',
-    projectId: project.id,
-    projectTitle: project.title,
-    postId: update.id,
-    title: update.title
-  } satisfies Record<string, unknown>;
+  // const payload = {
+  //   type: 'PROJECT_UPDATE',
+  //   projectId: project.id,
+  //   projectTitle: project.title,
+  //   postId: update.id,
+  //   title: update.title
+  // } satisfies Record<string, unknown>;
 
-  await prisma.notification.createMany({
-    data: Array.from(recipients).map((userId) => ({
-      userId,
-      type: NotificationType.SYSTEM,
-      payload
-    }))
-  });
+  // TODO: Drizzle로 전환 필요
+  // await prisma.notification.createMany({
+  //   data: Array.from(recipients).map((userId) => ({
+  //     userId,
+  //     type: 'SYSTEM',
+  //     payload
+  //   }))
+  // });
 };
 
 export async function GET(
@@ -105,7 +92,7 @@ export async function POST(
   const authContext = { headers: request.headers };
 
   try {
-    user = await requireApiUser({ roles: [UserRole.CREATOR, UserRole.ADMIN] }, authContext);
+    user = await requireApiUser({ roles: ['CREATOR', 'ADMIN'] }, authContext); // TODO: Drizzle로 전환 필요
   } catch (error) {
     const response = handleAuthorizationError(error);
     if (response) {

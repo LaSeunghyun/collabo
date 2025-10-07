@@ -26,7 +26,7 @@ export async function ProjectReviewSection() {
 
         {projects.length > 0 ? (
           <ul className="mt-6 space-y-3">
-            {projects.map((project) => (
+            {projects.map((project: any) => (
               <li
                 key={project.id}
                 className="flex items-center justify-between rounded-2xl border border-white/5 bg-white/[0.05] px-4 py-3"
@@ -38,7 +38,7 @@ export async function ProjectReviewSection() {
                   </p>
                 </div>
                 <span className="text-xs font-semibold text-amber-300">
-                  {PROJECT_STATUS_LABELS[project.status]}
+                  {PROJECT_STATUS_LABELS[project.status as keyof typeof PROJECT_STATUS_LABELS]}
                 </span>
               </li>
             ))}

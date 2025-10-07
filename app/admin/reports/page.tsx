@@ -2,6 +2,9 @@ import { getModerationStats, getOpenModerationReports } from '@/lib/server/moder
 import { ReportListSection } from './_components/report-list-section';
 import { ReportStatsSection } from './_components/report-stats-section';
 
+// 동적 렌더링 강제 - 빌드 시 데이터베이스 접근 방지
+export const dynamic = 'force-dynamic';
+
 export default async function AdminReportsPage() {
   const [stats, reports] = await Promise.all([
     getModerationStats(),

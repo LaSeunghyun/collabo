@@ -2,11 +2,11 @@
 
 import { spawnSync } from 'node:child_process';
 
-const MIGRATOR = (process.env.DB_MIGRATOR || 'prisma').toLowerCase();
+const MIGRATOR = (process.env.DB_MIGRATOR || 'drizzle').toLowerCase();
 const isDrizzle = MIGRATOR === 'drizzle';
 
 function run(command, args, options = {}) {
-  const result = spawnSync(command, args, { stdio: 'inherit', ...options });
+  const result = spawnSync(command, args, { stdio: 'inherit', shell: true, ...options });
 
   if (result.status !== 0) {
     console.error(`Command failed: ${command} ${args.join(' ')}`);
@@ -38,8 +38,14 @@ if (!hasDatabaseUrl) {
   console.log('[build] Database URL:', sanitizedUrl);
 
   if (isDrizzle) {
-    console.log('[build] Running drizzle-kit push...');
-    tryRun('npx', ['drizzle-kit', 'push']);
+    const shouldSkipPush = process.env.SKIP_DRIZZLE_PUSH === '1' || process.env.DATABASE_URL?.includes('test:test@localhost');
+    
+    if (shouldSkipPush) {
+      console.log('[build] Skipping drizzle-kit push (SKIP_DRIZZLE_PUSH is set or not localhost)');
+    } else {
+      console.log('[build] Running drizzle-kit push...');
+      tryRun('npx', ['drizzle-kit', 'push']);
+    }
   } else {
     console.log('[build] Running prisma migrate deploy...');
     tryRun('npx', ['prisma', 'migrate', 'deploy']);

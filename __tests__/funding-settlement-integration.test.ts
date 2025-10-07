@@ -1,8 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
-import { PrismaClient } from '@prisma/client';
 import { createSettlementIfTargetReached, validateFundingSettlementConsistency } from '../lib/server/funding-settlement';
-
-const prisma = new PrismaClient();
+import { db } from '@/lib/db/client';
 
 describe.skip('Funding-Settlement Integration', () => {
     let testProjectId: string;

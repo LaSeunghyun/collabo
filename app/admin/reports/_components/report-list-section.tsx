@@ -1,38 +1,33 @@
 'use client';
 
 import { useState } from 'react';
-import { 
-  ModerationStatus, 
-  ModerationTargetType,
-  type ModerationStatusValue,
-  type ModerationTargetTypeValue 
-} from '@/types/prisma';
+// import { ModerationStatus, ModerationTargetType, type ModerationStatusValue, type ModerationTargetTypeValue } from '@/types/prisma'; // TODO: Drizzle로 전환 필요
 import { ReportDetailModal } from './report-detail-modal';
 
-const statusLabels: Record<ModerationStatusValue, string> = {
-  [ModerationStatus.PENDING]: '대기중',
-  [ModerationStatus.REVIEWING]: '검토중',
-  [ModerationStatus.ACTION_TAKEN]: '조치완료',
-  [ModerationStatus.DISMISSED]: '기각됨'
+const statusLabels: Record<string, string> = {
+  'PENDING': '대기중',
+  'REVIEWING': '검토중',
+  'ACTION_TAKEN': '조치완료',
+  'DISMISSED': '기각됨'
 };
 
-const targetLabels: Record<ModerationTargetTypeValue, string> = {
-  [ModerationTargetType.POST]: '게시글',
-  [ModerationTargetType.COMMENT]: '댓글'
+const targetLabels: Record<string, string> = {
+  'POST': '게시글',
+  'COMMENT': '댓글'
 };
 
-const statusColors: Record<ModerationStatusValue, string> = {
-  [ModerationStatus.PENDING]: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-  [ModerationStatus.REVIEWING]: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  [ModerationStatus.ACTION_TAKEN]: 'bg-green-500/20 text-green-400 border-green-500/30',
-  [ModerationStatus.DISMISSED]: 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+const statusColors: Record<string, string> = {
+  'PENDING': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+  'REVIEWING': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  'ACTION_TAKEN': 'bg-green-500/20 text-green-400 border-green-500/30',
+  'DISMISSED': 'bg-gray-500/20 text-gray-400 border-gray-500/30'
 };
 
 interface ModerationReportSummary {
   id: string;
-  targetType: ModerationTargetTypeValue;
+  targetType: string;
   targetId: string;
-  status: ModerationStatusValue;
+  status: string;
   reason: string | null;
   createdAt: Date;
   reporter: {
@@ -53,10 +48,10 @@ export function ReportListSection({ reports }: ReportListSectionProps) {
   const filteredReports = reports.filter((report) => {
     if (filter === 'all') return true;
     if (filter === 'pending') {
-      return report.status === ModerationStatus.PENDING || report.status === ModerationStatus.REVIEWING;
+      return report.status === 'PENDING' || report.status === 'REVIEWING';
     }
     if (filter === 'completed') {
-      return report.status === ModerationStatus.ACTION_TAKEN || report.status === ModerationStatus.DISMISSED;
+      return report.status === 'ACTION_TAKEN' || report.status === 'DISMISSED';
     }
     return true;
   });
@@ -99,12 +94,12 @@ export function ReportListSection({ reports }: ReportListSectionProps) {
           { 
             key: 'pending', 
             label: '처리 대기중', 
-            count: reports.filter(r => r.status === ModerationStatus.PENDING || r.status === ModerationStatus.REVIEWING).length 
+            count: reports.filter(r => r.status === 'PENDING' || r.status === 'REVIEWING').length 
           },
           { 
             key: 'completed', 
             label: '처리 완료', 
-            count: reports.filter(r => r.status === ModerationStatus.ACTION_TAKEN || r.status === ModerationStatus.DISMISSED).length 
+            count: reports.filter(r => r.status === 'ACTION_TAKEN' || r.status === 'DISMISSED').length 
           }
         ].map(({ key, label, count }) => (
           <button
@@ -161,7 +156,7 @@ export function ReportListSection({ reports }: ReportListSectionProps) {
                   >
                     상세보기
                   </button>
-                  {report.status === ModerationStatus.PENDING && (
+                  {report.status === 'PENDING' && (
                     <button 
                       onClick={() => handleViewDetails(report.targetId)}
                       className="px-3 py-1 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary/80 transition-colors"

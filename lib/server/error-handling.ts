@@ -1,5 +1,5 @@
 ﻿import { NextResponse } from 'next/server';
-import { Prisma } from '@prisma/client';
+// Prisma 타입 제거됨 - Drizzle로 전환
 
 export interface ApiError {
     message: string;
@@ -38,7 +38,7 @@ export function handleFundingSettlementError(error: unknown): NextResponse {
         return buildApiError(error.message, error.status, error.code, error.details);
     }
 
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    if (error && typeof error === 'object' && 'code' in error) {
         switch (error.code) {
             case 'P2002':
                 return buildApiError('데이터 중복 오류가 발생했습니다.', 409, 'DUPLICATE_ENTRY');
@@ -51,7 +51,7 @@ export function handleFundingSettlementError(error: unknown): NextResponse {
         }
     }
 
-    if (error instanceof Prisma.PrismaClientValidationError) {
+    if (error && typeof error === 'object' && 'message' in error) {
         return buildApiError('데이터 검증 오류가 발생했습니다.', 400, 'VALIDATION_ERROR');
     }
 

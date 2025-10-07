@@ -1,6 +1,8 @@
+import { eq, and, inArray, desc } from 'drizzle-orm';
 import { SettlementPayoutStatus, type SettlementPayoutStatusType } from '@/types/prisma';
 
-import { prisma } from '@/lib/prisma';
+import { db } from '@/lib/db/client';
+import { settlements, projects } from '@/lib/db/schema';
 
 export interface SettlementSummary {
   id: string;
@@ -9,8 +11,8 @@ export interface SettlementSummary {
   totalRaised: number;
   netAmount: number;
   payoutStatus: SettlementPayoutStatusType;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const toSummary = (settlement: {
@@ -19,8 +21,8 @@ const toSummary = (settlement: {
   totalRaised: number;
   netAmount: number;
   payoutStatus: SettlementPayoutStatusType;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
   project: { id: string; title: string };
 }): SettlementSummary => ({
   id: settlement.id,
@@ -34,16 +36,25 @@ const toSummary = (settlement: {
 });
 
 export const getSettlementsPendingPayout = async (limit = 5) => {
-  const settlements = await prisma.settlement.findMany({
-    where: {
-      payoutStatus: { in: [SettlementPayoutStatus.PENDING, SettlementPayoutStatus.IN_PROGRESS] }
-    },
-    include: {
-      project: { select: { id: true, title: true } }
-    },
-    orderBy: { updatedAt: 'desc' },
-    take: limit
-  });
+  const settlements = await db
+    .select({
+      id: settlements.id,
+      projectId: settlements.projectId,
+      totalRaised: settlements.totalRaised,
+      netAmount: settlements.netAmount,
+      payoutStatus: settlements.payoutStatus,
+      createdAt: settlements.createdAt,
+      updatedAt: settlements.updatedAt,
+      project: {
+        id: projects.id,
+        title: projects.title
+      }
+    })
+    .from(settlements)
+    .innerJoin(projects, eq(settlements.projectId, projects.id))
+    .where(inArray(settlements.payoutStatus, [SettlementPayoutStatus.PENDING, SettlementPayoutStatus.IN_PROGRESS]))
+    .orderBy(desc(settlements.updatedAt))
+    .limit(limit);
 
   return settlements.map(toSummary);
 };

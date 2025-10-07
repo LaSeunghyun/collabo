@@ -1,6 +1,9 @@
 import { getProjectsPendingReview } from '@/lib/server/projects';
 import { PROJECT_STATUS_LABELS } from '@/types/prisma';
 
+// 동적 렌더링 강제 - 빌드 시 데이터베이스 접근 방지
+export const dynamic = 'force-dynamic';
+
 const dateFormatter = new Intl.DateTimeFormat('ko-KR', {
   dateStyle: 'medium',
   timeStyle: 'short'
@@ -21,7 +24,7 @@ export default async function AdminProjectsPage() {
 
         {projects.length > 0 ? (
           <div className="space-y-4">
-            {projects.map((project) => (
+            {projects.map((project: any) => (
               <div
                 key={project.id}
                 className="rounded-2xl border border-white/5 bg-white/[0.05] p-6"
@@ -40,7 +43,7 @@ export default async function AdminProjectsPage() {
                   </div>
                   <div className="ml-4 flex flex-col items-end gap-2">
                     <span className="rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-xs font-semibold text-amber-300">
-                      {PROJECT_STATUS_LABELS[project.status]}
+                      {PROJECT_STATUS_LABELS[project.status as keyof typeof PROJECT_STATUS_LABELS]}
                     </span>
                     <div className="flex gap-2">
                       <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">

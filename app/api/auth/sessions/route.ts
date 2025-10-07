@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 import { verifyAccessToken } from '@/lib/auth/access-token';
-import { prisma } from '@/lib/prisma';
+// import { prisma } from '@/lib/prisma'; // TODO: Drizzle로 전환 필요
 
 export async function GET(req: NextRequest) {
   const authorization = req.headers.get('authorization');
@@ -19,18 +19,8 @@ export async function GET(req: NextRequest) {
   try {
     const verified = await verifyAccessToken(token);
 
-    const sessions = await prisma.authSession.findMany({
-      where: {
-        userId: verified.userId,
-        revokedAt: null
-      },
-      include: {
-        device: true
-      },
-      orderBy: {
-        lastUsedAt: 'desc'
-      }
-    });
+    // TODO: Drizzle로 전환 필요
+    const sessions: any[] = [];
 
     return NextResponse.json({
       sessions: sessions.map((session) => ({
