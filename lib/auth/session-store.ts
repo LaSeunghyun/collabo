@@ -1,14 +1,29 @@
-import type { AuthSession, RefreshToken } from '@prisma/client';
+import { randomUUID } from 'crypto';
 
-import { prisma } from '@/lib/prisma';
-import { UserRole, type UserRoleType } from '@/types/prisma';
+import { eq, inArray } from 'drizzle-orm';
+
+import { db } from '@/lib/db/client';
+import {
+  authDevices,
+  authSessions,
+  refreshTokens,
+  users
+} from '@/lib/db/schema';
 
 import { issueAccessToken } from './access-token';
+import { createOpaqueToken, fingerprintToken, hashClientHint, hashToken, verifyTokenHash } from './crypto';
 import type { ClientKind } from './policy';
 import { resolveSessionPolicy } from './policy';
-import { createOpaqueToken, fingerprintToken, hashClientHint, hashToken, verifyTokenHash } from './crypto';
 import { deriveEffectivePermissions } from './permissions';
 import { fetchUserWithPermissions } from './user';
+
+type AuthSessionRow = typeof authSessions.$inferSelect;
+type RefreshTokenRow = typeof refreshTokens.$inferSelect;
+type AuthDeviceRow = typeof authDevices.$inferSelect;
+type UserRoleType = typeof users.$inferSelect['role'];
+
+type HydratedAuthSession = ReturnType<typeof hydrateSessionRow>;
+type HydratedRefreshToken = ReturnType<typeof hydrateRefreshTokenRow>;
 
 interface IssueSessionInput {
   userId: string;
@@ -25,8 +40,8 @@ export interface IssuedSession {
   accessToken: string;
   accessTokenExpiresAt: Date;
   refreshToken: string;
-  refreshRecord: RefreshToken;
-  session: AuthSession;
+  refreshRecord: HydratedRefreshToken;
+  session: HydratedAuthSession;
   permissions: string[];
 }
 
@@ -34,23 +49,48 @@ interface RefreshResult {
   accessToken: string;
   accessTokenExpiresAt: Date;
   refreshToken: string;
-  refreshRecord: RefreshToken;
-  session: AuthSession;
+  refreshRecord: HydratedRefreshToken;
+  session: HydratedAuthSession;
   permissions: string[];
 }
 
+const ADMIN_ROLE: UserRoleType = 'ADMIN';
+
 const now = () => new Date();
 
+const toIso = (value: Date) => value.toISOString();
+
+function hydrateSessionRow(session: AuthSessionRow): HydratedAuthSession {
+  return {
+    ...session,
+    createdAt: new Date(session.createdAt),
+    lastUsedAt: new Date(session.lastUsedAt),
+    absoluteExpiresAt: new Date(session.absoluteExpiresAt),
+    revokedAt: session.revokedAt ? new Date(session.revokedAt) : null
+  };
+}
+
+function hydrateRefreshTokenRow(token: RefreshTokenRow): HydratedRefreshToken {
+  return {
+    ...token,
+    createdAt: new Date(token.createdAt),
+    inactivityExpiresAt: new Date(token.inactivityExpiresAt),
+    absoluteExpiresAt: new Date(token.absoluteExpiresAt),
+    usedAt: token.usedAt ? new Date(token.usedAt) : null,
+    revokedAt: token.revokedAt ? new Date(token.revokedAt) : null
+  };
+}
+
 const loadUserPermissions = async (userId: string, fallbackRole: UserRoleType) => {
-  const user = await fetchUserWithPermissions(userId);
+  const user = await fetchUserWithPermissions({ id: userId });
 
   if (!user) {
     const effectivePermissions = deriveEffectivePermissions(fallbackRole, []);
     return { role: fallbackRole, permissions: effectivePermissions };
   }
 
-  const explicitPermissions = user.permissions.map((p) => p.permission.key);
-  const effectivePermissions = deriveEffectivePermissions(user.role, explicitPermissions);
+  const explicitPermissions = user.permissions.map((entry) => entry.permission.key);
+  const effectivePermissions = deriveEffectivePermissions(user.role as UserRoleType, explicitPermissions);
 
   return {
     role: user.role as UserRoleType,
@@ -62,31 +102,33 @@ const persistDevice = async (
   userId: string,
   deviceFingerprint?: string | null,
   deviceLabel?: string | null
-) => {
+): Promise<AuthDeviceRow | null> => {
   if (!deviceFingerprint) {
     return null;
   }
 
+  const timestamp = toIso(now());
+
   try {
-    const existing = await prisma.authDevice.upsert({
-      where: {
-        userId_deviceFingerprint: {
-          userId,
-          deviceFingerprint
-        }
-      },
-      create: {
+    const [record] = await db
+      .insert(authDevices)
+      .values({
+        id: randomUUID(),
         userId,
         deviceFingerprint,
-        label: deviceLabel ?? undefined
-      },
-      update: {
-        lastSeenAt: now(),
-        label: deviceLabel ?? undefined
-      }
-    });
+        label: deviceLabel ?? null,
+        lastSeenAt: timestamp
+      })
+      .onConflictDoUpdate({
+        target: [authDevices.userId, authDevices.deviceFingerprint],
+        set: {
+          lastSeenAt: timestamp,
+          label: deviceLabel ?? null
+        }
+      })
+      .returning();
 
-    return existing;
+    return record ?? null;
   } catch (error) {
     console.warn('Failed to persist device, continuing without device tracking:', error);
     return null;
@@ -106,61 +148,103 @@ export const issueSessionWithTokens = async ({
   try {
     const policy = resolveSessionPolicy({ role, remember, client });
     const current = now();
+    const currentIso = toIso(current);
     const absoluteExpiresAt = new Date(current.getTime() + policy.refreshAbsoluteTtl * 1000);
     const device = await persistDevice(userId, deviceFingerprint, deviceLabel);
     const ipHash = hashClientHint(ipAddress ?? undefined);
     const uaHash = hashClientHint(userAgent ?? undefined);
 
-  const session = await prisma.authSession.create({
-    data: {
+    const [sessionRow] = await db
+      .insert(authSessions)
+      .values({
+        id: randomUUID(),
+        userId,
+        deviceId: device?.id ?? null,
+        ipHash: ipHash ?? null,
+        uaHash: uaHash ?? null,
+        remember,
+        isAdmin: role === ADMIN_ROLE,
+        client,
+        absoluteExpiresAt: toIso(absoluteExpiresAt),
+        lastUsedAt: currentIso
+      })
+      .returning();
+
+    if (!sessionRow) {
+      throw new Error('세션을 생성하지 못했습니다.');
+    }
+
+    const session = hydrateSessionRow(sessionRow);
+
+    const refreshToken = createOpaqueToken();
+    const refreshTokenHash = await hashToken(refreshToken);
+    const refreshFingerprint = fingerprintToken(refreshToken);
+    const refreshInactivity = new Date(current.getTime() + policy.refreshSlidingTtl * 1000);
+
+    const [refreshRow] = await db
+      .insert(refreshTokens)
+      .values({
+        id: randomUUID(),
+        sessionId: session.id,
+        tokenHash: refreshTokenHash,
+        tokenFingerprint: refreshFingerprint,
+        inactivityExpiresAt: toIso(refreshInactivity),
+        absoluteExpiresAt: toIso(absoluteExpiresAt)
+      })
+      .returning();
+
+    if (!refreshRow) {
+      throw new Error('리프레시 토큰을 생성하지 못했습니다.');
+    }
+
+    const refreshRecord = hydrateRefreshTokenRow(refreshRow);
+
+    const { permissions, role: resolvedRole } = await loadUserPermissions(userId, role);
+
+    const access = await issueAccessToken({
       userId,
-      deviceId: device?.id,
-      ipHash: ipHash ?? undefined,
-      uaHash: uaHash ?? undefined,
-      remember,
-      isAdmin: role === UserRole.ADMIN,
-      client,
-      absoluteExpiresAt
-    }
-  });
-
-  const refreshToken = createOpaqueToken();
-  const refreshTokenHash = await hashToken(refreshToken);
-  const refreshFingerprint = fingerprintToken(refreshToken);
-  const refreshInactivity = new Date(current.getTime() + policy.refreshSlidingTtl * 1000);
-
-  const refreshRecord = await prisma.refreshToken.create({
-    data: {
       sessionId: session.id,
-      tokenHash: refreshTokenHash,
-      tokenFingerprint: refreshFingerprint,
-      inactivityExpiresAt: refreshInactivity,
-      absoluteExpiresAt
-    }
-  });
+      role: resolvedRole,
+      permissions,
+      expiresIn: policy.accessTokenTtl
+    });
 
-  const { permissions, role: resolvedRole } = await loadUserPermissions(userId, role);
-
-  const access = await issueAccessToken({
-    userId,
-    sessionId: session.id,
-    role: resolvedRole,
-    permissions,
-    expiresIn: policy.accessTokenTtl
-  });
-
-  return {
-    accessToken: access.token,
-    accessTokenExpiresAt: access.expiresAt,
-    refreshToken,
-    refreshRecord,
-    session,
-    permissions
-  };
+    return {
+      accessToken: access.token,
+      accessTokenExpiresAt: access.expiresAt,
+      refreshToken,
+      refreshRecord,
+      session,
+      permissions
+    };
   } catch (error) {
     console.error('Failed to issue session with tokens:', error);
     throw new Error(`Session creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
+};
+
+const revokeSessionAndToken = async (
+  refreshTokenId: string,
+  sessionId: string,
+  timestamp: Date,
+  options: { markUsed?: boolean } = {}
+) => {
+  const iso = toIso(timestamp);
+  const refreshUpdates = options.markUsed
+    ? { revokedAt: iso, usedAt: iso }
+    : { revokedAt: iso };
+
+  await db.transaction(async (tx) => {
+    await tx
+      .update(refreshTokens)
+      .set(refreshUpdates)
+      .where(eq(refreshTokens.id, refreshTokenId));
+
+    await tx
+      .update(authSessions)
+      .set({ revokedAt: iso })
+      .where(eq(authSessions.id, sessionId));
+  });
 };
 
 export const rotateRefreshToken = async (
@@ -174,17 +258,15 @@ export const rotateRefreshToken = async (
   }
 ): Promise<RefreshResult> => {
   const fingerprint = fingerprintToken(refreshToken);
-  const existing = await prisma.refreshToken.findUnique({
-    where: { tokenFingerprint: fingerprint },
-    include: {
-      session: true
-    }
+  const existingRow = await db.query.refreshTokens.findFirst({
+    where: eq(refreshTokens.tokenFingerprint, fingerprint)
   });
 
-  if (!existing) {
+  if (!existingRow) {
     throw new Error('유효하지 않은 리프레시 토큰입니다.');
   }
 
+  const existing = hydrateRefreshTokenRow(existingRow);
   const matches = await verifyTokenHash(refreshToken, existing.tokenHash);
 
   if (!matches) {
@@ -192,67 +274,45 @@ export const rotateRefreshToken = async (
   }
 
   if (existing.usedAt || existing.revokedAt) {
-    const timestamp = now();
-
-    await prisma.$transaction([
-      prisma.refreshToken.update({
-        where: { id: existing.id },
-        data: { revokedAt: timestamp }
-      }),
-      prisma.authSession.update({
-        where: { id: existing.sessionId },
-        data: { revokedAt: timestamp }
-      })
-    ]);
-
+    await revokeSessionAndToken(existing.id, existing.sessionId, now());
     throw new Error('재사용이 감지된 리프레시 토큰입니다.');
   }
 
-  const session = await prisma.authSession.findUnique({
-    where: { id: existing.sessionId },
-    include: { user: { include: { permissions: { include: { permission: true } } } } }
+  const sessionRow = await db.query.authSessions.findFirst({
+    where: eq(authSessions.id, existing.sessionId)
   });
 
-  if (!session || session.revokedAt) {
+  if (!sessionRow) {
+    throw new Error('만료된 세션입니다.');
+  }
+
+  const session = hydrateSessionRow(sessionRow);
+
+  if (session.revokedAt) {
     throw new Error('만료된 세션입니다.');
   }
 
   const current = now();
 
   if (session.absoluteExpiresAt <= current || existing.absoluteExpiresAt <= current) {
-    await prisma.$transaction([
-      prisma.refreshToken.update({
-        where: { id: existing.id },
-        data: { revokedAt: current }
-      }),
-      prisma.authSession.update({
-        where: { id: session.id },
-        data: { revokedAt: current }
-      })
-    ]);
-
+    await revokeSessionAndToken(existing.id, session.id, current);
     throw new Error('세션이 만료되었습니다. 다시 로그인하세요.');
   }
 
   if (existing.inactivityExpiresAt <= current) {
-    await prisma.$transaction([
-      prisma.refreshToken.update({
-        where: { id: existing.id },
-        data: { revokedAt: current }
-      }),
-      prisma.authSession.update({
-        where: { id: session.id },
-        data: { revokedAt: current }
-      })
-    ]);
-
+    await revokeSessionAndToken(existing.id, session.id, current);
     throw new Error('장시간 활동이 없어 세션이 만료되었습니다.');
   }
+
+  const user = await fetchUserWithPermissions({ id: session.userId });
+  const baseRole: UserRoleType = session.isAdmin ? ADMIN_ROLE : (user?.role ?? 'PARTICIPANT');
+  const explicitPermissions = user?.permissions.map((entry) => entry.permission.key) ?? [];
+  const permissions = deriveEffectivePermissions(baseRole, explicitPermissions);
 
   const ipHash = hashClientHint(ipAddress ?? undefined);
   const uaHash = hashClientHint(userAgent ?? undefined);
   const policy = resolveSessionPolicy({
-    role: session.isAdmin ? UserRole.ADMIN : (session.user.role as UserRoleType),
+    role: baseRole,
     remember: session.remember,
     client: session.client === 'mobile' ? 'mobile' : 'web'
   });
@@ -262,43 +322,58 @@ export const rotateRefreshToken = async (
   const newFingerprint = fingerprintToken(newRefreshValue);
   const newInactivityExpiresAt = new Date(current.getTime() + policy.refreshSlidingTtl * 1000);
 
-  const { updatedSession, newRefreshRecord } = await prisma.$transaction(async (tx) => {
-    const updatedSession = await tx.authSession.update({
-      where: { id: session.id },
-      data: {
-        lastUsedAt: current,
-        ipHash: ipHash ?? undefined,
-        uaHash: uaHash ?? undefined
-      }
-    });
+  const { updatedSession, newRefreshRecord } = await db.transaction(async (tx) => {
+    const [sessionUpdate] = await tx
+      .update(authSessions)
+      .set({
+        lastUsedAt: toIso(current),
+        ipHash: ipHash ?? null,
+        uaHash: uaHash ?? null
+      })
+      .where(eq(authSessions.id, session.id))
+      .returning();
 
-    const newRefreshRecord = await tx.refreshToken.create({
-      data: {
+    if (!sessionUpdate) {
+      throw new Error('세션 갱신에 실패했습니다.');
+    }
+
+    const [refreshInsert] = await tx
+      .insert(refreshTokens)
+      .values({
+        id: randomUUID(),
         sessionId: session.id,
         tokenHash: newRefreshHash,
         tokenFingerprint: newFingerprint,
-        inactivityExpiresAt: newInactivityExpiresAt,
-        absoluteExpiresAt: session.absoluteExpiresAt
-      }
-    });
+        inactivityExpiresAt: toIso(newInactivityExpiresAt),
+        absoluteExpiresAt: toIso(session.absoluteExpiresAt)
+      })
+      .returning();
 
-    await tx.refreshToken.update({
-      where: { id: existing.id },
-      data: {
-        usedAt: current,
-        rotatedToId: newRefreshRecord.id
-      }
-    });
+    if (!refreshInsert) {
+      throw new Error('리프레시 토큰 갱신에 실패했습니다.');
+    }
 
-    return { updatedSession, newRefreshRecord };
+    await tx
+      .update(refreshTokens)
+      .set({
+        usedAt: toIso(current),
+        rotatedToId: refreshInsert.id
+      })
+      .where(eq(refreshTokens.id, existing.id));
+
+    return {
+      updatedSession: sessionUpdate,
+      newRefreshRecord: refreshInsert
+    };
   });
 
-  const explicitPermissions = session.user.permissions.map((entry) => entry.permission.key);
-  const permissions = deriveEffectivePermissions(session.user.role as UserRoleType, explicitPermissions);
+  const hydratedSession = hydrateSessionRow(updatedSession);
+  const hydratedRefresh = hydrateRefreshTokenRow(newRefreshRecord);
+
   const access = await issueAccessToken({
     userId: session.userId,
     sessionId: session.id,
-    role: session.user.role as UserRoleType,
+    role: baseRole,
     permissions,
     expiresIn: policy.accessTokenTtl
   });
@@ -307,72 +382,80 @@ export const rotateRefreshToken = async (
     accessToken: access.token,
     accessTokenExpiresAt: access.expiresAt,
     refreshToken: newRefreshValue,
-    refreshRecord: newRefreshRecord,
-    session: updatedSession,
+    refreshRecord: hydratedRefresh,
+    session: hydratedSession,
     permissions
   };
 };
 
-export const revokeSession = (sessionId: string) =>
-  prisma.authSession.update({
-    where: { id: sessionId },
-    data: { revokedAt: now() }
-  });
+export const revokeSession = async (sessionId: string) => {
+  const timestamp = toIso(now());
+  const [sessionRow] = await db
+    .update(authSessions)
+    .set({ revokedAt: timestamp })
+    .where(eq(authSessions.id, sessionId))
+    .returning();
+
+  return sessionRow ? hydrateSessionRow(sessionRow) : null;
+};
 
 export const revokeAllSessionsForUser = async (userId: string) => {
   const timestamp = now();
+  const iso = toIso(timestamp);
 
-  await prisma.$transaction([
-    prisma.refreshToken.updateMany({
-      where: { session: { userId } },
-      data: {
-        revokedAt: timestamp,
-        usedAt: timestamp
-      }
-    }),
-    prisma.authSession.updateMany({
-      where: { userId },
-      data: { revokedAt: timestamp }
-    })
-  ]);
+  await db.transaction(async (tx) => {
+    const sessionIds = (
+      await tx
+        .select({ id: authSessions.id })
+        .from(authSessions)
+        .where(eq(authSessions.userId, userId))
+    ).map((row) => row.id);
+
+    if (sessionIds.length === 0) {
+      return;
+    }
+
+    await tx
+      .update(refreshTokens)
+      .set({
+        revokedAt: iso,
+        usedAt: iso
+      })
+      .where(inArray(refreshTokens.sessionId, sessionIds));
+
+    await tx
+      .update(authSessions)
+      .set({ revokedAt: iso })
+      .where(eq(authSessions.userId, userId));
+  });
 };
 
 export const revokeSessionByRefreshToken = async (refreshToken: string) => {
   const fingerprint = fingerprintToken(refreshToken);
-  const record = await prisma.refreshToken.findUnique({
-    where: { tokenFingerprint: fingerprint }
+  const recordRow = await db.query.refreshTokens.findFirst({
+    where: eq(refreshTokens.tokenFingerprint, fingerprint)
   });
 
-  if (!record) {
+  if (!recordRow) {
     return null;
   }
 
+  const record = hydrateRefreshTokenRow(recordRow);
   const matches = await verifyTokenHash(refreshToken, record.tokenHash);
 
   if (!matches) {
     return null;
   }
 
-  const session = await prisma.authSession.findUnique({ where: { id: record.sessionId } });
+  const sessionRow = await db.query.authSessions.findFirst({
+    where: eq(authSessions.id, record.sessionId)
+  });
 
-  if (!session) {
+  if (!sessionRow) {
     return null;
   }
 
-  await prisma.$transaction(async (tx) => {
-    await tx.refreshToken.update({
-      where: { id: record.id },
-      data: {
-        revokedAt: now(),
-        usedAt: now()
-      }
-    });
-
-    await tx.authSession.update({
-      where: { id: record.sessionId },
-      data: { revokedAt: now() }
-    });
-  });
-
+  const session = hydrateSessionRow(sessionRow);
+  await revokeSessionAndToken(record.id, record.sessionId, now(), { markUsed: true });
   return session;
 };

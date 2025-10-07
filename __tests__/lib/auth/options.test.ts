@@ -1,15 +1,27 @@
 import { describe, it, expect, beforeEach, beforeAll } from '@jest/globals';
 import { UserRole } from '@/types/prisma';
 import { compare } from 'bcryptjs';
-import { createPrismaMock, type MockPrisma } from '../../helpers/prisma-mock';
 
-jest.mock('@next-auth/prisma-adapter', () => ({
-  PrismaAdapter: jest.fn(() => ({}))
+const dbMock = {
+  query: {
+    users: {
+      findFirst: jest.fn()
+    }
+  }
+};
+
+jest.mock('@/lib/db/client', () => ({
+  db: dbMock
 }));
 
-const prismaMock = createPrismaMock() as MockPrisma;
-jest.mock('@/lib/prisma', () => ({
-  prisma: prismaMock
+const fetchUserWithPermissionsMock = jest.fn();
+
+jest.mock('@/lib/auth/user', () => ({
+  fetchUserWithPermissions: fetchUserWithPermissionsMock
+}));
+
+jest.mock('@/lib/auth/adapter', () => ({
+  createDrizzleAuthAdapter: jest.fn(() => ({}))
 }));
 
 jest.mock('bcryptjs', () => ({
@@ -33,7 +45,7 @@ beforeAll(async () => {
 
 describe('Credentials authorize', () => {
   beforeEach(() => {
-    prismaMock.user.findUnique.mockReset();
+    dbMock.query.users.findFirst.mockReset();
     compareMock.mockReset();
   });
 
@@ -45,7 +57,8 @@ describe('Credentials authorize', () => {
 
 describe('authOptions callbacks', () => {
   beforeEach(() => {
-    prismaMock.user.findUnique.mockReset();
+    dbMock.query.users.findFirst.mockReset();
+    fetchUserWithPermissionsMock.mockReset();
   });
 
   it('populates session with id, role, and permissions', async () => {
@@ -60,7 +73,7 @@ describe('authOptions callbacks', () => {
   });
 
   it('derives permissions in jwt callback', async () => {
-    prismaMock.user.findUnique.mockResolvedValue({
+    fetchUserWithPermissionsMock.mockResolvedValue({
       id: 'user-1',
       role: UserRole.CREATOR,
       permissions: []

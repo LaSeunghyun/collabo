@@ -1,6 +1,8 @@
-import { UserRole, type UserRoleType } from '@/types/prisma';
+import { users } from '@/lib/db/schema';
 
 export type ClientKind = 'web' | 'mobile';
+
+type UserRoleType = typeof users.$inferSelect['role'];
 
 export interface SessionPolicy {
   accessTokenTtl: number;
@@ -46,7 +48,7 @@ export const resolveSessionPolicy = ({
   remember,
   client
 }: ResolvePolicyParams): SessionPolicy => {
-  if (role === UserRole.ADMIN) {
+  if (role === 'ADMIN') {
     return ADMIN_POLICY;
   }
 

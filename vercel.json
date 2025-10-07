@@ -1,5 +1,5 @@
 {
-  "buildCommand": "node scripts/build-with-prisma.js",
+  "buildCommand": "node scripts/build-with-drizzle.mjs",
   "installCommand": "npm install",
   "framework": "nextjs",
   "functions": {
