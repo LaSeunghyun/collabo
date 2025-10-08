@@ -5,7 +5,7 @@ import { getDb, isDrizzleAvailable } from '@/lib/db/client';
 
 export async function GET() {
   try {
-    if (!isDrizzleAvailable()) {
+    if (!(await isDrizzleAvailable())) {
       return NextResponse.json({
         success: false,
         message: 'Database client is disabled',
