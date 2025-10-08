@@ -16,11 +16,17 @@ export async function GET() {
 
     // 간단한 데이터베이스 연결 테스트
     const db = await getDb();
-    const { rows } = await db.execute(sql`select 1 as test`);
+    
+    // execute 메서드가 있는지 확인
+    if (typeof db.execute !== 'function') {
+      throw new Error('Database execute method is not available');
+    }
+    
+    const result = await db.execute(sql`select 1 as test`);
     return NextResponse.json({
       success: true,
       message: 'Database connection successful',
-      result: rows
+      result: result
     });
   } catch (error) {
     console.error('Database connection failed:', error);

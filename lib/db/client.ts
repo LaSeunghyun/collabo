@@ -103,8 +103,18 @@ const createDisabledInstance = (reason: string): DrizzleInstance => {
           });
         }
         
-        // Drizzle의 다른 메서드들
+        // Drizzle의 다른 메서드들 - 체이닝을 위한 함수들
         if (['select', 'insert', 'update', 'delete', 'from', 'transaction'].includes(prop)) {
+          return () => { throw new Error(message); };
+        }
+        
+        // execute 메서드는 특별히 처리
+        if (prop === 'execute') {
+          return () => { throw new Error(message); };
+        }
+        
+        // Drizzle ORM 연산자들
+        if (['eq', 'and', 'or', 'not', 'like', 'inArray', 'notInArray', 'desc', 'asc', 'count', 'sql'].includes(prop)) {
           return () => { throw new Error(message); };
         }
       }
@@ -126,9 +136,12 @@ const instantiateDrizzle = async (): Promise<DrizzleInstance> => {
   const databaseUrl = process.env.DATABASE_URL;
 
   if (!databaseUrl) {
-    // 빌드 시에는 데이터베이스 연결 없이도 스키마만으로 작동할 수 있도록
-    if (process.env.NODE_ENV === 'production' && process.env.VERCEL) {
-      return createDisabledInstance('DATABASE_URL is not set in production environment.');
+    // Vercel 환경에서는 빌드 시에만 비활성화, 런타임에서는 에러 발생
+    if (process.env.NODE_ENV === 'production' && process.env.VERCEL && process.env.VERCEL_ENV === 'preview') {
+      return createDisabledInstance('DATABASE_URL is not set in preview environment.');
+    }
+    if (process.env.NODE_ENV === 'development') {
+      return createDisabledInstance('DATABASE_URL is not set in development environment.');
     }
     throw new Error('DATABASE_URL is not set.');
   }
