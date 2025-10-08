@@ -8,6 +8,7 @@ export type TokenBlacklistRecord = InferSelectModel<typeof tokenBlacklist>;
 
 export const blacklistToken = async (jti: string, expiresAt: Date) => {
   const timestamp = expiresAt.toISOString();
+  const db = await getDb();
 
   const [record] = await db
     .insert(tokenBlacklist)

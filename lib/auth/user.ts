@@ -3,16 +3,16 @@ import { randomUUID } from 'crypto';
 import { eq } from 'drizzle-orm';
 
 import { getDb } from '@/lib/db/client';
-import { permissions, userPermissions, users } from '@/lib/db/schema';
-import { UserRole } from '@/types/prisma';
+import { permission, userPermission, user } from '@/drizzle/schema';
+import { userRole } from '@/drizzle/schema';
 
-type UserRecord = typeof users.$inferSelect;
-type UserPermissionRecord = typeof userPermissions.$inferSelect;
-type PermissionRecord = typeof permissions.$inferSelect;
-type UserInsert = typeof users.$inferInsert;
+type UserRecord = typeof user.$inferSelect;
+type UserPermissionRecord = typeof userPermission.$inferSelect;
+type PermissionRecord = typeof permission.$inferSelect;
+type UserInsert = typeof user.$inferInsert;
 
 export type UserWithPermissions = UserRecord & {
-  permissions: Array<UserPermissionRecord & { permission: PermissionRecord }>;
+  permission: Array<UserPermissionRecord & { permission: PermissionRecord }>;
 };
 
 export type BasicUserSummary = Pick<UserRecord, 'id' | 'name' | 'email' | 'role' | 'createdAt'>;
@@ -23,19 +23,21 @@ export const fetchUserWithPermissions = async (
   identifier: UserIdentifier
 ): Promise<UserWithPermissions | null> => {
   const where = identifier.id
-    ? eq(users.id, identifier.id)
+    ? eq(user.id, identifier.id)
     : identifier.email
-    ? eq(users.email, identifier.email)
+    ? eq(user.email, identifier.email)
     : null;
 
   if (!where) {
     return null;
   }
 
-  const user = await db.query.users.findFirst({
+  const db = await getDb();
+
+  const user = await db.query.user.findFirst({
     where,
     with: {
-      permissions: {
+      permission: {
         with: {
           permission: true
         }
@@ -47,7 +49,7 @@ export const fetchUserWithPermissions = async (
     return null;
   }
 
-  const permissionsWithDetails = user.permissions
+  const permissionWithDetails = user.permission
     .filter((entry): entry is UserPermissionRecord & { permission: PermissionRecord } =>
       Boolean(entry.permission)
     )
@@ -58,14 +60,16 @@ export const fetchUserWithPermissions = async (
 
   return {
     ...user,
-    permissions: permissionsWithDetails
+    permission: permissionWithDetails
   };
 };
 
-export const findUserByEmail = async (email: string) =>
-  db.query.users.findFirst({
-    where: eq(users.email, email)
+export const findUserByEmail = async (email: string) => {
+  const db = await getDb();
+  return db.query.user.findFirst({
+    where: eq(user.email, email)
   });
+};
 
 interface CreateParticipantUserInput {
   name: string;
@@ -79,27 +83,28 @@ export const createParticipantUser = async (
   input: CreateParticipantUserInput
 ): Promise<BasicUserSummary> => {
   const now = touchTimestamp();
+  const db = await getDb();
 
   const [record] = await db
-    .insert(users)
+    .insert(user)
     .values({
       id: randomUUID(),
       name: input.name,
       email: input.email,
       passwordHash: input.passwordHash,
-      role: UserRole.PARTICIPANT,
+      role: typeof userRole.enumValues[number].PARTICIPANT,
       updatedAt: now
     } satisfies UserInsert)
     .returning({
-      id: users.id,
-      name: users.name,
-      email: users.email,
-      role: users.role,
-      createdAt: users.createdAt
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      createdAt: user.createdAt
     });
 
   if (!record) {
-    throw new Error('사용자 생성에 실패했습니다.');
+    throw new Error('Failed to create user account.');
   }
 
   return record;

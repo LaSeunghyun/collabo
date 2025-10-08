@@ -1,7 +1,7 @@
 ﻿import { createHash } from 'crypto';
 import { gte } from 'drizzle-orm';
 
-import { getDb } from '@/lib/db/client';
+import { getDbClient } from '@/lib/db/client';
 import { visitLogs, users } from '@/lib/db/schema';
 import { evaluateAuthorization } from '@/lib/auth/session';
 
@@ -65,7 +65,7 @@ export const recordVisit = async ({
       authorization ? { authorization } : undefined
     );
 
-    const db = await getDb();
+    const db = await getDbClient();
     await db.insert(visitLogs).values({
       id: crypto.randomUUID(),
       sessionId: normalizedSessionId,
@@ -113,7 +113,7 @@ export const getAnalyticsOverview = async (): Promise<AnalyticsOverview> => {
   const activeSince = new Date(now);
   activeSince.setDate(activeSince.getDate() - ACTIVE_USER_WINDOW_DAYS);
 
-  const db = await getDb();
+  const db = await getDbClient();
   const [visitLogsData, recentUsersData] = await Promise.all([
     db.select({
       occurredAt: visitLogs.occurredAt,

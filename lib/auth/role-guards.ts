@@ -1,11 +1,11 @@
-import { UserRole, type UserRoleType } from '@/types/prisma';
+import { userRole } from '@/drizzle/schema';
 
 import { hasAllPermissions, normalizeRole } from './permissions';
 
 export interface RoleGuard {
   matcher: string;
   pattern: RegExp;
-  roles?: UserRoleType[];
+  roles?: typeof userRole.enumValues[number][];
   permissions?: string[];
 }
 
@@ -13,30 +13,30 @@ export const ROLE_GUARDS: RoleGuard[] = [
   {
     matcher: '/admin/:path*',
     pattern: /^\/admin(?:\/.*)?$/,
-    roles: [UserRole.ADMIN]
+    roles: ['ADMIN']
   },
   {
     matcher: '/partners/dashboard/:path*',
     pattern: /^\/partners\/dashboard(?:\/.*)?$/,
-    roles: [UserRole.PARTNER, UserRole.ADMIN],
+    roles: ['PARTNER', 'ADMIN'],
     permissions: ['partner:manage']
   },
   {
     matcher: '/projects/new',
     pattern: /^\/projects\/new$/,
-    roles: [UserRole.CREATOR, UserRole.ADMIN],
+    roles: ['CREATOR', 'ADMIN'],
     permissions: ['project:create']
   },
   {
     matcher: '/api/partners/:path*',
     pattern: /^\/api\/partners(?:\/.*)?$/,
-    roles: [UserRole.PARTNER, UserRole.ADMIN],
+    roles: ['PARTNER', 'ADMIN'],
     permissions: ['partner:manage']
   },
   {
     matcher: '/api/settlement/:path*',
     pattern: /^\/api\/settlement(?:\/.*)?$/,
-    roles: [UserRole.ADMIN],
+    roles: ['ADMIN'],
     permissions: ['settlement:manage']
   }
 ];

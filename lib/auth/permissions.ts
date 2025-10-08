@@ -1,8 +1,15 @@
-import { UserRole, USER_ROLE_VALUES, USER_ROLE_LABELS, type UserRoleType } from '@/types/prisma';
+import { userRole } from '@/drizzle/schema';
 
-export { UserRole, USER_ROLE_VALUES, USER_ROLE_LABELS };
+export const UserRole = userRole.enumValues;
+export const USER_ROLE_VALUES = userRole.enumValues;
+export const USER_ROLE_LABELS: Record<typeof userRole.enumValues[number], string> = {
+  CREATOR: '크리에이터',
+  PARTICIPANT: '참여자',
+  PARTNER: '파트너',
+  ADMIN: '관리자'
+};
 
-export type AppUserRole = UserRoleType;
+export type AppUserRole = typeof userRole.enumValues[number];
 
 const DEFAULT_SESSION_PERMISSION = 'session:read';
 
@@ -22,16 +29,16 @@ export const ROLE_LABELS: Record<AppUserRole, string> = {
 
 export function normalizeRole(value: string | null | undefined): AppUserRole {
   if (!value) {
-    return UserRole.PARTICIPANT;
+    return 'PARTICIPANT';
   }
 
   const upperValue = value.toUpperCase();
   return USER_ROLE_VALUES.includes(upperValue as AppUserRole)
     ? (upperValue as AppUserRole)
-    : UserRole.PARTICIPANT;
+    : 'PARTICIPANT';
 }
 
-export function toPrismaRole(value: string | null | undefined): UserRoleType {
+export function toPrismaRole(value: string | null | undefined): AppUserRole {
   return normalizeRole(value);
 }
 
@@ -73,5 +80,5 @@ export function hasAllPermissions(
   return required.every((permission) => userPermissions.includes(permission));
 }
 
-export const CREATOR_ACCESS_ROLES: AppUserRole[] = [UserRole.CREATOR, UserRole.ADMIN];
-export const PARTNER_ACCESS_ROLES: AppUserRole[] = [UserRole.PARTNER, UserRole.ADMIN];
+export const CREATOR_ACCESS_ROLES: AppUserRole[] = ['CREATOR', 'ADMIN'];
+export const PARTNER_ACCESS_ROLES: AppUserRole[] = ['PARTNER', 'ADMIN'];

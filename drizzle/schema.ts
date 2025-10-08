@@ -643,16 +643,20 @@ export const authDevice = pgTable("AuthDevice", {
 	revokedAt: timestamp({ mode: 'string' }),
 	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-}, (table) => [
-	index("AuthDevice_fingerprint_idx").using("btree", table.fingerprint.asc().nullsLast().op("text_ops")),
-	index("AuthDevice_lastSeenAt_idx").using("btree", table.updatedAt.asc().nullsLast().op("timestamp_ops")),
-	index("AuthDevice_userId_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
-	foreignKey({
+}, (table) => ({
+	indexes: [
+		index("AuthDevice_fingerprint_idx").using("btree", table.fingerprint.asc().nullsLast().op("text_ops")),
+		index("AuthDevice_lastSeenAt_idx").using("btree", table.updatedAt.asc().nullsLast().op("timestamp_ops")),
+		index("AuthDevice_userId_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
+	],
+	foreignKeys: [
+		foreignKey({
 			columns: [table.userId],
 			foreignColumns: [user.id],
 			name: "AuthDevice_userId_User_id_fk"
 		}).onUpdate("cascade").onDelete("restrict"),
-]);
+	]
+}));
 
 export const refreshToken = pgTable("RefreshToken", {
 	id: text().primaryKey().notNull(),

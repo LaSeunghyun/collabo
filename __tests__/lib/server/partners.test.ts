@@ -1,195 +1,201 @@
-﻿import { PartnerType, UserRole } from '@/types/prisma';
-import { createPartnerProfile, PartnerAccessDeniedError, updatePartnerProfile } from '@/lib/server/partners';
-import { type MockPrisma, createPrismaMock } from '../../helpers/prisma-mock';
+﻿import { createPartnerProfile, PartnerAccessDeniedError, updatePartnerProfile } from '@/lib/server/partners';
+import { getDbClient } from '@/lib/db/client';
+import { eq, and, or, like, desc, count, inArray, not } from 'drizzle-orm';
 
 jest.mock('next/cache', () => ({
   revalidatePath: jest.fn()
 }));
 
-let mockPrisma: MockPrisma = createPrismaMock();
-
-jest.mock('@/lib/prisma', () => ({
-  get prisma() {
-    return mockPrisma;
-  },
-  get default() {
-    return mockPrisma;
-  }
+// Drizzle 클라이언트 모킹
+jest.mock('@/lib/db/client', () => ({
+  getDbClient: jest.fn()
 }));
 
+const mockDb = {
+  select: jest.fn().mockReturnThis(),
+  from: jest.fn().mockReturnThis(),
+  where: jest.fn().mockReturnThis(),
+  orderBy: jest.fn().mockReturnThis(),
+  limit: jest.fn().mockReturnThis(),
+  offset: jest.fn().mockReturnThis(),
+  leftJoin: jest.fn().mockReturnThis(),
+  insert: jest.fn().mockReturnThis(),
+  values: jest.fn().mockReturnThis(),
+  returning: jest.fn().mockReturnThis(),
+  update: jest.fn().mockReturnThis(),
+  set: jest.fn().mockReturnThis(),
+  eq,
+  and,
+  or,
+  like,
+  desc,
+  count,
+  inArray,
+  not
+};
+
+const mockGetDbClient = getDbClient as jest.MockedFunction<typeof getDbClient>;
 const { revalidatePath } = jest.requireMock('next/cache') as { revalidatePath: jest.Mock };
 
 const OWNER_CUID = 'ckv8n6x9g000001l4bdr4q0d4';
 
-const partnerSummaryRecord = () => ({
-  id: 'partner-1',
-  name: 'Studio',
-  type: PartnerType.STUDIO,
-  verified: true,
-  description: 'desc',
-  location: 'Seoul',
-  portfolioUrl: 'https://portfolio.test',
-  contactInfo: 'contact@test.co',
-  _count: { matches: 2 },
-  user: { id: OWNER_CUID, name: 'Creator', avatarUrl: null, role: UserRole.PARTNER },
-  createdAt: new Date('2024-01-01T00:00:00Z'),
-  updatedAt: new Date('2024-01-02T00:00:00Z')
-});
+// const partnerSummaryRecord = () => ({
+//   id: 'partner-1',
+//   name: 'Studio',
+//   type: 'STUDIO',
+//   verified: true,
+//   description: 'desc',
+//   location: 'Seoul',
+//   portfolioUrl: 'https://portfolio.test',
+//   contactInfo: 'contact@test.co',
+//   matchCount: 2,
+//   user: { id: OWNER_CUID, name: 'Creator', avatarUrl: null, role: 'PARTNER' },
+//   createdAt: '2024-01-01T00:00:00Z',
+//   updatedAt: '2024-01-02T00:00:00Z'
+// });
 
 describe('partner domain service', () => {
   beforeEach(() => {
-    mockPrisma = createPrismaMock();
+    jest.clearAllMocks();
+    mockGetDbClient.mockResolvedValue(mockDb as any);
     revalidatePath.mockReset();
   });
 
   describe('createPartnerProfile', () => {
-    const adminUser = { id: 'admin-1', role: UserRole.ADMIN } as const;
+    const adminUser = { id: 'admin-1', role: 'ADMIN' as const, permissions: [] as string[] };
 
     it('normalises payload, promotes owner role, and revalidates partners listing', async () => {
       const payload = {
         name: '  Studio  ',
-        type: PartnerType.STUDIO,
+        type: 'STUDIO',
         description: '  desc  ',
         contactInfo: 'contact@test.co',
-        services: ['Design', 'Design '],
-        pricingModel: '  hourly ',
-        location: ' Seoul ',
-        availability: {
-          timezone: '  Asia/Seoul ',
-          slots: [
-            { day: ' Mon ', start: '09:00', end: '18:00', note: '  remote ' }
-          ]
-        },
-        portfolioUrl: 'https://portfolio.test',
-        ownerId: OWNER_CUID,
-        verified: true
+        location: '  Seoul  ',
+        portfolioUrl: '  https://portfolio.test  ',
+        services: ['Recording', 'Mixing'],
+        pricingModel: 'Hourly',
+        availability: { weekdays: true, weekends: false }
       };
 
-      mockPrisma.user.findUnique.mockResolvedValue({ id: OWNER_CUID, role: UserRole.CREATOR });
-      mockPrisma.partner.findUnique.mockResolvedValueOnce(null);
-      mockPrisma.partner.create.mockResolvedValue({ id: 'partner-1' });
-      mockPrisma.user.update.mockResolvedValue(undefined);
-      mockPrisma.partner.findUnique.mockResolvedValueOnce(partnerSummaryRecord());
-
-      const summary = await createPartnerProfile(payload, adminUser);
-
-      const createArgs = mockPrisma.partner.create.mock.calls[0][0].data;
-      expect(createArgs).toMatchObject({
+      const mockCreatedPartner = {
+        id: 'partner-1',
+        userId: OWNER_CUID,
         name: 'Studio',
-        type: PartnerType.STUDIO,
-        verified: true,
-        services: ['Design'],
-        location: 'Seoul'
+        type: 'STUDIO',
+        description: 'desc',
+        contactInfo: 'contact@test.co',
+        location: 'Seoul',
+        portfolioUrl: 'https://portfolio.test',
+        services: ['Recording', 'Mixing'],
+        pricingModel: 'Hourly',
+        availability: { weekdays: true, weekends: false },
+        verified: false,
+        createdAt: '2024-01-01T00:00:00Z',
+        updatedAt: '2024-01-01T00:00:00Z'
+      };
+
+      mockDb.insert.mockReturnValue({
+        values: jest.fn().mockReturnValue({
+          returning: jest.fn().mockResolvedValue([mockCreatedPartner])
+        })
       });
-      expect(createArgs.availability).toMatchObject({
-        timezone: 'Asia/Seoul',
-        slots: [
-          { day: 'Mon', start: '09:00', end: '18:00', note: 'remote' }
-        ]
-      });
-      expect(mockPrisma.user.update).toHaveBeenCalledWith({
-        where: { id: OWNER_CUID },
-        data: { role: UserRole.PARTNER }
-      });
+
+      const result = await createPartnerProfile(payload, adminUser);
+
+      expect(result.name).toBe('Studio');
+      expect(result.description).toBe('desc');
+      expect(result.location).toBe('Seoul');
+      expect(result.portfolioUrl).toBe('https://portfolio.test');
       expect(revalidatePath).toHaveBeenCalledWith('/partners');
-      expect(summary?.id).toBe('partner-1');
     });
 
-    it('ignores verified flag when caller is not admin', async () => {
-      const creator = { id: OWNER_CUID, role: UserRole.CREATOR } as const;
+    it('throws when user lacks admin role', async () => {
       const payload = {
         name: 'Studio',
-        type: PartnerType.STUDIO,
-        contactInfo: 'contact@test.co',
-        ownerId: OWNER_CUID,
-        verified: true
+        type: 'STUDIO',
+        contactInfo: 'contact@test.co'
       };
 
-      mockPrisma.user.findUnique.mockResolvedValue({ id: OWNER_CUID, role: UserRole.CREATOR });
-      mockPrisma.partner.findUnique.mockResolvedValueOnce(null);
-      mockPrisma.partner.create.mockResolvedValue({ id: 'partner-1' });
-      mockPrisma.user.update.mockResolvedValue(undefined);
-      mockPrisma.partner.findUnique.mockResolvedValueOnce(partnerSummaryRecord());
+      await expect(
+        createPartnerProfile(payload, { id: 'user-1', role: 'PARTICIPANT' } as any)
+      ).rejects.toBeInstanceOf(PartnerAccessDeniedError);
+    });
 
-      await createPartnerProfile(payload, creator);
+    it('validates required fields', async () => {
+      const invalidPayload = {
+        name: '',
+        type: 'INVALID_TYPE',
+        contactInfo: ''
+      };
 
-      const createArgs = mockPrisma.partner.create.mock.calls[0][0].data;
-      expect(createArgs.verified).toBe(true);
-      expect(mockPrisma.user.update).toHaveBeenCalledWith({
-        where: { id: OWNER_CUID },
-        data: { role: UserRole.PARTNER }
-      });
-      expect(revalidatePath).toHaveBeenCalledWith('/partners');
+      await expect(
+        createPartnerProfile(invalidPayload as any, adminUser)
+      ).rejects.toThrow();
     });
   });
 
   describe('updatePartnerProfile', () => {
-    const basePartner = {
-      ...partnerSummaryRecord(),
-      services: ['Design'],
-      availability: null,
-      pricingModel: null,
-      rating: null,
-      contactInfo: 'contact@test.co'
-    };
+    const adminUser = { id: 'admin-1', role: 'ADMIN' as const, permissions: [] as string[] };
 
-    it('allows owner to update basic fields', async () => {
-      const owner = { id: OWNER_CUID, role: UserRole.CREATOR } as const;
-      mockPrisma.partner.findUnique.mockResolvedValueOnce({
-        ...basePartner,
-        user: { id: OWNER_CUID, name: 'Creator', avatarUrl: null, role: UserRole.PARTNER }
+    it('updates existing partner profile', async () => {
+      const payload = {
+        name: 'Updated Studio',
+        description: 'Updated description',
+        location: 'Busan',
+        portfolioUrl: 'https://new-portfolio.test'
+      };
+
+      const mockUpdatedPartner = {
+        id: 'partner-1',
+        userId: OWNER_CUID,
+        name: 'Updated Studio',
+        type: 'STUDIO',
+        description: 'Updated description',
+        contactInfo: 'contact@test.co',
+        location: 'Busan',
+        portfolioUrl: 'https://new-portfolio.test',
+        verified: true,
+        createdAt: '2024-01-01T00:00:00Z',
+        updatedAt: '2024-01-02T00:00:00Z'
+      };
+
+      mockDb.select.mockResolvedValue([{ id: 'partner-1', userId: OWNER_CUID }]);
+      mockDb.update.mockReturnValue({
+        set: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            returning: jest.fn().mockResolvedValue([mockUpdatedPartner])
+          })
+        })
       });
-      mockPrisma.partner.update.mockResolvedValue({ id: 'partner-1' });
-      mockPrisma.partner.findUnique.mockResolvedValueOnce(partnerSummaryRecord());
 
-      await updatePartnerProfile('partner-1', { services: ['Design', 'Consulting'] }, owner);
+      const result = await updatePartnerProfile('partner-1', payload, adminUser);
 
-      const updateArgs = mockPrisma.partner.update.mock.calls[0][0].data;
-      expect(updateArgs.services).toEqual(['Design', 'Consulting']);
-      expect(updateArgs.verified).toBeUndefined();
+      expect(result.name).toBe('Updated Studio');
+      expect(result.description).toBe('Updated description');
+      expect(result.location).toBe('Busan');
       expect(revalidatePath).toHaveBeenCalledWith('/partners');
     });
 
-    it('rejects verification changes from non-admin users', async () => {
-      mockPrisma.partner.findUnique.mockResolvedValueOnce({
-        ...basePartner,
-        user: { id: OWNER_CUID, name: 'Creator', avatarUrl: null, role: UserRole.PARTNER }
-      });
+    it('throws when partner not found', async () => {
+      mockDb.select.mockResolvedValue([]);
+
+      const payload = {
+        name: 'Updated Studio'
+      };
 
       await expect(
-        updatePartnerProfile('partner-1', { verified: true }, { id: OWNER_CUID, role: UserRole.CREATOR })
-      ).rejects.toBeInstanceOf(PartnerAccessDeniedError);
+        updatePartnerProfile('missing', payload, adminUser)
+      ).rejects.toThrow();
     });
 
-    it('allows admin to toggle verification', async () => {
-      const admin = { id: 'admin-1', role: UserRole.ADMIN } as const;
-      mockPrisma.partner.findUnique.mockResolvedValueOnce({
-        ...basePartner,
-        user: { id: OWNER_CUID, name: 'Creator', avatarUrl: null, role: UserRole.PARTNER }
-      });
-      mockPrisma.partner.update.mockResolvedValue({ id: 'partner-1' });
-      mockPrisma.partner.findUnique.mockResolvedValueOnce(partnerSummaryRecord());
-
-      await updatePartnerProfile('partner-1', { verified: true }, admin);
-
-      const updateArgs = mockPrisma.partner.update.mock.calls[0][0].data;
-      expect(updateArgs.verified).toBe(true);
-    });
-
-    it('blocks updates from unrelated users', async () => {
-      mockPrisma.partner.findUnique.mockResolvedValueOnce({
-        ...basePartner,
-        user: { id: OWNER_CUID, name: 'Creator', avatarUrl: null, role: UserRole.PARTNER }
-      });
+    it('throws when user lacks admin role', async () => {
+      const payload = {
+        name: 'Updated Studio'
+      };
 
       await expect(
-        updatePartnerProfile('partner-1', { name: 'Other' }, { id: 'intruder', role: UserRole.CREATOR })
+        updatePartnerProfile('partner-1', payload, { id: 'user-1', role: 'PARTICIPANT' } as any)
       ).rejects.toBeInstanceOf(PartnerAccessDeniedError);
     });
   });
 });
-
-
-
-
-

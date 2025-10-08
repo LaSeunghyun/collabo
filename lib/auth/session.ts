@@ -2,9 +2,9 @@ import { getServerSession } from 'next-auth';
 import type { Session } from 'next-auth';
 import { eq } from 'drizzle-orm';
 
-import { getDb } from '@/lib/db/client';
-import { authSessions, userPermissions } from '@/lib/db/schema';
-import type { UserRoleType } from '@/types/prisma';
+import { getDbClient } from '@/lib/db/client';
+import { authSession, userPermission } from '@/drizzle/schema';
+import { userRole } from '@/drizzle/schema';
 
 import { verifyAccessToken } from './access-token';
 import { authOptions } from './options';
@@ -14,12 +14,12 @@ export interface SessionUser {
   id: string;
   name?: string | null;
   email?: string | null;
-  role: UserRoleType;
+  role: typeof userRole.enumValues[number];
   permissions: string[];
 }
 
 export type GuardRequirement = {
-  roles?: UserRoleType[];
+  roles?: typeof userRole.enumValues[number][];
   permissions?: string[];
 };
 
@@ -88,8 +88,9 @@ const evaluateBearerToken = async (
   try {
     const verified = await verifyAccessToken(token);
 
-    const session = await db.query.authSessions.findFirst({
-      where: eq(authSessions.id, verified.sessionId),
+    const db = await getDbClient();
+    const session = await (db as any).query.authSession.findFirst({
+      where: eq(authSession.id, verified.sessionId),
       with: {
         user: {
           with: {
@@ -124,11 +125,11 @@ const evaluateBearerToken = async (
     }
 
     const explicitPermissions = session.user.permissions
-      .filter((entry): entry is typeof userPermissions.$inferSelect & { permission: { key: string } } =>
+      .filter((entry: any): entry is typeof userPermission.$inferSelect & { permission: { key: string } } =>
         Boolean(entry.permission?.key)
       )
-      .map((entry) => entry.permission.key);
-    const role = session.user.role as UserRoleType;
+      .map((entry: any) => entry.permission.key);
+    const role = session.user.role as typeof userRole.enumValues[number];
     const permissions = deriveEffectivePermissions(role, explicitPermissions);
 
     if (requirements.roles && !requirements.roles.includes(role)) {
@@ -159,7 +160,7 @@ const evaluateBearerToken = async (
       }
     };
   } catch (error) {
-    console.warn('Bearer 토큰 검증 실패', error);
+    console.warn('Bearer token verification failed', error);
     return {
       status: AuthorizationStatus.UNAUTHENTICATED,
       session: null,
@@ -188,7 +189,7 @@ export const evaluateAuthorization = async (
     };
   }
 
-  const role = normalizeRole(session.user.role) as UserRoleType;
+  const role = normalizeRole(session.user.role) as typeof userRole.enumValues[number];
   const permissions = Array.isArray(session.user.permissions)
     ? session.user.permissions
     : [];

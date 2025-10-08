@@ -1,8 +1,8 @@
-import { users } from '@/lib/db/schema';
+import { user, userRole } from '@/drizzle/schema';
 
 export type ClientKind = 'web' | 'mobile';
 
-type UserRoleType = typeof users.$inferSelect['role'];
+type UserRoleType = typeof userRole.enumValues[number];
 
 export interface SessionPolicy {
   accessTokenTtl: number;

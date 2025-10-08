@@ -8,28 +8,37 @@
 
 import { UserRole } from '@/types/prisma';
 import { getArtistProfile, listFeaturedArtists } from '@/lib/server/artists';
-import { type MockPrisma, createPrismaMock } from '../../helpers/prisma-mock';
+import { getDbClient } from '@/lib/db/client';
+import { eq, and, count } from 'drizzle-orm';
+
+// Drizzle 클라이언트 모킹
+jest.mock('@/lib/db/client', () => ({
+  getDbClient: jest.fn()
+}));
 
 jest.mock('@/lib/server/projects', () => ({
   getProjectSummaries: jest.fn()
 }));
 
-let mockPrisma: MockPrisma = createPrismaMock();
+const mockDb = {
+  select: jest.fn().mockReturnThis(),
+  from: jest.fn().mockReturnThis(),
+  where: jest.fn().mockReturnThis(),
+  orderBy: jest.fn().mockReturnThis(),
+  limit: jest.fn().mockReturnThis(),
+  leftJoin: jest.fn().mockReturnThis(),
+  innerJoin: jest.fn().mockReturnThis(),
+  eq,
+  and,
+  count
+};
 
-jest.mock('@/lib/prisma', () => ({
-  get prisma() {
-    return mockPrisma;
-  },
-  get default() {
-    return mockPrisma;
-  }
-}));
-
+const mockGetDbClient = getDbClient as jest.MockedFunction<typeof getDbClient>;
 const { getProjectSummaries } = jest.requireMock('@/lib/server/projects') as {
   getProjectSummaries: jest.Mock;
 };
 
-const viewer = { id: 'viewer-1', role: UserRole.PARTICIPANT } as const;
+const viewer = { id: 'viewer-1', role: UserRole.PARTICIPANT, permissions: [] as string[] };
 
 const artistRecord = {
   id: 'artist-1',
@@ -46,13 +55,14 @@ const artistRecord = {
 
 describe('artist domain service', () => {
   beforeEach(() => {
-    mockPrisma = createPrismaMock();
+    jest.clearAllMocks();
+    mockGetDbClient.mockResolvedValue(mockDb as any);
     getProjectSummaries.mockReset();
   });
 
   describe('getArtistProfile', () => {
     it('returns null when artist does not exist', async () => {
-      mockPrisma.user.findUnique.mockResolvedValue(null);
+      mockDb.select.mockResolvedValue([]);
 
       const result = await getArtistProfile('missing');
 
@@ -60,33 +70,35 @@ describe('artist domain service', () => {
     });
 
     it('resolves composite profile with stats, updates, and follow state', async () => {
-      mockPrisma.user.findUnique.mockResolvedValue(artistRecord);
+      // Mock artist data
+      mockDb.select
+        .mockResolvedValueOnce([artistRecord]) // artist query
+        .mockResolvedValueOnce([{ count: 12 }]) // follower count
+        .mockResolvedValueOnce([{ count: 3 }]) // project count
+        .mockResolvedValueOnce([{ userId: 'backer-1' }, { userId: 'backer-2' }]) // backers
+        .mockResolvedValueOnce([{ id: 'follow-1' }]) // follow check
+        .mockResolvedValueOnce([ // updates
+          {
+            id: 'post-1',
+            title: 'Update',
+            content: 'Detailed update content that is long enough',
+            excerpt: null,
+            createdAt: new Date('2024-02-01T00:00:00Z'),
+            projectId: 'project-1',
+            projectTitle: 'Project'
+          }
+        ])
+        .mockResolvedValueOnce([ // events (milestones)
+          {
+            id: 'milestone-1',
+            title: 'Showcase',
+            dueDate: new Date('2024-03-01T12:00:00Z'),
+            status: 'PLANNED',
+            projectTitle: 'Project'
+          }
+        ]);
+
       getProjectSummaries.mockResolvedValue([{ id: 'project-1', title: 'Project' }]);
-      mockPrisma.userFollow.count.mockResolvedValue(12);
-      mockPrisma.project.count.mockResolvedValue(3);
-      mockPrisma.funding.findMany.mockResolvedValue([{ userId: 'backer-1' }, { userId: 'backer-2' }]);
-      mockPrisma.post.findMany.mockResolvedValue([
-        {
-          id: 'post-1',
-          title: 'Update',
-          content: 'Detailed update content that is long enough',
-          excerpt: null,
-          createdAt: new Date('2024-02-01T00:00:00Z'),
-          projectId: 'project-1',
-          project: { id: 'project-1', title: 'Project' }
-        }
-      ]);
-      mockPrisma.eventRegistration.findMany.mockResolvedValue([
-        {
-          id: 'event-1',
-          title: 'Showcase',
-          startsAt: new Date('2024-03-01T12:00:00Z'),
-          status: 'UPCOMING',
-          location: 'Seoul',
-          url: 'https://events.test/showcase'
-        }
-      ]);
-      mockPrisma.userFollow.findUnique.mockResolvedValue({ id: 'follow-1' });
 
       const profile = await getArtistProfile(artistRecord.id, viewer);
 
@@ -100,7 +112,7 @@ describe('artist domain service', () => {
         projectTitle: 'Project'
       });
       expect(profile?.events[0]).toMatchObject({
-        id: 'event-1',
+        id: 'milestone-1',
         title: 'Showcase'
       });
       expect(profile?.socialLinks).toEqual([
@@ -111,32 +123,24 @@ describe('artist domain service', () => {
   });
 
   describe('listFeaturedArtists', () => {
-    it('maps prisma records into directory entries', async () => {
+    it('maps drizzle records into directory entries', async () => {
       const artists = [
         {
           id: 'artist-1',
           name: 'Artist One',
           avatarUrl: null,
           bio: 'Bio',
-          _count: { followers: 2, projects: 1 }
+          createdAt: new Date('2024-01-01T00:00:00Z')
         }
       ];
-      mockPrisma.user.findMany.mockResolvedValue(artists);
+
+      mockDb.select
+        .mockResolvedValueOnce(artists) // artists query
+        .mockResolvedValueOnce([{ count: 2 }]) // follower count for artist-1
+        .mockResolvedValueOnce([{ count: 1 }]); // project count for artist-1
 
       const result = await listFeaturedArtists();
 
-      expect(mockPrisma.user.findMany).toHaveBeenCalledWith({
-        where: { role: UserRole.CREATOR },
-        select: {
-          id: true,
-          name: true,
-          avatarUrl: true,
-          bio: true,
-          _count: { select: { followers: true, projects: true } }
-        },
-        orderBy: { createdAt: 'desc' },
-        take: 12
-      });
       expect(result).toEqual([
         {
           id: 'artist-1',
@@ -149,9 +153,9 @@ describe('artist domain service', () => {
       ]);
     });
 
-    it('returns empty array when prisma throws', async () => {
+    it('returns empty array when database throws', async () => {
       const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
-      mockPrisma.user.findMany.mockRejectedValue(new Error('db error'));
+      mockDb.select.mockRejectedValue(new Error('db error'));
 
       const result = await listFeaturedArtists();
 

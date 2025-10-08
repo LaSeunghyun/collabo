@@ -1,14 +1,12 @@
 import { randomUUID } from 'crypto';
-
 import { eq, inArray } from 'drizzle-orm';
-
-import { getDb } from '@/lib/db/client';
+import { getDbClient } from '@/lib/db/client';
 import {
-  authDevices,
-  authSessions,
-  refreshTokens,
-  users
-} from '@/lib/db/schema';
+  authDevice,
+  authSession,
+  refreshToken,
+  userRole
+} from '@/drizzle/schema';
 
 import { issueAccessToken } from './access-token';
 import { createOpaqueToken, fingerprintToken, hashClientHint, hashToken, verifyTokenHash } from './crypto';
@@ -17,13 +15,38 @@ import { resolveSessionPolicy } from './policy';
 import { deriveEffectivePermissions } from './permissions';
 import { fetchUserWithPermissions } from './user';
 
-type AuthSessionRow = typeof authSessions.$inferSelect;
-type RefreshTokenRow = typeof refreshTokens.$inferSelect;
-type AuthDeviceRow = typeof authDevices.$inferSelect;
-type UserRoleType = typeof users.$inferSelect['role'];
+type AuthSessionRow = typeof authSession.$inferSelect;
+type RefreshTokenRow = typeof refreshToken.$inferSelect;
+type AuthDeviceRow = typeof authDevice.$inferSelect;
+type UserRoleType = typeof userRole.enumValues[number];
 
-type HydratedAuthSession = ReturnType<typeof hydrateSessionRow>;
-type HydratedRefreshToken = ReturnType<typeof hydrateRefreshTokenRow>;
+type HydratedAuthSession = {
+  id: string;
+  userId: string;
+  deviceId: string | null;
+  createdAt: Date;
+  lastUsedAt: Date;
+  ipHash: string | null;
+  uaHash: string | null;
+  remember: boolean;
+  isAdmin: boolean;
+  client: string;
+  absoluteExpiresAt: Date;
+  revokedAt: Date | null;
+};
+
+type HydratedRefreshToken = {
+  id: string;
+  sessionId: string;
+  tokenHash: string;
+  tokenFingerprint: string;
+  createdAt: Date;
+  inactivityExpiresAt: Date;
+  absoluteExpiresAt: Date;
+  usedAt: Date | null;
+  rotatedToId: string | null;
+  revokedAt: Date | null;
+};
 
 interface IssueSessionInput {
   userId: string;
@@ -89,7 +112,7 @@ const loadUserPermissions = async (userId: string, fallbackRole: UserRoleType) =
     return { role: fallbackRole, permissions: effectivePermissions };
   }
 
-  const explicitPermissions = user.permissions.map((entry) => entry.permission.key);
+  const explicitPermissions = user.permission.map((entry) => entry.permission.key);
   const effectivePermissions = deriveEffectivePermissions(user.role as UserRoleType, explicitPermissions);
 
   return {
@@ -109,21 +132,23 @@ const persistDevice = async (
 
   const timestamp = toIso(now());
 
+  const db = await getDbClient();
+
   try {
     const [record] = await db
-      .insert(authDevices)
+      .insert(authDevice)
       .values({
         id: randomUUID(),
         userId,
-        deviceFingerprint,
-        label: deviceLabel ?? null,
-        lastSeenAt: timestamp
+        fingerprint: deviceFingerprint,
+        deviceName: deviceLabel ?? null,
+        updatedAt: timestamp
       })
       .onConflictDoUpdate({
-        target: [authDevices.userId, authDevices.deviceFingerprint],
+        target: [authDevice.userId, authDevice.fingerprint],
         set: {
-          lastSeenAt: timestamp,
-          label: deviceLabel ?? null
+          updatedAt: timestamp,
+          deviceName: deviceLabel ?? null
         }
       })
       .returning();
@@ -154,8 +179,9 @@ export const issueSessionWithTokens = async ({
     const ipHash = hashClientHint(ipAddress ?? undefined);
     const uaHash = hashClientHint(userAgent ?? undefined);
 
+    const db = await getDbClient();
     const [sessionRow] = await db
-      .insert(authSessions)
+      .insert(authSession)
       .values({
         id: randomUUID(),
         userId,
@@ -171,18 +197,18 @@ export const issueSessionWithTokens = async ({
       .returning();
 
     if (!sessionRow) {
-      throw new Error('세션을 생성하지 못했습니다.');
+      throw new Error('Failed to create session.');
     }
 
     const session = hydrateSessionRow(sessionRow);
 
-    const refreshToken = createOpaqueToken();
-    const refreshTokenHash = await hashToken(refreshToken);
-    const refreshFingerprint = fingerprintToken(refreshToken);
+    const refreshTokenValue = createOpaqueToken();
+    const refreshTokenHash = await hashToken(refreshTokenValue);
+    const refreshFingerprint = fingerprintToken(refreshTokenValue);
     const refreshInactivity = new Date(current.getTime() + policy.refreshSlidingTtl * 1000);
 
     const [refreshRow] = await db
-      .insert(refreshTokens)
+      .insert(refreshToken)
       .values({
         id: randomUUID(),
         sessionId: session.id,
@@ -194,7 +220,7 @@ export const issueSessionWithTokens = async ({
       .returning();
 
     if (!refreshRow) {
-      throw new Error('리프레시 토큰을 생성하지 못했습니다.');
+      throw new Error('Failed to create refresh token.');
     }
 
     const refreshRecord = hydrateRefreshTokenRow(refreshRow);
@@ -212,7 +238,7 @@ export const issueSessionWithTokens = async ({
     return {
       accessToken: access.token,
       accessTokenExpiresAt: access.expiresAt,
-      refreshToken,
+      refreshToken: refreshTokenValue,
       refreshRecord,
       session,
       permissions
@@ -234,21 +260,23 @@ const revokeSessionAndToken = async (
     ? { revokedAt: iso, usedAt: iso }
     : { revokedAt: iso };
 
+  const db = await getDbClient();
+
   await db.transaction(async (tx) => {
     await tx
-      .update(refreshTokens)
+      .update(refreshToken)
       .set(refreshUpdates)
-      .where(eq(refreshTokens.id, refreshTokenId));
+      .where(eq(refreshToken.id, refreshTokenId));
 
     await tx
-      .update(authSessions)
+      .update(authSession)
       .set({ revokedAt: iso })
-      .where(eq(authSessions.id, sessionId));
+      .where(eq(authSession.id, sessionId));
   });
 };
 
 export const rotateRefreshToken = async (
-  refreshToken: string,
+  refreshTokenValue: string,
   {
     ipAddress,
     userAgent
@@ -257,56 +285,57 @@ export const rotateRefreshToken = async (
     userAgent?: string | null;
   }
 ): Promise<RefreshResult> => {
-  const fingerprint = fingerprintToken(refreshToken);
-  const existingRow = await db.query.refreshTokens.findFirst({
-    where: eq(refreshTokens.tokenFingerprint, fingerprint)
+  const db = await getDbClient();
+  const fingerprint = fingerprintToken(refreshTokenValue);
+  const existingRow = await (db as any).query.refreshToken.findFirst({
+    where: eq(refreshToken.tokenFingerprint, fingerprint)
   });
 
   if (!existingRow) {
-    throw new Error('유효하지 않은 리프레시 토큰입니다.');
+    throw new Error('Invalid refresh token.');
   }
 
   const existing = hydrateRefreshTokenRow(existingRow);
-  const matches = await verifyTokenHash(refreshToken, existing.tokenHash);
+  const matches = await verifyTokenHash(refreshTokenValue, existing.tokenHash);
 
   if (!matches) {
-    throw new Error('리프레시 토큰 검증에 실패했습니다.');
+    throw new Error('Failed to verify refresh token.');
   }
 
   if (existing.usedAt || existing.revokedAt) {
     await revokeSessionAndToken(existing.id, existing.sessionId, now());
-    throw new Error('재사용이 감지된 리프레시 토큰입니다.');
+    throw new Error('Refresh token reuse detected.');
   }
 
-  const sessionRow = await db.query.authSessions.findFirst({
-    where: eq(authSessions.id, existing.sessionId)
+  const sessionRow = await (db as any).query.authSession.findFirst({
+    where: eq(authSession.id, existing.sessionId)
   });
 
   if (!sessionRow) {
-    throw new Error('만료된 세션입니다.');
+    throw new Error('Session has expired.');
   }
 
   const session = hydrateSessionRow(sessionRow);
 
   if (session.revokedAt) {
-    throw new Error('만료된 세션입니다.');
+    throw new Error('Session has expired.');
   }
 
   const current = now();
 
   if (session.absoluteExpiresAt <= current || existing.absoluteExpiresAt <= current) {
     await revokeSessionAndToken(existing.id, session.id, current);
-    throw new Error('세션이 만료되었습니다. 다시 로그인하세요.');
+    throw new Error('Session expired. Please sign in again.');
   }
 
   if (existing.inactivityExpiresAt <= current) {
     await revokeSessionAndToken(existing.id, session.id, current);
-    throw new Error('장시간 활동이 없어 세션이 만료되었습니다.');
+    throw new Error('Session expired due to inactivity.');
   }
 
   const user = await fetchUserWithPermissions({ id: session.userId });
   const baseRole: UserRoleType = session.isAdmin ? ADMIN_ROLE : (user?.role ?? 'PARTICIPANT');
-  const explicitPermissions = user?.permissions.map((entry) => entry.permission.key) ?? [];
+  const explicitPermissions = user?.permission.map((entry) => entry.permission.key) ?? [];
   const permissions = deriveEffectivePermissions(baseRole, explicitPermissions);
 
   const ipHash = hashClientHint(ipAddress ?? undefined);
@@ -324,21 +353,21 @@ export const rotateRefreshToken = async (
 
   const { updatedSession, newRefreshRecord } = await db.transaction(async (tx) => {
     const [sessionUpdate] = await tx
-      .update(authSessions)
+      .update(authSession)
       .set({
         lastUsedAt: toIso(current),
         ipHash: ipHash ?? null,
         uaHash: uaHash ?? null
       })
-      .where(eq(authSessions.id, session.id))
+      .where(eq(authSession.id, session.id))
       .returning();
 
     if (!sessionUpdate) {
-      throw new Error('세션 갱신에 실패했습니다.');
+      throw new Error('Failed to update session.');
     }
 
     const [refreshInsert] = await tx
-      .insert(refreshTokens)
+      .insert(refreshToken)
       .values({
         id: randomUUID(),
         sessionId: session.id,
@@ -350,16 +379,16 @@ export const rotateRefreshToken = async (
       .returning();
 
     if (!refreshInsert) {
-      throw new Error('리프레시 토큰 갱신에 실패했습니다.');
+      throw new Error('Failed to rotate refresh token.');
     }
 
     await tx
-      .update(refreshTokens)
+      .update(refreshToken)
       .set({
         usedAt: toIso(current),
         rotatedToId: refreshInsert.id
       })
-      .where(eq(refreshTokens.id, existing.id));
+      .where(eq(refreshToken.id, existing.id));
 
     return {
       updatedSession: sessionUpdate,
@@ -390,10 +419,12 @@ export const rotateRefreshToken = async (
 
 export const revokeSession = async (sessionId: string) => {
   const timestamp = toIso(now());
+
+  const db = await getDbClient();
   const [sessionRow] = await db
-    .update(authSessions)
+    .update(authSession)
     .set({ revokedAt: timestamp })
-    .where(eq(authSessions.id, sessionId))
+    .where(eq(authSession.id, sessionId))
     .returning();
 
   return sessionRow ? hydrateSessionRow(sessionRow) : null;
@@ -403,12 +434,14 @@ export const revokeAllSessionsForUser = async (userId: string) => {
   const timestamp = now();
   const iso = toIso(timestamp);
 
+  const db = await getDbClient();
+
   await db.transaction(async (tx) => {
     const sessionIds = (
       await tx
-        .select({ id: authSessions.id })
-        .from(authSessions)
-        .where(eq(authSessions.userId, userId))
+        .select({ id: authSession.id })
+        .from(authSession)
+        .where(eq(authSession.userId, userId))
     ).map((row) => row.id);
 
     if (sessionIds.length === 0) {
@@ -416,24 +449,25 @@ export const revokeAllSessionsForUser = async (userId: string) => {
     }
 
     await tx
-      .update(refreshTokens)
+      .update(refreshToken)
       .set({
         revokedAt: iso,
         usedAt: iso
       })
-      .where(inArray(refreshTokens.sessionId, sessionIds));
+      .where(inArray(refreshToken.sessionId, sessionIds));
 
     await tx
-      .update(authSessions)
+      .update(authSession)
       .set({ revokedAt: iso })
-      .where(eq(authSessions.userId, userId));
+      .where(eq(authSession.userId, userId));
   });
 };
 
-export const revokeSessionByRefreshToken = async (refreshToken: string) => {
-  const fingerprint = fingerprintToken(refreshToken);
-  const recordRow = await db.query.refreshTokens.findFirst({
-    where: eq(refreshTokens.tokenFingerprint, fingerprint)
+export const revokeSessionByRefreshToken = async (refreshTokenValue: string) => {
+  const db = await getDbClient();
+  const fingerprint = fingerprintToken(refreshTokenValue);
+  const recordRow = await (db as any).query.refreshToken.findFirst({
+    where: eq(refreshToken.tokenFingerprint, fingerprint)
   });
 
   if (!recordRow) {
@@ -441,14 +475,14 @@ export const revokeSessionByRefreshToken = async (refreshToken: string) => {
   }
 
   const record = hydrateRefreshTokenRow(recordRow);
-  const matches = await verifyTokenHash(refreshToken, record.tokenHash);
+  const matches = await verifyTokenHash(refreshTokenValue, record.tokenHash);
 
   if (!matches) {
     return null;
   }
 
-  const sessionRow = await db.query.authSessions.findFirst({
-    where: eq(authSessions.id, record.sessionId)
+  const sessionRow = await (db as any).query.authSession.findFirst({
+    where: eq(authSession.id, record.sessionId)
   });
 
   if (!sessionRow) {

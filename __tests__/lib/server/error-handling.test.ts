@@ -1,5 +1,4 @@
 ﻿import { NextResponse } from 'next/server';
-import { Prisma } from '@/types/prisma';
 import {
   buildApiError,
   createTransactionWrapper,
@@ -29,19 +28,10 @@ describe('error handling utilities', () => {
     });
   });
 
-  it('maps known prisma errors to api responses', async () => {
-    const duplicate = new Prisma.PrismaClientKnownRequestError('duplicate', {
-      code: 'P2002',
-      clientVersion: 'test'
-    });
-    const foreignKey = new Prisma.PrismaClientKnownRequestError('fk', {
-      code: 'P2003',
-      clientVersion: 'test'
-    });
-    const missing = new Prisma.PrismaClientKnownRequestError('missing', {
-      code: 'P2025',
-      clientVersion: 'test'
-    });
+  it('maps known database errors to api responses', async () => {
+    const duplicate = { code: 'P2002', message: 'duplicate' };
+    const foreignKey = { code: 'P2003', message: 'fk' };
+    const missing = { code: 'P2025', message: 'missing' };
 
     await expect(readJson(handleFundingSettlementError(duplicate))).resolves.toMatchObject({
       status: 409,
@@ -57,10 +47,8 @@ describe('error handling utilities', () => {
     });
   });
 
-  it('handles prisma validation errors', async () => {
-    const validation = new Prisma.PrismaClientValidationError('validation', {
-      clientVersion: 'test'
-    });
+  it('handles validation errors', async () => {
+    const validation = { message: 'validation error' };
 
     await expect(readJson(handleFundingSettlementError(validation))).resolves.toMatchObject({
       status: 400,

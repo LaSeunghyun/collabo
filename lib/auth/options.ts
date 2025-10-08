@@ -7,8 +7,8 @@ import KakaoProvider from 'next-auth/providers/kakao';
 import { compare } from 'bcryptjs';
 import { eq } from 'drizzle-orm';
 
-import { getDb } from '@/lib/db/client';
-import { users } from '@/lib/db/schema';
+import { getDbClient } from '@/lib/db/client';
+import { user } from '@/drizzle/schema';
 
 import { AUTH_V3_ENABLED } from './flags';
 import { deriveEffectivePermissions } from './permissions';
@@ -32,7 +32,7 @@ const safeCompare = (a: string, b: string) => {
 };
 
 export const authOptions: NextAuthOptions = {
-  adapter: isBuildTime ? undefined : createDrizzleAuthAdapter(db),
+  adapter: isBuildTime ? undefined : createDrizzleAuthAdapter(),
   pages: {
     signIn: '/auth/signin',
   },
@@ -56,19 +56,20 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const user = await db.query.users.findFirst({
-          where: eq(users.email, credentials.email)
+        const db = await getDbClient();
+        const userRecord = await (db as any).query.user.findFirst({
+          where: eq(user.email, credentials.email)
         });
 
-        if (!user || !user.passwordHash) {
+        if (!userRecord || !userRecord.passwordHash) {
           return null;
         }
 
         let passwordMatches = false;
-        if (user.passwordHash.startsWith('$2')) {
-          passwordMatches = await compare(credentials.password, user.passwordHash);
+        if (userRecord.passwordHash.startsWith('$2')) {
+          passwordMatches = await compare(credentials.password, userRecord.passwordHash);
         } else {
-          passwordMatches = safeCompare(user.passwordHash, credentials.password);
+          passwordMatches = safeCompare(userRecord.passwordHash, credentials.password);
         }
 
         if (!passwordMatches) {
@@ -76,10 +77,10 @@ export const authOptions: NextAuthOptions = {
         }
 
         return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role as any
+          id: userRecord.id,
+          name: userRecord.name,
+          email: userRecord.email,
+          role: userRecord.role as any
         };
       }
     }),
@@ -129,7 +130,7 @@ export const authOptions: NextAuthOptions = {
 
           if (dbUser) {
             resolvedRole = dbUser.role;
-            explicitPermissions = dbUser.permissions.map(
+            explicitPermissions = dbUser.permission.map(
               (entry: { permission: { key: string } }) => entry.permission.key
             );
           }

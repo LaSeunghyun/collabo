@@ -1,49 +1,58 @@
-﻿import { SettlementPayoutStatus } from '@/types/prisma';
-import { getSettlementsPendingPayout } from '@/lib/server/settlement-queries';
-import { type MockPrisma, createPrismaMock } from '../../helpers/prisma-mock';
+﻿import { getSettlementsPendingPayout } from '@/lib/server/settlement-queries';
+import { getDbClient } from '@/lib/db/client';
+import { settlement, project } from '@/drizzle/schema';
+import { eq, inArray, desc } from 'drizzle-orm';
 
-let mockPrisma: MockPrisma = createPrismaMock();
-
-jest.mock('@/lib/prisma', () => ({
-  get prisma() {
-    return mockPrisma;
-  },
-  get default() {
-    return mockPrisma;
-  }
+// Drizzle 클라이언트 모킹
+jest.mock('@/lib/db/client', () => ({
+  getDbClient: jest.fn()
 }));
+
+const mockDb = {
+  select: jest.fn().mockReturnThis(),
+  from: jest.fn().mockReturnThis(),
+  where: jest.fn().mockReturnThis(),
+  orderBy: jest.fn().mockReturnThis(),
+  limit: jest.fn().mockReturnThis(),
+  innerJoin: jest.fn().mockReturnThis(),
+  eq,
+  inArray,
+  desc
+};
+
+const mockGetDbClient = getDbClient as jest.MockedFunction<typeof getDbClient>;
 
 describe('settlement queries', () => {
   beforeEach(() => {
-    mockPrisma = createPrismaMock();
+    jest.clearAllMocks();
+    mockGetDbClient.mockResolvedValue(mockDb as any);
   });
 
   it('lists settlements awaiting payout with project summary', async () => {
-    mockPrisma.settlement.findMany.mockResolvedValue([
+    const mockSettlements = [
       {
         id: 'settlement-1',
         projectId: 'project-1',
         totalRaised: 1000,
         netAmount: 800,
-        payoutStatus: SettlementPayoutStatus.PENDING,
-        createdAt: new Date('2024-01-01T00:00:00Z'),
-        updatedAt: new Date('2024-01-02T00:00:00Z'),
+        payoutStatus: 'PENDING',
+        createdAt: '2024-01-01T00:00:00Z',
+        updatedAt: '2024-01-02T00:00:00Z',
         project: { id: 'project-1', title: 'Project' }
       }
-    ]);
+    ];
+
+    mockDb.select.mockResolvedValue(mockSettlements);
 
     const result = await getSettlementsPendingPayout(10);
 
-    expect(mockPrisma.settlement.findMany).toHaveBeenCalledWith({
-      where: {
-        payoutStatus: { in: [SettlementPayoutStatus.PENDING, SettlementPayoutStatus.IN_PROGRESS] }
-      },
-      include: {
-        project: { select: { id: true, title: true } }
-      },
-      orderBy: { updatedAt: 'desc' },
-      take: 10
-    });
+    expect(mockDb.select).toHaveBeenCalled();
+    expect(mockDb.from).toHaveBeenCalledWith(settlement);
+    expect(mockDb.innerJoin).toHaveBeenCalledWith(project, eq(settlement.projectId, project.id));
+    expect(mockDb.where).toHaveBeenCalledWith(inArray(settlement.payoutStatus, ['PENDING', 'IN_PROGRESS']));
+    expect(mockDb.orderBy).toHaveBeenCalledWith(desc(settlement.updatedAt));
+    expect(mockDb.limit).toHaveBeenCalledWith(10);
+    
     expect(result).toEqual([
       {
         id: 'settlement-1',
@@ -51,9 +60,9 @@ describe('settlement queries', () => {
         projectTitle: 'Project',
         totalRaised: 1000,
         netAmount: 800,
-        payoutStatus: SettlementPayoutStatus.PENDING,
-        createdAt: new Date('2024-01-01T00:00:00Z'),
-        updatedAt: new Date('2024-01-02T00:00:00Z')
+        payoutStatus: 'PENDING',
+        createdAt: '2024-01-01T00:00:00Z',
+        updatedAt: '2024-01-02T00:00:00Z'
       }
     ]);
   });

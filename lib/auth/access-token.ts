@@ -1,17 +1,14 @@
 import { randomUUID } from 'crypto';
-
 import { SignJWT, jwtVerify } from 'jose';
-
 import { eq } from 'drizzle-orm';
-
-import { getDb } from '@/lib/db/client';
-import { tokenBlacklist } from '@/lib/db/schema';
-import type { UserRoleType } from '@/types/prisma';
+import { getDbClient } from '@/lib/db/client';
+import { tokenBlacklist } from '@/drizzle/schema';
+import { userRole } from '@/drizzle/schema';
 
 export interface AccessTokenContext {
   userId: string;
   sessionId: string;
-  role: UserRoleType;
+  role: typeof userRole.enumValues[number];
   permissions: string[];
   expiresIn: number;
 }
@@ -25,7 +22,7 @@ export interface AccessTokenResult {
 export interface VerifiedAccessToken {
   userId: string;
   sessionId: string;
-  role: UserRoleType;
+  role: typeof userRole.enumValues[number];
   permissions: string[];
   jti: string;
   expiresAt: Date;
@@ -76,15 +73,16 @@ export const verifyAccessToken = async (token: string): Promise<VerifiedAccessTo
   const { payload } = await jwtVerify(token, getSecret(), { issuer: ISSUER });
 
   if (!payload.sub || typeof payload.sid !== 'string' || typeof payload.jti !== 'string') {
-    throw new Error('잘못된 액세스 토큰입니다.');
+    throw new Error('잘못된 형식의 토큰입니다.');
   }
 
-  const blacklisted = await db.query.tokenBlacklist.findFirst({
+  const db = await getDbClient();
+  const blacklisted = await (db as any).query.tokenBlacklist.findFirst({
     where: eq(tokenBlacklist.jti, payload.jti)
   });
 
   if (blacklisted) {
-    throw new Error('만료되거나 폐기된 토큰입니다.');
+    throw new Error('만료되었거나 폐기된 토큰입니다.');
   }
 
   const permissions = Array.isArray(payload.permissions)
@@ -96,7 +94,7 @@ export const verifyAccessToken = async (token: string): Promise<VerifiedAccessTo
   return {
     userId: payload.sub,
     sessionId: payload.sid,
-    role: payload.role as UserRoleType,
+    role: payload.role as typeof userRole.enumValues[number],
     permissions,
     jti: payload.jti,
     expiresAt: expirationSeconds ? new Date(expirationSeconds * 1000) : new Date()

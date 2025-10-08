@@ -2,7 +2,7 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import { eq } from 'drizzle-orm';
 
 import { normalizeServerlessConnectionString } from '@/lib/db/connection-string';
-import * as schema from '@/lib/db/schema';
+import * as schema from '@/drizzle/schema';
 
 // 서버 사이드에서만 postgres 모듈을 동적으로 import
 const getPostgres = async () => {
@@ -78,30 +78,43 @@ const createDisabledInstance = (reason: string): DrizzleInstance => {
   console.warn(message);
 
   // 더미 객체 생성 (실제 postgres 연결 없이)
-  const dummyDb = {} as DatabaseClient;
-
-  const proxy = new Proxy(
-    dummyDb,
-    {
-      get(target, prop) {
-        if (prop === Symbol.toStringTag) {
-          return 'DrizzleClientStub';
+  const dummyDb = new Proxy({} as DatabaseClient, {
+    get(target, prop) {
+      if (prop === Symbol.toStringTag) {
+        return 'DrizzleClientStub';
+      }
+      
+      if (typeof prop === 'string') {
+        // query 객체의 각 테이블에 대한 메서드들
+        if (prop === 'query') {
+          return new Proxy({}, {
+            get(target, tableName) {
+              if (typeof tableName === 'string') {
+                return {
+                  findFirst: () => { throw new Error(message); },
+                  findMany: () => { throw new Error(message); },
+                  insert: () => { throw new Error(message); },
+                  update: () => { throw new Error(message); },
+                  delete: () => { throw new Error(message); },
+                };
+              }
+              return target[tableName as keyof typeof target];
+            }
+          });
         }
-
-        // Drizzle의 내부 메서드들은 더미 객체에서 처리
-        if (typeof prop === 'string' && ['select', 'insert', 'update', 'delete', 'from'].includes(prop)) {
-          return () => {
-            throw new Error(message);
-          };
+        
+        // Drizzle의 다른 메서드들
+        if (['select', 'insert', 'update', 'delete', 'from', 'transaction'].includes(prop)) {
+          return () => { throw new Error(message); };
         }
-
-        return target[prop as keyof typeof target];
-      },
-    },
-  ) as DatabaseClient;
+      }
+      
+      return target[prop as keyof typeof target];
+    }
+  });
 
   return {
-    db: proxy,
+    db: dummyDb,
     kind: 'disabled',
     reason: baseReason,
   };

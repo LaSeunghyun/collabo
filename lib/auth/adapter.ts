@@ -9,13 +9,13 @@ import type {
 } from 'next-auth/adapters';
 import { eq } from 'drizzle-orm';
 
-import { getDb } from '@/lib/db/client';
-import { users } from '@/lib/db/schema';
+import { getDbClient } from '@/lib/db/client';
+import { user } from '@/drizzle/schema';
 
-type DatabaseClient = typeof db;
+type DatabaseClient = Awaited<ReturnType<typeof getDbClient>>;
 
-type UserSelect = typeof users.$inferSelect;
-type UserInsert = typeof users.$inferInsert;
+type UserSelect = typeof user.$inferSelect;
+type UserInsert = typeof user.$inferInsert;
 
 const toAdapterUser = (user: UserSelect): AdapterUser => ({
   id: user.id,
@@ -37,33 +37,42 @@ const unsupported = (feature: string): never => {
   throw new Error(`NextAuth ${feature} 기능은 Drizzle 어댑터에서 아직 지원되지 않습니다.`);
 };
 
-export const createDrizzleAuthAdapter = (database: DatabaseClient = db): Adapter => {
-  const readUserById = async (id: string) =>
-    database.query.users.findFirst({
-      where: eq(users.id, id)
-    });
+export const createDrizzleAuthAdapter = (database?: DatabaseClient): Adapter => {
+  const databasePromise = database ? Promise.resolve(database) : getDbClient();
 
-  const readUserByEmail = async (email: string) =>
-    database.query.users.findFirst({
-      where: eq(users.email, email)
+  const getDatabase = () => databasePromise;
+
+  const readUserById = async (id: string) => {
+    const db = await getDatabase();
+    return (db as any).query.user.findFirst({
+      where: eq(user.id, id)
     });
+  };
+
+  const readUserByEmail = async (email: string) => {
+    const db = await getDatabase();
+    return (db as any).query.user.findFirst({
+      where: eq(user.email, email)
+    });
+  };
 
   const touchTimestamp = () => new Date().toISOString();
 
   return {
-    createUser: async (user) => {
-      const id = user.id ?? randomUUID();
-      const email = ensureEmail(user.email);
-      const name = user.name ?? email;
+    createUser: async (userData: Omit<AdapterUser, 'id'> & { id?: string }) => {
+      const db = await getDatabase();
+      const id = userData.id ?? randomUUID();
+      const email = ensureEmail(userData.email);
+      const name = userData.name ?? email;
       const now = touchTimestamp();
 
-      const [record] = await database
-        .insert(users)
+      const [record] = await db
+        .insert(user)
         .values({
           id,
           email,
           name,
-          avatarUrl: user.image ?? null,
+          avatarUrl: userData.image ?? null,
           updatedAt: now
         } satisfies UserInsert)
         .returning();
@@ -75,48 +84,53 @@ export const createDrizzleAuthAdapter = (database: DatabaseClient = db): Adapter
       return toAdapterUser(record);
     },
     getUser: async (id) => {
-      const user = await readUserById(id);
-      return user ? toAdapterUser(user) : null;
+      const userRecord = await readUserById(id);
+      return userRecord ? toAdapterUser(userRecord) : null;
     },
     getUserByEmail: async (email) => {
-      const user = await readUserByEmail(email);
-      return user ? toAdapterUser(user) : null;
+      const userRecord = await readUserByEmail(email);
+      return userRecord ? toAdapterUser(userRecord) : null;
     },
     getUserByAccount: async () => null,
-    updateUser: async (user) => {
-      if (!user.id) {
+    updateUser: async (userData: Partial<AdapterUser> & Pick<AdapterUser, 'id'>) => {
+      if (!userData.id) {
         throw new Error('사용자 업데이트에는 ID가 필요합니다.');
       }
 
-      const existing = await readUserById(user.id);
+      const existing = await readUserById(userData.id);
 
       if (!existing) {
-        return null;
+        throw new Error('사용자를 찾을 수 없습니다.');
       }
 
       const updates: Partial<UserInsert> = {
         updatedAt: touchTimestamp()
       };
 
-      if (user.name !== undefined) {
-        updates.name = user.name ?? existing.name;
+      if (userData.name !== undefined) {
+        updates.name = userData.name ?? existing.name;
       }
 
-      if (user.email !== undefined) {
-        updates.email = ensureEmail(user.email);
+      if (userData.email !== undefined) {
+        updates.email = ensureEmail(userData.email);
       }
 
-      if (user.image !== undefined) {
-        updates.avatarUrl = user.image ?? null;
+      if (userData.image !== undefined) {
+        updates.avatarUrl = userData.image ?? null;
       }
 
-      const [record] = await database
-        .update(users)
+      const db = await getDatabase();
+      const [record] = await db
+        .update(user)
         .set(updates)
-        .where(eq(users.id, user.id))
+        .where(eq(user.id, userData.id))
         .returning();
 
-      return record ? toAdapterUser(record) : null;
+      if (!record) {
+        throw new Error('사용자 업데이트에 실패했습니다.');
+      }
+
+      return toAdapterUser(record);
     },
     deleteUser: async (id) => {
       const existing = await readUserById(id);
@@ -125,7 +139,8 @@ export const createDrizzleAuthAdapter = (database: DatabaseClient = db): Adapter
         return null;
       }
 
-      await database.delete(users).where(eq(users.id, id)).execute();
+      const db = await getDatabase();
+      await db.delete(user).where(eq(user.id, id)).execute();
       return toAdapterUser(existing);
     },
     linkAccount: async (account: AdapterAccount) => {
@@ -144,7 +159,7 @@ export const createDrizzleAuthAdapter = (database: DatabaseClient = db): Adapter
       void sessionToken;
       return unsupported('세션 조회');
     },
-    updateSession: async (session: AdapterSession) => {
+    updateSession: async (session: Partial<AdapterSession> & Pick<AdapterSession, 'sessionToken'>) => {
       void session;
       return unsupported('세션 갱신');
     },
@@ -156,7 +171,7 @@ export const createDrizzleAuthAdapter = (database: DatabaseClient = db): Adapter
       void token;
       return unsupported('인증 토큰 생성');
     },
-    useVerificationToken: async (params: VerificationToken) => {
+    useVerificationToken: async (params: { identifier: string; token: string }) => {
       void params;
       return unsupported('인증 토큰 사용');
     }

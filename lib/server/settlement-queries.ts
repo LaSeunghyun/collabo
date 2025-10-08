@@ -34,6 +34,7 @@ const toSummary = (settlement: {
 });
 
 export const getSettlementsPendingPayout = async (limit = 5) => {
+  const db = await getDb();
   const settlementsData = await db
     .select({
       id: settlements.id,

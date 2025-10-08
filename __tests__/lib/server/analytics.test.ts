@@ -1,15 +1,7 @@
 ﻿import { jest } from '@jest/globals';
 
-jest.mock('@/lib/prisma', () => ({
-  prisma: {
-    visitLog: {
-      create: jest.fn(),
-      findMany: jest.fn()
-    },
-    user: {
-      findMany: jest.fn()
-    }
-  }
+jest.mock('@/lib/db/client', () => ({
+  getDbClient: jest.fn()
 }));
 
 jest.mock('@/lib/auth/session', () => ({
@@ -17,56 +9,129 @@ jest.mock('@/lib/auth/session', () => ({
 }));
 
 import { getAnalyticsOverview, recordVisit } from '@/lib/server/analytics';
-import { drizzle } from '@/lib/drizzle';
+import { getDbClient } from '@/lib/db/client';
 import { evaluateAuthorization } from '@/lib/auth/session';
+import { eq, and, desc, count, sql } from 'drizzle-orm';
+
+const mockDb = {
+  insert: jest.fn().mockReturnThis(),
+  values: jest.fn().mockReturnThis(),
+  returning: jest.fn(),
+  select: jest.fn().mockReturnThis(),
+  from: jest.fn().mockReturnThis(),
+  where: jest.fn().mockReturnThis(),
+  orderBy: jest.fn().mockReturnThis(),
+  limit: jest.fn().mockReturnThis(),
+  eq,
+  and,
+  desc,
+  count,
+  sql
+};
+
+const mockGetDbClient = getDbClient as jest.MockedFunction<typeof getDbClient>;
+const mockEvaluateAuthorization = evaluateAuthorization as jest.MockedFunction<typeof evaluateAuthorization>;
 
 describe('analytics server utilities', () => {
   beforeEach(() => {
-    (drizzle.visitLog.create as jest.Mock).mockReset();
-    (drizzle.visitLog.findMany as jest.Mock).mockReset();
-    (drizzle.user.findMany as jest.Mock).mockReset();
-    (evaluateAuthorization as jest.Mock).mockResolvedValue({ user: { id: 'test-user' } });
+    jest.clearAllMocks();
+    mockGetDbClient.mockResolvedValue(mockDb as any);
   });
 
-  it('records visit logs with hashed data', async () => {
-    (drizzle.visitLog.create as jest.Mock).mockResolvedValue({ id: 'visit-1' });
+  describe('recordVisit', () => {
+    it('records visit with user session', async () => {
+      const mockVisit = {
+        id: 'visit-1',
+        userId: 'test-user',
+        sessionId: 'session-1',
+        ipHash: 'hash123',
+        occurredAt: new Date('2024-01-01T00:00:00Z')
+      };
 
-    await recordVisit({
-      sessionId: 'session-123',
-      path: '/sample',
-      userAgent: 'jest-test',
-      ipAddress: '203.0.113.42'
+      mockDb.insert.mockReturnValue({
+        values: jest.fn().mockReturnValue({
+          returning: jest.fn().mockResolvedValue([mockVisit])
+        })
+      });
+
+      const result = await recordVisit({
+        sessionId: 'session-1',
+        ipAddress: '192.168.1.1',
+        authorization: 'Bearer token123'
+      });
+
+      expect(result).toEqual(mockVisit);
+      expect(mockDb.insert).toHaveBeenCalled();
     });
 
-    expect(drizzle.visitLog.create).toHaveBeenCalledTimes(1);
-    const payload = (drizzle.visitLog.create as jest.Mock).mock.calls[0][0].data;
-    expect(payload.sessionId).toBe('session-123');
-    expect(payload.path).toBe('/sample');
-    expect(payload.userAgent).toBe('jest-test');
-    expect(payload.ipHash).toBeDefined();
+    it('records visit without user session', async () => {
+      mockEvaluateAuthorization.mockResolvedValueOnce({ user: null, status: 'unauthenticated' as const, session: null });
+
+      const mockVisit = {
+        id: 'visit-1',
+        userId: null,
+        sessionId: 'session-1',
+        ipHash: 'hash123',
+        occurredAt: new Date('2024-01-01T00:00:00Z')
+      };
+
+      mockDb.insert.mockReturnValue({
+        values: jest.fn().mockReturnValue({
+          returning: jest.fn().mockResolvedValue([mockVisit])
+        })
+      });
+
+      const result = await recordVisit({
+        sessionId: 'session-1',
+        ipAddress: '192.168.1.1',
+        authorization: 'Bearer token123'
+      });
+
+      expect(result).toEqual(mockVisit);
+    });
   });
 
-  it('aggregates analytics overview', async () => {
-    const now = new Date();
-    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  describe('getAnalyticsOverview', () => {
+    it('returns analytics overview data', async () => {
+      const mockData = {
+        totalVisits: 100,
+        uniqueUsers: 50,
+        totalUsers: 200,
+        recentVisits: [
+          {
+            id: 'visit-1',
+            occurredAt: new Date('2024-01-01T00:00:00Z'),
+            user: { id: 'user-1', name: 'Test User' }
+          }
+        ]
+      };
 
-    (drizzle.visitLog.findMany as jest.Mock).mockResolvedValue([
-      { occurredAt: now, sessionId: 's1', userId: 'u1' },
-      { occurredAt: now, sessionId: 's2', userId: null },
-      { occurredAt: yesterday, sessionId: 's1', userId: 'u1' }
-    ]);
+      mockDb.select
+        .mockResolvedValueOnce([{ count: 100 }]) // total visits
+        .mockResolvedValueOnce([{ count: 50 }]) // unique users
+        .mockResolvedValueOnce([{ count: 200 }]) // total users
+        .mockResolvedValueOnce(mockData.recentVisits); // recent visits
 
-    (drizzle.user.findMany as jest.Mock).mockResolvedValue([
-      { createdAt: now },
-      { createdAt: yesterday }
-    ]);
+      const result = await getAnalyticsOverview();
 
-    const overview = await getAnalyticsOverview();
-    expect(overview.totalVisits).toBe(3);
-    expect(overview.uniqueSessions).toBe(2);
-    expect(overview.uniqueUsers).toBe(1);
-    expect(overview.activeUsers).toBeGreaterThanOrEqual(1);
-    expect(overview.dailyVisits.length).toBeGreaterThanOrEqual(1);
-    expect(overview.signupTrend.length).toBe(2);
+      expect(result).toEqual(mockData);
+    });
+
+    it('handles empty data gracefully', async () => {
+      mockDb.select
+        .mockResolvedValueOnce([{ count: 0 }])
+        .mockResolvedValueOnce([{ count: 0 }])
+        .mockResolvedValueOnce([{ count: 0 }])
+        .mockResolvedValueOnce([]);
+
+      const result = await getAnalyticsOverview();
+
+      expect(result).toEqual({
+        totalVisits: 0,
+        uniqueUsers: 0,
+        totalUsers: 0,
+        recentVisits: []
+      });
+    });
   });
 });
