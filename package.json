@@ -13,6 +13,7 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
     "test:regression": "node scripts/run-drizzle-regression.mjs",
+    "db:community:check": "ts-node scripts/test-db-connection.ts",
     "postinstall": "drizzle-kit generate",
     "create-accounts": "ts-node scripts/create-test-accounts.ts",
     "db:drizzle:generate": "drizzle-kit generate",

@@ -224,7 +224,11 @@ export default function CommunityPostDetailPage() {
     }
   };
 
-  const reportMutation = useMutation({
+  const {
+    mutate: submitReport,
+    reset: resetReportMutation,
+    isPending: isReportPending
+  } = useMutation({
     mutationFn: async ({ reporterId, reason }: { reporterId: string; reason: string }) => {
       console.log('Sending report request:', { reporterId, reason, postId });
 
@@ -307,7 +311,7 @@ export default function CommunityPostDetailPage() {
       isOtherReportReason ? trimmedCustomReportReason : selectedReportReason.title;
 
     setReportError(null);
-    reportMutation.mutate({ reporterId: session.user.id, reason: finalReason });
+    submitReport({ reporterId: session.user.id, reason: finalReason });
   };
 
   const messageIsValid = useMemo(() => messageDraft.trim().length > 0, [messageDraft]);
@@ -346,9 +350,9 @@ export default function CommunityPostDetailPage() {
       setReportReasonKey(null);
       setReportCustomReason('');
       setReportError(null);
-      reportMutation.reset();
+      resetReportMutation();
     }
-  }, [reportOpen, reportMutation]);
+  }, [reportOpen, resetReportMutation]);
 
   if (isLoading) {
     return (
@@ -783,13 +787,13 @@ export default function CommunityPostDetailPage() {
                 type="button"
                 onClick={handleReportSubmit}
                 disabled={
-                  reportStatus !== 'submitted' && (!canSubmitReport || reportMutation.isPending)
+                  reportStatus !== 'submitted' && (!canSubmitReport || isReportPending)
                 }
                 className="rounded-full bg-red-500/80 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {reportStatus === 'submitted'
                   ? t('community.detail.reportSubmitted')
-                  : reportMutation.isPending
+                  : isReportPending
                     ? t('community.detail.reportSubmitting')
                     : t('community.detail.reportConfirm')}
               </button>
