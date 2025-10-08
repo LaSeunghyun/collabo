@@ -176,8 +176,8 @@ export const getDbClient = async (): Promise<DatabaseClient> => {
   return instance.db;
 };
 
-// topLevelAwait ?�거 - db export ?�거
-// 모든 곳에??getDbClient() ?�용
+// topLevelAwait 제거 - db export 제거
+// 모든 곳에서 getDbClient() 사용
 export const getDb = () => getDbClient();
 
 export const isDrizzleAvailable = async () => {
@@ -186,7 +186,7 @@ export const isDrizzleAvailable = async () => {
 };
 
 export const closeDb = async () => {
-  // ?�버리스 ?�경?�서???�결 ?�리가 ?�요?��? ?�음
+  // 서버리스 환경에서는 연결 관리가 필요 없음
   return;
 };
 
