@@ -1,6 +1,6 @@
 {
-  "id": "df10001c-946c-49ff-bbab-01facd05e9d6",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "edb624c3-da90-409a-b739-498d6e08dacf",
+  "prevId": "df10001c-946c-49ff-bbab-01facd05e9d6",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1793,7 +1793,7 @@
           "type": "text[]",
           "primaryKey": false,
           "notNull": true,
-          "default": "ARRAY[]::text[]"
+          "default": "'{\"RAY\"}'"
         },
         "category": {
           "name": "category",
@@ -1944,7 +1944,7 @@
           "type": "text[]",
           "primaryKey": false,
           "notNull": true,
-          "default": "ARRAY[]::text[]"
+          "default": "'{\"RAY\"}'"
         },
         "metadata": {
           "name": "metadata",
@@ -2248,7 +2248,7 @@
           "type": "text[]",
           "primaryKey": false,
           "notNull": true,
-          "default": "ARRAY[]::text[]"
+          "default": "'{\"RAY\"}'"
         },
         "startDate": {
           "name": "startDate",
@@ -2356,7 +2356,7 @@
           "type": "text[]",
           "primaryKey": false,
           "notNull": true,
-          "default": "ARRAY[]::text[]"
+          "default": "'{\"RAY\"}'"
         },
         "estimatedDelivery": {
           "name": "estimatedDelivery",

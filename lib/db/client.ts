@@ -5,6 +5,11 @@ import { eq } from 'drizzle-orm';
 import { normalizeServerlessConnectionString } from '@/lib/db/connection-string';
 import * as schema from '@/lib/db/schema';
 
+// 스키마가 제대로 로드되었는지 확인
+if (!schema || typeof schema !== 'object') {
+  throw new Error('Failed to load Drizzle schema');
+}
+
 neonConfig.fetchConnectionCache = true;
 
 export type DrizzleHttpClient = NeonHttpDatabase<typeof schema>;
@@ -45,17 +50,29 @@ const createDisabledInstance = (reason: string): DrizzleInstance => {
 
   console.warn(message);
 
+  // 빌드 시에는 더미 스키마로 더미 클라이언트 생성
+  const dummyClient = neon('postgresql://dummy:dummy@dummy:5432/dummy');
+  const dummyDb = drizzleNeon(dummyClient, {
+    schema,
+    logger: false,
+  });
+
   const proxy = new Proxy(
-    {},
+    dummyDb,
     {
-      get(_target, prop) {
+      get(target, prop) {
         if (prop === Symbol.toStringTag) {
           return 'DrizzleClientStub';
         }
 
-        return () => {
-          throw new Error(message);
-        };
+        // Drizzle의 내부 메서드들은 더미 객체에서 처리
+        if (typeof prop === 'string' && ['select', 'insert', 'update', 'delete', 'from'].includes(prop)) {
+          return () => {
+            throw new Error(message);
+          };
+        }
+
+        return target[prop as keyof typeof target];
       },
     },
   ) as DatabaseClient;
@@ -73,6 +90,10 @@ const instantiateDrizzle = (): DrizzleInstance => {
   const databaseUrl = process.env.DATABASE_URL;
 
   if (!databaseUrl) {
+    // 빌드 시에는 데이터베이스 연결 없이도 스키마만으로 작동할 수 있도록
+    if (process.env.NODE_ENV === 'production' && process.env.VERCEL) {
+      return createDisabledInstance('DATABASE_URL is not set in production environment.');
+    }
     throw new Error('DATABASE_URL is not set.');
   }
 

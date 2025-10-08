@@ -872,6 +872,8 @@ export const refreshTokensRelations = relations(refreshTokens, ({ one }) => ({
     relationName: 'RefreshTokenRotation',
   }),
   rotatedFrom: one(refreshTokens, {
+    fields: [refreshTokens.rotatedToId],
+    references: [refreshTokens.id],
     relationName: 'RefreshTokenRotation',
   }),
 }));
