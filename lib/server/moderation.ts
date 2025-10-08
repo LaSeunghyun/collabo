@@ -1,5 +1,5 @@
 import { eq, and, inArray, desc, count, notInArray } from 'drizzle-orm';
-import { getDb } from '@/lib/db/client';
+import { getDb, isDrizzleAvailable } from '@/lib/db/client';
 import { moderationReports, users, posts } from '@/lib/db/schema';
 
 export interface ModerationReportSummary {
@@ -31,6 +31,24 @@ export interface ModerationHandledPostSummary {
 
 const ACTIVE_REVIEW_STATUSES = ['PENDING', 'REVIEWING'] as ('PENDING' | 'REVIEWING')[];
 
+export class ModerationDataUnavailableError extends Error {
+  constructor(message = 'Moderation data is not available in this environment.') {
+    super(message);
+    this.name = 'ModerationDataUnavailableError';
+  }
+}
+
+const ensureModerationDb = async () => {
+  const available = await isDrizzleAvailable();
+
+  if (!available) {
+    console.warn('Moderation database access is disabled. Skipping query execution.');
+    return null;
+  }
+
+  return await getDb();
+};
+
 type ReportWithRelations = {
   id: string;
   targetType: string;
@@ -58,7 +76,10 @@ const toSummary = (report: ReportWithRelations): ModerationReportSummary => ({
 
 export const getOpenModerationReports = async (limit = 5) => {
   try {
-    const db = await getDb();
+    const db = await ensureModerationDb();
+    if (!db) {
+      return [];
+    }
     const reports = await db
       .select({
         id: moderationReports.id,
@@ -87,7 +108,14 @@ export const getOpenModerationReports = async (limit = 5) => {
 
 export const getModerationStats = async () => {
   try {
-    const db = await getDb();
+    const db = await ensureModerationDb();
+    if (!db) {
+      return {
+        total: 0,
+        pending: 0,
+        completed: 0
+      };
+    }
     const [totalReportsResult, pendingReportsResult, completedReportsResult] = await Promise.all([
       db.select({ count: count() }).from(moderationReports),
       db.select({ count: count() }).from(moderationReports).where(inArray(moderationReports.status, ACTIVE_REVIEW_STATUSES)),
@@ -113,7 +141,10 @@ export const getModerationStats = async () => {
 
 export const getReportedPostDetails = async (postId: string) => {
   try {
-    const db = await getDb();
+    const db = await ensureModerationDb();
+    if (!db) {
+      throw new ModerationDataUnavailableError();
+    }
     const [post, reports] = await Promise.all([
       db
         .select({
@@ -183,7 +214,10 @@ export const updateModerationStatus = async (
   actionNote?: string
 ) => {
   try {
-    const db = await getDb();
+    const db = await ensureModerationDb();
+    if (!db) {
+      throw new ModerationDataUnavailableError();
+    }
     const [updatedReport] = await db
       .update(moderationReports)
       .set({
@@ -204,7 +238,10 @@ export const updateModerationStatus = async (
 export const getHandledModerationReportsByPost = async (limit = 8) => {
   try {
     // 간단한 구현으로 변경 - 복잡한 groupBy 대신 기본 쿼리 사용
-    const db = await getDb();
+    const db = await ensureModerationDb();
+    if (!db) {
+      return [];
+    }
     const reports = await db
       .select({
         id: moderationReports.id,
