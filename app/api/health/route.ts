@@ -19,7 +19,12 @@ export async function GET() {
         
         // execute 메서드가 있는지 확인
         if (typeof db.execute !== 'function') {
-            throw new Error('Database execute method is not available');
+            return NextResponse.json({
+                status: 'degraded',
+                database: 'disabled',
+                message: 'Database execute method is not available',
+                timestamp: new Date().toISOString()
+            });
         }
         
         await db.execute(sql`select 1`);
@@ -31,6 +36,16 @@ export async function GET() {
         });
     } catch (error) {
         console.error('Health check error:', error);
+
+        // 데이터베이스가 비활성화된 경우 degraded 상태로 반환
+        if (error instanceof Error && error.message.includes('Database access is disabled')) {
+            return NextResponse.json({
+                status: 'degraded',
+                database: 'disabled',
+                message: 'Database is disabled in this environment',
+                timestamp: new Date().toISOString()
+            });
+        }
 
         return NextResponse.json({
             status: 'error',

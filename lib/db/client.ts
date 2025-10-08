@@ -137,8 +137,8 @@ const instantiateDrizzle = async (): Promise<DrizzleInstance> => {
 
   if (!databaseUrl) {
     // Vercel 환경에서는 빌드 시에만 비활성화, 런타임에서는 에러 발생
-    if (process.env.NODE_ENV === 'production' && process.env.VERCEL && process.env.VERCEL_ENV === 'preview') {
-      return createDisabledInstance('DATABASE_URL is not set in preview environment.');
+    if (process.env.NODE_ENV === 'production' && process.env.VERCEL) {
+      return createDisabledInstance('DATABASE_URL is not set in production environment.');
     }
     if (process.env.NODE_ENV === 'development') {
       return createDisabledInstance('DATABASE_URL is not set in development environment.');

@@ -19,7 +19,12 @@ export async function GET() {
     
     // execute 메서드가 있는지 확인
     if (typeof db.execute !== 'function') {
-      throw new Error('Database execute method is not available');
+      return NextResponse.json({
+        success: false,
+        message: 'Database execute method is not available',
+        error: 'Database is disabled in this environment',
+        timestamp: new Date().toISOString()
+      });
     }
     
     const result = await db.execute(sql`select 1 as test`);
@@ -30,6 +35,17 @@ export async function GET() {
     });
   } catch (error) {
     console.error('Database connection failed:', error);
+    
+    // 데이터베이스가 비활성화된 경우 graceful하게 처리
+    if (error instanceof Error && error.message.includes('Database access is disabled')) {
+      return NextResponse.json({
+        success: false,
+        message: 'Database is disabled in this environment',
+        error: 'DATABASE_URL is not configured for this environment',
+        timestamp: new Date().toISOString()
+      });
+    }
+    
     return NextResponse.json({ 
       success: false, 
       message: 'Database connection failed',
