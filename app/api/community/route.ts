@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { eq } from 'drizzle-orm';
+import { randomUUID } from 'crypto';
 
-import { communityCategoryEnum, posts, users } from '@/lib/db/schema';
+import { communityCategory, post as posts, user as users } from '@/drizzle/schema';
 import { getDb } from '@/lib/db/client';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
@@ -31,7 +32,7 @@ const parseCategory = (value: string | null): string | undefined => {
   }
 
   const normalized = value.toUpperCase();
-  const match = (Object.values(communityCategoryEnum.enumValues) as string[]).find(
+  const match = (Object.values(communityCategory.enumValues) as string[]).find(
     (option) => option === normalized
   );
 
@@ -292,15 +293,19 @@ export async function POST(request: NextRequest) {
       const [createdPost] = await db
         .insert(posts)
         .values({
-          id: crypto.randomUUID(),
+          id: randomUUID(),
           title,
           content,
-          category,
+          category: category as 'GENERAL' | 'NOTICE' | 'COLLAB' | 'SUPPORT' | 'SHOWCASE',
           type: 'DISCUSSION',
           projectId: projectId ?? null,
           authorId: sessionUser.id,
           isPinned: false,
           updatedAt: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          tags: ['RAY'],
+          language: 'ko',
+          visibility: 'PUBLIC'
         })
         .returning({
           id: posts.id,

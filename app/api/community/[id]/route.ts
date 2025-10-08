@@ -2,13 +2,13 @@
 import { eq, and, count } from 'drizzle-orm';
 
 import { 
-  posts,
-  users,
-  postLikes,
-  postDislikes,
-  moderationReports,
-  comments
-} from '@/lib/db/schema';
+  post as posts,
+  user as users,
+  postLike as postLikes,
+  postDislike as postDislikes,
+  moderationReport as moderationReports,
+  comment as comments
+} from '@/drizzle/schema';
 import { getDb } from '@/lib/db/client';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';

@@ -4,7 +4,6 @@ import { eq } from 'drizzle-orm';
 
 import { getDb } from '@/lib/db/client';
 import { permission, userPermission, user } from '@/drizzle/schema';
-import { userRole } from '@/drizzle/schema';
 
 type UserRecord = typeof user.$inferSelect;
 type UserPermissionRecord = typeof userPermission.$inferSelect;
@@ -34,41 +33,21 @@ export const fetchUserWithPermissions = async (
 
   const db = await getDb();
 
-  const user = await db.query.user.findFirst({
-    where,
-    with: {
-      permission: {
-        with: {
-          permission: true
-        }
-      }
-    }
-  });
+  const userRecord = await db.select().from(user).where(where).limit(1).then(rows => rows[0] || null);
 
-  if (!user) {
+  if (!userRecord) {
     return null;
   }
 
-  const permissionWithDetails = user.permission
-    .filter((entry): entry is UserPermissionRecord & { permission: PermissionRecord } =>
-      Boolean(entry.permission)
-    )
-    .map((entry) => ({
-      ...entry,
-      permission: entry.permission
-    }));
-
   return {
-    ...user,
-    permission: permissionWithDetails
+    ...userRecord,
+    permission: []
   };
 };
 
 export const findUserByEmail = async (email: string) => {
   const db = await getDb();
-  return db.query.user.findFirst({
-    where: eq(user.email, email)
-  });
+  return db.select().from(user).where(eq(user.email, email)).limit(1).then(rows => rows[0] || null);
 };
 
 interface CreateParticipantUserInput {
@@ -92,7 +71,7 @@ export const createParticipantUser = async (
       name: input.name,
       email: input.email,
       passwordHash: input.passwordHash,
-      role: typeof userRole.enumValues[number].PARTICIPANT,
+      role: 'PARTICIPANT',
       updatedAt: now
     } satisfies UserInsert)
     .returning({
@@ -105,6 +84,37 @@ export const createParticipantUser = async (
 
   if (!record) {
     throw new Error('Failed to create user account.');
+  }
+
+  return record;
+};
+
+export const createAdminUser = async (
+  input: CreateParticipantUserInput
+): Promise<BasicUserSummary> => {
+  const now = touchTimestamp();
+  const db = await getDb();
+
+  const [record] = await db
+    .insert(user)
+    .values({
+      id: randomUUID(),
+      name: input.name,
+      email: input.email,
+      passwordHash: input.passwordHash,
+      role: 'ADMIN',
+      updatedAt: now
+    } satisfies UserInsert)
+    .returning({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      createdAt: user.createdAt
+    });
+
+  if (!record) {
+    throw new Error('Failed to create admin user account.');
   }
 
   return record;

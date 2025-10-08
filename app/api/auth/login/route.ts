@@ -4,13 +4,13 @@ import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 
 import { getDb } from '@/lib/db/client';
-import { users } from '@/lib/db/schema';
+import { user } from '@/drizzle/schema';
 import { buildRefreshCookie } from '@/lib/auth/cookies';
 import type { ClientKind } from '@/lib/auth/policy';
 import { issueSessionWithTokens } from '@/lib/auth/session-store';
 import { verifyPassword } from '@/lib/auth/password';
 
-type UserRoleType = typeof users.$inferSelect['role'];
+type UserRoleType = 'CREATOR' | 'PARTICIPANT' | 'PARTNER' | 'ADMIN';
 
 const requestSchema = z.object({
   email: z.string().email(),
@@ -57,31 +57,29 @@ export async function POST(req: NextRequest) {
   const data = parsed.data;
 
   const db = await getDb();
-  const user = await db.query.users.findFirst({
-    where: eq(users.email, data.email)
-  });
+  const userRecord = await db.select().from(user).where(eq(user.email, data.email)).limit(1).then(rows => rows[0] || null);
 
-  if (!user || !user.passwordHash) {
+  if (!userRecord || !userRecord.passwordHash) {
     return NextResponse.json({ error: '아이디 또는 비밀번호가 올바르지 않습니다.' }, { status: 401 });
   }
 
-  const passwordMatches = await verifyPassword(user.passwordHash, data.password);
+  const passwordMatches = await verifyPassword(userRecord.passwordHash, data.password);
 
   if (!passwordMatches) {
     return NextResponse.json({ error: '아이디 또는 비밀번호가 올바르지 않습니다.' }, { status: 401 });
   }
 
-  const remember = user.role === 'ADMIN' ? false : data.rememberMe ?? false;
+  const remember = userRecord.role === 'ADMIN' ? false : data.rememberMe ?? false;
   const client: ClientKind = data.client === 'mobile' ? 'mobile' : 'web';
   const ipAddress = extractClientIp(req);
   const userAgent = req.headers.get('user-agent');
 
   try {
-    console.log('로그인 시도:', { userId: user.id, role: user.role, email: user.email });
+    console.log('로그인 시도:', { userId: userRecord.id, role: userRecord.role, email: userRecord.email });
     
     const issued = await issueSessionWithTokens({
-      userId: user.id,
-      role: user.role as UserRoleType,
+      userId: userRecord.id,
+      role: userRecord.role as UserRoleType,
       remember,
       client,
       ipAddress,
@@ -112,8 +110,8 @@ export async function POST(req: NextRequest) {
           client: issued.session.client
         },
         user: {
-          id: user.id,
-          role: user.role
+          id: userRecord.id,
+          role: userRecord.role
         }
       },
       {
@@ -127,8 +125,8 @@ export async function POST(req: NextRequest) {
     console.error('로그인 처리 중 오류 발생:', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
-      userId: user?.id,
-      email: user?.email
+      userId: userRecord?.id,
+      email: userRecord?.email
     });
     return NextResponse.json({ 
       error: '로그인 처리에 실패했습니다.',

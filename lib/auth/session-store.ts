@@ -105,20 +105,9 @@ function hydrateRefreshTokenRow(token: RefreshTokenRow): HydratedRefreshToken {
 }
 
 const loadUserPermissions = async (userId: string, fallbackRole: UserRoleType) => {
-  const user = await fetchUserWithPermissions({ id: userId });
-
-  if (!user) {
-    const effectivePermissions = deriveEffectivePermissions(fallbackRole, []);
-    return { role: fallbackRole, permissions: effectivePermissions };
-  }
-
-  const explicitPermissions = user.permission.map((entry) => entry.permission.key);
-  const effectivePermissions = deriveEffectivePermissions(user.role as UserRoleType, explicitPermissions);
-
-  return {
-    role: user.role as UserRoleType,
-    permissions: effectivePermissions
-  };
+  // 단순화: 기본 권한만 사용
+  const effectivePermissions = deriveEffectivePermissions(fallbackRole, []);
+  return { role: fallbackRole, permissions: effectivePermissions };
 };
 
 const persistDevice = async (

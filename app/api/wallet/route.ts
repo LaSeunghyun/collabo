@@ -5,27 +5,20 @@ import { eq } from 'drizzle-orm';
 import { requireApiUser } from '@/lib/auth/guards';
 import { GuardRequirement } from '@/lib/auth/session';
 import { getDb } from '@/lib/db/client';
-import { wallets } from '@/lib/db/schema';
+import { wallet as walletSchema } from '@/drizzle/schema';
 
 export async function GET(request: NextRequest) {
   try {
     const user = await requireApiUser(request as NextRequest & GuardRequirement);
     const db = await getDb();
 
-    const wallet = await db.query.wallets.findFirst({
-      where: eq(wallets.userId, user.id),
-      with: {
-        user: {
-          columns: { id: true, name: true, email: true }
-        }
-      }
-    });
+    const wallet = await db.select().from(walletSchema).where(eq(walletSchema.userId, user.id)).limit(1).then(rows => rows[0] || null);
 
     if (!wallet) {
       // 지갑이 없으면 생성
       const now = new Date().toISOString();
       const [created] = await db
-        .insert(wallets)
+        .insert(walletSchema)
         .values({
           id: randomUUID(),
           userId: user.id,
@@ -33,16 +26,9 @@ export async function GET(request: NextRequest) {
           pendingBalance: 0,
           updatedAt: now,
         })
-        .returning({ id: wallets.id });
+        .returning({ id: walletSchema.id });
 
-      const newWallet = await db.query.wallets.findFirst({
-        where: eq(wallets.id, created.id),
-        with: {
-          user: {
-            columns: { id: true, name: true, email: true }
-          }
-        }
-      });
+      const newWallet = await db.select().from(walletSchema).where(eq(walletSchema.id, created.id)).limit(1).then(rows => rows[0] || null);
 
       if (!newWallet) {
         throw new Error('Failed to create wallet');
@@ -83,14 +69,12 @@ export async function POST(request: NextRequest) {
     }
 
     // 지갑이 없으면 생성
-    let wallet = await db.query.wallets.findFirst({
-      where: eq(wallets.userId, user.id)
-    });
+    let wallet = await db.select().from(walletSchema).where(eq(walletSchema.userId, user.id)).limit(1).then(rows => rows[0] || null);
 
     if (!wallet) {
       const now = new Date().toISOString();
       const [created] = await db
-        .insert(wallets)
+        .insert(walletSchema)
         .values({
           id: randomUUID(),
           userId: user.id,
@@ -98,11 +82,9 @@ export async function POST(request: NextRequest) {
           pendingBalance: 0,
           updatedAt: now,
         })
-        .returning({ id: wallets.id });
+        .returning({ id: walletSchema.id });
 
-      wallet = await db.query.wallets.findFirst({
-        where: eq(wallets.id, created.id)
-      });
+      wallet = await db.select().from(walletSchema).where(eq(walletSchema.id, created.id)).limit(1).then(rows => rows[0] || null);
 
       if (!wallet) {
         throw new Error('Failed to create wallet');
@@ -124,23 +106,16 @@ export async function POST(request: NextRequest) {
     const newPendingBalance =
       type === 'DEPOSIT' ? wallet.pendingBalance + amount : wallet.pendingBalance;
     const [updated] = await db
-      .update(wallets)
+      .update(walletSchema)
       .set({
         balance: newBalance,
         pendingBalance: newPendingBalance,
         updatedAt: new Date().toISOString(),
       })
-      .where(eq(wallets.id, wallet.id))
-      .returning({ id: wallets.id });
+      .where(eq(walletSchema.id, wallet.id))
+      .returning({ id: walletSchema.id });
 
-    const updatedWallet = await db.query.wallets.findFirst({
-      where: eq(wallets.id, updated.id),
-      with: {
-        user: {
-          columns: { id: true, name: true, email: true }
-        }
-      }
-    });
+    const updatedWallet = await db.select().from(walletSchema).where(eq(walletSchema.id, updated.id)).limit(1).then(rows => rows[0] || null);
 
     if (!updatedWallet) {
       throw new Error('Failed to load updated wallet');
