@@ -2,7 +2,7 @@
 
 import { useTranslation } from 'react-i18next';
 
-import { AnnouncementComposer } from './_components/announcement-composer';
+import AnnouncementComposer from './_components/announcement-composer';
 import { AnnouncementList } from './_components/announcement-list';
 
 export default function AdminAnnouncementsPage() {

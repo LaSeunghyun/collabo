@@ -1,188 +1,198 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import * as TabsPrimitive from '@radix-ui/react-tabs';
+import { useState, useMemo } from 'react';
 
-import { CommunityBoard } from '@/components/ui/sections/community-board';
-import { ProjectUpdatesBoard } from '@/components/ui/sections/project-updates-board';
-import { fetchSettlement, SettlementRecord } from '@/lib/api/settlement';
+interface ProjectDetailTabsProps {
+  project: {
+    id: string;
+    title: string;
+    description: string;
+    content: string;
+    targetAmount: number;
+    currentAmount: number;
+    category: string;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+  settlements?: any[];
+  updates?: any[];
+  comments?: any[];
+}
 
-const tabItems = [
-  { value: 'story', label: 'Story' },
-  { value: 'updates', label: 'Updates' },
-  { value: 'community', label: 'Community' },
-  { value: 'roadmap', label: 'Roadmap' },
-  { value: 'settlement', label: 'Settlement' }
-];
+export function ProjectDetailTabs({ project, settlements = [], updates = [], comments = [] }: ProjectDetailTabsProps) {
+  const [current, setCurrent] = useState('overview');
 
-const currencyFormatter = new Intl.NumberFormat('ko-KR', {
-  style: 'currency',
-  currency: 'KRW',
-  maximumFractionDigits: 0
-});
+  const tabItems = [
+    { id: 'overview', label: '개요' },
+    { id: 'updates', label: '업데이트' },
+    { id: 'comments', label: '댓글' },
+    { id: 'settlements', label: '정산 내역' }
+  ];
 
-const dateFormatter = new Intl.DateTimeFormat('ko-KR', {
-  dateStyle: 'medium',
-  timeStyle: 'short'
-});
+  const progressPercentage = (project.currentAmount / project.targetAmount) * 100;
+  const remainingAmount = project.targetAmount - project.currentAmount;
 
-export function ProjectDetailTabs({
-  projectId,
-  canManageUpdates = false
-}: {
-  projectId: string;
-  canManageUpdates?: boolean;
-}) {
-  const [current, setCurrent] = useState('story');
-  const [settlements, setSettlements] = useState<SettlementRecord[]>([]);
-  const [settlementError, setSettlementError] = useState<string | null>(null);
-  const [isSettlementLoading, setIsSettlementLoading] = useState(false);
+  const formatDate = (dateString: string) => {
+    return new Intl.DateTimeFormat('ko-KR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }).format(new Date(dateString));
+  };
 
-  useEffect(() => {
-    if (current !== 'settlement') {
-      return;
-    }
-
-    let active = true;
-
-    const load = async (showLoading = false) => {
-      if (showLoading) {
-        setIsSettlementLoading(true);
-      }
-
-      try {
-        const data = await fetchSettlement(projectId);
-        if (!active) {
-          return;
-        }
-
-        setSettlements(data);
-        setSettlementError(null);
-      } catch (error) {
-        if (!active) {
-          return;
-        }
-
-        setSettlementError(error instanceof Error ? error.message : '?�산 ?�보�?불러?��? 못했?�니??');
-      } finally {
-        if (showLoading && active) {
-          setIsSettlementLoading(false);
-        }
-      }
-    };
-
-    void load(true);
-    const interval = window.setInterval(() => {
-      void load();
-    }, 10000);
-
-    return () => {
-      active = false;
-      window.clearInterval(interval);
-    };
-  }, [current, projectId]);
-
-  const latestSettlement = useMemo(() => settlements.at(0) ?? null, [settlements]);
-  const settlementHistory = useMemo(() => settlements.slice(1), [settlements]);
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('ko-KR', {
+      style: 'currency',
+      currency: 'KRW',
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
 
   return (
-    <TabsPrimitive.Root value={current} onValueChange={setCurrent} className="w-full">
-      <TabsPrimitive.List className="flex flex-wrap gap-2 rounded-full bg-white/5 p-2">
+    <div className="w-full">
+      <div className="flex flex-wrap gap-2 rounded-full bg-white/5 p-2 mb-6">
         {tabItems.map((tab) => (
-          <TabsPrimitive.Trigger
-            key={tab.value}
-            value={tab.value}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${current === tab.value ? 'bg-primary text-primary-foreground' : 'text-white/70'
-              }`}
+          <button
+            key={tab.id}
+            onClick={() => setCurrent(tab.id)}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              current === tab.id
+                ? 'bg-white text-black'
+                : 'text-white/60 hover:text-white hover:bg-white/10'
+            }`}
           >
             {tab.label}
-          </TabsPrimitive.Trigger>
+          </button>
         ))}
-      </TabsPrimitive.List>
-      <div className="mt-6 space-y-4">
-        <TabsPrimitive.Content value="story" className="space-y-4 text-sm text-white/70">
-          <p>
-            ?�들???�포?�로 ?�성?�는 공연. 참여???�드백을 바탕?�로 매주 ?�나리오?� 무�?�??�데?�트?�니??
-          </p>
-          <p>
-            ?�리미엄 ?�켓�?메�?버스 중계, ?�정??굿즈까�? ?�양??리워?��? ?�공?�며, 글로벌 ?�과???�시�??�터?�션??지?�합?�다.
-          </p>
-        </TabsPrimitive.Content>
-        <TabsPrimitive.Content value="updates">
-          <ProjectUpdatesBoard projectId={projectId} canManageUpdates={canManageUpdates} />
-        </TabsPrimitive.Content>
-        <TabsPrimitive.Content value="community">
-          <CommunityBoard projectId={projectId} />
-        </TabsPrimitive.Content>
-        <TabsPrimitive.Content value="roadmap" className="space-y-4 text-sm text-white/70">
-          <div className="grid gap-3">
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-              <h4 className="text-sm font-semibold text-white">Pre-production</h4>
-              <p className="mt-1 text-xs text-white/60">9??1주차 ??콘셉???�자???�정</p>
+      </div>
+
+      <div className="space-y-6">
+        {current === 'overview' && (
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+              <h3 className="text-lg font-semibold text-white mb-4">프로젝트 개요</h3>
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-sm font-medium text-white/60 mb-2">설명</h4>
+                  <p className="text-white/80 leading-relaxed">{project.description}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-white/60 mb-2">상세 내용</h4>
+                  <div className="text-white/80 leading-relaxed whitespace-pre-wrap">
+                    {project.content}
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-              <h4 className="text-sm font-semibold text-white">Live Recording</h4>
-              <p className="mt-1 text-xs text-white/60">10??4주차 ???�이�?공연 진행</p>
-            </div>
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-              <h4 className="text-sm font-semibold text-white">Settlement</h4>
-              <p className="mt-1 text-xs text-white/60">11??1주차 ???�산 리포??공유</p>
+
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+              <h3 className="text-lg font-semibold text-white mb-4">펀딩 현황</h3>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-white/60">목표 금액</span>
+                  <span className="text-white font-medium">{formatCurrency(project.targetAmount)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-white/60">현재 모집 금액</span>
+                  <span className="text-white font-medium">{formatCurrency(project.currentAmount)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-white/60">남은 금액</span>
+                  <span className="text-white font-medium">{formatCurrency(remainingAmount)}</span>
+                </div>
+                <div className="w-full bg-white/10 rounded-full h-2">
+                  <div 
+                    className="bg-blue-500 h-2 rounded-full transition-all duration-300" 
+                    style={{ width: `${Math.min(progressPercentage, 100)}%` }}
+                  />
+                </div>
+                <div className="text-center text-sm text-white/60">
+                  {progressPercentage.toFixed(1)}% 달성
+                </div>
+              </div>
             </div>
           </div>
-        </TabsPrimitive.Content>
-        <TabsPrimitive.Content value="settlement" className="space-y-4 text-sm text-white/70">
-          {isSettlementLoading ? (
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-4 text-xs text-white/60">
-              ?�산 ?�이?��? 불러?�는 중입?�다...
-            </div>
-          ) : settlementError ? (
-            <div className="rounded-3xl border border-red-500/40 bg-red-500/10 p-4 text-xs text-red-200">
-              {settlementError}
-            </div>
-          ) : latestSettlement ? (
-            <div className="space-y-4">
-              <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-                <p className="text-xs text-white/60">최신 ?�산 금액</p>
-                <p className="mt-2 text-lg font-semibold text-white">
-                  {currencyFormatter.format(latestSettlement.totalAmount)}
-                </p>
-                <p className="mt-2 text-xs text-white/60">
-                  ?�작??{currencyFormatter.format(latestSettlement.creatorShare)} · ?�랫??' '}
-                  {currencyFormatter.format(latestSettlement.platformShare)}
-                </p>
-                <p className="mt-2 text-xs text-white/50">
-                  {latestSettlement.distributed ? '분배 ?�료' : '분배 ?��?} ·{' '}
-                  {dateFormatter.format(new Date(latestSettlement.createdAt))}
-                </p>
-              </div>
+        )}
 
-              {settlementHistory.length ? (
-                <div className="space-y-3">
-                  <p className="text-xs font-medium uppercase tracking-[0.2em] text-white/60">?�산 ?�스?�리</p>
-                  <ul className="space-y-3 text-xs text-white/60">
-                    {settlementHistory.map((item) => (
-                      <li
-                        key={item.id}
-                        className="flex flex-col gap-1 rounded-2xl border border-white/5 bg-neutral-950/60 p-3 sm:flex-row sm:items-center sm:justify-between"
-                      >
-                        <span className="font-medium text-white/80">
-                          {currencyFormatter.format(item.totalAmount)}
-                        </span>
-                        <span>{dateFormatter.format(new Date(item.createdAt))}</span>
-                        <span className="text-white/40">{item.distributed ? '분배 ?�료' : '분배 준�?}</span>
-                      </li>
-                    ))}
-                  </ul>
+        {current === 'updates' && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-white">프로젝트 업데이트</h3>
+            {updates.length > 0 ? (
+              updates.map((update) => (
+                <div key={update.id} className="rounded-2xl border border-white/10 bg-white/5 p-6">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-white font-medium">{update.title}</h4>
+                      <span className="text-sm text-white/60">{formatDate(update.createdAt)}</span>
+                    </div>
+                    <p className="text-white/80 leading-relaxed">{update.content}</p>
+                  </div>
                 </div>
-              ) : null}
-            </div>
-          ) : (
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-4 text-xs text-white/60">
-              ?�직 ?�산 ?�역???�습?�다. 목표 금액???�성?�면 ?�산 리포?��? ?�동?�로 갱신?�니??
-            </div>
-          )}
-        </TabsPrimitive.Content>
+              ))
+            ) : (
+              <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 p-12 text-center">
+                <p className="text-white/60">아직 업데이트가 없습니다.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {current === 'comments' && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-white">댓글</h3>
+            {comments.length > 0 ? (
+              comments.map((comment) => (
+                <div key={comment.id} className="rounded-2xl border border-white/10 bg-white/5 p-6">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-white font-medium">{comment.author?.name || '익명'}</span>
+                      <span className="text-sm text-white/60">{formatDate(comment.createdAt)}</span>
+                    </div>
+                    <p className="text-white/80 leading-relaxed">{comment.content}</p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 p-12 text-center">
+                <p className="text-white/60">아직 댓글이 없습니다.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {current === 'settlements' && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-white">정산 내역</h3>
+            {settlements.length > 0 ? (
+              settlements.map((settlement) => (
+                <div key={settlement.id} className="rounded-2xl border border-white/10 bg-white/5 p-6">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-white font-medium">정산 #{settlement.id.slice(0, 8)}</span>
+                      <span className="text-sm text-white/60">{formatDate(settlement.createdAt)}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-white/60">총 모집금액:</span>
+                        <span className="text-white ml-2">{formatCurrency(settlement.totalRaised)}</span>
+                      </div>
+                      <div>
+                        <span className="text-white/60">정산금액:</span>
+                        <span className="text-white ml-2">{formatCurrency(settlement.netAmount)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 p-12 text-center">
+                <p className="text-white/60">아직 정산 내역이 없습니다.</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
-    </TabsPrimitive.Root>
+    </div>
   );
 }

@@ -1,32 +1,24 @@
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
 import { ReactNode } from 'react';
 
+import { Providers } from './providers';
 import './globals.css';
 
-import { Footer } from '@/components/ui/layout/footer';
-import { Header } from '@/components/ui/layout/header';
-import { MobileTabBar } from '@/components/ui/layout/mobile-tab-bar';
-import { Providers } from '@/app/providers';
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Collaborium ??Artist Collaboration Platform',
-  description: '?�과 ?�티?�트가 ?�께 만들?��????�??· 커�??�티 ?�랫??
+  title: 'Collaborium - Artist Collaboration Platform',
+  description: '음악과 아티스트가 함께 만들어가는 크리에이티브 커뮤니티 플랫폼',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="ko" suppressHydrationWarning>
-      <body className="bg-neutral-950 text-white">
+    <html lang="ko">
+      <body className={inter.className}>
         <Providers>
-          <div className="flex min-h-screen flex-col pb-16 lg:pb-0">
-            <Header />
-            <main className="flex-1 pt-20 lg:pt-24">{children}</main>
-            <Footer />
-            <MobileTabBar />
-          </div>
+          {children}
         </Providers>
-        <SpeedInsights />
       </body>
     </html>
   );

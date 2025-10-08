@@ -9,212 +9,180 @@ import {
   type AnnouncementCategory
 } from '@/lib/constants/announcements';
 
-interface AnnouncementFormState {
+interface AnnouncementComposerProps {
+  onSuccess?: () => void;
+  onCancel?: () => void;
+}
+
+interface CreateAnnouncementData {
   title: string;
   content: string;
   category: AnnouncementCategory;
   isPinned: boolean;
-  publishedAt: string;
+  targetAudience: 'ALL' | 'PARTNERS' | 'ARTISTS';
 }
 
-const initialState: AnnouncementFormState = {
-  title: '',
-  content: '',
-  category: DEFAULT_ANNOUNCEMENT_CATEGORY,
-  isPinned: false,
-  publishedAt: ''
-};
-
-async function createAnnouncementRequest(payload: AnnouncementFormState) {
+async function createAnnouncement(data: CreateAnnouncementData) {
   const response = await fetch('/api/announcements', {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      title: payload.title,
-      content: payload.content,
-      category: payload.category,
-      isPinned: payload.isPinned,
-      publishedAt: payload.publishedAt ? new Date(payload.publishedAt).toISOString() : null
-    })
+    body: JSON.stringify(data)
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: '공�? ?�성???�패?�습?�다.' }));
-    throw new Error(error.message ?? '공�? ?�성???�패?�습?�다.');
+    const error = await response.json().catch(() => ({ message: '공지사항 생성에 실패했습니다.' }));
+    throw new Error(error.message ?? '공지사항 생성에 실패했습니다.');
   }
 
   return response.json();
 }
 
-export function AnnouncementComposer() {
-  const [formState, setFormState] = useState<AnnouncementFormState>(initialState);
+export default function AnnouncementComposer({ onSuccess, onCancel }: AnnouncementComposerProps) {
+  const [formData, setFormData] = useState<CreateAnnouncementData>({
+    title: '',
+    content: '',
+    category: DEFAULT_ANNOUNCEMENT_CATEGORY,
+    isPinned: false,
+    targetAudience: 'ALL'
+  });
   const [error, setError] = useState<string | null>(null);
+
   const queryClient = useQueryClient();
 
-  const mutation = useMutation({
-    mutationFn: createAnnouncementRequest,
+  const createMutation = useMutation({
+    mutationFn: createAnnouncement,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['announcements', 'admin'] });
       queryClient.invalidateQueries({ queryKey: ['announcements'] });
-      setFormState(initialState);
+      onSuccess?.();
+    },
+    onError: (error: Error) => {
+      setError(error.message);
     }
   });
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError(null);
-
-    if (!formState.title.trim() || !formState.content.trim()) {
-      setError('?�목�??�용??모두 ?�력??주세??');
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.title.trim() || !formData.content.trim()) {
+      setError('제목과 내용을 모두 입력해주세요.');
       return;
     }
 
-    try {
-      await mutation.mutateAsync(formState);
-    } catch (submissionError) {
-      if (submissionError instanceof Error) {
-        setError(submissionError.message);
-      } else {
-        setError('공�? ?�성 �??�류가 발생?�습?�다.');
-      }
-    }
+    setError(null);
+    createMutation.mutate(formData);
   };
 
-  const handleChange = (field: keyof AnnouncementFormState, value: string | boolean) => {
-    setFormState((prev) => ({
-      ...prev,
-      [field]: value
-    }));
+  const handleChange = (field: keyof CreateAnnouncementData, value: string | boolean) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    if (error) setError(null);
   };
-
-  const previewDate = formState.publishedAt
-    ? new Date(formState.publishedAt)
-    : new Date();
 
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-8 shadow-lg shadow-blue-500/5">
-      <h2 className="text-xl font-semibold text-white">??공�? ?�성</h2>
-      <p className="mt-1 text-sm text-white/60">
-        공�? ?�목, 카테고리, 발행 ?�각???�정?�고 ?�시간으�?미리보기�??�인?�세??
-      </p>
-
-      <form onSubmit={handleSubmit} className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px]">
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <label htmlFor="title" className="text-sm font-medium text-white/80">
-              ?�목
-            </label>
-            <input
-              id="title"
-              type="text"
-              value={formState.title}
-              onChange={(event) => handleChange('title', event.target.value)}
-              className="w-full rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-white/40 focus:border-blue-400 focus:outline-none"
-              placeholder="?? 8???�기 ?��? ?�내"
-              required
-            />
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-2">
-            <div className="space-y-2">
-              <label htmlFor="category" className="text-sm font-medium text-white/80">
-                카테고리
-              </label>
-              <select
-                id="category"
-                value={formState.category}
-                onChange={(event) => handleChange('category', event.target.value as AnnouncementCategory)}
-                className="w-full rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white focus:border-blue-400 focus:outline-none"
-              >
-                {ANNOUNCEMENT_CATEGORIES.map((category) => (
-                  <option key={category.value} value={category.value}>
-                    {category.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <label htmlFor="publishedAt" className="text-sm font-medium text-white/80">
-                발행 ?�각 (비워?�면 즉시 발행)
-              </label>
-              <input
-                id="publishedAt"
-                type="datetime-local"
-                value={formState.publishedAt}
-                onChange={(event) => handleChange('publishedAt', event.target.value)}
-                className="w-full rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white focus:border-blue-400 focus:outline-none"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <input
-              id="isPinned"
-              type="checkbox"
-              checked={formState.isPinned}
-              onChange={(event) => handleChange('isPinned', event.target.checked)}
-              className="h-4 w-4 rounded border border-white/30 bg-white/5 text-blue-400 focus:ring-blue-400"
-            />
-            <label htmlFor="isPinned" className="text-sm text-white/70">
-              공�?�??�단??고정?�니??
-            </label>
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="content" className="text-sm font-medium text-white/80">
-              ?�용
-            </label>
-            <textarea
-              id="content"
-              value={formState.content}
-              onChange={(event) => handleChange('content', event.target.value)}
-              className="h-48 w-full rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-white/40 focus:border-blue-400 focus:outline-none"
-              placeholder="공�? ?�용???�성??주세??"
-              required
-            />
-          </div>
-
-          {error ? <p className="text-sm text-rose-300">{error}</p> : null}
-
-          <button
-            type="submit"
-            disabled={mutation.isPending}
-            className="inline-flex items-center justify-center rounded-lg bg-blue-500 px-5 py-3 text-sm font-medium text-white transition hover:bg-blue-400 disabled:cursor-not-allowed disabled:bg-blue-500/50"
-          >
-            {mutation.isPending ? '?�록 중�? : '공�? 발행' }
-          </button>
+    <div className="bg-white rounded-lg shadow-sm border p-6">
+      <h2 className="text-xl font-semibold text-gray-900 mb-6">새 공지사항 작성</h2>
+      
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div>
+          <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+            제목
+          </label>
+          <input
+            type="text"
+            id="title"
+            value={formData.title}
+            onChange={(e) => handleChange('title', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="공지사항 제목을 입력하세요"
+            required
+          />
         </div>
 
-        <aside className="hidden rounded-2xl border border-white/10 bg-white/[0.02] p-6 text-sm text-white/70 shadow-inner lg:block">
-          <h3 className="text-sm font-semibold text-white">미리보기</h3>
-          <p className="mt-1 text-xs text-white/50">
-            {formState.publishedAt ? `?�약 발행: ${new Date(formState.publishedAt).toLocaleString('ko-KR')}` : '즉시 발행 ?�정'}
-          </p>
-          <div className="mt-5 space-y-3">
-            <div className="flex items-center gap-2 text-xs text-white/60">
-              {formState.isPinned ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-amber-300">
-                  ?�� ?�단 고정
-                </span>
-              ) : null}
-              <span className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2 py-0.5 text-white/70">
-                {
-                  ANNOUNCEMENT_CATEGORIES.find((category) => category.value === formState.category)?.label ??
-                  formState.category
-                }
-              </span>
-            </div>
-            <h4 className="text-lg font-semibold text-white">{formState.title || '미리보기 ?�목'}</h4>
-            <p className="text-white/60">
-              {formState.content ? formState.content.slice(0, 160) : '공�? ?�용???�력?�면 ?�기?�서 미리보기가 ?�데?�트?�니??'}
-              {formState.content.length > 160 ? '?? : ''}
-            </p>
-            <p className="text-xs text-white/40">{previewDate.toLocaleString('ko-KR')}</p>
+        <div>
+          <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+            카테고리
+          </label>
+          <select
+            id="category"
+            value={formData.category}
+            onChange={(e) => handleChange('category', e.target.value as AnnouncementCategory)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            {ANNOUNCEMENT_CATEGORIES.map((category) => (
+              <option key={category.value} value={category.value}>
+                {category.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="targetAudience" className="block text-sm font-medium text-gray-700 mb-2">
+            대상
+          </label>
+          <select
+            id="targetAudience"
+            value={formData.targetAudience}
+            onChange={(e) => handleChange('targetAudience', e.target.value as 'ALL' | 'PARTNERS' | 'ARTISTS')}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="ALL">전체</option>
+            <option value="PARTNERS">파트너</option>
+            <option value="ARTISTS">아티스트</option>
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
+            내용
+          </label>
+          <textarea
+            id="content"
+            value={formData.content}
+            onChange={(e) => handleChange('content', e.target.value)}
+            rows={8}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="공지사항 내용을 입력하세요"
+            required
+          />
+        </div>
+
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            id="isPinned"
+            checked={formData.isPinned}
+            onChange={(e) => handleChange('isPinned', e.target.checked)}
+            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          />
+          <label htmlFor="isPinned" className="ml-2 block text-sm text-gray-700">
+            상단 고정
+          </label>
+        </div>
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+            {error}
           </div>
-        </aside>
+        )}
+
+        <div className="flex justify-end space-x-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            취소
+          </button>
+          <button
+            type="submit"
+            disabled={createMutation.isPending}
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {createMutation.isPending ? '생성 중...' : '공지사항 생성'}
+          </button>
+        </div>
       </form>
     </div>
   );

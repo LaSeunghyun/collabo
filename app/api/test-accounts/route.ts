@@ -1,24 +1,17 @@
-import { NextResponse } from 'next/server';
-import { hash } from 'bcryptjs';
-import { inArray } from 'drizzle-orm';
-import { users } from '@/lib/db/schema';
-import { getDb } from '@/lib/db/client';
+import { NextRequest, NextResponse } from 'next/server';
+import { getDb } from '@/lib/db';
+import { users } from '@/drizzle/schema';
+import { hashPassword } from '@/lib/auth/password';
+import { randomUUID } from 'crypto';
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
-    console.log('?�� ?�스??계정 ?�성 ?�작...');
-
-    // 기존 계정 ??�� (?�택?�항)
     const db = await getDb();
-    await db.delete(users).where(
-      inArray(users.email, ['admin@collabo.com', 'fan@collabo.com', 'partner@collabo.com'])
-    );
+    const hashedPassword = await hashPassword('test123!');
 
-    const hashedPassword = await hash('1234', 10);
-
-    // 1. 관리자 계정 ?�성
+    // 1. 관리자 계정 생성
     const admin = await db.insert(users).values({
-      id: crypto.randomUUID(),
+      id: randomUUID(),
       name: '관리자',
       email: 'admin@collabo.com',
       passwordHash: hashedPassword,
@@ -26,50 +19,61 @@ export async function POST() {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }).returning();
-    console.log('??관리자 계정 ?�성 ?�료:', admin[0].email);
 
-    // 2. ??계정 ?�성 (참여??
+    console.log('테스트 관리자 계정 생성 완료:', admin[0].email);
+
+    // 2. 팬 계정 생성 (참여자)
     const fan = await db.insert(users).values({
-      id: crypto.randomUUID(),
-      name: '??,
+      id: randomUUID(),
+      name: '팬',
       email: 'fan@collabo.com',
       passwordHash: hashedPassword,
       role: 'PARTICIPANT',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }).returning();
-    console.log('????계정 ?�성 ?�료:', fan[0].email);
 
-    // 3. ?�트??계정 ?�성
+    console.log('테스트 팬 계정 생성 완료:', fan[0].email);
+
+    // 3. 파트너 계정 생성
     const partner = await db.insert(users).values({
-      id: crypto.randomUUID(),
-      name: '?�트??,
+      id: randomUUID(),
+      name: '파트너',
       email: 'partner@collabo.com',
       passwordHash: hashedPassword,
       role: 'PARTNER',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }).returning();
-    console.log('???�트??계정 ?�성 ?�료:', partner[0].email);
+
+    console.log('테스트 파트너 계정 생성 완료:', partner[0].email);
+
+    // 4. 아티스트 계정 생성
+    const artist = await db.insert(users).values({
+      id: randomUUID(),
+      name: '아티스트',
+      email: 'artist@collabo.com',
+      passwordHash: hashedPassword,
+      role: 'CREATOR',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }).returning();
+
+    console.log('테스트 아티스트 계정 생성 완료:', artist[0].email);
 
     return NextResponse.json({
-      success: true,
-      message: '모든 ?�스??계정???�공?�으�??�성?�었?�니??',
-      accounts: [
-        { email: 'admin@collabo.com', role: 'ADMIN', password: '1234' },
-        { email: 'fan@collabo.com', role: 'PARTICIPANT', password: '1234' },
-        { email: 'partner@collabo.com', role: 'PARTNER', password: '1234' }
-      ]
+      message: '테스트 계정들이 성공적으로 생성되었습니다.',
+      accounts: {
+        admin: admin[0].email,
+        fan: fan[0].email,
+        partner: partner[0].email,
+        artist: artist[0].email
+      }
     });
-
   } catch (error) {
-    console.error('??계정 ?�성 �??�류 발생:', error);
+    console.error('테스트 계정 생성 중 오류 발생:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: '계정 ?�성 �??�류가 발생?�습?�다.',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
+      { error: '테스트 계정 생성에 실패했습니다.' },
       { status: 500 }
     );
   }

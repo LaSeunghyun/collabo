@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
-import { getServerAuthSession } from '@/lib/auth/session';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/options';
 import {
   deleteAnnouncement,
   getAnnouncementDetail,
   markAnnouncementAsRead,
   updateAnnouncement
 } from '@/lib/server/announcements';
-import { UserRole } from '@/types/prisma';
 
 export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const session = await getServerAuthSession();
+    const session = await getServerSession(authOptions);
     const userId = session?.user?.id ?? null;
     const announcement = await getAnnouncementDetail(params.id, userId);
 
@@ -58,7 +58,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   }
 
   try {
-    await requireApiUser({ roles: [UserRole.ADMIN] }, authContext);
+    await requireApiUser({ roles: ['ADMIN'] }, authContext);
   } catch (error) {
     const response = handleAuthorizationError(error);
 
@@ -99,7 +99,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   const authContext = { headers: request.headers };
   try {
-    await requireApiUser({ roles: [UserRole.ADMIN] }, authContext);
+    await requireApiUser({ roles: ['ADMIN'] }, authContext);
   } catch (error) {
     const response = handleAuthorizationError(error);
 

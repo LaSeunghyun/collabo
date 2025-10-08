@@ -1,181 +1,242 @@
-import { randomUUID } from 'crypto';
+import type { Adapter, AdapterAccount, AdapterSession, AdapterUser } from 'next-auth/adapters';
+import { getDb } from '@/lib/db/client';
+import { users, authSessions, authDevices } from '@/drizzle/schema';
+import { eq, and } from 'drizzle-orm';
 
-import type {
-  Adapter,
-  AdapterAccount,
-  AdapterSession,
-  AdapterUser,
-  VerificationToken
-} from 'next-auth/adapters';
-import { eq } from 'drizzle-orm';
-
-import { getDbClient } from '@/lib/db/client';
-import { user } from '@/drizzle/schema';
-
-type DatabaseClient = Awaited<ReturnType<typeof getDbClient>>;
-
-type UserSelect = typeof user.$inferSelect;
-type UserInsert = typeof user.$inferInsert;
-
-const toAdapterUser = (user: UserSelect): AdapterUser => ({
-  id: user.id,
-  name: user.name,
-  email: user.email,
-  emailVerified: null,
-  image: user.avatarUrl ?? null
-});
-
-const ensureEmail = (email: string | null | undefined): string => {
-  if (!email) {
-    throw new Error('?´ë©”???•ë³´ê°€ ?†ì–´ NextAuth ?¬ìš©???ˆì½”?œë? ?ì„±?????†ìŠµ?ˆë‹¤.');
-  }
-
-  return email;
+const unsupported = (operation: string) => {
+  throw new Error(`Operation "${operation}" is not supported by this adapter`);
 };
 
-const unsupported = (feature: string): never => {
-  throw new Error(`NextAuth ${feature} ê¸°ëŠ¥?€ Drizzle ?´ëŒ‘?°ì—???„ì§ ì§€?ë˜ì§€ ?ŠìŠµ?ˆë‹¤.`);
-};
+export const drizzleAdapter: Adapter = {
+  createUser: async (user: Omit<AdapterUser, 'id'>) => {
+    const db = await getDb();
+    const [created] = await db
+      .insert(users)
+      .values({
+        id: crypto.randomUUID(),
+        name: user.name || '',
+        email: user.email,
+        avatarUrl: user.image,
+        role: 'CREATOR',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      })
+      .returning();
 
-export const createDrizzleAuthAdapter = (database?: DatabaseClient): Adapter => {
-  const databasePromise = database ? Promise.resolve(database) : getDbClient();
+    return {
+      id: created.id,
+      name: created.name,
+      email: created.email,
+      emailVerified: null,
+      image: created.avatarUrl
+    };
+  },
+  getUser: async (id: string) => {
+    const db = await getDb();
+    const [user] = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        avatarUrl: users.avatarUrl
+      })
+      .from(users)
+      .where(eq(users.id, id))
+      .limit(1);
 
-  const getDatabase = () => databasePromise;
+    if (!user) return null;
 
-  const readUserById = async (id: string) => {
-    const db = await getDatabase();
-    return (db as any).query.user.findFirst({
-      where: eq(user.id, id)
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      emailVerified: null,
+      image: user.avatarUrl
+    };
+  },
+  getUserByEmail: async (email: string) => {
+    const db = await getDb();
+    const [user] = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        avatarUrl: users.avatarUrl
+      })
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+
+    if (!user) return null;
+
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      emailVerified: null,
+      image: user.avatarUrl
+    };
+  },
+  getUserByAccount: async (account: { provider: string; providerAccountId: string }) => {
+    const db = await getDb();
+    const [user] = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        avatarUrl: users.avatarUrl
+      })
+      .from(users)
+      .innerJoin(authDevices, eq(users.id, authDevices.userId))
+      .where(
+        and(
+          eq(authDevices.deviceName, account.provider),
+          eq(authDevices.userId, users.id)
+        )
+      )
+      .limit(1);
+
+    if (!user) return null;
+
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      emailVerified: null,
+      image: user.avatarUrl
+    };
+  },
+  updateUser: async (user: Partial<AdapterUser> & Pick<AdapterUser, 'id'>) => {
+    const db = await getDb();
+    const [updated] = await db
+      .update(users)
+      .set({
+        name: user.name || '',
+        email: user.email,
+        avatarUrl: user.image,
+        updatedAt: new Date().toISOString()
+      })
+      .where(eq(users.id, user.id))
+      .returning();
+
+    return {
+      id: updated.id,
+      name: updated.name,
+      email: updated.email,
+      emailVerified: null,
+      image: updated.avatarUrl
+    };
+  },
+  deleteUser: async (userId: string) => {
+    const db = await getDb();
+    await db.delete(users).where(eq(users.id, userId));
+  },
+  linkAccount: async (account: AdapterAccount) => {
+    const db = await getDb();
+    if (!account.userId) return;
+    
+    await db.insert(authDevices).values({
+      id: crypto.randomUUID(),
+      userId: account.userId,
+      deviceName: account.provider,
+      deviceType: account.type,
+      client: 'web',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     });
-  };
+  },
+  unlinkAccount: async (account: AdapterAccount) => {
+    const db = await getDb();
+    await db
+      .delete(authDevices)
+      .where(
+        and(
+          eq(authDevices.deviceName, account.provider),
+          eq(authDevices.userId, account.userId)
+        )
+      );
+  },
+  createSession: async (session: AdapterSession) => {
+    const db = await getDb();
+    const [created] = await db
+      .insert(authSessions)
+      .values({
+        id: session.sessionToken,
+        userId: session.userId,
+        absoluteExpiresAt: session.expires.toISOString(),
+        createdAt: new Date().toISOString(),
+        lastUsedAt: new Date().toISOString()
+      })
+      .returning();
 
-  const readUserByEmail = async (email: string) => {
-    const db = await getDatabase();
-    return (db as any).query.user.findFirst({
-      where: eq(user.email, email)
-    });
-  };
+    return {
+      sessionToken: created.id,
+      userId: created.userId,
+      expires: new Date(created.absoluteExpiresAt)
+    };
+  },
+  getSessionAndUser: async (sessionToken: string) => {
+    const db = await getDb();
+    const [result] = await db
+      .select({
+        session: {
+          sessionToken: authSessions.id,
+          userId: authSessions.userId,
+          expires: authSessions.absoluteExpiresAt
+        },
+        user: {
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          avatarUrl: users.avatarUrl
+        }
+      })
+      .from(authSessions)
+      .innerJoin(users, eq(authSessions.userId, users.id))
+      .where(eq(authSessions.id, sessionToken))
+      .limit(1);
 
-  const touchTimestamp = () => new Date().toISOString();
-
-  return {
-    createUser: async (userData: Omit<AdapterUser, 'id'> & { id?: string }) => {
-      const db = await getDatabase();
-      const id = userData.id ?? randomUUID();
-      const email = ensureEmail(userData.email);
-      const name = userData.name ?? email;
-      const now = touchTimestamp();
-
-      const [record] = await db
-        .insert(user)
-        .values({
-          id,
-          email,
-          name,
-          avatarUrl: userData.image ?? null,
-          updatedAt: now
-        } satisfies UserInsert)
-        .returning();
-
-      if (!record) {
-        throw new Error('?¬ìš©???ˆì½”?œë? ?ì„±?˜ì? ëª»í–ˆ?µë‹ˆ??');
-      }
-
-      return toAdapterUser(record);
-    },
-    getUser: async (id) => {
-      const userRecord = await readUserById(id);
-      return userRecord ? toAdapterUser(userRecord) : null;
-    },
-    getUserByEmail: async (email) => {
-      const userRecord = await readUserByEmail(email);
-      return userRecord ? toAdapterUser(userRecord) : null;
-    },
-    getUserByAccount: async () => null,
-    updateUser: async (userData: Partial<AdapterUser> & Pick<AdapterUser, 'id'>) => {
-      if (!userData.id) {
-        throw new Error('?¬ìš©???…ë°?´íŠ¸?ëŠ” IDê°€ ?„ìš”?©ë‹ˆ??');
-      }
-
-      const existing = await readUserById(userData.id);
-
-      if (!existing) {
-        throw new Error('?¬ìš©?ë? ì°¾ì„ ???†ìŠµ?ˆë‹¤.');
-      }
-
-      const updates: Partial<UserInsert> = {
-        updatedAt: touchTimestamp()
-      };
-
-      if (userData.name !== undefined) {
-        updates.name = userData.name ?? existing.name;
-      }
-
-      if (userData.email !== undefined) {
-        updates.email = ensureEmail(userData.email);
-      }
-
-      if (userData.image !== undefined) {
-        updates.avatarUrl = userData.image ?? null;
-      }
-
-      const db = await getDatabase();
-      const [record] = await db
-        .update(user)
-        .set(updates)
-        .where(eq(user.id, userData.id))
-        .returning();
-
-      if (!record) {
-        throw new Error('?¬ìš©???…ë°?´íŠ¸???¤íŒ¨?ˆìŠµ?ˆë‹¤.');
-      }
-
-      return toAdapterUser(record);
-    },
-    deleteUser: async (id) => {
-      const existing = await readUserById(id);
-
-      if (!existing) {
-        return null;
-      }
-
-      const db = await getDatabase();
-      await db.delete(user).where(eq(user.id, id)).execute();
-      return toAdapterUser(existing);
-    },
-    linkAccount: async (account: AdapterAccount) => {
-      void account;
-      return unsupported('OAuth ê³„ì • ?°ë™');
-    },
-    unlinkAccount: async (account: AdapterAccount) => {
-      void account;
-      return unsupported('OAuth ê³„ì • ?´ì œ');
-    },
-    createSession: async (session: AdapterSession) => {
-      void session;
-      return unsupported('?¸ì…˜ ?€??);
-    },
-    getSessionAndUser: async (sessionToken: string) => {
-      void sessionToken;
-      return unsupported('?¸ì…˜ ì¡°íšŒ');
-    },
-    updateSession: async (session: Partial<AdapterSession> & Pick<AdapterSession, 'sessionToken'>) => {
-      void session;
-      return unsupported('?¸ì…˜ ê°±ì‹ ');
-    },
-    deleteSession: async (sessionToken: string) => {
-      void sessionToken;
-      return unsupported('?¸ì…˜ ?? œ');
-    },
-    createVerificationToken: async (token: VerificationToken) => {
-      void token;
-      return unsupported('?¸ì¦ ? í° ?ì„±');
-    },
-    useVerificationToken: async (params: { identifier: string; token: string }) => {
-      void params;
-      return unsupported('?¸ì¦ ? í° ?¬ìš©');
+    if (!result) {
+      return null;
     }
-  } satisfies Adapter;
+
+    return {
+      session: {
+        sessionToken: result.session.sessionToken,
+        userId: result.session.userId,
+        expires: new Date(result.session.expires)
+      },
+      user: {
+        id: result.user.id,
+        name: result.user.name,
+        email: result.user.email,
+        emailVerified: null,
+        image: result.user.avatarUrl
+      }
+    };
+  },
+  updateSession: async (session: Partial<AdapterSession> & Pick<AdapterSession, 'sessionToken'>) => {
+    const db = await getDb();
+    const [updated] = await db
+      .update(authSessions)
+      .set({
+        userId: session.userId,
+        absoluteExpiresAt: session.expires?.toISOString(),
+        lastUsedAt: new Date().toISOString()
+      })
+      .where(eq(authSessions.id, session.sessionToken))
+      .returning();
+
+    return {
+      sessionToken: updated.id,
+      userId: updated.userId,
+      expires: new Date(updated.absoluteExpiresAt)
+    };
+  },
+  deleteSession: async (sessionToken: string) => {
+    const db = await getDb();
+    await db.delete(authSessions).where(eq(authSessions.id, sessionToken));
+  }
 };
 
-export default createDrizzleAuthAdapter;
+export const createDrizzleAuthAdapter = () => drizzleAdapter;

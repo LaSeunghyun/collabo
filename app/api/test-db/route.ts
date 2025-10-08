@@ -14,10 +14,10 @@ export async function GET() {
       });
     }
 
-    // 간단???�이?�베?�스 ?�결 ?�스??
+    // 간단???�이?�베?�스 ?�결 ?�스??
     const db = await getDb();
     
-    // execute 메서?��? ?�는지 ?�인
+    // execute 메서?��? ?�는지 ?�인
     if (typeof db.execute !== 'function') {
       return NextResponse.json({
         success: false,
@@ -36,7 +36,7 @@ export async function GET() {
   } catch (error) {
     console.error('Database connection failed:', error);
     
-    // ?�이?�베?�스가 비활?�화??경우 graceful?�게 처리
+    // ?�이?�베?�스가 비활?�화??경우 graceful?�게 처리
     if (error instanceof Error && error.message.includes('Database access is disabled')) {
       return NextResponse.json({
         success: false,

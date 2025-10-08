@@ -3,9 +3,10 @@ import { notFound } from 'next/navigation';
 
 import { FundingDialog } from '@/components/ui/dialogs/funding-dialog';
 import { ProjectDetailTabs } from '@/components/ui/sections/project-detail-tabs';
-import { getServerAuthSession } from '@/lib/auth/session';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/options';
 import { getProjectSummaryById } from '@/lib/server/projects';
-import { UserRole } from '@/types/prisma';
+import { userRole } from '@/drizzle/schema';
 
 interface ProjectPageProps {
   params: { id: string };
@@ -17,11 +18,11 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
     notFound();
   }
 
-  const session = await getServerAuthSession();
+  const session = await getServerSession(authOptions);
   const viewerId = session?.user?.id ?? null;
   const viewerRole = session?.user?.role ?? null;
   const canManageUpdates =
-    (viewerId && viewerId === project.owner.id) || viewerRole === UserRole.ADMIN;
+    (viewerId && viewerId === project.owner.id) || viewerRole === 'ADMIN';
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-12 px-4 pb-20">

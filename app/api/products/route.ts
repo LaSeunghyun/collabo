@@ -9,12 +9,12 @@ import { GuardRequirement } from '@/lib/auth/session';
 
 export async function GET(request: NextRequest) {
   try {
-    // ?�이?�베?�스 ?�용 가???��? ?�인
+    // ?�이?�베?�스 ?�용 가???��? ?�인
     if (!isDrizzleAvailable()) {
       return NextResponse.json(
         { 
-          error: '?�이?�베?�스???�결?????�습?�다.',
-          details: 'DATABASE_URL???�정?��? ?�았?�니??'
+          error: '?�이?�베?�스???�결?????�습?�다.',
+          details: 'DATABASE_URL???�정?��? ?�았?�니??'
         },
         { status: 503 }
       );
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const offset = (page - 1) * limit;
 
-    // 조건부 ?�터�?
+    // 조건부 ?�터�?
     const conditions = [];
     if (projectId) {
       conditions.push(eq(products.projectId, projectId));
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
       conditions.push(eq(products.type, type as any));
     }
 
-    // ?�품 목록 조회
+    // ?�품 목록 조회
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
     let productsQuery = db
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .offset(offset);
 
-    // ?�체 개수 조회
+    // ?�체 개수 조회
     let countQuery = db.select({ count: count() }).from(products);
     if (whereClause) {
       countQuery = countQuery.where(whereClause);
@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('?�품 목록 조회 �??�류 발생:', {
+    console.error('?�품 목록 조회 �??�류 발생:', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
       projectId: request.nextUrl.searchParams.get('projectId') || 'unknown'
@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json(
       { 
-        error: '?�품 목록??불러?�는???�패?�습?�다.',
+        error: '?�품 목록??불러?�는???�패?�습?�다.',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
@@ -109,12 +109,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // ?�이?�베?�스 ?�용 가???��? ?�인
+    // ?�이?�베?�스 ?�용 가???��? ?�인
     if (!isDrizzleAvailable()) {
       return NextResponse.json(
         { 
-          error: '?�이?�베?�스???�결?????�습?�다.',
-          details: 'DATABASE_URL???�정?��? ?�았?�니??'
+          error: '?�이?�베?�스???�결?????�습?�다.',
+          details: 'DATABASE_URL???�정?��? ?�았?�니??'
         },
         { status: 503 }
       );
@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
       body = await request.json();
     } catch {
       return NextResponse.json(
-        { error: '?�못???�청 본문?�니??' },
+        { error: '?�못???�청 본문?�니??' },
         { status: 400 }
       );
     }
@@ -145,20 +145,20 @@ export async function POST(request: NextRequest) {
 
     if (!projectId || !name || !type || !price) {
       return NextResponse.json(
-        { error: '?�수 ?�드가 ?�락?�었?�니??' },
+        { error: '?�수 ?�드가 ?�락?�었?�니??' },
         { status: 400 }
       );
     }
 
-    // ?�???�효??검??
+    // ?�???�효??검??
     if (!Object.values(productTypeEnum.enumValues).includes(type)) {
       return NextResponse.json(
-        { error: '?�효?��? ?��? ?�품 ?�형?�니??' },
+        { error: '?�효?��? ?��? ?�품 ?�형?�니??' },
         { status: 400 }
       );
     }
 
-    // ?�로?�트 ?�유?�인지 ?�인
+    // ?�로?�트 ?�유?�인지 ?�인
     const project = await db
       .select({ id: projects.id, ownerId: projects.ownerId })
       .from(projects)
@@ -167,16 +167,16 @@ export async function POST(request: NextRequest) {
 
     if (!project[0] || project[0].ownerId !== user.id) {
       return NextResponse.json(
-        { error: '권한???�습?�다.' },
+        { error: '권한???�습?�다.' },
         { status: 403 }
       );
     }
 
-    // ?�품 ?�성
+    // ?�품 ?�성
     const normalizedPrice = typeof price === 'string' ? Number.parseInt(price, 10) : Number(price);
     if (!Number.isFinite(normalizedPrice) || normalizedPrice <= 0) {
       return NextResponse.json(
-        { error: '?�효?��? ?��? ?�품 가격입?�다.' },
+        { error: '?�효?��? ?��? ?�품 가격입?�다.' },
         { status: 400 }
       );
     }
@@ -190,7 +190,7 @@ export async function POST(request: NextRequest) {
 
     if (normalizedInventory !== null && Number.isNaN(normalizedInventory)) {
       return NextResponse.json(
-        { error: '?�효?��? ?��? ?�고 ?�량?�니??' },
+        { error: '?�효?��? ?��? ?�고 ?�량?�니??' },
         { status: 400 }
       );
     }
@@ -213,12 +213,12 @@ export async function POST(request: NextRequest) {
       .returning();
 
     if (!newProduct) {
-      throw new Error('?�품 ?�성???�패?�습?�다.');
+      throw new Error('?�품 ?�성???�패?�습?�다.');
     }
 
     return NextResponse.json(newProduct, { status: 201 });
   } catch (error) {
-    console.error('?�품 ?�성 �??�류 발생:', {
+    console.error('?�품 ?�성 �??�류 발생:', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
       userId: request.headers.get('user-id') || 'unknown',
@@ -227,7 +227,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(
       { 
-        error: '?�품 ?�성???�패?�습?�다.',
+        error: '?�품 ?�성???�패?�습?�다.',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }

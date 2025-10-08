@@ -62,13 +62,13 @@ export function ProjectFilterPanel() {
   if (isError) {
     return (
       <div className="rounded-3xl border border-red-500/30 bg-red-500/10 p-6 text-sm text-red-100">
-        <p>?�로?�트 목록??불러?�는 �?문제가 발생?�습?�다.</p>
+        <p>?�로?�트 목록??불러?�는 �?문제가 발생?�습?�다.</p>
         <button
           type="button"
           onClick={() => refetch()}
           className="mt-4 inline-flex items-center rounded-full border border-red-400/40 px-4 py-2 text-xs font-semibold text-red-100 transition hover:border-red-300/60 hover:text-red-50"
         >
-          ?�시 ?�도
+          ?�시 ?�도
         </button>
       </div>
     );
@@ -77,7 +77,7 @@ export function ProjectFilterPanel() {
   if (filtered.length === 0) {
     return (
       <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-sm text-white/60">
-        조건??맞는 ?�로?�트가 ?�습?�다.
+        조건??맞는 ?�로?�트가 ?�습?�다.
       </div>
     );
   }

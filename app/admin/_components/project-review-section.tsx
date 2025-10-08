@@ -17,10 +17,10 @@ export async function ProjectReviewSection() {
         className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 shadow-lg shadow-black/5"
       >
         <header>
-          <p className="text-xs uppercase tracking-wider text-primary/60">га╥на╖ф╝ ╟к╪Ж</p>
-          <h2 className="mt-1 text-lg font-semibold text-white">╫бюн ╢К╠Б аъюн га╥на╖ф╝</h2>
+          <p className="text-xs uppercase tracking-wider text-primary/60">О©╫О©╫О©╫О©╫О©╫О©╫ф╝ О©╫к╪О©╫</p>
+          <h2 className="mt-1 text-lg font-semibold text-white">О©╫О©╫О©╫О©╫ О©╫О©╫О©╫ О©╫О©╫О©╫О©╫ О©╫О©╫О©╫О©╫О©╫О©╫ф╝</h2>
           <p className="mt-2 text-sm text-white/60">
-            ╟кеД ╩Себюг а╕цБ╧╟ю╩ ╟кеДго╟М ц╒юшюз╣Июл ╨Э╦ё╟т аЬгЮгр ╪Ж юж╣╣╥о ╣╣©маж╪╪©Д.
+            О©╫О©╫О©╫О©╫ О©╫О©╫О©╫О©╫О©╫О©╫ О©╫О©╫О©╫Б╧╟О©╫О©╫ О©╫О©╫О©╫О©╫О©╫о╟О©╫ ц╒О©╫О©╫О©╫з╣О©╫О©╫О©╫ О©╫О©╫О©╫О©╫О©╫О©╫ О©╫О©╫О©╫О©╫О©╫О©╫ О©╫О©╫ О©╫ж╣О©╫О©╫О©╫ О©╫О©╫О©╫О©╫О©╫ж╪О©╫О©╫О©╫.
           </p>
         </header>
 
@@ -34,7 +34,7 @@ export async function ProjectReviewSection() {
                 <div>
                   <p className="text-sm font-medium text-white">{project.title}</p>
                   <p className="text-xs text-white/50">
-                    а╕цБюо {dateFormatter.format(project.createdAt)} | бЭ©╘юз {project.participants}╦М
+                    О©╫О©╫О©╫О©╫О©╫О©╫ {dateFormatter.format(project.createdAt)} | О©╫О©╫О©╫О©╫О©╫О©╫ {project.participants}О©╫О©╫
                   </p>
                 </div>
                 <span className="text-xs font-semibold text-amber-300">
@@ -45,7 +45,7 @@ export async function ProjectReviewSection() {
           </ul>
         ) : (
           <p className="mt-6 rounded-2xl border border-dashed border-white/10 bg-white/5 px-4 py-6 text-center text-sm text-white/60">
-            ╟кеД ╢К╠Б аъюн га╥на╖ф╝╟║ ╬Ь╫ю╢о╢ы.
+            О©╫О©╫О©╫О©╫ О©╫О©╫О©╫ О©╫О©╫О©╫О©╫ О©╫О©╫О©╫О©╫О©╫О©╫ф╝О©╫О©╫ О©╫О©╫О©╫О©╫О©╫о╢О©╫.
           </p>
         )}
       </section>
@@ -57,8 +57,8 @@ export async function ProjectReviewSection() {
         id="project-review"
         className="rounded-3xl border border-red-500/30 bg-red-500/10 p-6 text-sm text-red-100"
       >
-        <h2 className="text-lg font-semibold text-red-100">га╥на╖ф╝ ╟к╪Ж</h2>
-        <p className="mt-2">╟кеД ╢К╠Б©╜ю╩ ╨р╥╞©ц ╪Ж ╬Ь╫ю╢о╢ы. юА╫ц хд ╢ы╫ц ╫ц╣╣гьаж╪╪©Д.</p>
+        <h2 className="text-lg font-semibold text-red-100">О©╫О©╫О©╫О©╫О©╫О©╫ф╝ О©╫к╪О©╫</h2>
+        <p className="mt-2">О©╫О©╫О©╫О©╫ О©╫О©╫Б©╜О©╫О©╫ О©╫р╥О©╫О©╫О©╫ О©╫О©╫ О©╫О©╫О©╫О©╫О©╫о╢О©╫. О©╫О©╫О©╫ О©╫О©╫ О©╫ы╫О©╫ О©╫ц╣О©╫О©╫О©╫О©╫ж╪О©╫О©╫О©╫.</p>
       </section>
     );
   }

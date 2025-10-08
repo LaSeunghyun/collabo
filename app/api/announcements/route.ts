@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
 
     if (!payload?.title || !payload?.content) {
       return NextResponse.json(
-        { message: '?�목�??�용??모두 ?�력??주세??' },
+        { message: '?�목�??�용??모두 ?�력??주세??' },
         { status: 400 }
       );
     }

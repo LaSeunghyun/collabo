@@ -6,12 +6,12 @@ import { createProject, ProjectValidationError } from '@/lib/server/projects';
 
 export async function GET() {
   try {
-    // 간단??기본 ?�답?�로 ?�작
+    // 간단??기본 ?�답?�로 ?�작
     return NextResponse.json([]);
   } catch (error) {
     console.error('Failed to load projects', error);
 
-    // ???�세???�러 ?�보 ?�공
+    // ???�세???�러 ?�보 ?�공
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const errorStack = error instanceof Error ? error.stack : undefined;
 
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     const project = await createProject(body, user);
 
     if (!project) {
-      return NextResponse.json({ message: '?�로?�트 ?�성???�패?�습?�다.' }, { status: 500 });
+      return NextResponse.json({ message: '?�로?�트 ?�성???�패?�습?�다.' }, { status: 500 });
     }
 
     return NextResponse.json(project, { status: 201 });

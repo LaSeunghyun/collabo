@@ -1,186 +1,100 @@
 'use client';
 
-import { ChangeEvent, FormEvent, useMemo, useState, useEffect, Suspense } from 'react';
+import { useState } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useMutation } from '@tanstack/react-query';
-import { ArrowLeft, Loader2, Paperclip } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { useSession, signIn } from 'next-auth/react';
-import clsx from 'clsx';
 
-import type { CommunityPost } from '@/lib/data/community';
-
-const CATEGORY_OPTIONS = [
-  'notice',
-  'general',
-  'collab',
-  'support',
-  'showcase'
+const CATEGORIES = [
+  { value: 'notice', label: '공지사항' },
+  { value: 'general', label: '일반' },
+  { value: 'collab', label: '협업' },
+  { value: 'support', label: '지원' },
+  { value: 'showcase', label: '쇼케이스' }
 ] as const;
 
-interface NewPostFormValues {
-  title: string;
-  content: string;
-  category: (typeof CATEGORY_OPTIONS)[number];
-  attachments: File[];
-}
-
-function CommunityNewPostForm() {
-  const { t } = useTranslation();
+export default function NewCommunityPostPage() {
+  const { data: session, status } = useSession();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const searchParamsString = searchParams.toString();
-  const { status } = useSession();
-  const [formValues, setFormValues] = useState<NewPostFormValues>({
+  const [formData, setFormData] = useState({
     title: '',
     content: '',
-    category: 'general',
-    attachments: []
+    category: 'general' as typeof CATEGORIES[number]['value']
   });
-  const [error, setError] = useState<string | null>(null);
-  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  // 로그???�태 체크 �?리다?�렉??
-  useEffect(() => {
-    if (status === 'loading') {
-      return; // 로딩 중이�??��?
-    }
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
 
-    if (status === 'unauthenticated') {
-      setIsRedirecting(true);
-      const callbackUrl = searchParamsString
-        ? `/community/new?${searchParamsString}`
-        : '/community/new';
-      void signIn(undefined, { callbackUrl });
-      return;
-    }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
 
-    if (status === 'authenticated') {
-      setIsRedirecting(false);
-    }
-  }, [status, searchParamsString]);
-
-  const isValid = useMemo(() => {
-    return formValues.title.trim().length > 0 && formValues.content.trim().length > 0;
-  }, [formValues.content, formValues.title]);
-
-  const createPostMutation = useMutation({
-    mutationFn: async (values: NewPostFormValues) => {
-      const body = {
-        title: values.title.trim(),
-        content: values.content.trim(),
-        category: values.category,
-        attachments: values.attachments.map((file) => ({
-          name: file.name,
-          size: file.size,
-          type: file.type
-        }))
-      };
-
-      const res = await fetch('/api/community', {
+    try {
+      const response = await fetch('/api/community', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
       });
 
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to create community post');
+      if (response.ok) {
+        const data = await response.json();
+        router.push(`/community/${data.id}`);
+      } else {
+        const data = await response.json();
+        setError(data.error || '게시글 작성에 실패했습니다.');
       }
-
-      return (await res.json()) as CommunityPost;
-    },
-    onSuccess: (post) => {
-      setFormValues({ title: '', content: '', category: 'general', attachments: [] });
-      router.push(`/community/${post.id}`);
-    },
-    onError: (error: Error) => {
-      console.error('Failed to create post:', error);
-      setError(error.message || t('community.postErrorMessage') || '게시글 ?�성???�패?�습?�다.');
+    } catch (error) {
+      setError('게시글 작성 중 오류가 발생했습니다.');
+    } finally {
+      setIsLoading(false);
     }
-  });
-
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError(null);
-
-    if (!isValid) {
-      setError(t('community.validation.required') ?? '');
-      return;
-    }
-
-    createPostMutation.mutate(formValues);
   };
 
-  const handleFileInput = (event: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? []);
-    if (!files.length) {
-      return;
-    }
-
-    setFormValues((prev) => ({
-      ...prev,
-      attachments: [...prev.attachments, ...files]
-    }));
-    event.target.value = '';
-  };
-
-  const handleRemoveAttachment = (index: number) => {
-    setFormValues((prev) => ({
-      ...prev,
-      attachments: prev.attachments.filter((_, fileIndex) => fileIndex !== index)
-    }));
-  };
-
-  // 로딩 중이거나 리다?�렉??중일 ???�시
-  if (status === 'loading' || isRedirecting) {
-    return (
-      <div className="mx-auto max-w-4xl px-4 pb-20">
-        <div className="pt-10">
-          <Link
-            href="/community"
-            className="inline-flex items-center gap-2 text-sm text-white/60 transition hover:text-white"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {t('community.actions.backToList')}
-          </Link>
-        </div>
-        <div className="mt-6 flex h-96 items-center justify-center">
-          <div className="text-center">
-            <Loader2 className="mx-auto h-8 w-8 animate-spin text-white/60" />
-            <p className="mt-4 text-sm text-white/60">
-              {isRedirecting ? '로그???�이지�??�동 �?..' : '로딩 �?..'}
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // 로그?�되지 ?��? 경우 (?�론?�으로는 ?�에??리다?�렉?�되지�??�전?�치)
+  // 로그인되지 않은 경우 (이론적으로는 미들웨어에서 리다이렉트되지 않을 수 있음)
   if (status === 'unauthenticated') {
     return (
       <div className="mx-auto max-w-4xl px-4 pb-20">
         <div className="pt-10">
           <Link
             href="/community"
-            className="inline-flex items-center gap-2 text-sm text-white/60 transition hover:text-white"
+            className="text-sm text-blue-300 hover:text-blue-200"
           >
-            <ArrowLeft className="h-4 w-4" />
-            {t('community.actions.backToList')}
+            ← 커뮤니티로 돌아가기
           </Link>
         </div>
-        <div className="mt-6 flex h-96 items-center justify-center">
+        <div className="mt-8 text-center">
+          <h1 className="text-2xl font-bold text-white">로그인이 필요합니다</h1>
+          <p className="mt-2 text-white/60">
+            게시글을 작성하려면 로그인해주세요.
+          </p>
+          <Link
+            href="/auth/signin"
+            className="mt-4 inline-block rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            로그인하기
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // 로딩 중
+  if (status === 'loading') {
+    return (
+      <div className="mx-auto max-w-4xl px-4 pb-20">
+        <div className="pt-10">
           <div className="text-center">
-            <p className="text-lg text-white/80">로그?�이 ?�요?�니??/p>
-            <p className="mt-2 text-sm text-white/60">게시글???�성?�려�?먼�? 로그?�해주세??</p>
-            <button
-              onClick={() => signIn(undefined, { callbackUrl: '/community/new' })}
-              className="mt-4 rounded-full bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
-            >
-              로그?�하�?
-            </button>
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-primary mx-auto" />
+            <p className="mt-2 text-white/60">로딩 중...</p>
           </div>
         </div>
       </div>
@@ -192,174 +106,94 @@ function CommunityNewPostForm() {
       <div className="pt-10">
         <Link
           href="/community"
-          className="inline-flex items-center gap-2 text-sm text-white/60 transition hover:text-white"
+          className="text-sm text-blue-300 hover:text-blue-200"
         >
-          <ArrowLeft className="h-4 w-4" />
-          {t('community.actions.backToList')}
+          ← 커뮤니티로 돌아가기
         </Link>
       </div>
 
-      <form
-        onSubmit={handleSubmit}
-        className="mt-6 space-y-8 rounded-3xl border border-white/10 bg-white/5 p-8"
-      >
-        <header className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/50">
-            {t('community.newPost.lead')}
-          </p>
-          <h1 className="text-3xl font-semibold text-white">{t('community.newPost.title')}</h1>
-          <p className="text-sm text-white/70">{t('community.newPost.description')}</p>
-        </header>
+      <div className="mt-8">
+        <h1 className="text-3xl font-bold text-white">새 게시글 작성</h1>
+        <p className="mt-2 text-white/60">
+          커뮤니티에 새로운 이야기를 공유해보세요.
+        </p>
+      </div>
 
-        <section className="space-y-4">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.3em] text-white/50">
-            {t('community.newPost.categoryLabel')}
-          </h2>
-          <div className="flex flex-wrap gap-2">
-            {CATEGORY_OPTIONS.map((option) => {
-              const isActive = formValues.category === option;
-              return (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => setFormValues((prev) => ({ ...prev, category: option }))}
-                  className={clsx(
-                    'rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.3em] transition focus:outline-none focus:ring-2 focus:ring-primary/60 focus:ring-offset-0',
-                    isActive
-                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
-                      : 'bg-white/5 text-white/60 hover:bg-white/10'
-                  )}
-                >
-                  {t(`community.filters.${option}`)}
-                </button>
-              );
-            })}
+      <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+        <div>
+          <label htmlFor="title" className="block text-sm font-medium text-white">
+            제목
+          </label>
+          <input
+            type="text"
+            id="title"
+            name="title"
+            required
+            value={formData.title}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/50 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            placeholder="게시글 제목을 입력하세요"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="category" className="block text-sm font-medium text-white">
+            카테고리
+          </label>
+          <select
+            id="category"
+            name="category"
+            value={formData.category}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+          >
+            {CATEGORIES.map((category) => (
+              <option key={category.value} value={category.value}>
+                {category.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="content" className="block text-sm font-medium text-white">
+            내용
+          </label>
+          <textarea
+            id="content"
+            name="content"
+            required
+            rows={12}
+            value={formData.content}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/50 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            placeholder="게시글 내용을 입력하세요"
+          />
+        </div>
+
+        {error && (
+          <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-4 text-sm text-red-300">
+            {error}
           </div>
-        </section>
+        )}
 
-        <section className="grid gap-6">
-          <label className="space-y-3">
-            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-white/50">
-              {t('community.newPostTitleLabel')}
-            </span>
-            <input
-              value={formValues.title}
-              onChange={(event) => setFormValues((prev) => ({ ...prev, title: event.target.value }))}
-              placeholder={t('community.newPostTitlePlaceholder') ?? ''}
-              className="w-full rounded-2xl border border-white/10 bg-neutral-950/60 px-4 py-3 text-sm text-white placeholder:text-white/50 focus:border-primary focus:outline-none"
-            />
-          </label>
-
-          <label className="space-y-3">
-            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-white/50">
-              {t('community.newPostContentLabel')}
-            </span>
-            <textarea
-              value={formValues.content}
-              onChange={(event) => setFormValues((prev) => ({ ...prev, content: event.target.value }))}
-              placeholder={t('community.writePlaceholder') ?? ''}
-              className="h-48 w-full rounded-2xl border border-white/10 bg-neutral-950/60 px-4 py-3 text-sm text-white placeholder:text-white/50 focus:border-primary focus:outline-none"
-            />
-          </label>
-        </section>
-
-        <section className="space-y-4">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.3em] text-white/50">
-            {t('community.newPost.attachmentLabel')}
-          </h2>
-          <label className="flex cursor-pointer items-center justify-between rounded-2xl border border-dashed border-white/20 bg-white/5 px-4 py-3 text-sm text-white/70 transition hover:border-white/40">
-            <div className="flex items-center gap-3">
-              <Paperclip className="h-4 w-4" />
-              <span>{t('community.newPost.attachmentCta')}</span>
-            </div>
-            <span className="text-xs text-white/40">{t('community.newPost.attachmentHint')}</span>
-            <input
-              type="file"
-              className="hidden"
-              multiple
-              onChange={handleFileInput}
-            />
-          </label>
-          {formValues.attachments.length ? (
-            <ul className="space-y-2 text-sm text-white/80">
-              {formValues.attachments.map((file, index) => (
-                <li
-                  key={`${file.name}-${index}`}
-                  className="flex items-center justify-between rounded-2xl border border-white/10 bg-neutral-950/60 px-4 py-2"
-                >
-                  <div>
-                    <p className="font-medium text-white">{file.name}</p>
-                    <p className="text-xs text-white/50">
-                      {(file.size / 1024).toFixed(1)} KB · {file.type || 'unknown'}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveAttachment(index)}
-                    className="rounded-full px-3 py-1 text-xs text-white/70 transition hover:bg-white/10"
-                  >
-                    {t('community.newPost.attachmentRemove')}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </section>
-
-        {error ? <p className="text-sm text-red-400">{error}</p> : null}
-
-        <footer className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-white/50">{t('community.newPost.notice')}</p>
-          <div className="flex gap-2">
-            <Link
-              href="/community"
-              className="inline-flex items-center gap-2 rounded-full border border-white/20 px-5 py-2 text-sm text-white/80 transition hover:border-white/40 hover:text-white"
-            >
-              {t('community.actions.cancel')}
-            </Link>
-            <button
-              type="submit"
-              disabled={!isValid || createPostMutation.isPending}
-              className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {createPostMutation.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {t('community.newPost.submitting')}
-                </>
-              ) : (
-                t('community.newPost.submit')
-              )}
-            </button>
-          </div>
-        </footer>
+        <div className="flex gap-4">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="flex-1 rounded-lg border border-white/20 bg-white/5 px-4 py-3 text-sm font-medium text-white hover:bg-white/10 transition-colors"
+          >
+            취소
+          </button>
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="flex-1 rounded-lg bg-blue-600 px-4 py-3 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          >
+            {isLoading ? '작성 중...' : '게시글 작성'}
+          </button>
+        </div>
       </form>
     </div>
-  );
-}
-
-export default function CommunityNewPostPage() {
-  return (
-    <Suspense fallback={
-      <div className="mx-auto max-w-4xl px-4 pb-20">
-        <div className="pt-10">
-          <Link
-            href="/community"
-            className="inline-flex items-center gap-2 text-sm text-white/60 transition hover:text-white"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            커�??�티�??�아가�?
-          </Link>
-        </div>
-        <div className="mt-6 flex h-96 items-center justify-center">
-          <div className="text-center">
-            <Loader2 className="mx-auto h-8 w-8 animate-spin text-white/60" />
-            <p className="mt-4 text-sm text-white/60">로딩 �?..</p>
-          </div>
-        </div>
-      </div>
-    }>
-      <CommunityNewPostForm />
-    </Suspense>
   );
 }

@@ -7,7 +7,7 @@ import {
 } from '@/lib/constants/announcements';
 import { getServerAuthSession } from '@/lib/auth/session';
 import { getAnnouncementDetail } from '@/lib/server/announcements';
-import { UserRole } from '@/types/prisma';
+import { userRole } from '@/drizzle/schema';
 
 import { AnnouncementReadTracker } from './read-tracker';
 
@@ -39,7 +39,7 @@ export default async function AnnouncementDetailPage({
 
   const publishedAt = announcement.publishedAt ?? announcement.updatedAt;
   const isPublished = !announcement.publishedAt || new Date(announcement.publishedAt) <= new Date();
-  const isAdmin = session?.user?.role === UserRole.ADMIN;
+  const isAdmin = session?.user?.role === 'ADMIN';
 
   if (!isPublished && !isAdmin) {
     notFound();

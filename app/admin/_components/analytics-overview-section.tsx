@@ -87,9 +87,9 @@ export function AnalyticsOverviewSection({ overview }: AnalyticsOverviewSectionP
                 >
                   <span className="font-semibold text-white">{formatDateLabel(day.date)}</span>
                   <div className="flex items-center justify-between text-white/70">
-                    <span>¹æ¹® {numberFormatter.format(day.visits)}</span>
-                    <span>¼¼¼Ç {numberFormatter.format(day.uniqueSessions)}</span>
-                    <span>À¯Àú {numberFormatter.format(day.uniqueUsers)}</span>
+                    <span>ï¿½æ¹® {numberFormatter.format(day.visits)}</span>
+                    <span>ï¿½ï¿½ï¿½ï¿½ {numberFormatter.format(day.uniqueSessions)}</span>
+                    <span>ï¿½ï¿½ï¿½ï¿½ {numberFormatter.format(day.uniqueUsers)}</span>
                   </div>
                 </li>
               ))
@@ -113,7 +113,7 @@ export function AnalyticsOverviewSection({ overview }: AnalyticsOverviewSectionP
                   className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.06] p-3"
                 >
                   <span className="font-semibold text-white">{formatDateLabel(day.date)}</span>
-                  <span className="text-white/80">{numberFormatter.format(day.signups)}¸í</span>
+                  <span className="text-white/80">{numberFormatter.format(day.signups)}ï¿½ï¿½</span>
                 </li>
               ))
             )}

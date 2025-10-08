@@ -1,88 +1,135 @@
-import { getPartnersAwaitingApproval } from '@/lib/server/partners';
-// import { PartnerType, type PartnerTypeType } from '@/types/shared'; // TODO: Drizzle�??�환 ?�요
+import { getPartnerStats, getRecentPartners } from '@/lib/server/partners';
 
-// ?�적 ?�더�?강제 - 빌드 ???�이?�베?�스 ?�근 방�?
 export const dynamic = 'force-dynamic';
 
-const partnerTypeLabels: Record<string, string> = {
-  'STUDIO': '?�튜?�오',
-  'VENUE': '공연??,
-  'PRODUCTION': '?�작??,
-  'MERCHANDISE': '굿즈',
-  'OTHER': '기�?'
+const statusLabels: Record<string, string> = {
+  'PENDING': '대기중',
+  'APPROVED': '승인됨',
+  'REJECTED': '거부됨',
+  'SUSPENDED': '정지됨'
 };
 
-const dateFormatter = new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium' });
+const typeLabels: Record<string, string> = {
+  'STUDIO': '스튜디오',
+  'VENUE': '공연장',
+  'PRODUCTION': '제작 스튜디오',
+  'MERCHANDISE': '머천다이즈',
+  'OTHER': '기타'
+};
+
+const dateFormatter = new Intl.DateTimeFormat('ko-KR', {
+  dateStyle: 'medium',
+  timeStyle: 'short'
+});
 
 export default async function AdminPartnersPage() {
   try {
-    const partners = await getPartnersAwaitingApproval();
+    const [stats, partners] = await Promise.all([
+      getPartnerStats(),
+      getRecentPartners()
+    ]);
 
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold text-white">?�트???�인</h1>
+          <h1 className="text-2xl font-semibold text-white">파트너 관리</h1>
           <p className="mt-2 text-sm text-white/60">
-            검증을 기다리는 ?�트?�들??검?�하�??�업 준비�? ???�트?�들???�인?�주?�요.
+            파트너 등록 현황을 확인하고 승인/거부를 관리하세요
           </p>
         </div>
 
-        {partners.length > 0 ? (
-          <div className="space-y-4">
-            {partners.map((partner) => (
-              <div
-                key={partner.id}
-                className="rounded-2xl border border-white/5 bg-white/[0.05] p-6"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-medium text-white">{partner.name}</h3>
-                    <p className="mt-1 text-sm text-white/60">
-                      {partnerTypeLabels[partner.type]} | 가?�일 {dateFormatter.format(partner.createdAt)}
-                    </p>
-                    {partner.description && (
-                      <p className="mt-3 text-sm text-white/70 line-clamp-3">
+        {/* 통계 카드 */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+            <div className="text-2xl font-bold text-white">{stats.total}</div>
+            <div className="text-sm text-white/60">전체 파트너</div>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+            <div className="text-2xl font-bold text-amber-400">{stats.pending}</div>
+            <div className="text-sm text-white/60">대기중</div>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+            <div className="text-2xl font-bold text-green-400">{stats.approved}</div>
+            <div className="text-sm text-white/60">승인됨</div>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+            <div className="text-2xl font-bold text-red-400">{stats.rejected}</div>
+            <div className="text-sm text-white/60">거부됨</div>
+          </div>
+        </div>
+
+        {/* 파트너 목록 */}
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+          <h2 className="text-lg font-semibold text-white">최근 파트너 등록</h2>
+          <p className="mt-1 text-sm text-white/60">처리 대기 중인 파트너 등록 신청</p>
+
+          {partners.length > 0 ? (
+            <div className="mt-6 space-y-4">
+              {partners.map((partner) => (
+                <div
+                  key={partner.id}
+                  className="rounded-xl border border-white/10 bg-white/[0.02] p-4"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 text-xs text-white/60">
+                        <span>{typeLabels[partner.type]}</span>
+                        <span>•</span>
+                        <span>{dateFormatter.format(new Date(partner.createdAt))}</span>
+                        <span>•</span>
+                        <span>등록자: {partner.ownerId}</span>
+                      </div>
+                      <h3 className="mt-2 text-sm font-medium text-white">
+                        {partner.name}
+                      </h3>
+                      <p className="mt-1 text-xs text-white/60 line-clamp-2">
                         {partner.description}
                       </p>
-                    )}
-                    {partner.portfolioUrl && (
-                      <p className="mt-2 text-sm text-blue-400">
-                        ?�트?�리?? <a href={partner.portfolioUrl} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                          {partner.portfolioUrl}
-                        </a>
-                      </p>
-                    )}
-                  </div>
-                  <div className="ml-4 flex flex-col items-end gap-2">
-                    <span className="rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-white/80">
-                      ?�기중
-                    </span>
-                    <div className="flex gap-2">
-                      <button className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
-                        ?�인
-                      </button>
-                      <button className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700">
-                        거�?
-                      </button>
+                      <div className="mt-2 flex items-center gap-4 text-xs text-white/60">
+                        <span>연락처: {partner.contactEmail}</span>
+                        <span>위치: {partner.location}</span>
+                      </div>
+                    </div>
+                    <div className="ml-4 flex flex-col items-end gap-2">
+                      <span className="rounded-full bg-amber-500/10 px-2 py-1 text-xs text-amber-300">
+                        {statusLabels[partner.status]}
+                      </span>
+                      <div className="flex gap-2">
+                        <button className="rounded-lg bg-green-500/10 px-3 py-1 text-xs text-green-300 transition hover:bg-green-500/20">
+                          승인
+                        </button>
+                        <button className="rounded-lg bg-red-500/10 px-3 py-1 text-xs text-red-300 transition hover:bg-red-500/20">
+                          거부
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 px-8 py-12 text-center">
-            <p className="text-sm text-white/60">검???��?중인 ?�트???�청???�습?�다.</p>
-          </div>
-        )}
+              ))}
+            </div>
+          ) : (
+            <div className="mt-6 text-center text-white/60">
+              처리 대기 중인 파트너 등록이 없습니다.
+            </div>
+          )}
+        </div>
       </div>
     );
   } catch (error) {
-    console.error('?�트??목록 로드 ?�패:', error);
+    console.error('Failed to load partner data:', error);
     return (
-      <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-6 text-sm text-red-100">
-        <h2 className="text-lg font-semibold text-red-100">?�트???�인</h2>
-        <p className="mt-2">?�트???�청??불러?????�습?�다. ?�시 ???�시 ?�도?�주?�요.</p>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold text-white">파트너 관리</h1>
+          <p className="mt-2 text-sm text-white/60">
+            파트너 등록 현황을 확인하고 승인/거부를 관리하세요
+          </p>
+        </div>
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+          <div className="text-center text-white/60">
+            파트너 데이터를 불러올 수 없습니다.
+          </div>
+        </div>
       </div>
     );
   }

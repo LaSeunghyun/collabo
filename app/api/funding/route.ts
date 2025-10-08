@@ -66,7 +66,7 @@ async function createFundingWithTransaction(
   amount: number,
   currency: string,
   paymentIntentId: string,
-  snapshot: unknown;
+  snapshot: unknown
 ) {
   // TODO: Drizzle로 전환 필요 - 트랜잭션 구현
   return (async (tx: any) => {

@@ -1,5 +1,16 @@
 import { revalidatePath } from 'next/cache';
 import { eq, and, inArray, desc, count } from 'drizzle-orm';
+import { ZodError } from 'zod';
+
+import type { SessionUser } from '@/lib/auth/session';
+import { getDb } from '@/lib/db/client';
+import { projects, users, fundings, auditLogs } from '@/lib/db/schema';
+import {
+  createProjectSchema,
+  updateProjectSchema,
+  type CreateProjectInput,
+  type UpdateProjectInput
+} from '@/lib/validators/projects';
 
 export interface ProjectSummary {
   id: string;
@@ -23,17 +34,6 @@ export interface ProjectSummary {
   participants: number;
   remainingDays: number;
 }
-import { ZodError } from 'zod';
-
-import type { SessionUser } from '@/lib/auth/session';
-import { getDb } from '@/lib/db/client';
-import { projects, users, fundings, auditLogs } from '@/lib/db/schema';
-import {
-  createProjectSchema,
-  updateProjectSchema,
-  type CreateProjectInput,
-  type UpdateProjectInput
-} from '@/lib/validators/projects';
 
 const CAMPAIGN_DURATION_DAYS = 30;
 const DEFAULT_THUMBNAIL = 'https://images.unsplash.com/photo-1525182008055-f88b95ff7980';
@@ -42,20 +42,20 @@ export class ProjectValidationError extends Error {
   issues: string[];
 
   constructor(error: ZodError) {
-    super('?�로?�트 ?�력 값이 ?�바르�? ?�습?�다.');
+    super('프로젝트 입력 값이 올바르지 않습니다.');
     this.issues = error.issues.map((issue) => issue.message);
   }
 }
 
 export class ProjectNotFoundError extends Error {
   constructor() {
-    super('?�로?�트�?찾을 ???�습?�다.');
+    super('프로젝트를 찾을 수 없습니다.');
   }
 }
 
 export class ProjectAccessDeniedError extends Error {
   constructor() {
-    super('?�로?�트???�근??권한???�습?�다.');
+    super('프로젝트에 접근할 권한이 없습니다.');
   }
 }
 
@@ -183,6 +183,7 @@ export const getProjectsPendingReview = async (limit = 5) =>
   getProjectSummaries({ statuses: ['REVIEWING'], take: limit });
 
 export const getProjectSummaryById = async (id: string) => {
+  const db = await getDb();
   const projectData = await db
     .select({
       id: projects.id,
@@ -379,6 +380,7 @@ export const createProject = async (rawInput: unknown, user: SessionUser) => {
 export const updateProject = async (id: string, rawInput: unknown, user: SessionUser) => {
   const input = parseUpdateInput(rawInput);
 
+  const db = await getDb();
   const projectData = await db
     .select({ ownerId: projects.ownerId })
     .from(projects)
@@ -398,7 +400,6 @@ export const updateProject = async (id: string, rawInput: unknown, user: Session
     return getProjectSummaryById(id);
   }
 
-  const db = await getDb();
   await db.transaction(async (tx) => {
     // Update project
     await tx.update(projects)
@@ -426,6 +427,7 @@ export const updateProject = async (id: string, rawInput: unknown, user: Session
 };
 
 export const deleteProject = async (id: string, user: SessionUser) => {
+  const db = await getDb();
   const projectData = await db
     .select({ ownerId: projects.ownerId })
     .from(projects)
@@ -439,7 +441,6 @@ export const deleteProject = async (id: string, user: SessionUser) => {
   const project = projectData[0];
   assertProjectOwnership(project.ownerId, user);
 
-  const db = await getDb();
   await db.transaction(async (tx) => {
     // Delete project
     await tx.delete(projects).where(eq(projects.id, id));
@@ -459,3 +460,30 @@ export const deleteProject = async (id: string, user: SessionUser) => {
   revalidateProjectPaths(id);
 };
 
+export const getProjectStats = async () => {
+  const db = await getDb();
+  
+  const [totalProjects] = await db
+    .select({ count: count() })
+    .from(projects);
+    
+  const [liveProjects] = await db
+    .select({ count: count() })
+    .from(projects)
+    .where(eq(projects.status, 'LIVE'));
+    
+  const [pendingProjects] = await db
+    .select({ count: count() })
+    .from(projects)
+    .where(eq(projects.status, 'REVIEWING'));
+
+  return {
+    total: totalProjects.count,
+    live: liveProjects.count,
+    pending: pendingProjects.count
+  };
+};
+
+export const getRecentProjects = async (limit = 5) => {
+  return await getProjectSummaries({ take: limit });
+};

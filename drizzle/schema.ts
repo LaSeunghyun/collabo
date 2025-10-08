@@ -727,3 +727,8 @@ export const visitLog = pgTable("VisitLog", {
 			name: "VisitLog_userId_User_id_fk"
 		}).onUpdate("cascade").onDelete("set null"),
 ]);
+
+// Export aliases for compatibility
+export const users = user;
+export const authSessions = authSession;
+export const authDevices = authDevice;

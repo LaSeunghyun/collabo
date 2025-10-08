@@ -132,7 +132,7 @@ type PartnerWithRelations = {
   updatedAt: string;
 };
 
-// PartnerSummary Å¸ÀÔÀº @/types/prisma¿¡¼­ importÇÕ´Ï´Ù
+// PartnerSummary Å¸ï¿½ï¿½ï¿½ï¿½ @/types/prismaï¿½ï¿½ï¿½ï¿½ importï¿½Õ´Ï´ï¿½
 
 const toPartnerSummary = (partner: PartnerWithRelations): PartnerSummary => {
   // const services = Array.isArray(partner.services)
@@ -197,32 +197,32 @@ export class PartnerValidationError extends Error {
   issues: string[];
 
   constructor(error: ZodError) {
-    super('ÆÄÆ®³Ê Á¤º¸°¡ À¯È¿ÇÏÁö ¾Ê½À´Ï´Ù.');
+    super('ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½È¿ï¿½ï¿½ï¿½ï¿½ ï¿½Ê½ï¿½ï¿½Ï´ï¿½.');
     this.issues = error.issues.map((issue) => issue.message);
   }
 }
 
 export class PartnerProfileExistsError extends Error {
   constructor() {
-    super('ÀÌ¹Ì µî·ÏµÈ ÆÄÆ®³Ê ÇÁ·ÎÇÊÀÌ ÀÖ½À´Ï´Ù.');
+    super('ï¿½Ì¹ï¿½ ï¿½ï¿½Ïµï¿½ ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ö½ï¿½ï¿½Ï´ï¿½.');
   }
 }
 
 export class PartnerOwnerNotFoundError extends Error {
   constructor() {
-    super('ÆÄÆ®³Ê ¼ÒÀ¯ÀÚ Á¤º¸¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù.');
+    super('ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ã£ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½.');
   }
 }
 
 export class PartnerNotFoundError extends Error {
   constructor() {
-    super('ÆÄÆ®³Ê Á¤º¸¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù.');
+    super('ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ã£ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½.');
   }
 }
 
 export class PartnerAccessDeniedError extends Error {
   constructor() {
-    super('ÆÄÆ®³Ê Á¤º¸¸¦ ¼öÁ¤ÇÒ ±ÇÇÑÀÌ ¾ø½À´Ï´Ù.');
+    super('ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½.');
   }
 }
 
@@ -658,6 +658,35 @@ export const updatePartnerProfile = async (
   }
 
   return refreshed;
+};
+
+export const getPartnerStats = async () => {
+  const db = await getDb();
+  
+  const [totalPartners] = await db
+    .select({ count: count() })
+    .from(partners);
+    
+  const [verifiedPartners] = await db
+    .select({ count: count() })
+    .from(partners)
+    .where(eq(partners.verified, true));
+    
+  const [pendingPartners] = await db
+    .select({ count: count() })
+    .from(partners)
+    .where(eq(partners.verified, false));
+
+  return {
+    total: totalPartners.count,
+    verified: verifiedPartners.count,
+    pending: pendingPartners.count
+  };
+};
+
+export const getRecentPartners = async (limit = 5) => {
+  const result = await listPartners({ limit });
+  return result.items;
 };
 
 

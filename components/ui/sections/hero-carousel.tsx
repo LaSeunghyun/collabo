@@ -13,14 +13,14 @@ export function HeroCarousel() {
   const { data: slides = [], isLoading } = useQuery({
     queryKey: ['hero-slides'],
     queryFn: fetchHeroSlides,
-    staleTime: 1000 * 60 * 5 // 5�?
+    staleTime: 1000 * 60 * 5 // 5�?
   });
 
   if (isLoading) {
     return (
       <div className="overflow-hidden rounded-[40px] border border-white/10 bg-white/10">
         <div className="flex h-[240px] lg:h-[420px] items-center justify-center">
-          <div className="text-white/60">로딩 �?..</div>
+          <div className="text-white/60">로딩 �?..</div>
         </div>
       </div>
     );
@@ -43,14 +43,14 @@ export function HeroCarousel() {
                     href={slide.link}
                     className="mt-2 inline-flex w-fit items-center rounded-full bg-white px-5 py-2 text-sm font-semibold text-neutral-900 hover:bg-white/90 transition-colors"
                   >
-                    ?�세??보기
+                    ?�세??보기
                   </Link>
                 ) : (
                   <button
                     type="button"
                     className="mt-2 inline-flex w-fit items-center rounded-full bg-white px-5 py-2 text-sm font-semibold text-neutral-900 hover:bg-white/90 transition-colors"
                   >
-                    ?�세??보기
+                    ?�세??보기
                   </button>
                 )}
               </div>

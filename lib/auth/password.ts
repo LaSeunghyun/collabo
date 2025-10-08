@@ -1,6 +1,6 @@
 import { timingSafeEqual } from 'crypto';
 
-import { compare } from 'bcryptjs';
+import { compare, hash } from 'bcryptjs';
 
 export const verifyPassword = async (storedHash: string, password: string) => {
   if (storedHash.startsWith('$2')) {
@@ -15,4 +15,8 @@ export const verifyPassword = async (storedHash: string, password: string) => {
   }
 
   return timingSafeEqual(bufferA, bufferB);
+};
+
+export const hashPassword = async (password: string) => {
+  return hash(password, 12);
 };

@@ -11,7 +11,7 @@ export default function ProjectsPage() {
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-12 px-4 pb-20">
       <header className="pt-4">
-        <h1 className="text-3xl font-bold text-white mb-4">?�로?�트</h1>
+        <h1 className="text-3xl font-bold text-white mb-4">?�로?�트</h1>
         <SectionHeader title={t('projects.overviewTitle')} />
         <p className="max-w-2xl text-sm text-white/60">{t('projects.overviewDescription')}</p>
       </header>

@@ -1,5 +1,5 @@
 // UI Components Index
-// 모든 UI 컴포?�트�?중앙?�서 관리하�?export
+// 모든 UI 컴포?�트�?중앙?�서 관리하�?export
 
 // Cards
 export { ProjectCard } from './cards/project-card';

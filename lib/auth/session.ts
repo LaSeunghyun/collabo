@@ -68,7 +68,7 @@ export const evaluateBearerToken = async (
       status: AuthorizationStatus.AUTHORIZED,
       session: null,
       user: {
-        id: verified.sub,
+        id: verified.userId,
         name: verified.name,
         email: verified.email,
         role,
@@ -146,4 +146,8 @@ export const evaluateAuthorization = async (
       permissions
     }
   };
+};
+
+export const getServerAuthSession = async () => {
+  return await getServerSession(authOptions);
 };

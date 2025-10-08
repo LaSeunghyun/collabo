@@ -81,14 +81,14 @@ export const verifyAccessToken = async (token: string): Promise<VerifiedAccessTo
   const { payload } = await jwtVerify(token, getSecret(), { issuer: ISSUER });
 
   if (!payload.sub || typeof payload.sid !== 'string' || typeof payload.jti !== 'string') {
-    throw new Error('?�못???�식???�큰?�니??');
+    throw new Error('잘못된 형식의 토큰입니다.');
   }
 
   const db = await getDb();
   const blacklisted = await db.select().from(tokenBlacklist).where(eq(tokenBlacklist.jti, payload.jti)).limit(1).then(rows => rows[0] || null);
 
   if (blacklisted) {
-    throw new Error('만료?�었거나 ?�기???�큰?�니??');
+    throw new Error('만료되었거나 무효한 토큰입니다.');
   }
 
   const permissions = Array.isArray(payload.permissions)

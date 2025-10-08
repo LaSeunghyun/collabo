@@ -1,8 +1,8 @@
 export const ANNOUNCEMENT_CATEGORIES = [
-  { value: 'platform', label: '?�랫???�데?�트' },
-  { value: 'policy', label: '?�책 �??�용 ?�내' },
-  { value: 'event', label: '?�벤???�식' },
-  { value: 'maintenance', label: '?�비???��?' }
+  { value: 'platform', label: '플랫폼 업데이트' },
+  { value: 'policy', label: '정책 및 이용 내역' },
+  { value: 'event', label: '이벤트 및 행사' },
+  { value: 'maintenance', label: '시스템 점검' }
 ] as const;
 
 export type AnnouncementCategory = (typeof ANNOUNCEMENT_CATEGORIES)[number]['value'];

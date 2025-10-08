@@ -18,7 +18,7 @@ import { validateFundingSettlementConsistency } from '@/lib/server/funding-settl
 import { buildApiError } from '@/lib/server/error-handling';
 
 const requestSchema = z.object({
-  projectId: z.string().min(1, 'projectId´Â ÇÊ¼öÀÔ´Ï´Ù.'),
+  projectId: z.string().min(1, 'projectIdï¿½ï¿½ ï¿½Ê¼ï¿½ï¿½Ô´Ï´ï¿½.'),
   platformFeeRate: z.number().min(0).max(1).optional(),
   gatewayFeeOverride: z.number().min(0).optional(),
   notes: z.any().optional()
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
   const projectId = searchParams.get('projectId');
 
   if (!projectId) {
-    return buildError('projectId ÆÄ¶ó¹ÌÅÍ°¡ ÇÊ¿äÇÕ´Ï´Ù.');
+    return buildError('projectId ï¿½Ä¶ï¿½ï¿½ï¿½Í°ï¿½ ï¿½Ê¿ï¿½ï¿½Õ´Ï´ï¿½.');
   }
 
   try {
@@ -68,8 +68,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(settlementsList);
   } catch (error) {
-    console.error('Á¤»ê Á¶È¸ ¿À·ù:', error);
-    return buildError('Á¤»ê Á¤º¸¸¦ Á¶È¸ÇÒ ¼ö ¾ø½À´Ï´Ù.', 500);
+    console.error('ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½È¸ ï¿½ï¿½ï¿½ï¿½:', error);
+    return buildError('ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½È¸ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½.', 500);
   }
 }
 
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     if (error instanceof z.ZodError) {
       return buildError(error.issues.map((issue) => issue.message).join(', '));
     }
-    return buildError('¿äÃ» º»¹®À» È®ÀÎÇÒ ¼ö ¾ø½À´Ï´Ù.');
+    return buildError('ï¿½ï¿½Ã» ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ È®ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½.');
   }
 
   const { projectId, platformFeeRate = 0.05, gatewayFeeOverride, notes } = payload;
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
   try {
     const db = await getDb();
     
-    // ÇÁ·ÎÁ§Æ® Á¤º¸ Á¶È¸
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ® ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½È¸
     const [project] = await db
       .select({
         id: projects.id,
@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
       .limit(1);
 
     if (!project) {
-      return buildError('ÇØ´ç ÇÁ·ÎÁ§Æ®¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù.', 404);
+      return buildError('ï¿½Ø´ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ Ã£ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½.', 404);
     }
 
     if (
@@ -124,10 +124,10 @@ export async function POST(request: NextRequest) {
       project.status !== 'EXECUTING' &&
       project.status !== 'COMPLETED'
     ) {
-      return buildError('Á¤»êÀÌ °¡´ÉÇÑ »óÅÂÀÇ ÇÁ·ÎÁ§Æ®¸¸ Á¤»êÀ» »ý¼ºÇÒ ¼ö ÀÖ½À´Ï´Ù.', 409);
+      return buildError('ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½Ö½ï¿½ï¿½Ï´ï¿½.', 409);
     }
 
-    // ±âÁ¸ ´ë±â ÁßÀÎ Á¤»ê È®ÀÎ
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ È®ï¿½ï¿½
     const [existingPending] = await db
       .select()
       .from(settlements)
@@ -141,18 +141,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(existingPending);
     }
 
-    // Á¤»ê µ¥ÀÌÅÍ ÀÏ°ü¼º °ËÁõ
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ï°ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
     try {
       const consistencyCheck = await validateFundingSettlementConsistency(projectId);
       if (!consistencyCheck.isValid) {
-        console.warn('Á¤»ê µ¥ÀÌÅÍ ÀÏ°ü¼º ¹®Á¦:', consistencyCheck.issues);
-        // ·Î±×¸¸ ³²±â°í °è¼Ó ÁøÇà (µ¥ÀÌÅÍ ºÒÀÏÄ¡ ½Ã ÈÄ¼Ó Á¶Ä¡ ÇÊ¿ä)
+        console.warn('ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ï°ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½:', consistencyCheck.issues);
+        // ï¿½Î±×¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ä¡ ï¿½ï¿½ ï¿½Ä¼ï¿½ ï¿½ï¿½Ä¡ ï¿½Ê¿ï¿½)
       }
     } catch (error) {
-      console.warn('Á¤»ê µ¥ÀÌÅÍ °ËÁõ ¿À·ù:', error);
+      console.warn('ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½:', error);
     }
 
-    // ÆÝµù Á¤º¸ Á¶È¸
+    // ï¿½Ýµï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½È¸
     const fundingsList = await db
       .select({
         id: fundings.id,
@@ -163,27 +163,27 @@ export async function POST(request: NextRequest) {
 
     const totalRaised = fundingsList.reduce((acc, funding) => acc + funding.amount, 0);
     if (totalRaised <= 0) {
-      return buildError('¸ð±Ý¾×ÀÌ ºÎÁ·ÇÕ´Ï´Ù.', 409);
+      return buildError('ï¿½ï¿½Ý¾ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Õ´Ï´ï¿½.', 409);
     }
 
     if (totalRaised < project.targetAmount) {
-      return buildError('¸ñÇ¥ ±Ý¾×À» ¾ÆÁ÷ ´Þ¼ºÇÏÁö ¸øÇß½À´Ï´Ù.', 409);
+      return buildError('ï¿½ï¿½Ç¥ ï¿½Ý¾ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Þ¼ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ß½ï¿½ï¿½Ï´ï¿½.', 409);
     }
 
-    // ÇÁ·ÎÁ§Æ® currentAmount¿Í ÃÖ±Ù °áÁ¦ ±Ý¾× ÀÏÄ¡ ¿©ºÎ È®ÀÎ
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ® currentAmountï¿½ï¿½ ï¿½Ö±ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ý¾ï¿½ ï¿½ï¿½Ä¡ ï¿½ï¿½ï¿½ï¿½ È®ï¿½ï¿½
     if (project.currentAmount !== totalRaised) {
-      console.warn(`ÇÁ·ÎÁ§Æ® currentAmount(${project.currentAmount})¿Í ÃÖ±Ù °áÁ¦ ±Ý¾×(${totalRaised})ÀÌ ÀÏÄ¡ÇÏÁö ¾Ê½À´Ï´Ù.`);
-      // µ¥ÀÌÅÍ ÀÏ°ü¼ºÀ» À§ÇØ currentAmount¸¦ ¾÷µ¥ÀÌÆ®
+      console.warn(`ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ® currentAmount(${project.currentAmount})ï¿½ï¿½ ï¿½Ö±ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ý¾ï¿½(${totalRaised})ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ï¿½ï¿½ ï¿½Ê½ï¿½ï¿½Ï´ï¿½.`);
+      // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ï°ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ currentAmountï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®
       await db
         .update(projects)
         .set({ currentAmount: totalRaised })
         .where(eq(projects.id, projectId));
     }
 
-    // Gateway fee´Â º°µµ·Î °è»êÇÏ°Å³ª ±âº»°ª »ç¿ë
-    const inferredGatewayFees = gatewayFeeOverride ?? (totalRaised * 0.03); // ±âº» 3% ¼ö¼ö·á
+    // Gateway feeï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ï°Å³ï¿½ ï¿½âº»ï¿½ï¿½ ï¿½ï¿½ï¿½
+    const inferredGatewayFees = gatewayFeeOverride ?? (totalRaised * 0.03); // ï¿½âº» 3% ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
-    // ÆÄÆ®³Ê ¸ÅÄ¡ Á¤º¸ Á¶È¸
+    // ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½Ä¡ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½È¸
     const partnerMatchesList = await db
       .select({
         partnerId: partnerMatches.partnerId,
@@ -200,7 +200,7 @@ export async function POST(request: NextRequest) {
       }))
       .filter(entry => entry.share > 0);
 
-    // Çù¾÷ÀÚ Á¤º¸ Á¶È¸
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½È¸
     const collaboratorsList = await db
       .select({
         userId: projectCollaborators.userId,
@@ -227,16 +227,16 @@ export async function POST(request: NextRequest) {
       collaboratorShares
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Á¤»ê ¹èºÐ °è»ê¿¡ ½ÇÆÐÇß½À´Ï´Ù.';
+    const message = error instanceof Error ? error.message : 'ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ê¿¡ ï¿½ï¿½ï¿½ï¿½ï¿½ß½ï¿½ï¿½Ï´ï¿½.';
     return buildError(message, 422);
   }
 
-    // Drizzle Æ®·£Àè¼ÇÀ¸·Î Á¤»ê »ý¼º
+    // Drizzle Æ®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
     const settlement = await db.transaction(async (tx) => {
       const settlementId = crypto.randomUUID();
       const now = new Date().toISOString();
 
-      // Á¤»ê »ý¼º
+      // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
       const [createdSettlement] = await tx
         .insert(settlements)
         .values({
@@ -289,7 +289,7 @@ export async function POST(request: NextRequest) {
         }))
       ].filter((payout) => payout.amount > 0);
 
-      // Á¤»ê Áö±Þ ³»¿ª »ý¼º
+      // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
       const payoutValues = payoutPayload.map((payout) => ({
         id: crypto.randomUUID(),
         settlementId,
@@ -315,8 +315,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(settlement, { status: 201 });
   } catch (error) {
-    console.error('Á¤»ê »ý¼º ¿À·ù:', error);
-    return buildError('Á¤»ê »ý¼º¿¡ ½ÇÆÐÇß½À´Ï´Ù.', 500);
+    console.error('ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½:', error);
+    return buildError('ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ß½ï¿½ï¿½Ï´ï¿½.', 500);
   }
 }
 

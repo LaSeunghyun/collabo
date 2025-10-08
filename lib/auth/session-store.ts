@@ -107,7 +107,7 @@ function hydrateRefreshTokenRow(token: RefreshTokenRow): HydratedRefreshToken {
 }
 
 const loadUserPermissions = async (userId: string, fallbackRole: UserRoleType) => {
-  // ?�순?? 기본 권한�??�용
+  // ?�순?? 기본 권한�??�용
   const effectivePermissions = deriveEffectivePermissions(fallbackRole, []);
   return { role: fallbackRole, permissions: effectivePermissions };
 };

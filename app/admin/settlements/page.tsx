@@ -1,13 +1,13 @@
 import { getSettlementsPendingPayout } from '@/lib/server/settlement-queries';
-// import { SettlementPayoutStatus, type SettlementPayoutStatusType } from '@/types/shared'; // TODO: Drizzle�??�환 ?�요
+// import { SettlementPayoutStatus, type SettlementPayoutStatusType } from '@/types/shared'; // TODO: Drizzle로 전환 필요
 
-// ?�적 ?�더�?강제 - 빌드 ???�이?�베?�스 ?�근 방�?
+// 동적 데이터 강제 - 빌드 시 데이터베이스 접근 방지
 export const dynamic = 'force-dynamic';
 
 const statusLabels: Record<string, string> = {
-  'PENDING': '?�기중',
-  'IN_PROGRESS': '진행�?,
-  'PAID': '?�료'
+  'PENDING': '대기중',
+  'IN_PROGRESS': '진행중',
+  'PAID': '완료'
 };
 
 const currencyFormatter = new Intl.NumberFormat('ko-KR', {
@@ -25,9 +25,9 @@ export default async function AdminSettlementsPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold text-white">?�산 관�?/h1>
+          <h1 className="text-2xl font-semibold text-white">정산 관리</h1>
           <p className="mt-2 text-sm text-white/60">
-            ?�공???�로?�트??지급을 추적?�고 창작?�들???�정??맞게 ?�금??받을 ???�도�??�주?�요.
+            성공한 프로젝트의 지급을 추적하고 창작자들이 정당하게 수익을 받을 수 있도록 도와주세요.
           </p>
         </div>
 
@@ -42,15 +42,15 @@ export default async function AdminSettlementsPage() {
                   <div className="flex-1">
                     <h3 className="text-lg font-medium text-white">{settlement.projectTitle}</h3>
                     <p className="mt-1 text-sm text-white/60">
-                      �?모금??{currencyFormatter.format(settlement.totalRaised)} | ?�데?�트 {dateFormatter.format(settlement.updatedAt)}
+                      총 모금액: {currencyFormatter.format(settlement.totalRaised)} | 업데이트: {dateFormatter.format(settlement.updatedAt)}
                     </p>
                     <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <p className="text-white/60">�?모금??/p>
+                        <p className="text-white/60">총 모금액</p>
                         <p className="font-medium text-white">{currencyFormatter.format(settlement.totalRaised)}</p>
                       </div>
                       <div>
-                        <p className="text-white/60">?�산 금액</p>
+                        <p className="text-white/60">정산 금액</p>
                         <p className="font-medium text-white">{currencyFormatter.format(settlement.netAmount)}</p>
                       </div>
                     </div>
@@ -62,7 +62,7 @@ export default async function AdminSettlementsPage() {
                     {settlement.payoutStatus === 'PENDING' && (
                       <div className="flex gap-2">
                         <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
-                          지�??�작
+                          지급 시작
                         </button>
                         <button className="rounded-lg bg-gray-600 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700">
                           보류
@@ -76,17 +76,17 @@ export default async function AdminSettlementsPage() {
           </div>
         ) : (
           <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 px-8 py-12 text-center">
-            <p className="text-sm text-white/60">지�??��?중인 ?�산???�습?�다.</p>
+            <p className="text-sm text-white/60">지급 대기중인 정산이 없습니다.</p>
           </div>
         )}
       </div>
     );
   } catch (error) {
-    console.error('?�산 목록 로드 ?�패:', error);
+    console.error('정산 목록 로드 실패:', error);
     return (
       <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-6 text-sm text-red-100">
-        <h2 className="text-lg font-semibold text-red-100">?�산 관�?/h2>
-        <p className="mt-2">?�산 ?�이?��? 불러?????�습?�다. ?�시 ???�시 ?�도?�주?�요.</p>
+        <h2 className="text-lg font-semibold text-red-100">정산 관리</h2>
+        <p className="mt-2">정산 데이터를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.</p>
       </div>
     );
   }

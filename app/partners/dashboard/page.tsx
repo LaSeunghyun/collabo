@@ -1,258 +1,148 @@
-import Link from 'next/link';
-import {
-  ArrowUpRight,
-  CalendarDays,
-  CheckCircle2,
-  ClipboardList,
-  Clock4,
-  Sparkles,
-  Users2
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/options';
+import { 
+  Building2, 
+  Users, 
+  TrendingUp, 
+  Star
 } from 'lucide-react';
 
-import { getServerAuthSession } from '@/lib/auth/session';
-import { getPartnerProfileForUser, listPartners } from '@/lib/server/partners';
-import { PARTNER_TYPE_LABELS } from '@/lib/validators/partners';
+const currencyFormatter = new Intl.NumberFormat('ko-KR', {
+  style: 'currency',
+  currency: 'KRW',
+  maximumFractionDigits: 0
+});
 
 const dateFormatter = new Intl.DateTimeFormat('ko-KR', {
-  dateStyle: 'medium',
-  timeStyle: 'short'
+  dateStyle: 'medium'
 });
 
 const statusLabel = (verified: boolean | null | undefined) =>
-  verified ? '?¹ì¸ ?„ë£Œ' : 'ê²€??ì¤?;
+  verified ? 'ì¸ì¦ ì™„ë£Œ' : 'ê²€í†  ì¤‘';
 
 export default async function PartnerDashboardPage() {
-  const session = await getServerAuthSession();
+  const session = await getServerSession(authOptions);
+  const user = session?.user;
 
-  if (!session?.user?.id) {
-    throw new Error('?ŒíŠ¸???•ë³´ë¥??•ì¸?˜ë ¤ë©?ë¡œê·¸?¸ì´ ?„ìš”?©ë‹ˆ??');
+  if (!user) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-white/60">ë¡œê·¸ì¸ì´ í•„ìš”í•©ë‹ˆë‹¤.</p>
+      </div>
+    );
   }
 
-  const partnerProfile = await getPartnerProfileForUser(session.user.id);
-  const recommendedPartners = await listPartners({
-    verified: true,
-    limit: 4,
-    excludeOwnerId: session.user.id
-  });
+  try {
+    // ì„ì‹œë¡œ ë¹ˆ í†µê³„ ë°ì´í„° ì‚¬ìš©
+    const stats = {
+      totalMatches: 0,
+      successfulProjects: 0,
+      totalRevenue: 0,
+      averageRating: 0,
+      verified: false,
+      createdAt: new Date().toISOString(),
+      location: 'ë¯¸ì„¤ì •',
+      contactEmail: 'ë¯¸ì„¤ì •'
+    };
 
-  const hasProfile = Boolean(partnerProfile);
-  const overviewItems = [
-    {
-      label: '?„ë¡œ???íƒœ',
-      value: hasProfile ? statusLabel(partnerProfile?.verified) : '?±ë¡ ?„ìš”',
-      icon: CheckCircle2,
-      accent: hasProfile && partnerProfile?.verified ? 'text-emerald-300' : 'text-amber-300'
-    },
-    {
-      label: '?„ì  ë§¤ì¹­',
-      value: hasProfile ? `${partnerProfile?.matchCount ?? 0}ê±? : '0ê±?,
-      icon: Users2,
-      accent: 'text-sky-300'
-    },
-    {
-      label: 'ìµœê·¼ ?…ë°?´íŠ¸',
-      value: hasProfile
-        ? dateFormatter.format(partnerProfile?.updatedAt ?? partnerProfile?.createdAt ?? new Date())
-        : 'ë¯¸ë“±ë¡?,
-      icon: CalendarDays,
-      accent: 'text-violet-300'
-    }
-  ];
+    const overviewItems = [
+      {
+        label: 'ì´ ë§¤ì¹­ ìˆ˜',
+        value: stats.totalMatches.toString(),
+        icon: Users,
+        accent: 'text-blue-400'
+      },
+      {
+        label: 'ì„±ê³µí•œ í”„ë¡œì íŠ¸',
+        value: stats.successfulProjects.toString(),
+        icon: Star,
+        accent: 'text-yellow-400'
+      },
+      {
+        label: 'ì´ ìˆ˜ìµ',
+        value: currencyFormatter.format(stats.totalRevenue),
+        icon: TrendingUp,
+        accent: 'text-green-400'
+      },
+      {
+        label: 'í‰ê·  í‰ì ',
+        value: stats.averageRating.toFixed(1),
+        icon: Building2,
+        accent: 'text-purple-400'
+      }
+    ];
 
-  return (
-    <div className="space-y-10">
-      <section
-        id="overview"
-        className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 shadow-lg shadow-black/5"
-      >
-        <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-wider text-primary/60">?ŒíŠ¸???„í™©</p>
-            <h2 className="mt-1 text-lg font-semibold text-white">?´ë²ˆ ì£??œë™ ?”ì•½</h2>
-            <p className="mt-2 text-sm text-white/60">
-              ë§¤ì¹­ ?”ì²­ê³?ê²€???íƒœë¥???ê³³ì—??ê´€ë¦¬í•˜?¸ìš”. ?„ë¡œ?„ì„ ìµœì‹ ?¼ë¡œ ? ì?? ìˆ˜ë¡?ì¶”ì²œ ?°ì„ ?œìœ„ê°€ ?’ì•„ì§‘ë‹ˆ??
-            </p>
-          </div>
-          <Link
-            href="/partners"
-            className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-xs font-semibold text-white/80 transition hover:border-white/40 hover:text-white"
-          >
-            ê³µê°œ ?ŒíŠ¸??ë³´ê¸°
-            <ArrowUpRight className="h-4 w-4" />
-          </Link>
-        </header>
-
-        <div className="mt-6 grid gap-4 sm:grid-cols-3">
-          {overviewItems.map((item) => (
-            <div
-              key={item.label}
-              className="rounded-2xl border border-white/10 bg-white/[0.05] p-5"
-            >
-              <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-white/50">
-                <span>{item.label}</span>
-                <item.icon className={`h-4 w-4 ${item.accent}`} />
-              </div>
-              <p className="mt-4 text-xl font-semibold text-white">{item.value}</p>
-            </div>
-          ))}
+    return (
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-3xl font-semibold text-white">íŒŒíŠ¸ë„ˆ ëŒ€ì‹œë³´ë“œ</h1>
+          <p className="mt-2 text-sm text-white/60">
+            íŒŒíŠ¸ë„ˆ í™œë™ í˜„í™©ê³¼ í†µê³„ë¥¼ í™•ì¸í•˜ì„¸ìš”
+          </p>
         </div>
 
-        {!hasProfile ? (
-          <div className="mt-6 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-100">
-            <p className="font-semibold text-amber-200">?ŒíŠ¸???„ë¡œ?„ì´ ?„ì§ ?±ë¡?˜ì? ?Šì•˜?´ìš”.</p>
-            <p className="mt-1 text-amber-100/80">
-              ê²€???€ê¸?ì¤‘ì¸ ê²½ìš° ?´ì˜?€?ì„œ ë³„ë„ë¡??°ë½?œë¦¬ê³??ˆì–´?? ë°”ë¡œ ?±ë¡???œì‘?˜ë ¤ë©??„ë˜ ?ˆë‚´ë¥??•ì¸?˜ì„¸??
-            </p>
-          </div>
-        ) : null}
-      </section>
-
-      <section
-        id="profile"
-        className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 shadow-lg shadow-black/5"
-      >
-        <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-wider text-primary/60">?„ë¡œ??ê´€ë¦?/p>
-            <h2 className="mt-1 text-lg font-semibold text-white">?‘ì—… ì¤€ë¹??íƒœ ?ê?</h2>
-            <p className="mt-2 text-sm text-white/60">
-              ?ŒíŠ¸???„ë¡œ?„ê³¼ ?°ë½ì²??•ë³´ë¥?ìµœì‹ ?¼ë¡œ ? ì??˜ë©´ ?„ë¡œ?íŠ¸ ì¶”ì²œê³?ë§¤ì¹­ ?•ë¥ ???’ì•„ì§‘ë‹ˆ??
-            </p>
-          </div>
-          <Link
-            href="/partners"
-            className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition hover:bg-primary/90"
-          >
-            ?„ë¡œ???…ë°?´íŠ¸?˜ê¸°
-            <ClipboardList className="h-4 w-4" />
-          </Link>
-        </header>
-
-        {partnerProfile ? (
-          <div className="mt-6 space-y-5">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-5">
-                <p className="text-xs uppercase tracking-[0.3em] text-white/50">?ŒíŠ¸?ˆëª…</p>
-                <p className="mt-3 text-lg font-semibold text-white">{partnerProfile.name}</p>
-                <p className="mt-1 text-sm text-white/60">
-                  {PARTNER_TYPE_LABELS[partnerProfile.type]}
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-5">
-                <p className="text-xs uppercase tracking-[0.3em] text-white/50">?°ë½ ì±„ë„</p>
-                <p className="mt-3 text-lg font-semibold text-white">{partnerProfile.contactInfo}</p>
-                {partnerProfile.location ? (
-                  <p className="mt-1 text-sm text-white/60">?œë™ ì§€??Â· {partnerProfile.location}</p>
-                ) : null}
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-5">
-              <p className="text-xs uppercase tracking-[0.3em] text-white/50">?Œê°œ</p>
-              <p className="mt-3 text-sm leading-relaxed text-white/70">
-                {partnerProfile.description ?? '?Œê°œ ë¬¸êµ¬ê°€ ?„ì§ ?±ë¡?˜ì? ?Šì•˜?´ìš”. ?µì‹¬ ??Ÿ‰ê³??‘ì—… ?±ê³¼ë¥??…ë ¥??ì£¼ì„¸??'}
-              </p>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-5">
-                <p className="text-xs uppercase tracking-[0.3em] text-white/50">?¹ì¸ ?íƒœ</p>
-                <div className="mt-3 flex items-center gap-2 text-sm text-white/70">
-                  <Clock4 className={`h-4 w-4 ${partnerProfile.verified ? 'text-emerald-300' : 'text-amber-300'}`} />
-                  <span>
-                    {partnerProfile.verified
-                      ? '?¹ì¸ ?„ë£Œ ??? ê·œ ?„ë¡œ?íŠ¸ ë§¤ì¹­ ?Œë¦¼??ë°›ì•„ë³????ˆì–´??'
-                      : '?´ì˜?€ ê²€??ì¤‘ì…?ˆë‹¤. ?¹ì¸ ???Œë¦¼?¼ë¡œ ?ˆë‚´?œë¦´ê²Œìš”.'}
-                  </span>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-5">
-                <p className="text-xs uppercase tracking-[0.3em] text-white/50">?¬íŠ¸?´ë¦¬??/p>
-                {partnerProfile.portfolioUrl ? (
-                  <Link
-                    href={partnerProfile.portfolioUrl}
-                    className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-primary transition hover:text-primary/80"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    ?¬íŠ¸?´ë¦¬???´ê¸°
-                    <ArrowUpRight className="h-4 w-4" />
-                  </Link>
-                ) : (
-                  <p className="mt-3 text-sm text-white/60">
-                    ?¬íŠ¸?´ë¦¬??ë§í¬ê°€ ?±ë¡?˜ì? ?Šì•˜?µë‹ˆ?? ?€???‘ì—…ë¬¼ì„ ?°ê²°?˜ë©´ ? ë¢°?„ë? ?’ì¼ ???ˆì–´??
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="mt-6 rounded-2xl border border-dashed border-white/15 bg-white/[0.02] p-6 text-sm text-white/60">
-            <p className="font-semibold text-white">?±ë¡???ŒíŠ¸???„ë¡œ?„ì´ ?†ìŠµ?ˆë‹¤.</p>
-            <p className="mt-2">
-              ê°„ë‹¨???Œê°œ?€ ?°ë½ì²? ?œê³µ ê°€?¥í•œ ?œë¹„?¤ë? ?…ë ¥?˜ë©´ ì¶”ì²œ ?ë ˆ?´ì…˜???¸ì¶œ?˜ê³  ?„ë¡œ?íŠ¸ ë§¤ì¹­ ?œì•ˆ??ë°›ì„ ???ˆìŠµ?ˆë‹¤.
-            </p>
-            <div className="mt-4 inline-flex items-center gap-2 text-xs text-white/50">
-              <Sparkles className="h-4 w-4" />
-              <span>?¹ì¸ ?„ë£Œ ?„ì—??ë§¤ì¹­ ?”ì²­ê³??•ì‚° ?„í™©???¬ê¸°?ì„œ ë°”ë¡œ ?•ì¸?????ˆì–´??</span>
-            </div>
-          </div>
-        )}
-      </section>
-
-      <section
-        id="insights"
-        className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 shadow-lg shadow-black/5"
-      >
-        <header>
-          <p className="text-xs uppercase tracking-wider text-primary/60">ì¶”ì²œ ?¸ì‚¬?´íŠ¸</p>
-          <h2 className="mt-1 text-lg font-semibold text-white">?¨ê»˜ ë³´ë©´ ì¢‹ì? ?ŒíŠ¸??/h2>
-          <p className="mt-2 text-sm text-white/60">
-            ë¹„ìŠ·??ë¶„ì•¼???ŒíŠ¸?ˆë? ?•ì¸?˜ê³  ?‘ì—… ?¤íŠ¸?Œí¬ë¥??•ì¥??ë³´ì„¸?? ?„ë¡œ?íŠ¸ ?œì•ˆ ??ì°¸ê³  ?ë£Œë¡??œìš©?????ˆìŠµ?ˆë‹¤.
-          </p>
-        </header>
-
-        {recommendedPartners.items.length ? (
-          <ul className="mt-6 grid gap-4 md:grid-cols-2">
-            {recommendedPartners.items.map((partner) => (
-              <li
-                key={partner.id}
-                className="rounded-2xl border border-white/10 bg-white/[0.05] p-5"
+        <section id="overview" className="space-y-6">
+          <h2 className="text-xl font-semibold text-white">í˜„í™© ìš”ì•½</h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {overviewItems.map((item) => (
+              <div
+                key={item.label}
+                className="rounded-2xl border border-white/10 bg-white/5 p-6"
               >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-white">{partner.name}</p>
-                    <p className="mt-1 text-xs text-white/60">
-                      {PARTNER_TYPE_LABELS[partner.type]} Â· ë§¤ì¹­ {partner.matchCount}ê±?
-                    </p>
-                  </div>
-                  <span className="rounded-full border border-white/20 px-3 py-1 text-xs text-white/60">
-                    {statusLabel(partner.verified)}
-                  </span>
+                <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-white/50">
+                  <span>{item.label}</span>
+                  <item.icon className={`h-4 w-4 ${item.accent}`} />
                 </div>
-
-                {partner.location ? (
-                  <p className="mt-4 text-xs text-white/50">?œë™ ì§€??Â· {partner.location}</p>
-                ) : null}
-
-                <Link
-                  href={`/partners?highlight=${partner.id}`}
-                  className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-primary transition hover:text-primary/80"
-                >
-                  ?„ë¡œ???´í´ë³´ê¸°
-                  <ArrowUpRight className="h-4 w-4" />
-                </Link>
-              </li>
+                <p className="mt-4 text-xl font-semibold text-white">{item.value}</p>
+              </div>
             ))}
-          </ul>
-        ) : (
-          <div className="mt-6 rounded-2xl border border-dashed border-white/15 bg-white/[0.02] p-6 text-sm text-white/60">
-            ì¶”ì²œ???ŒíŠ¸?ˆê? ?„ì§ ?†ìŠµ?ˆë‹¤. ?„ë¡œ?„ì„ ë³´ê°•?˜ë©´ ê´€??ë¶„ì•¼???ŒíŠ¸?ˆì? ?„ë¡œ?íŠ¸ë¥?ì¶”ì²œ???œë¦´ê²Œìš”.
           </div>
-        )}
-      </section>
-    </div>
-  );
+        </section>
+
+        <section id="profile" className="space-y-6">
+          <h2 className="text-xl font-semibold text-white">í”„ë¡œí•„ ê´€ë¦¬</h2>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-white/60">ì¸ì¦ ìƒíƒœ</span>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  stats.verified ? 'bg-green-500/10 text-green-300' : 'bg-yellow-500/10 text-yellow-300'
+                }`}>
+                  {statusLabel(stats.verified)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-white/60">ë“±ë¡ì¼</span>
+                <span className="text-sm text-white">{dateFormatter.format(new Date(stats.createdAt))}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-white/60">ìœ„ì¹˜</span>
+                <span className="text-sm text-white">{stats.location || 'ë¯¸ì„¤ì •'}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-white/60">ì—°ë½ì²˜</span>
+                <span className="text-sm text-white">{stats.contactEmail || 'ë¯¸ì„¤ì •'}</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="insights" className="space-y-6">
+          <h2 className="text-xl font-semibold text-white">ì¶”ì²œ ì•„í‹°ìŠ¤íŠ¸</h2>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+            <p className="text-white/60">
+              ì¶”ì²œ ì•„í‹°ìŠ¤íŠ¸ ê¸°ëŠ¥ì€ ê³§ ì¶œì‹œë  ì˜ˆì •ì…ë‹ˆë‹¤.
+            </p>
+          </div>
+        </section>
+      </div>
+    );
+  } catch (error) {
+    console.error('Failed to load partner dashboard data:', error);
+    return (
+      <div className="text-center py-12">
+        <p className="text-white/60">ë°ì´í„°ë¥¼ ë¶ˆëŸ¬ì˜¬ ìˆ˜ ì—†ìŠµë‹ˆë‹¤.</p>
+      </div>
+    );
+  }
 }

@@ -32,7 +32,7 @@ const buildInitialValues = (initialData?: Partial<PartnerFormData>): PartnerForm
   portfolioUrl: initialData?.portfolioUrl ?? ''
 });
 
-const SUBMIT_ERROR_FALLBACK = '?�트???�록 ?�청???�료?��? 못했?�요. ?�시 ???�시 ?�도??주세??';
+const SUBMIT_ERROR_FALLBACK = '?�트???�록 ?�청???�료?��? 못했?�요. ?�시 ???�시 ?�도??주세??';
 
 export function PartnerForm({ onSubmit, initialData, onSuccess }: PartnerFormProps) {
   const initialValues = useMemo(() => buildInitialValues(initialData), [initialData]);
@@ -82,66 +82,66 @@ export function PartnerForm({ onSubmit, initialData, onSuccess }: PartnerFormPro
   return (
     <form onSubmit={handleSubmit} className="space-y-6" noValidate>
       <div className="space-y-2">
-        <Label htmlFor="name">?�트?�명 *</Label>
+        <Label htmlFor="name">?�트?�명 *</Label>
         <Input
           id="name"
           value={formData.name}
           onChange={(event) => handleChange('name', event.target.value)}
-          placeholder="?�트?�명???�력?�세??
+          placeholder="?�트?�명???�력?�세??
           required
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="description">?�명</Label>
+        <Label htmlFor="description">?�명</Label>
         <Textarea
           id="description"
           value={formData.description}
           onChange={(event) => handleChange('description', event.target.value)}
-          placeholder="?�공 ?�비?��? ?�로?�트 경험???�개??주세??
+          placeholder="?�공 ?�비?��? ?�로?�트 경험???�개??주세??
           rows={3}
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="type">?�트???�형 *</Label>
+        <Label htmlFor="type">?�트???�형 *</Label>
         <Select value={formData.type} onValueChange={(value) => handleChange('type', value as PartnerTypeType)}>
           <SelectTrigger>
-            <SelectValue placeholder="?�트???�형???�택?�세?? />
+            <SelectValue placeholder="?�트???�형???�택?�세?? />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={PartnerType.STUDIO}>?�튜?�오</SelectItem>
+            <SelectItem value={PartnerType.STUDIO}>?�튜?�오</SelectItem>
             <SelectItem value={PartnerType.VENUE}>공연??/SelectItem>
-            <SelectItem value={PartnerType.PRODUCTION}>?�작 ?�튜?�오</SelectItem>
-            <SelectItem value={PartnerType.MERCHANDISE}>머천?�이�?/SelectItem>
-            <SelectItem value={PartnerType.OTHER}>기�?</SelectItem>
+            <SelectItem value={PartnerType.PRODUCTION}>?�작 ?�튜?�오</SelectItem>
+            <SelectItem value={PartnerType.MERCHANDISE}>머천?�이�?/SelectItem>
+            <SelectItem value={PartnerType.OTHER}>기�?</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="contactInfo">?�락�?*</Label>
+        <Label htmlFor="contactInfo">?�락�?*</Label>
         <Input
           id="contactInfo"
           value={formData.contactInfo}
           onChange={(event) => handleChange('contactInfo', event.target.value)}
-          placeholder="?�락 가?�한 ?�메???�는 ?�화번호"
+          placeholder="?�락 가?�한 ?�메???�는 ?�화번호"
           required
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="location">?�치</Label>
+        <Label htmlFor="location">?�치</Label>
         <Input
           id="location"
           value={formData.location}
           onChange={(event) => handleChange('location', event.target.value)}
-          placeholder="기반 지??�� ?�력?�세??
+          placeholder="기반 지??�� ?�력?�세??
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="portfolioUrl">?�트?�리??URL</Label>
+        <Label htmlFor="portfolioUrl">?�트?�리??URL</Label>
         <Input
           id="portfolioUrl"
           type="url"
@@ -162,7 +162,7 @@ export function PartnerForm({ onSubmit, initialData, onSuccess }: PartnerFormPro
           초기??
         </Button>
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? '?�록 ?�청 중�? : '?�트???�록 ?�청'}
+          {isSubmitting ? '?�록 ?�청 중�? : '?�트???�록 ?�청'}
         </Button>
       </div>
     </form>

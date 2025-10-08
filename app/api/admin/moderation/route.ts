@@ -38,7 +38,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    // ? íš¨???íƒœ?¸ì? ?•ì¸
+    // ?ï¿½íš¨???ï¿½íƒœ?ï¿½ï¿½? ?ï¿½ì¸
     if (!Object.values(moderationStatusEnum.enumValues).includes(status)) {
       return NextResponse.json(
         { message: 'Invalid status' },

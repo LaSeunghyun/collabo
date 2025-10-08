@@ -17,7 +17,7 @@ export async function GET() {
         id: 'music',
         label: 'Music',
         subcategories: ['K-pop', 'Indie', 'Live Session'],
-        icon: '?Žµ',
+        icon: '?ï¿½ï¿½',
         color: '#ff6b6b',
         isActive: true,
         order: 1
@@ -26,7 +26,7 @@ export async function GET() {
         id: 'performance',
         label: 'Performance',
         subcategories: ['Musical', 'Play', 'Dance'],
-        icon: '?Ž­',
+        icon: '?ï¿½ï¿½',
         color: '#4ecdc4',
         isActive: true,
         order: 2
@@ -35,7 +35,7 @@ export async function GET() {
         id: 'art',
         label: 'Art',
         subcategories: ['Media Art', 'Exhibition', 'Workshop'],
-        icon: '?Ž¨',
+        icon: '?ï¿½ï¿½',
         color: '#45b7d1',
         isActive: true,
         order: 3
@@ -44,7 +44,7 @@ export async function GET() {
         id: 'tech',
         label: 'Tech',
         subcategories: ['XR', 'Metaverse', 'AI Collab'],
-        icon: '?¤–',
+        icon: '?ï¿½ï¿½',
         color: '#96ceb4',
         isActive: true,
         order: 4

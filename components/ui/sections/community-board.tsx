@@ -145,14 +145,15 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
     ? selectedCategories.filter((category) => category !== 'all')
     : selectedCategories;
   const categoriesForQuery = effectiveCategories.includes('all') ? ['all'] : effectiveCategories;
-  // 글?�기 버튼 ?�릭 ?�들??
+  
+  // 글쓰기 버튼 클릭 핸들러
   const handleCreatePost = () => {
     if (!session) {
-      // 로그?�되지 ?��? 경우 로그???�이지�?리다?�렉??
+      // 로그인되지 않은 경우 로그인 페이지로 리다이렉트
       signIn(undefined, { callbackUrl: '/community/new' });
       return;
     }
-    // 로그?�된 경우 글?�기 ?�이지�??�동
+    // 로그인된 경우 글쓰기 페이지로 이동
     if (router) {
       router.push('/community/new');
       return;
@@ -199,39 +200,49 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
       return;
     }
 
-    const observer = new IntersectionObserver((entries) => {
-      const entry = entries[0];
-      if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
-        fetchNextPage().catch(() => {
-          // handled by React Query error states
-        });
-      }
-    });
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
 
-    const node = loadMoreRef.current;
-    observer.observe(node);
+    observer.observe(loadMoreRef.current);
 
-    return () => {
-      observer.disconnect();
-    };
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const toggleLikeMutation = useMutation<CommunityPost, Error, { postId: string; like: boolean }, { previous?: InfiniteData<CommunityFeedResponse>; queryKey: QueryKey }>({
-    mutationFn: async ({ postId, like }) => {
-      const res = await fetch(`/api/community/${postId}`, {
+  const toggleLikeMutation = useMutation({
+    mutationFn: async (postId: string) => {
+      const response = await fetch(`/api/community/${postId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: like ? 'like' : 'unlike' })
+        body: JSON.stringify({ action: 'toggleLike' })
       });
 
-      if (!res.ok) {
+      if (!response.ok) {
         throw new Error('Failed to toggle like');
       }
 
-      return (await res.json()) as CommunityPost;
+      return response.json();
     },
-    onMutate: async ({ postId, like }) => {
-      const queryKey: QueryKey = [
+    onMutate: async (postId) => {
+      await queryClient.cancelQueries({
+        queryKey: [
+          'community',
+          {
+            projectId: projectId ?? null,
+            authorId: authorId ?? null,
+            sort,
+            categories: categoriesForQuery,
+            search: debouncedSearch
+          }
+        ]
+      });
+
+      const previousData = queryClient.getQueryData<InfiniteData<CommunityFeedResponse>>([
         'community',
         {
           projectId: projectId ?? null,
@@ -240,44 +251,56 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
           categories: categoriesForQuery,
           search: debouncedSearch
         }
-      ];
+      ]);
 
-      await queryClient.cancelQueries({ queryKey });
-      const previous = queryClient.getQueryData<InfiniteData<CommunityFeedResponse>>(queryKey);
-
-      queryClient.setQueryData<InfiniteData<CommunityFeedResponse>>(queryKey, (current) => {
-        if (!current) {
-          return current;
-        }
-
-        return {
-          ...current,
-          pages: current.pages.map((page) => ({
-            ...page,
-            posts: page.posts.map((post) => {
-              if (post.id !== postId) {
-                return post;
-              }
-
-              const delta = like ? 1 : -1;
-              return {
-                ...post,
-                liked: like,
-                likes: Math.max(0, post.likes + delta)
-              };
-            })
-          }))
-        };
-      });
-
-      return { previous, queryKey };
-    },
-    onError: (_error, _variables, context) => {
-      if (!context?.previous) {
-        return;
+      if (previousData) {
+        queryClient.setQueryData<InfiniteData<CommunityFeedResponse>>(
+          [
+            'community',
+            {
+              projectId: projectId ?? null,
+              authorId: authorId ?? null,
+              sort,
+              categories: categoriesForQuery,
+              search: debouncedSearch
+            }
+          ],
+          {
+            ...previousData,
+            pages: previousData.pages.map((page) => ({
+              ...page,
+              posts: page.posts.map((post) =>
+                post.id === postId
+                  ? {
+                      ...post,
+                      liked: !post.liked,
+                      likeCount: post.liked ? post.likeCount - 1 : post.likeCount + 1
+                    }
+                  : post
+              )
+            }))
+          }
+        );
       }
 
-      queryClient.setQueryData(context.queryKey, context.previous);
+      return { previousData };
+    },
+    onError: (err, postId, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(
+          [
+            'community',
+            {
+              projectId: projectId ?? null,
+              authorId: authorId ?? null,
+              sort,
+              categories: categoriesForQuery,
+              search: debouncedSearch
+            }
+          ],
+          context.previousData
+        );
+      }
     },
     onSettled: () => {
       queryClient.invalidateQueries({
@@ -295,7 +318,7 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
     }
   });
 
-  const handleCategoryToggle = useCallback((category: string) => {
+  const handleToggleCategory = useCallback((category: string) => {
     setSelectedCategories((prev) => {
       if (category === 'all') {
         return ['all'];
@@ -328,248 +351,202 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
               onClick={handleCreatePost}
               className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
             >
-              {t('community.actions.create')}
-              <ArrowRight className="h-4 w-4" />
+              <Sparkles className="h-4 w-4" />
+              {t('community.createPost')}
             </button>
           ) : null}
         </div>
 
-        <div className="mt-6 flex flex-wrap gap-2">
-          {CATEGORY_OPTIONS.map((option) => {
-            const isActive = selectedCategories.includes(option);
-            return (
+        <div className="mt-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap gap-2">
+            {CATEGORY_OPTIONS.map((category) => (
+              <button
+                key={category}
+                type="button"
+                onClick={() => handleToggleCategory(category)}
+                className={clsx(
+                  'rounded-full px-3 py-1.5 text-xs font-medium transition',
+                  selectedCategories.includes(category)
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-white/5 text-white/60 hover:bg-white/10'
+                )}
+              >
+                {t(`community.categories.${category}`)}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-white/60">
+              {t('community.labels.selectedCategories', { count: categoriesForQuery.length })}
+            </span>
+            <span className="hidden md:inline">•</span>
+            <span>{t('community.labels.selectedCategories', { count: categoriesForQuery.length })}</span>
+          </div>
+        </div>
+
+        <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
+            <input
+              type="text"
+              value={searchValue}
+              onChange={(event) => setSearchValue(event.target.value)}
+              placeholder={t('community.searchPlaceholder') ?? ''}
+              className="w-full rounded-full border border-white/10 bg-neutral-950/60 py-2 pl-10 pr-4 text-sm text-white placeholder:text-white/50 focus:border-primary focus:outline-none"
+            />
+          </div>
+
+          <div className="flex gap-2">
+            {SORT_OPTIONS.map((option) => (
               <button
                 key={option}
                 type="button"
-                onClick={() => handleCategoryToggle(option)}
+                onClick={() => setSort(option)}
                 className={clsx(
-                  'rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-widest transition focus:outline-none focus:ring-2 focus:ring-primary/60 focus:ring-offset-0',
-                  isActive ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'bg-white/5 text-white/60 hover:bg-white/10'
+                  'rounded-full px-3 py-1.5 text-xs font-medium transition',
+                  sort === option
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-white/5 text-white/60 hover:bg-white/10'
                 )}
               >
-                {t(`community.filters.${option}`)}
+                {t(`community.sort.${option}`)}
               </button>
-            );
-          })}
-        </div>
-
-        <div className="mt-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex flex-wrap items-center gap-2 text-xs text-white/60">
-            <span className="rounded-full bg-white/10 px-3 py-1 font-semibold uppercase tracking-[0.2em]">
-              {t('community.labels.total', { count: totalCount })}
-            </span>
-            <span className="hidden md:inline">??/span>
-            <span>{t('community.labels.selectedCategories', { count: categoriesForQuery.length })}</span>
-          </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-            <div className="flex gap-2 rounded-full bg-white/5 p-1">
-              {SORT_OPTIONS.map((option) => {
-                const isActive = sort === option;
-                return (
-                  <button
-                    key={option}
-                    type="button"
-                    className={clsx(
-                      'rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] transition',
-                      isActive ? 'bg-white text-neutral-900' : 'text-white/60 hover:text-white'
-                    )}
-                    onClick={() => setSort(option)}
-                  >
-                    {t(
-                      option === 'trending'
-                        ? 'community.sortTrending'
-                        : option === 'popular'
-                          ? 'community.sortPopular'
-                          : 'community.sortRecent'
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="relative w-full min-w-[220px] sm:w-64">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
-              <input
-                value={searchValue}
-                onChange={(event) => setSearchValue(event.target.value)}
-                placeholder={t('community.searchPlaceholder') ?? ''}
-                className="w-full rounded-full border border-white/10 bg-neutral-950/60 py-2 pl-10 pr-4 text-sm text-white placeholder:text-white/50 focus:border-primary focus:outline-none"
-              />
-            </div>
-        </div>
-      </div>
-    </div>
-
-    {metaPinned.length ? (
-      <div className="rounded-3xl border border-primary/20 bg-primary/10 p-6">
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-primary">
-          <Sparkles className="h-4 w-4" />
-          <span>{t('community.pinned.title')}</span>
-          </div>
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
-            {metaPinned.map((post) => (
-              <Link
-                key={post.id}
-                href={`/community/${post.id}`}
-                className="group rounded-2xl border border-primary/20 bg-neutral-950/60 p-4 transition hover:-translate-y-1 hover:border-primary hover:shadow-lg hover:shadow-primary/20"
-              >
-                <div className="flex items-center gap-3 text-xs uppercase tracking-[0.25em] text-primary">
-                  <span>{t(`community.filters.${post.category}`)}</span>
-                  <span>??/span>
-                  <span>{t('community.badges.pinned')}</span>
-                </div>
-                <p className="mt-2 text-base font-semibold text-white">{post.title}</p>
-                <p className="mt-1 text-sm text-white/70 line-clamp-2">{post.content}</p>
-              </Link>
             ))}
           </div>
         </div>
-      ) : null}
-
-      {isLoading ? (
-        <p className="text-sm text-white/70">{t('common.loading')}</p>
-      ) : null}
-      {isError ? (
-        <p className="text-sm text-red-400">{t('community.loadErrorMessage')}</p>
-      ) : null}
-
-      {!isLoading && posts.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-white/10 bg-white/5 p-12 text-center">
-          <Sparkles className="mx-auto h-10 w-10 text-white/30" />
-          <h3 className="mt-4 text-lg font-semibold text-white">
-            {t('community.emptyStateTitle')}
-          </h3>
-          <p className="mt-2 text-sm text-white/60">{t('community.emptyStateDescription')}</p>
-          {!readOnly ? (
-            <button
-              onClick={handleCreatePost}
-              className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
-            >
-              {t('community.actions.create')}
-              <ArrowRight className="h-4 w-4" />
-            </button>
-          ) : null}
-        </div>
-      ) : null}
-
-      <div className="space-y-4">
-        {posts.map((post) => (
-          <CommunityPostCard
-            key={post.id}
-            post={post}
-            onToggleLike={(like) => {
-              if (!session?.user) {
-                signIn().catch(() => {
-                  // ignore
-                });
-                return;
-              }
-
-              toggleLikeMutation.mutate({ postId: post.id, like });
-            }}
-          />
-        ))}
       </div>
 
-      <div ref={loadMoreRef} className="h-1" />
-
-      {hasNextPage ? (
-        <div className="flex justify-center">
-          <button
-            type="button"
-            onClick={() => fetchNextPage()}
-            disabled={isFetchingNextPage}
-            className="rounded-full border border-white/10 px-6 py-2 text-sm text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isFetchingNextPage ? t('common.loading') : t('community.loadMore')}
-          </button>
+      {isLoading ? (
+        <div className="space-y-4">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <div key={index} className="rounded-2xl border border-white/10 bg-white/5 p-6">
+              <div className="animate-pulse">
+                <div className="h-4 w-3/4 rounded bg-white/10" />
+                <div className="mt-2 h-3 w-1/2 rounded bg-white/10" />
+                <div className="mt-4 h-20 w-full rounded bg-white/10" />
+              </div>
+            </div>
+          ))}
         </div>
-      ) : null}
+      ) : isError ? (
+        <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-6 text-center">
+          <p className="text-red-300">{t('community.error.loading')}</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {posts.map((post) => (
+            <CommunityPostCard
+              key={post.id}
+              post={post}
+              onToggleLike={() => toggleLikeMutation.mutate(post.id)}
+              isLiking={toggleLikeMutation.isPending}
+            />
+          ))}
+
+          {hasNextPage && (
+            <div ref={loadMoreRef} className="flex justify-center py-8">
+              {isFetchingNextPage ? (
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-primary" />
+              ) : (
+                <button
+                  onClick={() => fetchNextPage()}
+                  className="rounded-full bg-white/5 px-4 py-2 text-sm text-white/60 transition hover:bg-white/10"
+                >
+                  {t('community.loadMore')}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </section>
   );
 }
 
-function CommunityPostCard({
-  post,
-  onToggleLike
-}: {
+interface CommunityPostCardProps {
   post: CommunityPost;
-  onToggleLike: (like: boolean) => void;
-}) {
+  onToggleLike: () => void;
+  isLiking: boolean;
+}
+
+function CommunityPostCard({ post, onToggleLike, isLiking }: CommunityPostCardProps) {
   const { t } = useTranslation();
-  const isLiked = Boolean(post.liked);
-  const likeLabel = t('community.likesLabel_other', { count: post.likes });
-  const commentLabel = t('community.commentsLabel_other', { count: post.comments });
+
   const displayCategory = t(`community.filters.${post.category}`);
   const authorName = post.author?.name ?? t('community.defaultGuestName');
   const createdAt = post.createdAt ? new Date(post.createdAt) : null;
-  const formattedDate = createdAt
-    ? createdAt.toLocaleDateString('ko-KR', {
-      month: 'numeric',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-    : '';
+
+  const commentLabel = t('community.labels.comments', { count: post.commentCount });
+  const likeLabel = t('community.labels.likes', { count: post.likeCount });
 
   return (
-    <article className="group rounded-3xl border border-white/10 bg-white/5 p-5 transition hover:border-primary/60 hover:bg-white/10">
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div className="flex-1 space-y-3">
-          <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.25em] text-white/50">
-            <span className="rounded-full bg-white/10 px-3 py-1 text-white">
-              {displayCategory}
-            </span>
+    <article className="rounded-2xl border border-white/10 bg-white/5 p-6 transition hover:border-white/20">
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 text-xs text-white/60">
             {post.isPinned ? (
-              <span className="rounded-full bg-primary/20 px-3 py-1 text-primary">
-                {t('community.badges.pinned')}
-              </span>
-            ) : null}
-            {post.isTrending ? (
-              <span className="rounded-full bg-white/10 px-3 py-1 text-white">
-                {t('community.badges.trending')}
-              </span>
-            ) : null}
-            {formattedDate ? <span>{formattedDate}</span> : null}
+              <>
+                <span>{t(`community.filters.${post.category}`)}</span>
+                <span>•</span>
+                <span>{t('community.badges.pinned')}</span>
+              </>
+            ) : (
+              <span>{displayCategory}</span>
+            )}
+            <span>•</span>
+            <time dateTime={createdAt?.toISOString()}>
+              {createdAt?.toLocaleDateString('ko-KR')}
+            </time>
           </div>
-          <Link href={`/community/${post.id}`} className="space-y-2">
-            <h3 className="text-lg font-semibold text-white transition group-hover:text-primary">
+
+          <h3 className="mt-2 text-lg font-semibold text-white">
+            <Link
+              href={`/community/${post.id}`}
+              className="transition hover:text-primary"
+            >
               {post.title}
-            </h3>
-            <p className="text-sm text-white/70 line-clamp-2">{post.content}</p>
-          </Link>
-          <div className="flex flex-wrap items-center gap-3 text-xs text-white/60">
+            </Link>
+          </h3>
+
+          <p className="mt-2 line-clamp-3 text-sm text-white/70">
+            {post.content}
+          </p>
+
+          <div className="mt-4 flex items-center gap-4 text-xs text-white/60">
             <span className="font-semibold text-white">{authorName}</span>
-            <span>??/span>
+            <span>•</span>
             <span>{commentLabel}</span>
-            <span>??/span>
+            <span>•</span>
             <span>{likeLabel}</span>
           </div>
         </div>
-        <div className="flex flex-row items-center gap-3 md:flex-col md:items-end">
+
+        <div className="ml-4 flex flex-col items-center gap-2">
           <button
             type="button"
-            onClick={() => onToggleLike(!isLiked)}
+            onClick={onToggleLike}
+            disabled={isLiking}
             className={clsx(
-              'inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition',
-              isLiked
-                ? 'border-primary/60 bg-primary/20 text-primary'
-                : 'border-white/10 bg-white/5 text-white/80 hover:border-white/30 hover:bg-white/10'
+              'flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition',
+              post.liked
+                ? 'bg-red-500/10 text-red-300 hover:bg-red-500/20'
+                : 'bg-white/5 text-white/60 hover:bg-white/10'
             )}
           >
-            <Heart className={clsx('h-4 w-4', isLiked ? 'fill-current' : undefined)} />
-            <span>{likeLabel}</span>
+            <Heart className={clsx('h-3 w-3', post.liked && 'fill-current')} />
+            {post.likeCount}
           </button>
+
           <Link
             href={`/community/${post.id}`}
-            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80 transition hover:border-white/30 hover:bg-white/10"
+            className="flex items-center gap-1 rounded-full bg-white/5 px-3 py-1.5 text-xs font-medium text-white/60 transition hover:bg-white/10"
           >
-            <MessageCircle className="h-4 w-4" />
-            <span>{t('community.actions.viewDetail')}</span>
+            <MessageCircle className="h-3 w-3" />
+            {post.commentCount}
           </Link>
         </div>
       </div>
     </article>
   );
 }
-
-export { CommunityPostCard };

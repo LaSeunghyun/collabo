@@ -30,7 +30,7 @@ function SessionPersistenceManager() {
     const flag = window.sessionStorage.getItem(SESSION_PERSISTENCE_KEY);
 
     if (status === 'authenticated') {
-      // ¼¼¼Ç Áö¼Ó¼º ÇÃ·¡±×°¡ ¾øÀ¸¸é È°¼ºÀ¸·Î ¼³Á¤ (·Î±×¾Æ¿ôÇÏÁö ¾ÊÀ½)
+      // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ó¼ï¿½ ï¿½Ã·ï¿½ï¿½×°ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ È°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½Î±×¾Æ¿ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
       if (!flag) {
         window.sessionStorage.setItem(SESSION_PERSISTENCE_KEY, SESSION_PERSISTENCE_ACTIVE);
         return;

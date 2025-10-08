@@ -11,19 +11,19 @@ export function Header() {
   const { data: unreadCount = 0 } = useAnnouncementUnreadCount(Boolean(session?.user));
 
   const navigationItems = [
-    { href: '/projects', label: '?�로?�트' },
-    { href: '/artists', label: '?�티?�트' },
-    { href: '/partners', label: '?�트?? },
-    { href: '/community', label: '커�??�티' },
-    { href: '/announcements', label: '공�??�항', unreadCount }
+    { href: '/projects', label: '?�로?�트' },
+    { href: '/artists', label: '?�티?�트' },
+    { href: '/partners', label: '?�트?? },
+    { href: '/community', label: '커�??�티' },
+    { href: '/announcements', label: '공�??�항', unreadCount }
   ];
 
   if (session?.user && canAccessRoute(session.user, '/partners/dashboard')) {
-    navigationItems.push({ href: '/partners/dashboard', label: '?�트???�브' });
+    navigationItems.push({ href: '/partners/dashboard', label: '?�트???�브' });
   }
 
   if (session?.user && canAccessRoute(session.user, '/admin')) {
-    navigationItems.push({ href: '/admin', label: '관�? });
+    navigationItems.push({ href: '/admin', label: '관�? });
   }
 
   return (
@@ -61,7 +61,7 @@ export function Header() {
                 href="/profile"
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors"
               >
-                ?�로??
+                ?�로??
               </Link>
             ) : (
               <>
@@ -75,7 +75,7 @@ export function Header() {
                   href="/auth/signup"
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors"
                 >
-                  ?�원가??
+                  ?�원가??
                 </Link>
               </>
             )}

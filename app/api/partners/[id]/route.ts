@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { UserRole } from '@/types/prisma';
+import { userRole } from '@/drizzle/schema';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import {
@@ -30,7 +30,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   const authContext = { headers: request.headers };
 
   try {
-    sessionUser = await requireApiUser({ roles: [UserRole.PARTNER, UserRole.ADMIN] }, authContext);
+    sessionUser = await requireApiUser({ roles: ['PARTNER', 'ADMIN'] }, authContext);
   } catch (error) {
     const response = handleAuthorizationError(error);
     if (response) {

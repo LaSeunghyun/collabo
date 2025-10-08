@@ -1,47 +1,32 @@
-import type { ReactNode } from 'react';
-
-import { requireUser } from '@/lib/auth/guards';
-import { ROLE_LABELS, UserRole } from '@/types/shared';
+import Link from 'next/link';
 
 const navigationAnchors = [
-  { href: '#overview', label: '?�황 ?�약' },
-  { href: '#profile', label: '?�로??관�? },
-  { href: '#insights', label: '추천 ?�사?�트' }
+  { href: '#overview', label: '현황 요약' },
+  { href: '#profile', label: '프로필 관리' },
+  { href: '#insights', label: '추천 아티스트' }
 ];
 
 export default async function PartnerDashboardLayout({
   children
 }: {
-  children: ReactNode;
+  children: React.ReactNode;
 }) {
-  const { user } = await requireUser({
-    roles: [UserRole.PARTNER, UserRole.ADMIN],
-    permissions: ['partner:manage'],
-    redirectTo: '/partners/dashboard'
-  });
-
   return (
     <div className="mx-auto max-w-6xl px-4 pb-20">
-      <header className="pb-6 pt-12">
-        <p className="text-xs uppercase tracking-[0.2em] text-primary/60">Partner</p>
-        <h1 className="mt-2 text-3xl font-semibold text-white">?�트???�브</h1>
-        <p className="mt-3 text-sm text-white/60">
-          {user.name ? `${user.name}?? ` : ''}
-          {ROLE_LABELS[user.role]} 권한?�로 ?�업 ?�청�??�로???�황??빠르�??�인?�세??
-        </p>
-        <nav className="mt-6 flex flex-wrap gap-3">
-          {navigationAnchors.map((item) => (
-            <a
-              key={item.href}
-              href={item.href}
-              className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-medium text-white/80 transition hover:border-white/30 hover:bg-white/[0.08] hover:text-white"
+      <div className="pt-6">
+        <nav className="mb-8 flex gap-4">
+          {navigationAnchors.map((anchor) => (
+            <Link
+              key={anchor.href}
+              href={anchor.href}
+              className="rounded-lg bg-white/5 px-4 py-2 text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white transition-colors"
             >
-              {item.label}
-            </a>
+              {anchor.label}
+            </Link>
           ))}
         </nav>
-      </header>
-      <div className="space-y-10 pb-8">{children}</div>
+      </div>
+      {children}
     </div>
   );
 }

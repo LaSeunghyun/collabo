@@ -57,3 +57,5 @@ export const getSettlementsPendingPayout = async (limit = 5) => {
 
   return settlementsData.map(toSummary);
 };
+
+export const getSettlementQueue = getSettlementsPendingPayout;

@@ -102,7 +102,7 @@ const parseSocialLinks = (links: unknown | null): ArtistSocialLink[] => {
 
 const fetchArtistEvents = async (artistId: string): Promise<ArtistEventSummary[]> => {
   try {
-    // ÇÁ·ÎÁ§Æ® ¸¶ÀÏ½ºÅæÀ» ÀÌº¥Æ®·Î È°¿ë
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ® ï¿½ï¿½ï¿½Ï½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ìºï¿½Æ®ï¿½ï¿½ È°ï¿½ï¿½
     const db = await getDb();
     const milestones = await db
       .select({

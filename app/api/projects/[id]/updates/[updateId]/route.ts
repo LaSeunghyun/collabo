@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { UserRole } from '@/types/prisma';
+import { userRole } from '@/drizzle/schema';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import {
@@ -25,7 +25,7 @@ export async function PATCH(
   const authContext = { headers: request.headers };
 
   try {
-    user = await requireApiUser({ roles: [UserRole.CREATOR, UserRole.ADMIN] }, authContext);
+    user = await requireApiUser({ roles: ['CREATOR', 'ADMIN'] }, authContext);
   } catch (error) {
     const response = handleAuthorizationError(error);
     if (response) {
@@ -82,7 +82,7 @@ export async function DELETE(
   const authContext = { headers: request.headers };
 
   try {
-    user = await requireApiUser({ roles: [UserRole.CREATOR, UserRole.ADMIN] }, authContext);
+    user = await requireApiUser({ roles: ['CREATOR', 'ADMIN'] }, authContext);
   } catch (error) {
     const response = handleAuthorizationError(error);
     if (response) {

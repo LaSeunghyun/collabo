@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     const user = await requireApiUser(request as NextRequest & GuardRequirement);
     const db = await getDb();
 
-    // 관리자�?권한 목록 조회 가??
+    // 관리자�?권한 목록 조회 가??
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
         { message: 'Unauthorized' },
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .offset(offset);
 
-    // ?�체 개수 조회
+    // ?�체 개수 조회
     const totalResult = await db
       .select({ count: count() })
       .from(permissions);
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     const user = await requireApiUser(request as NextRequest & GuardRequirement);
     const db = await getDb();
 
-    // 관리자�?권한 ?�성 가??
+    // 관리자�?권한 ?�성 가??
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
         { message: 'Unauthorized' },

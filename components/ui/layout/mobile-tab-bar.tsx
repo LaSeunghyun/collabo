@@ -8,11 +8,11 @@ import { canAccessRoute } from '@/lib/auth/role-guards';
 // import { useAnnouncementUnreadCount } from '@/hooks/use-announcement-read';
 
 const baseTabs = [
-  { href: '/', label: '??, icon: '? ' },
-  { href: '/projects', label: '?„ë¡œ?íŠ¸', icon: '?µ' },
-  { href: '/artists', label: '?„í‹°?¤íŠ¸', icon: '?¨' },
-  { href: '/partners', label: '?ŒíŠ¸??, icon: '?¤' },
-  { href: '/community', label: 'ì»¤ë??ˆí‹°', icon: '?’¬' }
+  { href: '/', label: '??, icon: '?ï¿½ï¿½' },
+  { href: '/projects', label: '?ï¿½ë¡œ?ï¿½íŠ¸', icon: '?ï¿½ï¿½' },
+  { href: '/artists', label: '?ï¿½í‹°?ï¿½íŠ¸', icon: '?ï¿½ï¿½' },
+  { href: '/partners', label: '?ï¿½íŠ¸??, icon: '?ï¿½ï¿½' },
+  { href: '/community', label: 'ì»¤ï¿½??ï¿½í‹°', icon: '?ï¿½ï¿½' }
 ];
 
 export function MobileTabBar() {
@@ -21,14 +21,14 @@ export function MobileTabBar() {
   // const { data: unreadCount = 0 } = useAnnouncementUnreadCount(Boolean(session?.user));
 
   const tabs = [...baseTabs];
-  tabs.splice(4, 0, { href: '/announcements', label: 'ê³µì?', icon: '?“¢' });
+  tabs.splice(4, 0, { href: '/announcements', label: 'ê³µï¿½?', icon: '?ï¿½ï¿½' });
 
   if (session?.user && canAccessRoute(session.user, '/partners/dashboard')) {
-    tabs.push({ href: '/partners/dashboard', label: '?ˆë¸Œ', icon: '??' });
+    tabs.push({ href: '/partners/dashboard', label: '?ï¿½ë¸Œ', icon: '??' });
   }
 
   if (session?.user && canAccessRoute(session.user, '/admin')) {
-    tabs.push({ href: '/admin', label: 'ê´€ë¦?, icon: '?› ï¸? });
+    tabs.push({ href: '/admin', label: 'ê´€ï¿½?, icon: '?ï¿½ï¿½ï¿½? });
   }
 
   return (

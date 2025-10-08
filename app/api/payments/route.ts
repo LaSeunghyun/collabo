@@ -22,13 +22,13 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const offset = (page - 1) * limit;
 
-    // 조건부 ?�터�?
+    // 조건부 ?�터�?
     const conditions = [eq(fundings.userId, user.id)];
     if (provider && Object.values(paymentProviderEnum.enumValues).includes(provider as any)) {
       conditions.push(eq(paymentTransactions.provider, provider as any));
     }
 
-    // 결제 ?�역 조회
+    // 결제 ?�역 조회
     const paymentsList = await db
       .select({
         id: paymentTransactions.id,
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .offset(offset);
 
-    // ?�체 개수 조회
+    // ?�체 개수 조회
     const totalResult = await db
       .select({ count: count() })
       .from(paymentTransactions)
