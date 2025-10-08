@@ -34,6 +34,8 @@ const isTrendingPost = (createdAt: Date, commentCount: number, likeCount: number
 
 const buildPostResponse = async (postId: string, viewerId?: string | null) => {
   try {
+    const db = await getDb();
+
     // 게시글과 작성자 정보를 함께 조회
     const postResult = await db
       .select({
@@ -62,7 +64,6 @@ const buildPostResponse = async (postId: string, viewerId?: string | null) => {
     }
 
     // 좋아요, 싫어요, 댓글 수를 별도로 조회
-    const db = await getDb();
     const [likesResult, dislikesResult, commentsResult] = await Promise.all([
       db.select({ count: count() }).from(postLikes).where(eq(postLikes.postId, postId)),
       db.select({ count: count() }).from(postDislikes).where(eq(postDislikes.postId, postId)),
@@ -200,6 +201,7 @@ export async function PATCH(
   }
 
   try {
+    const db = await getDb();
     // 게시글 존재 여부 확인
     const existingPost = await db
       .select({ id: posts.id })
