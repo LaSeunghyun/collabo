@@ -103,6 +103,7 @@ const parseSocialLinks = (links: unknown | null): ArtistSocialLink[] => {
 const fetchArtistEvents = async (artistId: string): Promise<ArtistEventSummary[]> => {
   try {
     // 프로젝트 마일스톤을 이벤트로 활용
+    const db = await getDb();
     const milestones = await db
       .select({
         id: projectMilestones.id,
@@ -133,6 +134,7 @@ const fetchArtistEvents = async (artistId: string): Promise<ArtistEventSummary[]
 
 const fetchArtistUpdates = async (artistId: string): Promise<ArtistProjectUpdate[]> => {
   try {
+    const db = await getDb();
     const updates = await db
       .select({
         id: posts.id,
@@ -206,6 +208,7 @@ const fetchIsFollowing = async (artistId: string, viewer?: SessionUser | null) =
   }
 
   try {
+    const db = await getDb();
     const follow = await db
       .select()
       .from(userFollows)

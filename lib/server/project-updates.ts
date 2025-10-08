@@ -148,6 +148,7 @@ const getLikedPostIds = async (
   }
 
   try {
+    const db = await getDb();
     const likes = await db
       .select({ postId: postLikes.postId })
       .from(postLikes)
@@ -198,6 +199,7 @@ const toProjectUpdateRecord = (
 
 const ensureMilestoneBelongsToProject = async (projectId: string, milestoneId: string) => {
   try {
+    const db = await getDb();
     const [exists] = await db
       .select({ id: projectMilestones.id })
       .from(projectMilestones)
@@ -228,6 +230,7 @@ export const assertProjectOwner = async (
   }
 
   try {
+    const db = await getDb();
     const [project] = await db
       .select({ 
         id: projects.id, 
@@ -261,6 +264,7 @@ export const listProjectUpdates = async (
   viewer?: SessionUser | null
 ): Promise<ProjectUpdateRecord[]> => {
   try {
+    const db = await getDb();
     const [project] = await db
       .select({ 
         id: projects.id, 
@@ -339,6 +343,7 @@ export const createProjectUpdate = async (
       await ensureMilestoneBelongsToProject(projectId, input.milestoneId);
     }
 
+    const db = await getDb();
     const [post] = await db
       .insert(posts)
       .values({
@@ -384,6 +389,7 @@ export const updateProjectUpdate = async (
   try {
     const project = await assertProjectOwner(projectId, user);
 
+    const db = await getDb();
     const [existing] = await db
       .select({ id: posts.id })
       .from(posts)
@@ -456,6 +462,7 @@ export const deleteProjectUpdate = async (
   try {
     await assertProjectOwner(projectId, user);
 
+    const db = await getDb();
     const [existing] = await db
       .select({ id: posts.id })
       .from(posts)
