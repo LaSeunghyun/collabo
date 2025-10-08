@@ -11,9 +11,6 @@ if (!schema || typeof schema !== 'object') {
 }
 
 neonConfig.fetchConnectionCache = true;
-neonConfig.fetchOptions = {
-  cache: 'no-store',
-};
 
 export type DrizzleHttpClient = NeonHttpDatabase<typeof schema>;
 export type DatabaseClient = DrizzleHttpClient;
