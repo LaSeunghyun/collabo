@@ -25,18 +25,15 @@ export interface AnnouncementDetail extends AnnouncementListItem {
 }
 
 const mapAnnouncement = (
-  announcement: any, // Prisma.AnnouncementGetPayload<{
-  //   include: {
-  //     author: true;
-  //     reads: { select: { userId: true } };
-  //   };
-  // }>,
+  announcement: any,
   userId?: string | null,
   referenceDate: Date = new Date()
 ): AnnouncementListItem => {
-  const hasRead = userId ? announcement.reads.some((read: any) => read.userId === userId) : false;
-  const publishedAt = announcement.publishedAt ?? announcement.createdAt;
-  const isPublished = !announcement.publishedAt || announcement.publishedAt <= referenceDate;
+  const reads = Array.isArray(announcement.reads) ? announcement.reads : [];
+  const hasRead = userId ? reads.some((read: any) => read.userId === userId) : false;
+  const publishedAtInput = announcement.publishedAt ?? announcement.createdAt;
+  const publishedAt = publishedAtInput ? resolvePublishedAt(publishedAtInput) : null;
+  const isPublished = !announcement.publishedAt || (publishedAt ? publishedAt <= referenceDate : false);
   const rawCategory = announcement.category as AnnouncementCategory;
   const category = Object.prototype.hasOwnProperty.call(
     ANNOUNCEMENT_CATEGORY_LABELS,
@@ -50,7 +47,7 @@ const mapAnnouncement = (
     title: announcement.title,
     content: announcement.content,
     category,
-    isPinned: announcement.isPinned,
+    isPinned: Boolean(announcement.isPinned),
     publishedAt,
     author: {
       id: announcement.author.id,
@@ -192,7 +189,12 @@ const resolvePublishedAt = (publishedAt?: string | Date | null): Date => {
     return publishedAt;
   }
 
-  return new Date(publishedAt);
+  const parsed = Date.parse(publishedAt);
+  if (Number.isNaN(parsed)) {
+    return new Date();
+  }
+
+  return new Date(parsed);
 };
 
 export async function createAnnouncement(

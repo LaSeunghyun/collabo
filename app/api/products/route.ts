@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { eq, and, count, desc } from 'drizzle-orm';
 
@@ -8,6 +9,7 @@ import { GuardRequirement } from '@/lib/auth/session';
 
 export async function GET(request: NextRequest) {
   try {
+    const db = await getDb();
     const { searchParams } = new URL(request.url);
     const projectId = searchParams.get('projectId');
     const type = searchParams.get('type') as string | null;
@@ -25,7 +27,9 @@ export async function GET(request: NextRequest) {
     }
 
     // 상품 목록 조회
-    const productsList = await db
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    let productsQuery = db
       .select({
         id: products.id,
         projectId: products.projectId,
@@ -45,17 +49,24 @@ export async function GET(request: NextRequest) {
         }
       })
       .from(products)
-      .innerJoin(projects, eq(products.projectId, projects.id))
-      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .innerJoin(projects, eq(products.projectId, projects.id));
+
+    if (whereClause) {
+      productsQuery = productsQuery.where(whereClause);
+    }
+
+    const productsList = await productsQuery
       .orderBy(desc(products.createdAt))
       .limit(limit)
       .offset(offset);
 
     // 전체 개수 조회
-    const totalResult = await db
-      .select({ count: count() })
-      .from(products)
-      .where(conditions.length > 0 ? and(...conditions) : undefined);
+    let countQuery = db.select({ count: count() }).from(products);
+    if (whereClause) {
+      countQuery = countQuery.where(whereClause);
+    }
+
+    const totalResult = await countQuery;
     
     const total = totalResult[0]?.count || 0;
 
@@ -80,6 +91,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const user = await requireApiUser(request as NextRequest & GuardRequirement);
+    const db = await getDb();
     const body = await request.json();
     const { projectId, name, type, price, inventory, images, sku } = body;
 
@@ -113,22 +125,46 @@ export async function POST(request: NextRequest) {
     }
 
     // 상품 생성
-    const newProduct = await db
+    const normalizedPrice = typeof price === 'string' ? Number.parseInt(price, 10) : Number(price);
+    if (!Number.isFinite(normalizedPrice) || normalizedPrice <= 0) {
+      return NextResponse.json(
+        { message: 'Invalid product price' },
+        { status: 400 }
+      );
+    }
+
+    const normalizedInventory =
+      inventory === undefined || inventory === null
+        ? null
+        : typeof inventory === 'string'
+          ? Number.parseInt(inventory, 10)
+          : Number(inventory);
+
+    if (normalizedInventory !== null && Number.isNaN(normalizedInventory)) {
+      return NextResponse.json(
+        { message: 'Invalid inventory value' },
+        { status: 400 }
+      );
+    }
+
+    const now = new Date().toISOString();
+    const [newProduct] = await db
       .insert(products)
       .values({
-        id: crypto.randomUUID(),
+        id: randomUUID(),
         projectId,
         name,
         type: type as any,
-        price: parseInt(price),
-        inventory: inventory ? parseInt(inventory) : null,
+        price: normalizedPrice,
+        inventory: normalizedInventory,
         images: images || [],
         sku: sku || null,
-        isActive: true
+        isActive: true,
+        updatedAt: now
       })
       .returning();
 
-    return NextResponse.json(newProduct[0], { status: 201 });
+    return NextResponse.json(newProduct, { status: 201 });
   } catch (error) {
     console.error('Failed to create product:', error);
     return NextResponse.json(

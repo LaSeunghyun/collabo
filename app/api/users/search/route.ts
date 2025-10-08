@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { ilike, or } from 'drizzle-orm';
 
-import { drizzle } from '@/lib/drizzle';
+import { getDb } from '@/lib/db/client';
+import { users } from '@/lib/db/schema';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -11,18 +13,17 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const users = await drizzle.user.findMany({
-      where: {
-        OR: [
-          { name: { contains: query, mode: 'insensitive' } },
-          { email: { contains: query, mode: 'insensitive' } }
-        ]
-      },
-      select: { id: true, name: true, avatarUrl: true },
-      take: 10
-    });
+    const db = await getDb();
+    const escapedQuery = query.replace(/[\\%_]/g, (char) => `\\${char}`);
+    const likePattern = `%${escapedQuery}%`;
 
-    return NextResponse.json(users);
+    const results = await db
+      .select({ id: users.id, name: users.name, avatarUrl: users.avatarUrl })
+      .from(users)
+      .where(or(ilike(users.name, likePattern), ilike(users.email, likePattern)))
+      .limit(10);
+
+    return NextResponse.json(results);
   } catch (error) {
     console.error('Failed to search users', error);
     return NextResponse.json([]);
