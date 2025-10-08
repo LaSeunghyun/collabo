@@ -201,6 +201,7 @@ export async function PATCH(
   }
 
   try {
+    const db = await getDb();
     // 게시글 존재 여부 확인
     const existingPost = await db
       .select({ id: posts.id })
