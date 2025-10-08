@@ -32,6 +32,7 @@ const safeCompare = (a: string, b: string) => {
 };
 
 export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET,
   adapter: isBuildTime ? undefined : createDrizzleAuthAdapter(),
   pages: {
     signIn: '/auth/signin',
