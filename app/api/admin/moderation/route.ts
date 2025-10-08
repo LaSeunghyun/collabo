@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireApiUser } from '@/lib/auth/guards';
 import { UserRole } from '@/types/prisma';
-import { getReportedPostDetails, updateModerationStatus } from '@/lib/server/moderation';
+import {
+  ModerationDataUnavailableError,
+  getReportedPostDetails,
+  updateModerationStatus
+} from '@/lib/server/moderation';
 import { moderationStatusEnum } from '@/lib/db/schema';
 
 export async function GET(request: NextRequest) {
@@ -17,6 +21,13 @@ export async function GET(request: NextRequest) {
     const details = await getReportedPostDetails(postId);
     return NextResponse.json(details);
   } catch (error) {
+    if (error instanceof ModerationDataUnavailableError) {
+      return NextResponse.json(
+        { message: error.message },
+        { status: 503 }
+      );
+    }
+
     console.error('Failed to get reported post details:', error);
     return NextResponse.json(
       { message: 'Failed to get post details' },
@@ -55,6 +66,13 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json(updatedReport);
   } catch (error) {
+    if (error instanceof ModerationDataUnavailableError) {
+      return NextResponse.json(
+        { message: error.message },
+        { status: 503 }
+      );
+    }
+
     console.error('Failed to update moderation status:', error);
     return NextResponse.json(
       { message: 'Failed to update moderation status' },

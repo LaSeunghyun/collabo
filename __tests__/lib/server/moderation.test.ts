@@ -1,11 +1,11 @@
-﻿import { getOpenModerationReports } from '@/lib/server/moderation';
-import { getDbClient } from '@/lib/db/client';
-import { moderationReport, user } from '@/drizzle/schema';
+import { getOpenModerationReports } from '@/lib/server/moderation';
+import { getDb, isDrizzleAvailable } from '@/lib/db/client';
+import { moderationReports, users } from '@/lib/db/schema';
 import { eq, and, inArray, desc, count, notInArray } from 'drizzle-orm';
 
-// Drizzle 클라이언트 모킹
 jest.mock('@/lib/db/client', () => ({
-  getDbClient: jest.fn()
+  getDb: jest.fn(),
+  isDrizzleAvailable: jest.fn()
 }));
 
 const mockDb = {
@@ -23,12 +23,14 @@ const mockDb = {
   notInArray
 };
 
-const mockGetDbClient = getDbClient as jest.MockedFunction<typeof getDbClient>;
+const mockGetDb = getDb as jest.MockedFunction<typeof getDb>;
+const mockIsDrizzleAvailable = isDrizzleAvailable as jest.MockedFunction<typeof isDrizzleAvailable>;
 
 describe('moderation domain service', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGetDbClient.mockResolvedValue(mockDb as any);
+    mockGetDb.mockResolvedValue(mockDb as any);
+    mockIsDrizzleAvailable.mockResolvedValue(true);
   });
 
   it('fetches active reports and maps to summaries', async () => {
@@ -44,17 +46,18 @@ describe('moderation domain service', () => {
       }
     ];
 
-    mockDb.select.mockResolvedValue(reports);
+    mockDb.limit.mockResolvedValue(reports);
 
     const result = await getOpenModerationReports(3);
 
+    expect(mockIsDrizzleAvailable).toHaveBeenCalled();
     expect(mockDb.select).toHaveBeenCalled();
-    expect(mockDb.from).toHaveBeenCalledWith(moderationReport);
-    expect(mockDb.leftJoin).toHaveBeenCalledWith(user, eq(moderationReport.reporterId, user.id));
-    expect(mockDb.where).toHaveBeenCalledWith(inArray(moderationReport.status, ['PENDING', 'REVIEWING']));
-    expect(mockDb.orderBy).toHaveBeenCalledWith(desc(moderationReport.createdAt));
+    expect(mockDb.from).toHaveBeenCalledWith(moderationReports);
+    expect(mockDb.leftJoin).toHaveBeenCalledWith(users, eq(moderationReports.reporterId, users.id));
+    expect(mockDb.where).toHaveBeenCalledWith(inArray(moderationReports.status, ['PENDING', 'REVIEWING']));
+    expect(mockDb.orderBy).toHaveBeenCalledWith(desc(moderationReports.createdAt));
     expect(mockDb.limit).toHaveBeenCalledWith(3);
-    
+
     expect(result).toEqual([
       {
         id: 'report-1',
@@ -69,16 +72,29 @@ describe('moderation domain service', () => {
   });
 
   it('returns empty array when no reports found', async () => {
-    mockDb.select.mockResolvedValue([]);
+    mockDb.limit.mockResolvedValue([]);
 
     const result = await getOpenModerationReports(5);
 
     expect(result).toEqual([]);
   });
 
+  it('returns empty array without querying when database is disabled', async () => {
+    mockIsDrizzleAvailable.mockResolvedValue(false);
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    const result = await getOpenModerationReports(5);
+
+    expect(result).toEqual([]);
+    expect(mockDb.select).not.toHaveBeenCalled();
+    expect(warnSpy).toHaveBeenCalled();
+
+    warnSpy.mockRestore();
+  });
+
   it('handles database errors gracefully', async () => {
     const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
-    mockDb.select.mockRejectedValue(new Error('Database error'));
+    mockDb.limit.mockRejectedValue(new Error('Database error'));
 
     const result = await getOpenModerationReports(5);
 
