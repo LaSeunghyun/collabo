@@ -33,111 +33,116 @@ const isTrendingPost = (createdAt: Date, commentCount: number, likeCount: number
 };
 
 const buildPostResponse = async (postId: string, viewerId?: string | null) => {
-  const db = await getDb();
+  try {
+    const db = await getDb();
 
-  // 게시글과 작성자 정보를 함께 조회
-  const postResult = await db
-    .select({
-      id: posts.id,
-      title: posts.title,
-      content: posts.content,
-      category: posts.category,
-      projectId: posts.projectId,
-      isPinned: posts.isPinned,
-      createdAt: posts.createdAt,
-      author: {
-        id: users.id,
-        name: users.name,
-        avatarUrl: users.avatarUrl
+    // 게시글과 작성자 정보를 함께 조회
+    const postResult = await db
+      .select({
+        id: posts.id,
+        title: posts.title,
+        content: posts.content,
+        category: posts.category,
+        projectId: posts.projectId,
+        isPinned: posts.isPinned,
+        createdAt: posts.createdAt,
+        author: {
+          id: users.id,
+          name: users.name,
+          avatarUrl: users.avatarUrl
+        }
+      })
+      .from(posts)
+      .innerJoin(users, eq(posts.authorId, users.id))
+      .where(eq(posts.id, postId))
+      .limit(1);
+
+    const post = postResult[0];
+
+    if (!post) {
+      return null;
+    }
+
+    // 좋아요, 싫어요, 댓글 수를 별도로 조회
+    const [likesResult, dislikesResult, commentsResult] = await Promise.all([
+      db.select({ count: count() }).from(postLikes).where(eq(postLikes.postId, postId)),
+      db.select({ count: count() }).from(postDislikes).where(eq(postDislikes.postId, postId)),
+      db.select({ count: count() }).from(comments).where(eq(comments.postId, postId))
+    ]);
+
+    const postWithCounts = {
+      ...post,
+      _count: {
+        likes: likesResult[0]?.count || 0,
+        dislikes: dislikesResult[0]?.count || 0,
+        comments: commentsResult[0]?.count || 0
       }
-    })
-    .from(posts)
-    .innerJoin(users, eq(posts.authorId, users.id))
-    .where(eq(posts.id, postId))
-    .limit(1);
+    };
 
-  const post = postResult[0];
+    // 안전한 liked/disliked 체크
+    let liked = false;
+    let disliked = false;
+    if (viewerId) {
+      try {
+        const [likeRecord, dislikeRecord] = await Promise.all([
+          db.select().from(postLikes).where(and(eq(postLikes.postId, postId), eq(postLikes.userId, viewerId))).limit(1),
+          db
+            .select()
+            .from(postDislikes)
+            .where(and(eq(postDislikes.postId, postId), eq(postDislikes.userId, viewerId)))
+            .limit(1)
+        ]);
+        liked = Boolean(likeRecord[0]);
+        disliked = Boolean(dislikeRecord[0]);
+      } catch (error) {
+        console.warn('Failed to check like/dislike status:', error);
+        liked = false;
+        disliked = false;
+      }
+    }
 
-  if (!post) {
+    // 안전한 reports 카운트
+    let reports = 0;
+    try {
+      const reportsResult = await db
+        .select({ count: count() })
+        .from(moderationReports)
+        .where(and(eq(moderationReports.targetType, 'POST'), eq(moderationReports.targetId, postId)));
+      reports = reportsResult[0]?.count || 0;
+    } catch (reportError) {
+      console.warn('Failed to count reports:', reportError);
+      reports = 0;
+    }
+
+    return {
+      id: postWithCounts.id || '',
+      title: postWithCounts.title || '',
+      content: postWithCounts.content || '',
+      likes: postWithCounts._count?.likes || 0,
+      dislikes: postWithCounts._count?.dislikes || 0,
+      comments: postWithCounts._count?.comments || 0,
+      reports,
+      projectId: postWithCounts.projectId ?? undefined,
+      createdAt: postWithCounts.createdAt || new Date().toISOString(),
+      liked,
+      disliked,
+      category: toCategorySlug(postWithCounts.category),
+      isPinned: postWithCounts.isPinned || false,
+      isTrending: isTrendingPost(
+        new Date(postWithCounts.createdAt),
+        postWithCounts._count?.comments || 0,
+        postWithCounts._count?.likes || 0
+      ),
+      author: {
+        id: postWithCounts.author?.id || '',
+        name: postWithCounts.author?.name || 'Unknown',
+        avatarUrl: postWithCounts.author?.avatarUrl || null
+      }
+    };
+  } catch (error) {
+    console.error('Failed to build post response:', error);
     return null;
   }
-
-  // 좋아요, 싫어요, 댓글 수를 별도로 조회
-  const [likesResult, dislikesResult, commentsResult] = await Promise.all([
-    db.select({ count: count() }).from(postLikes).where(eq(postLikes.postId, postId)),
-    db.select({ count: count() }).from(postDislikes).where(eq(postDislikes.postId, postId)),
-    db.select({ count: count() }).from(comments).where(eq(comments.postId, postId))
-  ]);
-
-  const postWithCounts = {
-    ...post,
-    _count: {
-      likes: likesResult[0]?.count || 0,
-      dislikes: dislikesResult[0]?.count || 0,
-      comments: commentsResult[0]?.count || 0
-    }
-  };
-
-  // 안전한 liked/disliked 체크
-  let liked = false;
-  let disliked = false;
-  if (viewerId) {
-    try {
-      const [likeRecord, dislikeRecord] = await Promise.all([
-        db.select().from(postLikes).where(and(eq(postLikes.postId, postId), eq(postLikes.userId, viewerId))).limit(1),
-        db
-          .select()
-          .from(postDislikes)
-          .where(and(eq(postDislikes.postId, postId), eq(postDislikes.userId, viewerId)))
-          .limit(1)
-      ]);
-      liked = Boolean(likeRecord[0]);
-      disliked = Boolean(dislikeRecord[0]);
-    } catch (error) {
-      console.warn('Failed to check like/dislike status:', error);
-      liked = false;
-      disliked = false;
-    }
-  }
-
-  // 안전한 reports 카운트
-  let reports = 0;
-  try {
-    const reportsResult = await db
-      .select({ count: count() })
-      .from(moderationReports)
-      .where(and(eq(moderationReports.targetType, 'POST'), eq(moderationReports.targetId, postId)));
-    reports = reportsResult[0]?.count || 0;
-  } catch (reportError) {
-    console.warn('Failed to count reports:', reportError);
-    reports = 0;
-  }
-
-  return {
-    id: postWithCounts.id || '',
-    title: postWithCounts.title || '',
-    content: postWithCounts.content || '',
-    likes: postWithCounts._count?.likes || 0,
-    dislikes: postWithCounts._count?.dislikes || 0,
-    comments: postWithCounts._count?.comments || 0,
-    reports,
-    projectId: postWithCounts.projectId ?? undefined,
-    createdAt: postWithCounts.createdAt || new Date().toISOString(),
-    liked,
-    disliked,
-    category: toCategorySlug(postWithCounts.category),
-    isPinned: postWithCounts.isPinned || false,
-    isTrending: isTrendingPost(
-      new Date(postWithCounts.createdAt),
-      postWithCounts._count?.comments || 0,
-      postWithCounts._count?.likes || 0
-    ),
-    author: {
-      id: postWithCounts.author?.id || '',
-      name: postWithCounts.author?.name || 'Unknown',
-      avatarUrl: postWithCounts.author?.avatarUrl || null
-    }
-  };
 };
 
 export async function GET(
