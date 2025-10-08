@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { eq, and, desc, count, sql } from 'drizzle-orm';
 
-import { communityCategoryEnum } from '@/lib/db/schema';
+import { communityCategoryEnum, posts, users, postLikes, postDislikes, moderationReports } from '@/lib/db/schema';
+import { db } from '@/lib/db/client';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import type { SessionUser } from '@/lib/auth/session';
 import { evaluateAuthorization } from '@/lib/auth/session';
-// import { prisma } from '@/lib/prisma'; // TODO: Drizzle로 전환 필요
 
 import type { CommunityFeedResponse } from '@/lib/data/community';
 
@@ -286,16 +287,55 @@ export async function POST(request: NextRequest) {
         projectId: projectId || 'none'
       });
       
-      // TODO: Drizzle로 전환 필요
+      // Drizzle로 게시글 생성
+      const [createdPost] = await db
+        .insert(posts)
+        .values({
+          title,
+          content,
+          category,
+          projectId: projectId ?? null,
+          authorId: sessionUser.id,
+          isPinned: false,
+        })
+        .returning({
+          id: posts.id,
+          title: posts.title,
+          content: posts.content,
+          category: posts.category,
+          projectId: posts.projectId,
+          createdAt: posts.createdAt,
+          isPinned: posts.isPinned,
+        });
+
+      if (!createdPost) {
+        throw new Error('Failed to create post');
+      }
+
+      // 작성자 정보 조회
+      const [author] = await db
+        .select({
+          id: users.id,
+          name: users.name,
+          avatarUrl: users.avatarUrl,
+        })
+        .from(users)
+        .where(eq(users.id, sessionUser.id))
+        .limit(1);
+
       const post: PostWithAuthor = {
-        id: 'temp-id',
-        title,
-        content,
-        category,
-        projectId: projectId ?? null,
-        createdAt: new Date().toISOString(),
-        isPinned: false,
-        author: { id: sessionUser.id, name: sessionUser.name ?? 'Guest', avatarUrl: null },
+        id: createdPost.id,
+        title: createdPost.title,
+        content: createdPost.content,
+        category: createdPost.category,
+        projectId: createdPost.projectId,
+        createdAt: createdPost.createdAt.toISOString(),
+        isPinned: createdPost.isPinned,
+        author: author ? { 
+          id: author.id, 
+          name: author.name ?? 'Guest', 
+          avatarUrl: author.avatarUrl 
+        } : null,
         _count: { likes: 0, dislikes: 0, comments: 0 }
       };
 

@@ -11,6 +11,9 @@ if (!schema || typeof schema !== 'object') {
 }
 
 neonConfig.fetchConnectionCache = true;
+neonConfig.fetchOptions = {
+  cache: 'no-store',
+};
 
 export type DrizzleHttpClient = NeonHttpDatabase<typeof schema>;
 export type DatabaseClient = DrizzleHttpClient;
@@ -32,16 +35,22 @@ const loggerEnabled = () => process.env.NODE_ENV === 'development';
 // Node.js 관련 코드 제거됨 - 서버리스 환경만 지원
 
 const createServerlessInstance = (connectionString: string): DrizzleInstance => {
-  const client = neon(connectionString);
-  const db = drizzleNeon(client, {
-    schema,
-    logger: loggerEnabled(),
-  });
+  try {
+    const client = neon(connectionString);
+    const db = drizzleNeon(client, {
+      schema,
+      logger: loggerEnabled(),
+    });
 
-  return {
-    db,
-    kind: 'serverless',
-  };
+    return {
+      db,
+      kind: 'serverless',
+    };
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    console.error('Failed to create serverless instance:', reason);
+    return createDisabledInstance(`Serverless instance creation failed: ${reason}`);
+  }
 };
 
 const createDisabledInstance = (reason: string): DrizzleInstance => {
