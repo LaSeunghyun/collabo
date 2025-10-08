@@ -58,6 +58,7 @@ const toSummary = (report: ReportWithRelations): ModerationReportSummary => ({
 
 export const getOpenModerationReports = async (limit = 5) => {
   try {
+    const db = await getDb();
     const reports = await db
       .select({
         id: moderationReports.id,
@@ -112,6 +113,7 @@ export const getModerationStats = async () => {
 
 export const getReportedPostDetails = async (postId: string) => {
   try {
+    const db = await getDb();
     const [post, reports] = await Promise.all([
       db
         .select({
@@ -181,6 +183,7 @@ export const updateModerationStatus = async (
   actionNote?: string
 ) => {
   try {
+    const db = await getDb();
     const [updatedReport] = await db
       .update(moderationReports)
       .set({
@@ -201,6 +204,7 @@ export const updateModerationStatus = async (
 export const getHandledModerationReportsByPost = async (limit = 8) => {
   try {
     // 간단한 구현으로 변경 - 복잡한 groupBy 대신 기본 쿼리 사용
+    const db = await getDb();
     const reports = await db
       .select({
         id: moderationReports.id,

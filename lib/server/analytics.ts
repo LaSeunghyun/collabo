@@ -113,6 +113,7 @@ export const getAnalyticsOverview = async (): Promise<AnalyticsOverview> => {
   const activeSince = new Date(now);
   activeSince.setDate(activeSince.getDate() - ACTIVE_USER_WINDOW_DAYS);
 
+  const db = await getDb();
   const [visitLogsData, recentUsersData] = await Promise.all([
     db.select({
       occurredAt: visitLogs.occurredAt,

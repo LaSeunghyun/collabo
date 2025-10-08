@@ -168,6 +168,7 @@ const fetchArtistUpdates = async (artistId: string): Promise<ArtistProjectUpdate
 
 const fetchArtistStats = async (artistId: string) => {
   try {
+    const db = await getDb();
     const [followerCountResult, projectCountResult, distinctBackersResult] = await Promise.all([
       db.select({ count: count() }).from(userFollows).where(eq(userFollows.followingId, artistId)),
       db.select({ count: count() }).from(projects).where(eq(projects.ownerId, artistId)),
@@ -275,6 +276,7 @@ export type GetArtistProfileResult = NonNullable<Awaited<ReturnType<typeof getAr
 
 export const listFeaturedArtists = cache(async (): Promise<ArtistDirectoryEntry[]> => {
   try {
+    const db = await getDb();
     const artists = await db
       .select({
         id: users.id,
