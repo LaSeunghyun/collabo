@@ -1,9 +1,17 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
 import { eq } from 'drizzle-orm';
 
 import { normalizeServerlessConnectionString } from '@/lib/db/connection-string';
 import * as schema from '@/lib/db/schema';
+
+// 서버 사이드에서만 postgres 모듈을 동적으로 import
+const getPostgres = async () => {
+  if (typeof window !== 'undefined') {
+    throw new Error('Database client can only be used on the server side');
+  }
+  const postgres = (await import('postgres')).default;
+  return postgres;
+};
 
 // 스키마가 제대로 로드되었는지 확인
 if (!schema || typeof schema !== 'object') {
@@ -28,8 +36,9 @@ const loggerEnabled = () => process.env.NODE_ENV === 'development';
 
 // Node.js 관련 코드 제거됨 - 서버리스 환경만 지원
 
-const createServerlessInstance = (connectionString: string): DrizzleInstance => {
+const createServerlessInstance = async (connectionString: string): Promise<DrizzleInstance> => {
   try {
+    const postgres = await getPostgres();
     const client = postgres(connectionString, {
       max: 1,
       idle_timeout: 20,
@@ -68,16 +77,8 @@ const createDisabledInstance = (reason: string): DrizzleInstance => {
 
   console.warn(message);
 
-  // 빌드 시에는 더미 스키마로 더미 클라이언트 생성
-  const dummyClient = postgres('postgresql://dummy:dummy@dummy:5432/dummy', {
-    max: 1,
-    idle_timeout: 20,
-    connect_timeout: 10,
-  });
-  const dummyDb = drizzle(dummyClient, {
-    schema,
-    logger: false,
-  });
+  // 더미 객체 생성 (실제 postgres 연결 없이)
+  const dummyDb = {} as DatabaseClient;
 
   const proxy = new Proxy(
     dummyDb,
@@ -108,7 +109,7 @@ const createDisabledInstance = (reason: string): DrizzleInstance => {
 
 // Node.js 관련 코드 제거됨 - 서버리스 환경만 지원
 
-const instantiateDrizzle = (): DrizzleInstance => {
+const instantiateDrizzle = async (): Promise<DrizzleInstance> => {
   const databaseUrl = process.env.DATABASE_URL;
 
   if (!databaseUrl) {
@@ -126,15 +127,15 @@ const instantiateDrizzle = (): DrizzleInstance => {
   }
 
   // 서버리스 환경만 지원
-  const instance = createServerlessInstance(normalizedUrl);
+  const instance = await createServerlessInstance(normalizedUrl);
 
   return instance;
 };
 
-const getDrizzleInstance = (): DrizzleInstance => {
+const getDrizzleInstance = async (): Promise<DrizzleInstance> => {
   if (!globalForDrizzle.drizzle) {
     try {
-      globalForDrizzle.drizzle = instantiateDrizzle();
+      globalForDrizzle.drizzle = await instantiateDrizzle();
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
       globalForDrizzle.drizzle = createDisabledInstance(reason);
@@ -144,11 +145,17 @@ const getDrizzleInstance = (): DrizzleInstance => {
   return globalForDrizzle.drizzle;
 };
 
-export const getDbClient = (): DatabaseClient => getDrizzleInstance().db;
+export const getDbClient = async (): Promise<DatabaseClient> => {
+  const instance = await getDrizzleInstance();
+  return instance.db;
+};
 
-export const db = getDbClient();
+export const db = await getDbClient();
 
-export const isDrizzleAvailable = () => getDrizzleInstance().kind !== 'disabled';
+export const isDrizzleAvailable = async () => {
+  const instance = await getDrizzleInstance();
+  return instance.kind !== 'disabled';
+};
 
 export const closeDb = async () => {
   // 서버리스 환경에서는 연결 정리가 필요하지 않음
