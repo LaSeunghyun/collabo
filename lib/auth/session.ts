@@ -1,9 +1,6 @@
 import { getServerSession } from 'next-auth';
 import type { Session } from 'next-auth';
-import { eq } from 'drizzle-orm';
 
-import { getDbClient } from '@/lib/db/client';
-import { authSession, userPermission } from '@/drizzle/schema';
 import { userRole } from '@/drizzle/schema';
 
 import { verifyAccessToken } from './access-token';
@@ -23,114 +20,33 @@ export type GuardRequirement = {
   permissions?: string[];
 };
 
-type HeaderGetter = {
-  get(name: string): string | null | undefined;
+export type AuthorizationContext = {
+  headers?: Headers;
+  session?: Session | null;
 };
 
-export interface AuthorizationContext {
-  headers?: HeaderGetter | null;
-  authorization?: string | null;
+export enum AuthorizationStatus {
+  AUTHORIZED = 'AUTHORIZED',
+  UNAUTHENTICATED = 'UNAUTHENTICATED',
+  FORBIDDEN = 'FORBIDDEN'
 }
-
-const resolveAuthorizationHeader = (context?: AuthorizationContext) => {
-  if (!context) {
-    return null;
-  }
-
-  if (context.authorization) {
-    return context.authorization;
-  }
-
-  try {
-    return context.headers?.get('authorization') ?? null;
-  } catch (error) {
-    console.warn('Failed to read authorization header from context', error);
-    return null;
-  }
-};
-
-export const getServerAuthSession = () => getServerSession(authOptions);
 
 export const FORBIDDEN_ROUTE = '/forbidden';
 
-export enum AuthorizationStatus {
-  AUTHORIZED = 'authorized',
-  UNAUTHENTICATED = 'unauthenticated',
-  FORBIDDEN = 'forbidden'
-}
+const extractBearerToken = (context: AuthorizationContext): string | null => {
+  return context.headers?.get('authorization') ?? context.headers?.get('Authorization') ?? null;
+};
 
-export interface AuthorizationResult {
-  status: AuthorizationStatus;
-  session: Session | null;
-  user: SessionUser | null;
-}
-
-const evaluateBearerToken = async (
-  requirements: GuardRequirement,
-  context?: AuthorizationContext
-): Promise<AuthorizationResult | null> => {
-  const authorization = resolveAuthorizationHeader(context);
-
-  if (!authorization?.startsWith('Bearer ')) {
-    return null;
-  }
-
-  const token = authorization.slice(7).trim();
-
-  if (!token) {
-    return {
-      status: AuthorizationStatus.UNAUTHENTICATED,
-      session: null,
-      user: null
-    };
-  }
-
+export const evaluateBearerToken = async (
+  token: string,
+  requirements: GuardRequirement
+): Promise<{ status: AuthorizationStatus; session: Session | null; user: SessionUser | null }> => {
   try {
     const verified = await verifyAccessToken(token);
 
-    const db = await getDbClient();
-    const session = await (db as any).query.authSession.findFirst({
-      where: eq(authSession.id, verified.sessionId),
-      with: {
-        user: {
-          with: {
-            permissions: {
-              with: {
-                permission: true
-              }
-            }
-          }
-        }
-      }
-    });
-
-    if (!session || session.revokedAt || !session.user) {
-      return {
-        status: AuthorizationStatus.UNAUTHENTICATED,
-        session: null,
-        user: null
-      };
-    }
-
-    const absoluteExpiry = session.absoluteExpiresAt
-      ? new Date(session.absoluteExpiresAt)
-      : null;
-
-    if (!absoluteExpiry || absoluteExpiry <= new Date()) {
-      return {
-        status: AuthorizationStatus.UNAUTHENTICATED,
-        session: null,
-        user: null
-      };
-    }
-
-    const explicitPermissions = session.user.permissions
-      .filter((entry: any): entry is typeof userPermission.$inferSelect & { permission: { key: string } } =>
-        Boolean(entry.permission?.key)
-      )
-      .map((entry: any) => entry.permission.key);
-    const role = session.user.role as typeof userRole.enumValues[number];
-    const permissions = deriveEffectivePermissions(role, explicitPermissions);
+    // JWT 토큰에서 직접 사용자 정보 사용
+    const role = normalizeRole(verified.role) as typeof userRole.enumValues[number];
+    const permissions = deriveEffectivePermissions(role, verified.permissions);
 
     if (requirements.roles && !requirements.roles.includes(role)) {
       return {
@@ -152,15 +68,15 @@ const evaluateBearerToken = async (
       status: AuthorizationStatus.AUTHORIZED,
       session: null,
       user: {
-        id: session.userId,
-        name: session.user.name,
-        email: session.user.email,
+        id: verified.sub,
+        name: verified.name,
+        email: verified.email,
         role,
         permissions
       }
     };
   } catch (error) {
-    console.warn('Bearer token verification failed', error);
+    console.error('Bearer token evaluation failed:', error);
     return {
       status: AuthorizationStatus.UNAUTHENTICATED,
       session: null,
@@ -170,29 +86,38 @@ const evaluateBearerToken = async (
 };
 
 export const evaluateAuthorization = async (
-  requirements: GuardRequirement = {},
+  requirements: GuardRequirement,
   context?: AuthorizationContext
-): Promise<AuthorizationResult> => {
-  const bearerResult = await evaluateBearerToken(requirements, context);
-
-  if (bearerResult) {
-    return bearerResult;
+): Promise<{ status: AuthorizationStatus; session: Session | null; user: SessionUser | null }> => {
+  if (!context) {
+    return {
+      status: AuthorizationStatus.UNAUTHENTICATED,
+      session: null,
+      user: null
+    };
   }
 
-  const session = await getServerAuthSession();
+  // Bearer 토큰이 있는 경우 JWT 검증
+  const authHeader = extractBearerToken(context);
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.slice(7).trim();
+    if (token) {
+      return await evaluateBearerToken(token, requirements);
+    }
+  }
 
+  // 세션 기반 인증
+  const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return {
       status: AuthorizationStatus.UNAUTHENTICATED,
-      session,
+      session: null,
       user: null
     };
   }
 
   const role = normalizeRole(session.user.role) as typeof userRole.enumValues[number];
-  const permissions = Array.isArray(session.user.permissions)
-    ? session.user.permissions
-    : [];
+  const permissions = deriveEffectivePermissions(role, session.user.permissions || []);
 
   if (requirements.roles && !requirements.roles.includes(role)) {
     return {

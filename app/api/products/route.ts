@@ -3,12 +3,23 @@ import { NextRequest, NextResponse } from 'next/server';
 import { eq, and, count, desc } from 'drizzle-orm';
 
 import { products, projects, productTypeEnum } from '@/lib/db/schema';
-import { getDb } from '@/lib/db/client';
+import { getDb, isDrizzleAvailable } from '@/lib/db/client';
 import { requireApiUser } from '@/lib/auth/guards';
 import { GuardRequirement } from '@/lib/auth/session';
 
 export async function GET(request: NextRequest) {
   try {
+    // ?°ì´?°ë² ?´ìŠ¤ ?¬ìš© ê°€???¬ë? ?•ì¸
+    if (!isDrizzleAvailable()) {
+      return NextResponse.json(
+        { 
+          error: '?°ì´?°ë² ?´ìŠ¤???°ê²°?????†ìŠµ?ˆë‹¤.',
+          details: 'DATABASE_URL???¤ì •?˜ì? ?Šì•˜?µë‹ˆ??'
+        },
+        { status: 503 }
+      );
+    }
+
     const db = await getDb();
     const { searchParams } = new URL(request.url);
     const projectId = searchParams.get('projectId');
@@ -17,7 +28,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const offset = (page - 1) * limit;
 
-    // ì¡°ê±´ë¶€ í•„í„°ë§
+    // ì¡°ê±´ë¶€ ?„í„°ë§?
     const conditions = [];
     if (projectId) {
       conditions.push(eq(products.projectId, projectId));
@@ -26,7 +37,7 @@ export async function GET(request: NextRequest) {
       conditions.push(eq(products.type, type as any));
     }
 
-    // ìƒí’ˆ ëª©ë¡ ì¡°íšŒ
+    // ?í’ˆ ëª©ë¡ ì¡°íšŒ
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
     let productsQuery = db
@@ -60,7 +71,7 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .offset(offset);
 
-    // ì „ì²´ ê°œìˆ˜ ì¡°íšŒ
+    // ?„ì²´ ê°œìˆ˜ ì¡°íšŒ
     let countQuery = db.select({ count: count() }).from(products);
     if (whereClause) {
       countQuery = countQuery.where(whereClause);
@@ -80,9 +91,17 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('Failed to fetch products:', error);
+    console.error('?í’ˆ ëª©ë¡ ì¡°íšŒ ì¤??¤ë¥˜ ë°œìƒ:', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      projectId: request.nextUrl.searchParams.get('projectId') || 'unknown'
+    });
+    
     return NextResponse.json(
-      { message: 'Failed to fetch products' },
+      { 
+        error: '?í’ˆ ëª©ë¡??ë¶ˆëŸ¬?¤ëŠ”???¤íŒ¨?ˆìŠµ?ˆë‹¤.',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
@@ -90,27 +109,56 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // ?°ì´?°ë² ?´ìŠ¤ ?¬ìš© ê°€???¬ë? ?•ì¸
+    if (!isDrizzleAvailable()) {
+      return NextResponse.json(
+        { 
+          error: '?°ì´?°ë² ?´ìŠ¤???°ê²°?????†ìŠµ?ˆë‹¤.',
+          details: 'DATABASE_URL???¤ì •?˜ì? ?Šì•˜?µë‹ˆ??'
+        },
+        { status: 503 }
+      );
+    }
+
     const user = await requireApiUser(request as NextRequest & GuardRequirement);
     const db = await getDb();
-    const body = await request.json();
-    const { projectId, name, type, price, inventory, images, sku } = body;
+    
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: '?˜ëª»???”ì²­ ë³¸ë¬¸?…ë‹ˆ??' },
+        { status: 400 }
+      );
+    }
+
+    const { projectId, name, type, price, inventory, images, sku } = body as {
+      projectId?: string;
+      name?: string;
+      type?: string;
+      price?: number | string;
+      inventory?: number | string | null;
+      images?: string[];
+      sku?: string;
+    };
 
     if (!projectId || !name || !type || !price) {
       return NextResponse.json(
-        { message: 'Missing required fields' },
+        { error: '?„ìˆ˜ ?„ë“œê°€ ?„ë½?˜ì—ˆ?µë‹ˆ??' },
         { status: 400 }
       );
     }
 
-    // íƒ€ì… ìœ íš¨ì„± ê²€ì‚¬
+    // ?€??? íš¨??ê²€??
     if (!Object.values(productTypeEnum.enumValues).includes(type)) {
       return NextResponse.json(
-        { message: 'Invalid product type' },
+        { error: '? íš¨?˜ì? ?Šì? ?í’ˆ ? í˜•?…ë‹ˆ??' },
         { status: 400 }
       );
     }
 
-    // í”„ë¡œì íŠ¸ ì†Œìœ ìì¸ì§€ í™•ì¸
+    // ?„ë¡œ?íŠ¸ ?Œìœ ?ì¸ì§€ ?•ì¸
     const project = await db
       .select({ id: projects.id, ownerId: projects.ownerId })
       .from(projects)
@@ -119,16 +167,16 @@ export async function POST(request: NextRequest) {
 
     if (!project[0] || project[0].ownerId !== user.id) {
       return NextResponse.json(
-        { message: 'Unauthorized' },
+        { error: 'ê¶Œí•œ???†ìŠµ?ˆë‹¤.' },
         { status: 403 }
       );
     }
 
-    // ìƒí’ˆ ìƒì„±
+    // ?í’ˆ ?ì„±
     const normalizedPrice = typeof price === 'string' ? Number.parseInt(price, 10) : Number(price);
     if (!Number.isFinite(normalizedPrice) || normalizedPrice <= 0) {
       return NextResponse.json(
-        { message: 'Invalid product price' },
+        { error: '? íš¨?˜ì? ?Šì? ?í’ˆ ê°€ê²©ì…?ˆë‹¤.' },
         { status: 400 }
       );
     }
@@ -142,7 +190,7 @@ export async function POST(request: NextRequest) {
 
     if (normalizedInventory !== null && Number.isNaN(normalizedInventory)) {
       return NextResponse.json(
-        { message: 'Invalid inventory value' },
+        { error: '? íš¨?˜ì? ?Šì? ?¬ê³  ?˜ëŸ‰?…ë‹ˆ??' },
         { status: 400 }
       );
     }
@@ -164,11 +212,24 @@ export async function POST(request: NextRequest) {
       })
       .returning();
 
+    if (!newProduct) {
+      throw new Error('?í’ˆ ?ì„±???¤íŒ¨?ˆìŠµ?ˆë‹¤.');
+    }
+
     return NextResponse.json(newProduct, { status: 201 });
   } catch (error) {
-    console.error('Failed to create product:', error);
+    console.error('?í’ˆ ?ì„± ì¤??¤ë¥˜ ë°œìƒ:', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      userId: request.headers.get('user-id') || 'unknown',
+      projectId: (body as any)?.projectId || 'unknown'
+    });
+    
     return NextResponse.json(
-      { message: 'Failed to create product' },
+      { 
+        error: '?í’ˆ ?ì„±???¤íŒ¨?ˆìŠµ?ˆë‹¤.',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }

@@ -2,7 +2,7 @@ import { eq, and, desc, inArray } from 'drizzle-orm';
 
 import type { SessionUser } from '@/lib/auth/session';
 import { getDb } from '@/lib/db/client';
-import { posts, users, projectMilestones, postLikes, projects } from '@/lib/db/schema';
+import { posts, users, postLikes, projects } from '@/lib/db/schema';
 
 export class ProjectUpdateNotFoundError extends Error {
   constructor(message = '프로젝트 업데이트를 찾을 수 없습니다.') {
@@ -28,306 +28,127 @@ export class ProjectUpdateValidationError extends Error {
 export type ProjectUpdateAttachment = {
   url: string;
   label?: string;
-  type?: string;
+  type: 'image' | 'video' | 'document';
 };
 
 export type ProjectUpdateRecord = {
   id: string;
-  projectId: string;
   title: string;
   content: string;
-  attachments: ProjectUpdateAttachment[];
-  milestone: {
-    id: string;
-    title: string;
-    status: string;
-  } | null;
+  projectId: string | null;
+  authorId: string;
   createdAt: Date;
   updatedAt: Date;
-  likes: number;
-  comments: number;
-  liked: boolean;
+  isPinned: boolean;
+  attachments: ProjectUpdateAttachment[];
   author: {
     id: string;
-    name: string | null;
+    name: string;
     avatarUrl: string | null;
-  } | null;
-  canEdit: boolean;
+  };
+  project: {
+    id: string;
+    title: string;
+    ownerId: string;
+  };
+  _count: {
+    likes: number;
+    comments: number;
+  };
+  isLiked: boolean;
 };
 
-export interface CreateProjectUpdateInput {
+export type CreateProjectUpdateInput = {
   title: string;
   content: string;
   attachments?: ProjectUpdateAttachment[];
-  milestoneId?: string | null;
-}
+  milestoneId?: string;
+};
 
-export interface UpdateProjectUpdateInput {
+export type UpdateProjectUpdateInput = {
   title?: string;
   content?: string;
   attachments?: ProjectUpdateAttachment[];
-  milestoneId?: string | null;
-}
-
-type ProjectInfo = {
-  id: string;
-  ownerId: string;
+  milestoneId?: string;
 };
 
-const toJsonInput = (
-  value: ProjectUpdateAttachment[] | undefined
-): any => {
-  if (!value || value.length === 0) {
-    return null;
-  }
-
-  return value;
+export type ProjectUpdateFilters = {
+  projectId?: string;
+  authorId?: string;
+  milestoneId?: string;
+  isPinned?: boolean;
+  search?: string;
 };
 
-const normalizeAttachments = (value: any | null): ProjectUpdateAttachment[] => {
-  if (!value) {
-    return [];
-  }
-
-  if (Array.isArray(value)) {
-    return value
-      .map((item) => {
-        if (typeof item === 'object' && item !== null) {
-          const record = item as Record<string, unknown>;
-          const url = typeof record.url === 'string' ? record.url : null;
-          if (!url) {
-            return null;
-          }
-
-          return {
-            url,
-            label: typeof record.label === 'string' ? record.label : undefined,
-            type: typeof record.type === 'string' ? record.type : undefined
-          } satisfies ProjectUpdateAttachment;
-        }
-
-        if (typeof item === 'string') {
-          return { url: item } satisfies ProjectUpdateAttachment;
-        }
-
-        return null;
-      })
-      .filter((item): item is ProjectUpdateAttachment => item !== null);
-  }
-
-  if (typeof value === 'string') {
-    return [{ url: value }];
-  }
-
-  return [];
+export type ProjectUpdateListOptions = {
+  filters?: ProjectUpdateFilters;
+  limit?: number;
+  offset?: number;
+  sortBy?: 'createdAt' | 'updatedAt' | 'likes' | 'comments';
+  sortOrder?: 'asc' | 'desc';
 };
 
-
-type PostWithRelations = {
-  id: string;
-  title: string;
-  content: string;
-  type: string;
-  projectId: string | null;
-  authorId: string;
-  milestoneId: string | null;
-  createdAt: string;
-  updatedAt: string;
-  attachments: any;
-  author: { id: string; name: string | null; avatarUrl: string | null } | null;
-  milestone: { id: string; title: string; status: string } | null;
-  _count: { likes: number; comments: number };
+export type ProjectUpdateListResult = {
+  updates: ProjectUpdateRecord[];
+  total: number;
+  hasMore: boolean;
 };
 
-const getLikedPostIds = async (
-  viewer: SessionUser | null | undefined,
-  postIds: string[]
-): Promise<Set<string> | undefined> => {
-  if (!viewer || postIds.length === 0) {
-    return undefined;
+const validateProjectUpdateInput = (input: CreateProjectUpdateInput | UpdateProjectUpdateInput): void => {
+  if ('title' in input && input.title) {
+    if (input.title.length < 1) {
+      throw new ProjectUpdateValidationError('제목은 1자 이상이어야 합니다.');
+    }
+    if (input.title.length > 200) {
+      throw new ProjectUpdateValidationError('제목은 200자 이하여야 합니다.');
+    }
   }
 
-  try {
-    const db = await getDb();
-    const likes = await db
-      .select({ postId: postLikes.postId })
-      .from(postLikes)
-      .where(and(
-        eq(postLikes.userId, viewer.id),
-        inArray(postLikes.postId, postIds)
-      ));
-
-    return new Set(likes.map((like) => like.postId));
-  } catch (error) {
-    console.error('Failed to get liked post IDs:', error);
-    return undefined;
+  if ('content' in input && input.content) {
+    if (input.content.length < 1) {
+      throw new ProjectUpdateValidationError('내용은 1자 이상이어야 합니다.');
+    }
+    if (input.content.length > 10000) {
+      throw new ProjectUpdateValidationError('내용은 10,000자 이하여야 합니다.');
+    }
   }
-};
 
-const toProjectUpdateRecord = (
-  post: PostWithRelations,
-  viewer: SessionUser | null | undefined,
-  project: ProjectInfo,
-  likedPostIds?: Set<string>
-): ProjectUpdateRecord => ({
-  id: post.id,
-  projectId: post.projectId ?? project.id,
-  title: post.title,
-  content: post.content,
-  attachments: normalizeAttachments(post.attachments ?? null),
-  milestone: post.milestone
-    ? {
-        id: post.milestone.id,
-        title: post.milestone.title,
-        status: post.milestone.status
+  if (input.attachments) {
+    if (input.attachments.length > 10) {
+      throw new ProjectUpdateValidationError('첨부파일은 최대 10개까지 업로드할 수 있습니다.');
+    }
+
+    for (const attachment of input.attachments) {
+      if (!attachment.url) {
+        throw new ProjectUpdateValidationError('첨부파일 URL이 필요합니다.');
       }
-    : null,
-  createdAt: new Date(post.createdAt),
-  updatedAt: new Date(post.updatedAt),
-  likes: post._count.likes,
-  comments: post._count.comments,
-  liked: Boolean(viewer && likedPostIds?.has(post.id)),
-  author: post.author ? {
-    id: post.author.id,
-    name: post.author.name,
-    avatarUrl: post.author.avatarUrl
-  } : null,
-  canEdit: Boolean(
-    viewer && (viewer.role === 'ADMIN' || viewer.id === project.ownerId)
-  )
-});
-
-const ensureMilestoneBelongsToProject = async (projectId: string, milestoneId: string) => {
-  try {
-    const db = await getDb();
-    const [exists] = await db
-      .select({ id: projectMilestones.id })
-      .from(projectMilestones)
-      .where(and(
-        eq(projectMilestones.id, milestoneId),
-        eq(projectMilestones.projectId, projectId)
-      ))
-      .limit(1);
-
-    if (!exists) {
-      throw new ProjectUpdateValidationError('마일스톤을 찾을 수 없습니다.');
+      if (!['image', 'video', 'document'].includes(attachment.type)) {
+        throw new ProjectUpdateValidationError('지원하지 않는 첨부파일 유형입니다.');
+      }
     }
-  } catch (error) {
-    if (error instanceof ProjectUpdateValidationError) {
-      throw error;
-    }
-    console.error('Failed to check milestone:', error);
-    throw new ProjectUpdateValidationError('마일스톤을 찾을 수 없습니다.');
   }
 };
 
-export const assertProjectOwner = async (
+const checkProjectUpdateAccess = async (
   projectId: string,
-  user: SessionUser
-): Promise<ProjectInfo> => {
-  if (user.role !== 'CREATOR' && user.role !== 'ADMIN') {
-    throw new ProjectUpdateAccessDeniedError();
-  }
-
-  try {
-    const db = await getDb();
-    const [project] = await db
-      .select({ 
-        id: projects.id, 
-        ownerId: projects.ownerId 
-      })
-      .from(projects)
-      .where(eq(projects.id, projectId))
+  userId: string,
+  userRole: string
+): Promise<void> => {
+  const db = await getDb();
+  
+  const project = await db
+    .select({ id: projects.id, ownerId: projects.ownerId, status: projects.status })
+    .from(projects)
+    .where(eq(projects.id, projectId))
       .limit(1);
 
-    if (!project) {
-      throw new ProjectUpdateNotFoundError('프로젝트를 찾을 수 없습니다.');
-    }
-
-    if (user.role !== 'ADMIN' && project.ownerId !== user.id) {
-      throw new ProjectUpdateAccessDeniedError();
-    }
-
-    return project;
-  } catch (error) {
-    if (error instanceof ProjectUpdateNotFoundError || error instanceof ProjectUpdateAccessDeniedError) {
-      throw error;
-    }
-    console.error('Failed to assert project owner:', error);
+  if (!project[0]) {
     throw new ProjectUpdateNotFoundError('프로젝트를 찾을 수 없습니다.');
   }
-};
 
-
-export const listProjectUpdates = async (
-  projectId: string,
-  viewer?: SessionUser | null
-): Promise<ProjectUpdateRecord[]> => {
-  try {
-    const db = await getDb();
-    const [project] = await db
-      .select({ 
-        id: projects.id, 
-        ownerId: projects.ownerId 
-      })
-      .from(projects)
-      .where(eq(projects.id, projectId))
-      .limit(1);
-
-    if (!project) {
-      throw new ProjectUpdateNotFoundError('프로젝트를 찾을 수 없습니다.');
-    }
-
-    const postsData = await db
-      .select({
-        id: posts.id,
-        title: posts.title,
-        content: posts.content,
-        type: posts.type,
-        projectId: posts.projectId,
-        authorId: posts.authorId,
-        milestoneId: posts.milestoneId,
-        createdAt: posts.createdAt,
-        updatedAt: posts.updatedAt,
-        attachments: posts.attachments,
-        author: {
-          id: users.id,
-          name: users.name,
-          avatarUrl: users.avatarUrl
-        },
-        milestone: {
-          id: projectMilestones.id,
-          title: projectMilestones.title,
-          status: projectMilestones.status
-        }
-      })
-      .from(posts)
-      .leftJoin(users, eq(posts.authorId, users.id))
-      .leftJoin(projectMilestones, eq(posts.milestoneId, projectMilestones.id))
-      .where(and(
-        eq(posts.projectId, projectId),
-        eq(posts.type, 'UPDATE' as any)
-      ))
-      .orderBy(desc(posts.createdAt));
-
-    // 간단한 likes와 comments 카운트 (실제로는 별도 쿼리 필요)
-    const postsWithCounts = postsData.map(post => ({
-      ...post,
-      _count: { likes: 0, comments: 0 } // 임시로 0 설정
-    }));
-
-    const likedPostIds = await getLikedPostIds(
-      viewer,
-      postsWithCounts.map((post) => post.id)
-    );
-
-    return postsWithCounts.map((post) => toProjectUpdateRecord(post, viewer, project, likedPostIds));
-  } catch (error) {
-    if (error instanceof ProjectUpdateNotFoundError) {
-      throw error;
-    }
-    console.error('Failed to list project updates:', error);
-    throw new ProjectUpdateNotFoundError('프로젝트를 찾을 수 없습니다.');
+  // 프로젝트 소유자이거나 관리자인 경우에만 접근 가능
+  if (project[0].ownerId !== userId && userRole !== 'ADMIN') {
+    throw new ProjectUpdateAccessDeniedError('프로젝트 업데이트에 대한 권한이 없습니다.');
   }
 };
 
@@ -336,155 +157,586 @@ export const createProjectUpdate = async (
   input: CreateProjectUpdateInput,
   user: SessionUser
 ): Promise<ProjectUpdateRecord> => {
+  validateProjectUpdateInput(input);
+  await checkProjectUpdateAccess(projectId, user.id, user.role);
+
+  const db = await getDb();
+  const now = new Date().toISOString();
+
   try {
-    const project = await assertProjectOwner(projectId, user);
-
-    if (input.milestoneId) {
-      await ensureMilestoneBelongsToProject(projectId, input.milestoneId);
-    }
-
-    const db = await getDb();
-    const [post] = await db
+    const [newUpdate] = await db
       .insert(posts)
       .values({
         id: crypto.randomUUID(),
-        projectId,
-        authorId: user.id,
         title: input.title,
         content: input.content,
+        projectId,
+        authorId: user.id,
         type: 'UPDATE',
-        attachments: toJsonInput(input.attachments),
-        milestoneId: input.milestoneId ?? null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        category: 'GENERAL',
+        isPinned: false,
+        attachments: input.attachments || [],
+        milestoneId: input.milestoneId || null,
+        createdAt: now,
+        updatedAt: now,
+        language: 'ko',
+        visibility: 'PUBLIC'
       })
-      .returning();
+      .returning({
+        id: posts.id,
+        title: posts.title,
+        content: posts.content,
+        projectId: posts.projectId,
+        authorId: posts.authorId,
+        createdAt: posts.createdAt,
+        updatedAt: posts.updatedAt,
+        isPinned: posts.isPinned,
+        attachments: posts.attachments,
+        milestoneId: posts.milestoneId
+      });
 
-    // 간단한 post 데이터 구성
-    const postWithRelations = {
-      ...post,
-      author: { id: user.id, name: user.name || '', avatarUrl: null },
-      milestone: null, // 필요시 별도 조회
-      _count: { likes: 0, comments: 0 }
+    if (!newUpdate) {
+      throw new Error('프로젝트 업데이트 생성에 실패했습니다.');
+    }
+
+    // 작성자 정보 조회
+    const [author] = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        avatarUrl: users.avatarUrl
+      })
+      .from(users)
+      .where(eq(users.id, user.id))
+      .limit(1);
+
+    // 프로젝트 정보 조회
+    const [project] = await db
+      .select({ 
+        id: projects.id, 
+        title: projects.title,
+        ownerId: projects.ownerId 
+      })
+      .from(projects)
+      .where(eq(projects.id, projectId))
+      .limit(1);
+
+    return {
+      ...newUpdate,
+      createdAt: new Date(newUpdate.createdAt),
+      updatedAt: new Date(newUpdate.updatedAt),
+      attachments: (newUpdate.attachments as ProjectUpdateAttachment[]) || [],
+      author: author || { id: user.id, name: user.name || 'Unknown', avatarUrl: null },
+      project: project || { id: projectId, title: 'Unknown Project', ownerId: user.id },
+      _count: { likes: 0, comments: 0 },
+      isLiked: false
     };
-
-    const likedPostIds = await getLikedPostIds(user, [post.id]);
-
-    return toProjectUpdateRecord(postWithRelations, user, project, likedPostIds);
   } catch (error) {
-    if (error instanceof ProjectUpdateNotFoundError || error instanceof ProjectUpdateAccessDeniedError || error instanceof ProjectUpdateValidationError) {
+    if (error instanceof ProjectUpdateValidationError || error instanceof ProjectUpdateAccessDeniedError) {
       throw error;
     }
-    console.error('Failed to create project update:', error);
-    throw new ProjectUpdateValidationError('프로젝트 업데이트 생성에 실패했습니다.');
+    throw new Error(`프로젝트 업데이트 생성 중 오류가 발생했습니다: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
 
+export const getProjectUpdate = async (
+  updateId: string,
+  user?: SessionUser
+): Promise<ProjectUpdateRecord> => {
+  const db = await getDb();
+
+  const [update] = await db
+    .select({
+      id: posts.id,
+      title: posts.title,
+      content: posts.content,
+      projectId: posts.projectId,
+      authorId: posts.authorId,
+      createdAt: posts.createdAt,
+      updatedAt: posts.updatedAt,
+      isPinned: posts.isPinned,
+      attachments: posts.attachments,
+      milestoneId: posts.milestoneId
+    })
+    .from(posts)
+    .where(and(
+      eq(posts.id, updateId),
+      eq(posts.type, 'UPDATE')
+    ))
+    .limit(1);
+
+  if (!update) {
+    throw new ProjectUpdateNotFoundError('프로젝트 업데이트를 찾을 수 없습니다.');
+  }
+
+  // 작성자 정보 조회
+  const [author] = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      avatarUrl: users.avatarUrl
+    })
+    .from(users)
+    .where(eq(users.id, update.authorId))
+    .limit(1);
+
+  // 프로젝트 정보 조회
+  const [project] = update.projectId ? await db
+      .select({ 
+        id: projects.id, 
+      title: projects.title,
+        ownerId: projects.ownerId 
+      })
+      .from(projects)
+    .where(eq(projects.id, update.projectId))
+    .limit(1) : [null];
+
+  // 좋아요 수 조회
+  const likeCountResult = await db
+    .select({ count: postLikes.id })
+    .from(postLikes)
+    .where(eq(postLikes.postId, updateId));
+  
+  const likeCount = likeCountResult.length;
+
+  // 댓글 수 조회 (실제로는 comments 테이블에서 조회해야 함)
+  const commentCount = 0; // TODO: comments 테이블 구현 후 수정
+
+  // 사용자가 좋아요를 눌렀는지 확인
+  let isLiked = false;
+  if (user) {
+    const [like] = await db
+      .select({ id: postLikes.id })
+      .from(postLikes)
+      .where(and(
+        eq(postLikes.postId, updateId),
+        eq(postLikes.userId, user.id)
+      ))
+      .limit(1);
+    isLiked = !!like;
+  }
+
+  return {
+    ...update,
+    createdAt: new Date(update.createdAt),
+    updatedAt: new Date(update.updatedAt),
+    attachments: (update.attachments as ProjectUpdateAttachment[]) || [],
+    author: author || { id: update.authorId, name: 'Unknown', avatarUrl: null },
+    project: project || { id: update.projectId || 'unknown', title: 'Unknown Project', ownerId: update.authorId },
+    _count: { 
+      likes: likeCount, 
+      comments: commentCount 
+    },
+    isLiked
+  };
+};
+
 export const updateProjectUpdate = async (
-  projectId: string,
   updateId: string,
   input: UpdateProjectUpdateInput,
   user: SessionUser
 ): Promise<ProjectUpdateRecord> => {
-  try {
-    const project = await assertProjectOwner(projectId, user);
+  validateProjectUpdateInput(input);
 
-    const db = await getDb();
-    const [existing] = await db
-      .select({ id: posts.id })
-      .from(posts)
-      .where(and(
-        eq(posts.id, updateId),
-        eq(posts.projectId, projectId),
-        eq(posts.type, 'UPDATE' as any)
-      ))
+  const db = await getDb();
+
+  // 기존 업데이트 조회
+  const [existingUpdate] = await db
+    .select({
+      id: posts.id,
+      projectId: posts.projectId,
+      authorId: posts.authorId
+    })
+    .from(posts)
+    .where(and(
+      eq(posts.id, updateId),
+      eq(posts.type, 'UPDATE')
+    ))
       .limit(1);
 
-    if (!existing) {
-      throw new ProjectUpdateNotFoundError();
-    }
+  if (!existingUpdate) {
+    throw new ProjectUpdateNotFoundError('프로젝트 업데이트를 찾을 수 없습니다.');
+  }
 
-    if (input.milestoneId) {
-      await ensureMilestoneBelongsToProject(projectId, input.milestoneId);
-    }
+  // 권한 확인
+  if (existingUpdate.projectId) {
+    await checkProjectUpdateAccess(existingUpdate.projectId, user.id, user.role);
+  }
 
-    const data: any = {
-      updatedAt: new Date().toISOString()
-    };
+  const now = new Date().toISOString();
 
-    if (input.title !== undefined) {
-      data.title = input.title;
-    }
-
-    if (input.content !== undefined) {
-      data.content = input.content;
-    }
-
-    if (input.attachments !== undefined) {
-      data.attachments = toJsonInput(input.attachments);
-    }
-
-    if (input.milestoneId !== undefined) {
-      data.milestoneId = input.milestoneId;
-    }
-
-    const [updatedPost] = await db
+  try {
+    const [updatedUpdate] = await db
       .update(posts)
-      .set(data)
-      .where(eq(posts.id, existing.id))
-      .returning();
+      .set({
+        ...(input.title && { title: input.title }),
+        ...(input.content && { content: input.content }),
+        ...(input.attachments && { attachments: input.attachments }),
+        ...(input.milestoneId !== undefined && { milestoneId: input.milestoneId }),
+        updatedAt: now
+      })
+      .where(eq(posts.id, updateId))
+      .returning({
+        id: posts.id,
+        title: posts.title,
+        content: posts.content,
+        projectId: posts.projectId,
+        authorId: posts.authorId,
+        createdAt: posts.createdAt,
+        updatedAt: posts.updatedAt,
+        isPinned: posts.isPinned,
+        attachments: posts.attachments,
+        milestoneId: posts.milestoneId
+      });
 
-    // 간단한 post 데이터 구성
-    const postWithRelations = {
-      ...updatedPost,
-      author: { id: user.id, name: user.name || '', avatarUrl: null },
-      milestone: null, // 필요시 별도 조회
-      _count: { likes: 0, comments: 0 }
-    };
+    if (!updatedUpdate) {
+      throw new Error('프로젝트 업데이트 수정에 실패했습니다.');
+    }
 
-    const likedPostIds = await getLikedPostIds(user, [updatedPost.id]);
-
-    return toProjectUpdateRecord(postWithRelations, user, project, likedPostIds);
+    return await getProjectUpdate(updateId, user);
   } catch (error) {
-    if (error instanceof ProjectUpdateNotFoundError || error instanceof ProjectUpdateAccessDeniedError || error instanceof ProjectUpdateValidationError) {
+    if (error instanceof ProjectUpdateValidationError || error instanceof ProjectUpdateAccessDeniedError) {
       throw error;
     }
-    console.error('Failed to update project update:', error);
-    throw new ProjectUpdateValidationError('프로젝트 업데이트 수정에 실패했습니다.');
+    throw new Error(`프로젝트 업데이트 수정 중 오류가 발생했습니다: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
 
 export const deleteProjectUpdate = async (
-  projectId: string,
   updateId: string,
   user: SessionUser
 ): Promise<void> => {
-  try {
-    await assertProjectOwner(projectId, user);
+  const db = await getDb();
 
-    const db = await getDb();
-    const [existing] = await db
+  // 기존 업데이트 조회
+  const [existingUpdate] = await db
+    .select({
+      id: posts.id,
+      projectId: posts.projectId,
+      authorId: posts.authorId
+    })
+    .from(posts)
+    .where(and(
+      eq(posts.id, updateId),
+      eq(posts.type, 'UPDATE')
+    ))
+    .limit(1);
+
+  if (!existingUpdate) {
+    throw new ProjectUpdateNotFoundError('프로젝트 업데이트를 찾을 수 없습니다.');
+  }
+
+  // 권한 확인
+  if (existingUpdate.projectId) {
+    await checkProjectUpdateAccess(existingUpdate.projectId, user.id, user.role);
+  }
+
+  try {
+    await db
+      .delete(posts)
+      .where(eq(posts.id, updateId));
+  } catch (error) {
+    throw new Error(`프로젝트 업데이트 삭제 중 오류가 발생했습니다: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
+
+export const listProjectUpdates = async (
+  projectId: string,
+  user?: SessionUser,
+  options: ProjectUpdateListOptions = {}
+): Promise<ProjectUpdateListResult> => {
+  const db = await getDb();
+  const {
+    filters = {},
+    limit = 20,
+    offset = 0,
+    sortBy = 'createdAt',
+    sortOrder = 'desc'
+  } = options;
+
+  // 기본 조건
+  const conditions = [
+    eq(posts.projectId, projectId),
+    eq(posts.type, 'UPDATE')
+  ];
+
+  // 필터 조건 추가
+  if (filters.authorId) {
+    conditions.push(eq(posts.authorId, filters.authorId));
+  }
+
+  if (filters.milestoneId) {
+    conditions.push(eq(posts.milestoneId, filters.milestoneId));
+  }
+
+  if (filters.isPinned !== undefined) {
+    conditions.push(eq(posts.isPinned, filters.isPinned));
+  }
+
+  if (filters.search) {
+    // 검색 조건은 LIKE 연산자를 사용해야 하므로 별도 처리
+    // TODO: Drizzle의 like 연산자 사용으로 수정 필요
+  }
+
+  // 정렬 조건
+  const orderBy = sortOrder === 'asc' ? 
+    (sortBy === 'createdAt' ? posts.createdAt : 
+     sortBy === 'updatedAt' ? posts.updatedAt : 
+     posts.createdAt) : 
+    desc(sortBy === 'createdAt' ? posts.createdAt : 
+         sortBy === 'updatedAt' ? posts.updatedAt : 
+         posts.createdAt);
+
+  try {
+    // 업데이트 목록 조회
+    const updates = await db
+      .select({
+        id: posts.id,
+        title: posts.title,
+        content: posts.content,
+        projectId: posts.projectId,
+        authorId: posts.authorId,
+        createdAt: posts.createdAt,
+        updatedAt: posts.updatedAt,
+        isPinned: posts.isPinned,
+        attachments: posts.attachments,
+        milestoneId: posts.milestoneId
+      })
+      .from(posts)
+      .where(and(...conditions))
+      .orderBy(orderBy)
+      .limit(limit + 1)
+      .offset(offset);
+
+    // 작성자 정보 조회
+    const authorIds = [...new Set(updates.map(update => update.authorId))];
+    const authors = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        avatarUrl: users.avatarUrl
+      })
+      .from(users)
+      .where(inArray(users.id, authorIds));
+
+    const authorMap = new Map(authors.map(author => [author.id, author]));
+
+    // 프로젝트 정보 조회
+    const [project] = await db
+      .select({
+        id: projects.id,
+        title: projects.title,
+        ownerId: projects.ownerId
+      })
+      .from(projects)
+      .where(eq(projects.id, projectId))
+      .limit(1);
+
+    // 좋아요 수 조회
+    const updateIds = updates.map(update => update.id);
+    const likeCounts = await db
+      .select({
+        postId: postLikes.postId,
+        count: postLikes.id
+      })
+      .from(postLikes)
+      .where(inArray(postLikes.postId, updateIds));
+
+    // postId별로 그룹화하여 개수 계산
+    const likeCountMap = new Map<string, number>();
+    likeCounts.forEach(like => {
+      const currentCount = likeCountMap.get(like.postId) || 0;
+      likeCountMap.set(like.postId, currentCount + 1);
+    });
+
+    // 사용자가 좋아요를 눌렀는지 확인
+    let userLikes = new Set<string>();
+    if (user) {
+      const userLikePosts = await db
+        .select({ postId: postLikes.postId })
+        .from(postLikes)
+        .where(and(
+          inArray(postLikes.postId, updateIds),
+          eq(postLikes.userId, user.id)
+        ));
+      userLikes = new Set(userLikePosts.map(like => like.postId));
+    }
+
+    // 결과 변환
+    const hasMore = updates.length > limit;
+    const resultUpdates = updates.slice(0, limit).map(update => ({
+      ...update,
+      createdAt: new Date(update.createdAt),
+      updatedAt: new Date(update.updatedAt),
+      attachments: (update.attachments as ProjectUpdateAttachment[]) || [],
+      author: authorMap.get(update.authorId) || { id: update.authorId, name: 'Unknown', avatarUrl: null },
+      project: project || { id: projectId, title: 'Unknown Project', ownerId: update.authorId },
+      _count: { 
+        likes: likeCountMap.get(update.id) || 0, 
+        comments: 0 // TODO: comments 테이블 구현 후 수정
+      },
+      isLiked: userLikes.has(update.id)
+    }));
+
+    // 전체 개수 조회
+    const totalResult = await db
+      .select({ count: posts.id })
+      .from(posts)
+      .where(and(...conditions));
+
+    return {
+      updates: resultUpdates,
+      total: totalResult.length,
+      hasMore
+    };
+  } catch (error) {
+    throw new Error(`프로젝트 업데이트 목록 조회 중 오류가 발생했습니다: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
+
+export const toggleProjectUpdateLike = async (
+  updateId: string,
+  user: SessionUser
+): Promise<{ isLiked: boolean; likeCount: number }> => {
+  const db = await getDb();
+
+  // 업데이트 존재 확인
+  const [update] = await db
       .select({ id: posts.id })
       .from(posts)
       .where(and(
         eq(posts.id, updateId),
-        eq(posts.projectId, projectId),
-        eq(posts.type, 'UPDATE' as any)
+      eq(posts.type, 'UPDATE')
+    ))
+    .limit(1);
+
+  if (!update) {
+    throw new ProjectUpdateNotFoundError('프로젝트 업데이트를 찾을 수 없습니다.');
+  }
+
+  try {
+    // 기존 좋아요 확인
+    const [existingLike] = await db
+      .select({ id: postLikes.id })
+      .from(postLikes)
+      .where(and(
+        eq(postLikes.postId, updateId),
+        eq(postLikes.userId, user.id)
       ))
       .limit(1);
 
-    if (!existing) {
-      throw new ProjectUpdateNotFoundError();
+    if (existingLike) {
+      // 좋아요 취소
+      await db
+        .delete(postLikes)
+        .where(eq(postLikes.id, existingLike.id));
+    } else {
+      // 좋아요 추가
+      await db
+        .insert(postLikes)
+        .values({
+          id: crypto.randomUUID(),
+          postId: updateId,
+          userId: user.id,
+          createdAt: new Date().toISOString()
+        });
     }
 
-    await db
-      .delete(posts)
-      .where(eq(posts.id, existing.id));
+    // 현재 좋아요 수 조회
+    const likeCountResult = await db
+      .select({ count: postLikes.id })
+      .from(postLikes)
+      .where(eq(postLikes.postId, updateId));
+
+    return {
+      isLiked: !existingLike,
+      likeCount: likeCountResult.length
+    };
   } catch (error) {
-    if (error instanceof ProjectUpdateNotFoundError || error instanceof ProjectUpdateAccessDeniedError) {
-      throw error;
+    throw new Error(`좋아요 토글 중 오류가 발생했습니다: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
+
+export const pinProjectUpdate = async (
+  updateId: string,
+  user: SessionUser
+): Promise<void> => {
+  const db = await getDb();
+
+  // 업데이트 존재 확인 및 권한 확인
+  const [update] = await db
+    .select({
+      id: posts.id,
+      projectId: posts.projectId,
+      authorId: posts.authorId
+    })
+    .from(posts)
+    .where(and(
+      eq(posts.id, updateId),
+      eq(posts.type, 'UPDATE')
+    ))
+    .limit(1);
+
+  if (!update) {
+    throw new ProjectUpdateNotFoundError('프로젝트 업데이트를 찾을 수 없습니다.');
+  }
+
+  // 권한 확인
+  if (update.projectId) {
+    await checkProjectUpdateAccess(update.projectId, user.id, user.role);
+  }
+
+  try {
+    await db
+      .update(posts)
+      .set({
+        isPinned: true,
+        updatedAt: new Date().toISOString()
+      })
+      .where(eq(posts.id, updateId));
+  } catch (error) {
+    throw new Error(`업데이트 고정 중 오류가 발생했습니다: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
+
+export const unpinProjectUpdate = async (
+  updateId: string,
+  user: SessionUser
+): Promise<void> => {
+  const db = await getDb();
+
+  // 업데이트 존재 확인 및 권한 확인
+  const [update] = await db
+    .select({
+      id: posts.id,
+      projectId: posts.projectId,
+      authorId: posts.authorId
+    })
+      .from(posts)
+      .where(and(
+        eq(posts.id, updateId),
+      eq(posts.type, 'UPDATE')
+      ))
+      .limit(1);
+
+  if (!update) {
+    throw new ProjectUpdateNotFoundError('프로젝트 업데이트를 찾을 수 없습니다.');
     }
-    console.error('Failed to delete project update:', error);
-    throw new ProjectUpdateValidationError('프로젝트 업데이트 삭제에 실패했습니다.');
+
+  // 권한 확인
+  if (update.projectId) {
+    await checkProjectUpdateAccess(update.projectId, user.id, user.role);
+  }
+
+  try {
+    await db
+      .update(posts)
+      .set({
+        isPinned: false,
+        updatedAt: new Date().toISOString()
+      })
+      .where(eq(posts.id, updateId));
+  } catch (error) {
+    throw new Error(`업데이트 고정 해제 중 오류가 발생했습니다: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };

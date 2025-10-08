@@ -3,9 +3,9 @@ import { userRole } from '@/drizzle/schema';
 export const UserRole = userRole.enumValues;
 export const USER_ROLE_VALUES = userRole.enumValues;
 export const USER_ROLE_LABELS: Record<typeof userRole.enumValues[number], string> = {
-  CREATOR: '크리에이터',
-  PARTICIPANT: '참여자',
-  PARTNER: '파트너',
+  CREATOR: '?�리?�이??,
+  PARTICIPANT: '참여??,
+  PARTNER: '?�트??,
   ADMIN: '관리자'
 };
 
@@ -21,9 +21,9 @@ const BASE_ROLE_PERMISSIONS: Record<AppUserRole, string[]> = {
 };
 
 export const ROLE_LABELS: Record<AppUserRole, string> = {
-  CREATOR: '크리에이터',
-  PARTICIPANT: '참여자',
-  PARTNER: '파트너',
+  CREATOR: '?�리?�이??,
+  PARTICIPANT: '참여??,
+  PARTNER: '?�트??,
   ADMIN: '관리자'
 };
 

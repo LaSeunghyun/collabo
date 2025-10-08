@@ -1,5 +1,5 @@
-﻿import { NextResponse } from 'next/server';
-// Prisma 타입 제거됨 - Drizzle로 전환
+import { NextResponse } from 'next/server';
+// Prisma 타입 제거 - Drizzle로 전환
 
 export interface ApiError {
     message: string;
@@ -45,14 +45,14 @@ export function handleFundingSettlementError(error: unknown): NextResponse {
             case 'P2025':
                 return buildApiError('요청한 데이터를 찾을 수 없습니다.', 404, 'NOT_FOUND');
             case 'P2003':
-                return buildApiError('참조 무결성 오류가 발생했습니다.', 400, 'FOREIGN_KEY_CONSTRAINT');
+                return buildApiError('외래 키 제약 조건 오류가 발생했습니다.', 400, 'FOREIGN_KEY_CONSTRAINT');
             default:
                 return buildApiError('데이터베이스 오류가 발생했습니다.', 500, 'DATABASE_ERROR');
         }
     }
 
     if (error && typeof error === 'object' && 'message' in error) {
-        return buildApiError('데이터 검증 오류가 발생했습니다.', 400, 'VALIDATION_ERROR');
+        return buildApiError('입력 데이터 검증 오류가 발생했습니다.', 400, 'VALIDATION_ERROR');
     }
 
     if (error instanceof Error) {

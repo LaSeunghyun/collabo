@@ -16,13 +16,13 @@ const DATE_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
   minute: '2-digit'
 });
 
-const FILTERS = [{ value: 'all', label: '전체' }, ...ANNOUNCEMENT_CATEGORIES];
+const FILTERS = [{ value: 'all', label: '?�체' }, ...ANNOUNCEMENT_CATEGORIES];
 
 const getCategoryLabel = (category: string) =>
   ANNOUNCEMENT_CATEGORY_LABELS[category as AnnouncementCategory] ?? category;
 
 const formatDate = (date: Date | null) =>
-  date ? DATE_FORMATTER.format(typeof date === 'string' ? new Date(date) : date) : '발행 예정';
+  date ? DATE_FORMATTER.format(typeof date === 'string' ? new Date(date) : date) : '발행 ?�정';
 
 export default async function AnnouncementsPage({
   searchParams
@@ -43,13 +43,13 @@ export default async function AnnouncementsPage({
       <header className="flex flex-col gap-3 py-12">
         <div className="flex items-center gap-2 text-sm text-blue-300/80">
           <span className="rounded-full bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-300">
-            공지
+            공�?
           </span>
-          {unreadCount > 0 ? <span>읽지 않은 공지 {unreadCount}건</span> : <span>모든 소식을 확인해보세요</span>}
+          {unreadCount > 0 ? <span>?��? ?��? 공�? {unreadCount}�?/span> : <span>모든 ?�식???�인?�보?�요</span>}
         </div>
-        <h1 className="text-3xl font-semibold text-white">플랫폼 공지사항</h1>
+        <h1 className="text-3xl font-semibold text-white">?�랫??공�??�항</h1>
         <p className="text-sm text-neutral-300">
-          Collaborium 팀의 최신 소식, 정책 변경, 이벤트 정보를 가장 먼저 확인하세요.
+          Collaborium ?�??최신 ?�식, ?�책 변�? ?�벤???�보�?가??먼�? ?�인?�세??
         </p>
       </header>
 
@@ -75,7 +75,7 @@ export default async function AnnouncementsPage({
       <section>
         {announcements.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-12 text-center text-sm text-white/60">
-            아직 공개된 공지가 없어요. 곧 새로운 소식을 전해드릴게요.
+            ?�직 공개??공�?가 ?�어?? �??�로???�식???�해?�릴게요.
           </div>
         ) : (
           <ul className="space-y-4">
@@ -91,7 +91,7 @@ export default async function AnnouncementsPage({
                         <div className="flex items-center gap-2 text-xs text-white/60">
                           {announcement.isPinned ? (
                             <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-amber-300">
-                              📌 상단 고정
+                              ?�� ?�단 고정
                             </span>
                           ) : null}
                           <span className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2 py-0.5 text-white/70">
@@ -104,7 +104,7 @@ export default async function AnnouncementsPage({
                         </h2>
                         <p className="line-clamp-2 text-sm leading-relaxed text-white/70">
                           {announcement.content.replace(/\n+/g, ' ').slice(0, 160)}
-                          {announcement.content.length > 160 ? '…' : ''}
+                          {announcement.content.length > 160 ? '?? : ''}
                         </p>
                       </div>
                       {announcement.isNew ? (

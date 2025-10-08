@@ -19,7 +19,7 @@ export default function ProfilePage() {
     signOut({ callbackUrl: '/' });
   };
 
-  // 사용자 프로필 정보 가져오기
+  // ?�용???�로???�보 가?�오�?
   useEffect(() => {
     if (session?.user?.id) {
       setIsLoadingProfile(true);
@@ -41,8 +41,8 @@ export default function ProfilePage() {
     return (
       <div className="mx-auto max-w-3xl px-4 pb-20">
         <header className="pt-6">
-          <h1 className="text-3xl font-semibold text-white">내 정보</h1>
-          <p className="mt-2 text-sm text-white/60">로딩 중...</p>
+          <h1 className="text-3xl font-semibold text-white">???�보</h1>
+          <p className="mt-2 text-sm text-white/60">로딩 �?..</p>
         </header>
       </div>
     );
@@ -52,11 +52,11 @@ export default function ProfilePage() {
     return (
       <div className="mx-auto max-w-3xl px-4 pb-20">
         <header className="pt-6">
-          <h1 className="text-3xl font-semibold text-white">내 정보</h1>
-          <p className="mt-2 text-sm text-white/60">로그인이 필요합니다.</p>
+          <h1 className="text-3xl font-semibold text-white">???�보</h1>
+          <p className="mt-2 text-sm text-white/60">로그?�이 ?�요?�니??</p>
         </header>
         <section className="mt-8 space-y-3 rounded-3xl border border-white/10 bg-white/5 p-6">
-          <p className="text-sm text-white/70">로그인 후 마이페이지를 이용할 수 있습니다.</p>
+          <p className="text-sm text-white/70">로그????마이?�이지�??�용?????�습?�다.</p>
         </section>
       </div>
     );
@@ -65,11 +65,11 @@ export default function ProfilePage() {
   return (
     <div className="mx-auto max-w-3xl px-4 pb-20">
       <header className="pt-6">
-        <h1 className="text-3xl font-semibold text-white">내 정보</h1>
-        <p className="mt-2 text-sm text-white/60">로그인 후 팬/크리에이터 권한에 따라 대시보드가 구성됩니다.</p>
+        <h1 className="text-3xl font-semibold text-white">???�보</h1>
+        <p className="mt-2 text-sm text-white/60">로그???????�리?�이??권한???�라 ?�?�보?��? 구성?�니??</p>
       </header>
 
-      {/* 사용자 정보 섹션 */}
+      {/* ?�용???�보 ?�션 */}
       <section className="mt-8 space-y-6 rounded-3xl border border-white/10 bg-white/5 p-6">
         <div className="flex items-center gap-4">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/20">
@@ -77,10 +77,10 @@ export default function ProfilePage() {
           </div>
           <div className="flex-1">
             <h2 className="text-xl font-semibold text-white">
-              {session?.user?.name || '사용자'}
+              {session?.user?.name || '?�용??}
             </h2>
             <p className="text-sm text-white/60">
-              {session?.user?.email || '이메일 정보 없음'}
+              {session?.user?.email || '?�메???�보 ?�음'}
             </p>
           </div>
         </div>
@@ -90,10 +90,10 @@ export default function ProfilePage() {
             <Mail className="h-5 w-5 text-white/60" />
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/50">
-                이메일
+                ?�메??
               </p>
               <p className="text-sm text-white/80">
-                {session?.user?.email || '정보 없음'}
+                {session?.user?.email || '?�보 ?�음'}
               </p>
             </div>
           </div>
@@ -102,14 +102,14 @@ export default function ProfilePage() {
             <Calendar className="h-5 w-5 text-white/60" />
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/50">
-                가입일
+                가?�일
               </p>
               <p className="text-sm text-white/80">
                 {isLoadingProfile
-                  ? '로딩 중...'
+                  ? '로딩 �?..'
                   : userProfile?.createdAt
                     ? new Date(userProfile.createdAt).toLocaleDateString('ko-KR')
-                    : '정보 없음'
+                    : '?�보 ?�음'
                 }
               </p>
             </div>
@@ -117,26 +117,26 @@ export default function ProfilePage() {
         </div>
       </section>
 
-      {/* 로그아웃 버튼 섹션 */}
+      {/* 로그?�웃 버튼 ?�션 */}
       <section className="mt-6">
         <button
           onClick={handleLogout}
           className="flex w-full items-center justify-center gap-3 rounded-2xl border border-red-500/20 bg-red-500/10 px-6 py-4 text-red-400 transition hover:border-red-500/40 hover:bg-red-500/20"
         >
           <LogOut className="h-5 w-5" />
-          <span className="font-semibold">로그아웃</span>
+          <span className="font-semibold">로그?�웃</span>
         </button>
       </section>
 
-      {/* 추가 정보 섹션 */}
+      {/* 추�? ?�보 ?�션 */}
       <section className="mt-8 space-y-3 rounded-3xl border border-white/10 bg-white/5 p-6">
-        <h3 className="text-lg font-semibold text-white">계정 정보</h3>
+        <h3 className="text-lg font-semibold text-white">계정 ?�보</h3>
         <p className="text-sm text-white/70">
-          현재 데모 계정으로 로그인하여 기본 정보를 확인할 수 있습니다.
+          ?�재 ?�모 계정?�로 로그?�하??기본 ?�보�??�인?????�습?�다.
         </p>
         <div className="mt-4 space-y-2 text-xs text-white/50">
-          <p>• 팬/크리에이터 권한에 따라 추가 기능이 제공됩니다.</p>
-          <p>• 프로젝트 생성 및 관리 기능을 이용하려면 크리에이터 인증이 필요합니다.</p>
+          <p>?????�리?�이??권한???�라 추�? 기능???�공?�니??</p>
+          <p>???�로?�트 ?�성 �?관�?기능???�용?�려�??�리?�이???�증???�요?�니??</p>
         </div>
       </section>
     </div>

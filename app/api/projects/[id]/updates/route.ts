@@ -3,11 +3,10 @@ import { NextRequest, NextResponse } from 'next/server';
 //   FundingStatus,
 //   NotificationType,
 //   UserRole
-// } from '@/types/prisma'; // TODO: Drizzle로 전환 필요
+// } from '@/types/shared'; // TODO: Drizzle로 전환 필요
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import { evaluateAuthorization } from '@/lib/auth/session';
-// import { prisma } from '@/lib/prisma'; // TODO: Drizzle로 전환 필요
 import {
   createProjectUpdate,
   listProjectUpdates,

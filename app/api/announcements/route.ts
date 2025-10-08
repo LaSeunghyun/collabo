@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import { getServerAuthSession } from '@/lib/auth/session';
 import { getAnnouncements, createAnnouncement } from '@/lib/server/announcements';
-import { UserRole } from '@/types/prisma';
+import { UserRole } from '@/types/shared';
 
 const parseCategory = (value: string | null): string | null => {
   if (!value) {
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
 
     if (!payload?.title || !payload?.content) {
       return NextResponse.json(
-        { message: '제목과 내용을 모두 입력해 주세요.' },
+        { message: '?�목�??�용??모두 ?�력??주세??' },
         { status: 400 }
       );
     }

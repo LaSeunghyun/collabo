@@ -2,20 +2,32 @@ import { NextRequest, NextResponse } from 'next/server';
 import { eq, and, count, desc, inArray } from 'drizzle-orm';
 
 import { orders, orderItems, products, orderStatusEnum } from '@/lib/db/schema';
-import { getDb } from '@/lib/db/client';
+import { getDb, isDrizzleAvailable } from '@/lib/db/client';
 import { requireApiUser } from '@/lib/auth/guards';
 import { GuardRequirement } from '@/lib/auth/session';
 
 export async function GET(request: NextRequest) {
   try {
+    // ?�이?�베?�스 ?�용 가???��? ?�인
+    if (!isDrizzleAvailable()) {
+      return NextResponse.json(
+        { 
+          error: '?�이?�베?�스???�결?????�습?�다.',
+          details: 'DATABASE_URL???�정?��? ?�았?�니??'
+        },
+        { status: 503 }
+      );
+    }
+
     const user = await requireApiUser(request as NextRequest & GuardRequirement);
+    const db = await getDb();
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') as string | null;
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
     const offset = (page - 1) * limit;
 
-    // 조건부 필터링
+    // 조건부 ?�터�?
     const conditions = [eq(orders.userId, user.id)];
     if (status && Object.values(orderStatusEnum.enumValues).includes(status as any)) {
       conditions.push(eq(orders.orderStatus, status as any));
@@ -45,7 +57,7 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .offset(offset);
 
-    // 각 주문의 아이템들 조회
+    // �?주문???�이?�들 조회
     const ordersWithItems = await Promise.all(
       ordersList.map(async (order) => {
         const items = await db
@@ -73,7 +85,7 @@ export async function GET(request: NextRequest) {
       })
     );
 
-    // 전체 개수 조회
+    // ?�체 개수 조회
     const totalResult = await db
       .select({ count: count() })
       .from(orders)
@@ -91,9 +103,17 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('Failed to fetch orders:', error);
+    console.error('주문 목록 조회 �??�류 발생:', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      userId: request.headers.get('user-id') || 'unknown'
+    });
+    
     return NextResponse.json(
-      { message: 'Failed to fetch orders' },
+      { 
+        error: '주문 목록??불러?�는???�패?�습?�다.',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
@@ -101,18 +121,43 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await requireApiUser(request as NextRequest & GuardRequirement);
-    const body = await request.json();
-    const { items, shippingInfo } = body;
-
-    if (!items || !Array.isArray(items) || items.length === 0) {
+    // ?�이?�베?�스 ?�용 가???��? ?�인
+    if (!isDrizzleAvailable()) {
       return NextResponse.json(
-        { message: 'Items are required' },
+        { 
+          error: '?�이?�베?�스???�결?????�습?�다.',
+          details: 'DATABASE_URL???�정?��? ?�았?�니??'
+        },
+        { status: 503 }
+      );
+    }
+
+    const user = await requireApiUser(request as NextRequest & GuardRequirement);
+    const db = await getDb();
+    
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: '?�못???�청 본문?�니??' },
         { status: 400 }
       );
     }
 
-    // 상품 정보 조회 및 검증
+    const { items, shippingInfo } = body as {
+      items?: Array<{ productId: string; quantity: number }>;
+      shippingInfo?: any;
+    };
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return NextResponse.json(
+        { error: '주문???�품???�요?�니??' },
+        { status: 400 }
+      );
+    }
+
+    // ?�품 ?�보 조회 �?검�?
     const productIds = items.map((item: any) => item.productId);
     const productsList = await db
       .select({
@@ -130,17 +175,17 @@ export async function POST(request: NextRequest) {
 
     if (productsList.length !== productIds.length) {
       return NextResponse.json(
-        { message: 'Some products not found' },
+        { error: '?��? ?�품??찾을 ???�습?�다.' },
         { status: 400 }
       );
     }
 
-    // 재고 확인
+    // ?�고 ?�인
     for (const item of items) {
       const product = productsList.find(p => p.id === item.productId);
       if (!product || (product.inventory && product.inventory < item.quantity)) {
         return NextResponse.json(
-          { message: `Insufficient stock for product ${product?.name}` },
+          { error: `${product?.name || '?�품'}???�고가 부족합?�다.` },
           { status: 400 }
         );
       }
@@ -161,12 +206,12 @@ export async function POST(request: NextRequest) {
       };
     });
 
-    const totalPrice = subtotal; // 배송비 등 추가 가능
+    const totalPrice = subtotal; // 배송�???추�? 가??
 
-    // 트랜잭션으로 주문 생성 및 재고 차감
+    // ?�랜??��?�로 주문 ?�성 �??�고 차감
     const orderId = crypto.randomUUID();
     
-    // 주문 생성
+    // 주문 ?�성
     const newOrder = await db
       .insert(orders)
       .values({
@@ -180,7 +225,7 @@ export async function POST(request: NextRequest) {
       })
       .returning();
 
-    // 주문 아이템 생성
+    // 주문 ?�이???�성
     const db = await getDb();
     const newOrderItems = await Promise.all(
       orderItemsData.map(item => 
@@ -195,7 +240,7 @@ export async function POST(request: NextRequest) {
       )
     );
 
-    // 재고 차감
+    // ?�고 차감
     for (const item of items) {
       const product = productsList.find(p => p.id === item.productId)!;
       if (product.inventory !== null) {
@@ -206,14 +251,26 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    if (!newOrder[0]) {
+      throw new Error('주문 ?�성???�패?�습?�다.');
+    }
+
     return NextResponse.json({
       ...newOrder[0],
       items: newOrderItems.map(item => item[0])
     }, { status: 201 });
   } catch (error) {
-    console.error('Failed to create order:', error);
+    console.error('주문 ?�성 �??�류 발생:', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      userId: request.headers.get('user-id') || 'unknown'
+    });
+    
     return NextResponse.json(
-      { message: 'Failed to create order' },
+      { 
+        error: '주문 ?�성???�패?�습?�다.',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }

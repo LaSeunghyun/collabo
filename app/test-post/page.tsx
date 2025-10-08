@@ -36,28 +36,28 @@ export default function TestPostPage() {
 
   return (
     <div className="max-w-2xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">게시글 작성 테스트</h1>
+      <h1 className="text-2xl font-bold mb-6">게시글 ?�성 ?�스??/h1>
       
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-2">제목</label>
+          <label className="block text-sm font-medium mb-2">?�목</label>
           <input
             type="text"
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
             className="w-full p-2 border rounded"
-            placeholder="게시글 제목을 입력하세요"
+            placeholder="게시글 ?�목???�력?�세??
             required
           />
         </div>
         
         <div>
-          <label className="block text-sm font-medium mb-2">내용</label>
+          <label className="block text-sm font-medium mb-2">?�용</label>
           <textarea
             value={formData.content}
             onChange={(e) => setFormData({ ...formData, content: e.target.value })}
             className="w-full p-2 border rounded h-32"
-            placeholder="게시글 내용을 입력하세요"
+            placeholder="게시글 ?�용???�력?�세??
             required
           />
         </div>
@@ -69,11 +69,11 @@ export default function TestPostPage() {
             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
             className="w-full p-2 border rounded"
           >
-            <option value="GENERAL">일반</option>
-            <option value="NOTICE">공지</option>
-            <option value="COLLAB">협업</option>
-            <option value="SUPPORT">지원</option>
-            <option value="SHOWCASE">쇼케이스</option>
+            <option value="GENERAL">?�반</option>
+            <option value="NOTICE">공�?</option>
+            <option value="COLLAB">?�업</option>
+            <option value="SUPPORT">지??/option>
+            <option value="SHOWCASE">?��??�스</option>
           </select>
         </div>
         
@@ -82,7 +82,7 @@ export default function TestPostPage() {
           disabled={loading}
           className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 disabled:opacity-50"
         >
-          {loading ? '작성 중...' : '게시글 작성'}
+          {loading ? '?�성 �?..' : '게시글 ?�성'}
         </button>
       </form>
 

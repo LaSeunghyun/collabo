@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto';
 import { SignJWT, jwtVerify } from 'jose';
 import { eq } from 'drizzle-orm';
-import { getDbClient } from '@/lib/db/client';
+import { getDb } from '@/lib/db/client';
 import { tokenBlacklist } from '@/drizzle/schema';
 import { userRole } from '@/drizzle/schema';
 
@@ -11,6 +11,8 @@ export interface AccessTokenContext {
   role: typeof userRole.enumValues[number];
   permissions: string[];
   expiresIn: number;
+  name?: string;
+  email?: string;
 }
 
 export interface AccessTokenResult {
@@ -26,6 +28,8 @@ export interface VerifiedAccessToken {
   permissions: string[];
   jti: string;
   expiresAt: Date;
+  name?: string;
+  email?: string;
 }
 
 const ISSUER = 'collaborium.auth';
@@ -45,14 +49,18 @@ export const issueAccessToken = async ({
   sessionId,
   role,
   permissions,
-  expiresIn
+  expiresIn,
+  name,
+  email
 }: AccessTokenContext): Promise<AccessTokenResult> => {
   const jti = randomUUID();
   const expirationSeconds = Math.floor(Date.now() / 1000) + expiresIn;
   const token = await new SignJWT({
     sid: sessionId,
     role,
-    permissions
+    permissions,
+    name,
+    email
   })
     .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
     .setIssuer(ISSUER)
@@ -73,16 +81,14 @@ export const verifyAccessToken = async (token: string): Promise<VerifiedAccessTo
   const { payload } = await jwtVerify(token, getSecret(), { issuer: ISSUER });
 
   if (!payload.sub || typeof payload.sid !== 'string' || typeof payload.jti !== 'string') {
-    throw new Error('잘못된 형식의 토큰입니다.');
+    throw new Error('?�못???�식???�큰?�니??');
   }
 
-  const db = await getDbClient();
-  const blacklisted = await (db as any).query.tokenBlacklist.findFirst({
-    where: eq(tokenBlacklist.jti, payload.jti)
-  });
+  const db = await getDb();
+  const blacklisted = await db.select().from(tokenBlacklist).where(eq(tokenBlacklist.jti, payload.jti)).limit(1).then(rows => rows[0] || null);
 
   if (blacklisted) {
-    throw new Error('만료되었거나 폐기된 토큰입니다.');
+    throw new Error('만료?�었거나 ?�기???�큰?�니??');
   }
 
   const permissions = Array.isArray(payload.permissions)
@@ -97,6 +103,8 @@ export const verifyAccessToken = async (token: string): Promise<VerifiedAccessTo
     role: payload.role as typeof userRole.enumValues[number],
     permissions,
     jti: payload.jti,
-    expiresAt: expirationSeconds ? new Date(expirationSeconds * 1000) : new Date()
+    expiresAt: expirationSeconds ? new Date(expirationSeconds * 1000) : new Date(),
+    name: typeof payload.name === 'string' ? payload.name : undefined,
+    email: typeof payload.email === 'string' ? payload.email : undefined
   };
 };

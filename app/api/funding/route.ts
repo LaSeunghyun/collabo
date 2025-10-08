@@ -1,107 +1,42 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
-// import type { Prisma } from '@prisma/client'; // TODO: Drizzle로 전환 필요
+import { NextRequest, NextResponse } from 'next/server';
 // import {
 //   FundingStatus,
 //   PaymentProvider,
 //   ProjectStatus,
 //   type Funding
-// } from '@/types/prisma'; // TODO: Drizzle로 전환 필요
+// } from '@/types/shared'; // TODO: Drizzle로 전환 필요
 import Stripe from 'stripe';
 
-// import { prisma } from '@/lib/prisma'; // TODO: Drizzle로 전환 필요
 import { createSettlementIfTargetReached } from '@/lib/server/funding-settlement';
 import { buildApiError } from '@/lib/server/error-handling';
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 
 interface FundingCreatePayload {
   projectId: string;
-  amount?: number;
-  mode?: 'payment_intent' | 'checkout';
-  currency?: string;
-  receiptEmail?: string;
+  amount: number;
+  currency: string;
+  paymentMethod: 'stripe' | 'checkout';
   successUrl?: string;
   cancelUrl?: string;
-  customerName?: string;
-}
-
-interface FundingVerifyPayload {
-  projectId: string;
-  paymentIntentId?: string;
-  checkoutSessionId?: string;
   receiptEmail?: string;
-  customerName?: string;
 }
 
-type FundingRequestPayload = FundingCreatePayload & FundingVerifyPayload;
-
-const stripeApiVersion: Stripe.LatestApiVersion = '2024-06-20';
-
-function createStripeClient() {
-  const secret = process.env.STRIPE_SECRET_KEY;
-  if (!secret) {
-    throw new Error('Stripe secret key is not configured.');
+const createStripeClient = () => {
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  if (!secretKey) {
+    throw new Error('STRIPE_SECRET_KEY is not configured');
   }
-
-  return new Stripe(secret, { apiVersion: stripeApiVersion });
-}
-
-function buildError(message: string, status = 400) {
-  return buildApiError(message, status);
-}
-
-function normaliseCurrency(currency?: string | null) {
-  if (!currency) {
-    return 'KRW';
-  }
-
-  return currency.toUpperCase();
-}
-
-function ensureIntegerAmount(amount?: number | null) {
-  if (typeof amount !== 'number' || !Number.isFinite(amount)) {
-    return null;
-  }
-
-  const rounded = Math.round(amount);
-  if (rounded <= 0) {
-    return null;
-  }
-
-  return rounded;
-}
-
-function pickStripeIntentSnapshot(intent: Stripe.PaymentIntent | Stripe.Checkout.Session) {
-  if ('object' in intent && intent.object === 'payment_intent') {
-    const paymentIntent = intent as Stripe.PaymentIntent;
-    return {
-      id: paymentIntent.id,
-      status: paymentIntent.status,
-      amount: paymentIntent.amount,
-      amountReceived: paymentIntent.amount_received,
-      currency: paymentIntent.currency,
-      metadata: paymentIntent.metadata ?? {}
-    };
-  }
-
-  const session = intent as Stripe.Checkout.Session;
-  return {
-    id: session.id,
-    status: session.payment_status,
-    amount: session.amount_total,
-    currency: session.currency,
-    metadata: session.metadata ?? {}
-  };
-}
+  return new Stripe(secretKey, { apiVersion: '2023-10-16' });
+};
 
 async function upsertPaymentTransaction(
   tx: any, // TODO: Drizzle로 전환 필요
   fundingId: string,
   externalId: string,
   amount: number,
-  currency: string,
-  rawPayload?: unknown
+  currency: string
 ) {
-  await tx.paymentTransaction.upsert({
+  return tx.paymentTransaction.upsert({
     where: { fundingId },
     update: {
       provider: 'STRIPE', // TODO: Drizzle로 전환 필요
@@ -109,7 +44,7 @@ async function upsertPaymentTransaction(
       status: 'SUCCEEDED', // TODO: Drizzle로 전환 필요
       amount,
       currency,
-      rawPayload: rawPayload as any
+      updatedAt: new Date()
     },
     create: {
       fundingId,
@@ -118,31 +53,25 @@ async function upsertPaymentTransaction(
       status: 'SUCCEEDED', // TODO: Drizzle로 전환 필요
       amount,
       currency,
-      rawPayload: rawPayload as any
+      createdAt: new Date(),
+      updatedAt: new Date()
     }
   });
 }
 
-async function recordSuccessfulFunding({
-  projectId,
-  userId,
-  amount,
-  currency,
-  paymentIntentId,
-  snapshot
-}: {
-  projectId: string;
-  userId: string;
-  amount: number;
-  currency: string;
-  paymentIntentId: string;
+async function createFundingWithTransaction(
+  tx: any,
+  userId: string,
+  projectId: string,
+  amount: number,
+  currency: string,
+  paymentIntentId: string,
   snapshot: unknown;
-}) {
+) {
   // TODO: Drizzle로 전환 필요 - 트랜잭션 구현
   return (async (tx: any) => {
     const existing = await tx.funding.findUnique({
-      where: { paymentIntentId },
-      include: { transaction: true }
+      where: { paymentIntentId }
     });
 
     if (existing) {
@@ -154,7 +83,6 @@ async function recordSuccessfulFunding({
       let funding: any; // TODO: Drizzle로 전환 필요
 
       if (needsUpdate) {
-        const delta = amount - existing.amount;
         funding = await tx.funding.update({
           where: { id: existing.id },
           data: {
@@ -164,38 +92,17 @@ async function recordSuccessfulFunding({
           },
           include: { transaction: true }
         });
-
-        if (delta !== 0) {
-          await tx.project.update({
-            where: { id: projectId },
-            data: { currentAmount: { increment: delta } }
-          });
-        }
       } else {
         funding = existing;
       }
 
-      await upsertPaymentTransaction(
-        tx,
-        funding.id,
-        paymentIntentId,
-        amount,
-        currency,
-        snapshot
-      );
-
-      return (
-        await tx.funding.findUnique({
-          where: { id: funding.id },
-          include: { transaction: true }
-        })
-      )!;
+      return funding;
     }
 
     const funding = await tx.funding.create({
       data: {
-        projectId,
         userId,
+        projectId,
         amount,
         currency,
         paymentIntentId,
@@ -204,45 +111,25 @@ async function recordSuccessfulFunding({
       include: { transaction: true }
     });
 
-    await tx.project.update({
-      where: { id: projectId },
-      data: { currentAmount: { increment: amount } }
-    });
+    await upsertPaymentTransaction(tx, funding.id, paymentIntentId, amount, currency);
 
-    await upsertPaymentTransaction(
-      tx,
-      funding.id,
-      paymentIntentId,
-      amount,
-      currency,
-      snapshot
-    );
-
-    return (
-      await tx.funding.findUnique({
-        where: { id: funding.id },
-        include: { transaction: true }
-      })
-    )!;
-  });
+    return funding;
+  })(tx);
 }
 
-export async function POST(request: NextRequest) {
-  let sessionUser;
-  const authContext = { headers: request.headers };
-
-  try {
-    sessionUser = await requireApiUser({}, authContext);
-  } catch (error) {
-    const response = handleAuthorizationError(error);
-    if (response) {
-      return response;
-    }
-
-    throw error;
+const ensureIntegerAmount = (amount: unknown): number | null => {
+  if (typeof amount === 'number') {
+    return Number.isInteger(amount) && amount > 0 ? amount : null;
   }
+  if (typeof amount === 'string') {
+    const parsed = Number.parseInt(amount, 10);
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+  }
+  return null;
+};
 
-  let payload: FundingRequestPayload;
+export async function POST(request: NextRequest) {
+  let payload: FundingCreatePayload;
 
   try {
     payload = await request.json();
@@ -250,33 +137,7 @@ export async function POST(request: NextRequest) {
     return buildError('요청 본문을 확인할 수 없습니다.');
   }
 
-  const {
-    projectId,
-    amount,
-    mode = 'payment_intent',
-    currency = 'krw',
-    receiptEmail,
-    paymentIntentId,
-    checkoutSessionId,
-    successUrl,
-    cancelUrl,
-    customerName
-  } = payload;
-
-  const normalisedReceiptEmail =
-    typeof receiptEmail === 'string' && receiptEmail.trim().length > 0
-      ? receiptEmail.trim()
-      : sessionUser.email ?? undefined;
-
-  const normalisedCustomerName =
-    typeof customerName === 'string' && customerName.trim().length > 0
-      ? customerName.trim()
-      : sessionUser.name ?? undefined;
-
-  const baseMetadata: Record<string, string> = { projectId };
-  const metadata = normalisedCustomerName
-    ? { ...baseMetadata, customerName: normalisedCustomerName }
-    : baseMetadata;
+  const { projectId, amount, currency, paymentMethod, successUrl, cancelUrl, receiptEmail } = payload;
 
   if (!projectId) {
     return buildError('프로젝트 정보가 누락되었습니다.');
@@ -299,102 +160,189 @@ export async function POST(request: NextRequest) {
     return buildError(error instanceof Error ? error.message : 'Stripe 클라이언트를 생성할 수 없습니다.', 500);
   }
 
-  // Verification path
-  if (paymentIntentId || checkoutSessionId) {
-    try {
-      if (paymentIntentId) {
-        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+  const user = await requireApiUser(request);
 
-        if (paymentIntent.status !== 'succeeded') {
-          return buildError(`결제 상태가 완료되지 않았습니다 (현재 상태: ${paymentIntent.status})`, 409);
-        }
-
-        const amountReceived = ensureIntegerAmount(
-          paymentIntent.amount_received ?? paymentIntent.amount
-        );
-        if (!amountReceived) {
-          return buildError('결제 금액을 확인할 수 없습니다.', 422);
-        }
-
-        const funding = await recordSuccessfulFunding({
+  try {
+    if (paymentMethod === 'stripe') {
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: ensureIntegerAmount(amount) || 0,
+        currency: currency || 'krw',
+        metadata: {
           projectId,
-          userId: sessionUser.id,
-          amount: amountReceived,
-          currency: normaliseCurrency(paymentIntent.currency),
-          paymentIntentId: paymentIntent.id,
-          snapshot: pickStripeIntentSnapshot(paymentIntent)
-        });
+          userId: user.id
+        },
+        receipt_email: receiptEmail || undefined
+      });
 
-        // 정산 자동 생성 로직
-        try {
-          const settlement = await createSettlementIfTargetReached(projectId);
-          return NextResponse.json({
-            status: 'recorded',
-            funding,
-            settlement: settlement ? { id: settlement.id, status: settlement.payoutStatus } : null
-          });
-        } catch (settlementError) {
-          console.warn('정산 자동 생성 실패:', settlementError);
-          return NextResponse.json({
-            status: 'recorded',
-            funding,
-            settlement: null,
-            warning: '목표 달성 여부 확인 중 정산 생성에 실패했습니다.'
-          });
-        }
-      }
-
-      if (checkoutSessionId) {
-        const session = await stripe.checkout.sessions.retrieve(checkoutSessionId, {
-          expand: ['payment_intent']
-        });
-
-        if (session.payment_status !== 'paid') {
-          return buildError(`체크아웃 세션이 완료되지 않았습니다 (현재 상태: ${session.payment_status})`, 409);
-        }
-
-        const amountPaid = ensureIntegerAmount(session.amount_total);
-        if (!amountPaid) {
-          return buildError('결제 금액을 확인할 수 없습니다.', 422);
-        }
-
-        const paymentIntentReference =
-          typeof session.payment_intent === 'string'
-            ? session.payment_intent
-            : session.payment_intent?.id ?? session.id;
-
-        const funding = await recordSuccessfulFunding({
+      return NextResponse.json({
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id
+      });
+    } else if (paymentMethod === 'checkout') {
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price_data: {
+              currency: currency || 'krw',
+              unit_amount: ensureIntegerAmount(amount) || 0,
+              product_data: {
+                name: project.title,
+                description: `Collab Funding – ${project.title}`
+              }
+            },
+            quantity: 1
+          }
+        ],
+        mode: 'payment',
+        success_url: successUrl || `${request.nextUrl.origin}/projects/${projectId}?success=true`,
+        cancel_url: cancelUrl || `${request.nextUrl.origin}/projects/${projectId}?canceled=true`,
+        metadata: {
           projectId,
-          userId: sessionUser.id,
-          amount: amountPaid,
-          currency: normaliseCurrency(session.currency),
-          paymentIntentId: paymentIntentReference,
-          snapshot: pickStripeIntentSnapshot(session)
-        });
+          userId: user.id
+        },
+        receipt_email: receiptEmail || undefined,
+        description: `Collab Funding – ${project.title}`
+      });
 
-        // 정산 자동 생성 로직
-        try {
-          const settlement = await createSettlementIfTargetReached(projectId);
-          return NextResponse.json({
-            status: 'recorded',
-            funding,
-            settlement: settlement ? { id: settlement.id, status: settlement.payoutStatus } : null
-          });
-        } catch (settlementError) {
-          console.warn('정산 자동 생성 실패:', settlementError);
-          return NextResponse.json({
-            status: 'recorded',
-            funding,
-            settlement: null,
-            warning: '목표 달성 여부 확인 중 정산 생성에 실패했습니다.'
-          });
-        }
-      }
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : '결제 검증 과정에서 오류가 발생했습니다.';
-      return buildError(message, 500);
+      return NextResponse.json({
+        sessionId: session.id,
+        url: session.url
+      });
+    } else {
+      return buildError('지원하지 않는 결제 방법입니다.');
     }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '결제 요청 처리 중 오류가 발생했습니다.';
+    return buildError(message, 500);
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  let payload: { paymentIntentId?: string; sessionId?: string };
+
+  try {
+    payload = await request.json();
+  } catch {
+    return buildError('요청 본문을 확인할 수 없습니다.');
+  }
+
+  const { paymentIntentId, sessionId } = payload;
+
+  if (!paymentIntentId && !sessionId) {
+    return buildError('결제 정보가 필요합니다.');
+  }
+
+  const user = await requireApiUser(request);
+
+  let stripe: Stripe;
+  try {
+    stripe = createStripeClient();
+  } catch (error) {
+    return buildError(error instanceof Error ? error.message : 'Stripe 클라이언트를 생성할 수 없습니다.', 500);
+  }
+
+  try {
+    if (paymentIntentId) {
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+      if (paymentIntent.status !== 'succeeded') {
+        return buildError(`결제 상태가 완료되지 않았습니다 (현재 상태: ${paymentIntent.status})`, 409);
+      }
+
+      const amountReceived = ensureIntegerAmount(paymentIntent.amount_received);
+      if (!amountReceived) {
+        return buildError('결제 금액을 확인할 수 없습니다.', 422);
+      }
+
+      // TODO: Drizzle로 전환 필요
+      const funding = await createFundingWithTransaction(
+        null, // 트랜잭션 객체
+        user.id,
+        paymentIntent.metadata.projectId,
+        amountReceived,
+        paymentIntent.currency,
+        paymentIntent.id,
+        paymentIntent
+      );
+
+      // 정산 자동 생성 로직
+      try {
+        const settlement = await createSettlementIfTargetReached(paymentIntent.metadata.projectId);
+        return NextResponse.json({
+          status: 'recorded',
+          funding,
+          settlement
+        });
+      } catch (settlementError) {
+        console.warn('정산 자동 생성 실패:', settlementError);
+        return NextResponse.json({
+          status: 'recorded',
+          funding,
+          settlement: null,
+          warning: '목표 달성 여부 확인 중 정산 생성에 실패했습니다.'
+        });
+      }
+    } else if (sessionId) {
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+      if (session.payment_status !== 'paid') {
+        return buildError(`체크아웃 세션이 완료되지 않았습니다 (현재 상태: ${session.payment_status})`, 409);
+      }
+
+      const amountPaid = ensureIntegerAmount(session.amount_total);
+      if (!amountPaid) {
+        return buildError('결제 금액을 확인할 수 없습니다.', 422);
+      }
+
+      // TODO: Drizzle로 전환 필요
+      const funding = await createFundingWithTransaction(
+        null, // 트랜잭션 객체
+        user.id,
+        session.metadata.projectId,
+        amountPaid,
+        session.currency || 'krw',
+        session.payment_intent as string,
+        session
+      );
+
+      // 정산 자동 생성 로직
+      try {
+        const settlement = await createSettlementIfTargetReached(session.metadata.projectId);
+        return NextResponse.json({
+          status: 'recorded',
+          funding,
+          settlement
+        });
+      } catch (settlementError) {
+        console.warn('정산 자동 생성 실패:', settlementError);
+        return NextResponse.json({
+          status: 'recorded',
+          funding,
+          settlement: null,
+          warning: '목표 달성 여부 확인 중 정산 생성에 실패했습니다.'
+        });
+      }
+    }
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : '결제 검증 과정에서 오류가 발생했습니다.';
+    return buildError(message, 500);
+  }
+}
+
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const projectId = searchParams.get('projectId');
+  const amount = searchParams.get('amount');
+  const currency = searchParams.get('currency') || 'krw';
+  const mode = searchParams.get('mode') as 'stripe' | 'checkout' | null;
+  const successUrl = searchParams.get('successUrl');
+  const cancelUrl = searchParams.get('cancelUrl');
+  const receiptEmail = searchParams.get('receiptEmail');
+
+  if (!projectId || !amount || !mode) {
+    return buildError('필수 매개변수가 누락되었습니다.');
   }
 
   const normalisedAmount = ensureIntegerAmount(amount);
@@ -408,52 +356,55 @@ export async function POST(request: NextRequest) {
         return buildError('Checkout 세션에는 성공 및 취소 URL이 필요합니다.');
       }
 
+      const stripe = createStripeClient();
       const session = await stripe.checkout.sessions.create({
-        mode: 'payment',
         payment_method_types: ['card'],
         line_items: [
           {
-            quantity: 1,
             price_data: {
               currency,
               unit_amount: normalisedAmount,
               product_data: {
-                name: project.title,
-                description: `Collab Funding – ${project.title}`
+                name: 'Collab Funding',
+                description: `Collab Funding – ${projectId}`
               }
-            }
+            },
+            quantity: 1
           }
         ],
+        mode: 'payment',
         success_url: successUrl,
         cancel_url: cancelUrl,
-        customer_email: normalisedReceiptEmail,
-        metadata
+        metadata: {
+          projectId
+        },
+        receipt_email: receiptEmail || undefined,
+        description: `Collab Funding – ${projectId}`
       });
 
       return NextResponse.json({
-        mode: 'checkout',
-        checkoutSessionId: session.id,
+        sessionId: session.id,
         url: session.url
       });
+    } else {
+      const stripe = createStripeClient();
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: normalisedAmount,
+        currency,
+        metadata: {
+          projectId
+        },
+        receipt_email: receiptEmail || undefined,
+        description: `Collab Funding – ${projectId}`
+      });
+
+      return NextResponse.json({
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id
+      });
     }
-
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: normalisedAmount,
-      currency,
-      automatic_payment_methods: { enabled: true },
-      metadata,
-      receipt_email: normalisedReceiptEmail,
-      description: `Collab Funding – ${project.title}`
-    });
-
-    return NextResponse.json({
-      mode: 'payment_intent',
-      paymentIntentId: paymentIntent.id,
-      clientSecret: paymentIntent.client_secret
-    });
   } catch (error) {
     const message = error instanceof Error ? error.message : '결제 요청 처리 중 오류가 발생했습니다.';
     return buildError(message, 500);
   }
 }
-

@@ -8,35 +8,35 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const { name, email, password } = body;
 
-        // 입력 검증
+        // ?�력 검�?
         if (!name || !email || !password) {
             return NextResponse.json(
-                { error: '이름, 이메일, 비밀번호는 필수입니다.' },
+                { error: '?�름, ?�메?? 비�?번호???�수?�니??' },
                 { status: 400 }
             );
         }
 
         if (password.length < 4) {
             return NextResponse.json(
-                { error: '비밀번호는 4자 이상이어야 합니다.' },
+                { error: '비�?번호??4???�상?�어???�니??' },
                 { status: 400 }
             );
         }
 
-        // 이메일 중복 확인
+        // ?�메??중복 ?�인
         const existingUser = await findUserByEmail(email);
 
         if (existingUser) {
             return NextResponse.json(
-                { error: '이미 사용 중인 이메일입니다.' },
+                { error: '?��? ?�용 중인 ?�메?�입?�다.' },
                 { status: 400 }
             );
         }
 
-        // 비밀번호 해시화
+        // 비�?번호 ?�시??
         const hashedPassword = await hash(password, 12);
 
-        // 관리자 사용자 생성
+        // 관리자 ?�용???�성
         const user = await createAdminUser({
             name,
             email,
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
         });
 
         return NextResponse.json({
-            message: '관리자 계정이 생성되었습니다.',
+            message: '관리자 계정???�성?�었?�니??',
             user: {
                 id: user.id,
                 name: user.name,
@@ -54,9 +54,9 @@ export async function POST(request: NextRequest) {
         });
 
     } catch (error) {
-        console.error('관리자 계정 생성 에러:', error);
+        console.error('관리자 계정 ?�성 ?�러:', error);
         return NextResponse.json(
-            { error: '관리자 계정 생성 중 오류가 발생했습니다.' },
+            { error: '관리자 계정 ?�성 �??�류가 발생?�습?�다.' },
             { status: 500 }
         );
     }

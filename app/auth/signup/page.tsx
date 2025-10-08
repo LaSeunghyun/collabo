@@ -28,16 +28,16 @@ export default function SignUpPage() {
         setIsLoading(true);
         setError('');
 
-        // 비밀번호 확인
+        // 비�?번호 ?�인
         if (formData.password !== formData.confirmPassword) {
-            setError('비밀번호가 일치하지 않습니다.');
+            setError('비�?번호가 ?�치?��? ?�습?�다.');
             setIsLoading(false);
             return;
         }
 
-        // 비밀번호 길이 확인
+        // 비�?번호 길이 ?�인
         if (formData.password.length < 6) {
-            setError('비밀번호는 6자 이상이어야 합니다.');
+            setError('비�?번호??6???�상?�어???�니??');
             setIsLoading(false);
             return;
         }
@@ -71,8 +71,8 @@ export default function SignUpPage() {
                 });
 
                 if (!loginResponse.ok) {
-                    const payload = await loginResponse.json().catch(() => ({ error: '자동 로그인에 실패했습니다.' }));
-                    setError(payload.error ?? '회원가입은 완료되었지만 자동 로그인에 실패했습니다. 로그인 페이지에서 다시 시도해주세요.');
+                    const payload = await loginResponse.json().catch(() => ({ error: '?�동 로그?�에 ?�패?�습?�다.' }));
+                    setError(payload.error ?? '?�원가?��? ?�료?�었지�??�동 로그?�에 ?�패?�습?�다. 로그???�이지?�서 ?�시 ?�도?�주?�요.');
                     return;
                 }
 
@@ -85,14 +85,14 @@ export default function SignUpPage() {
                 if (result?.ok) {
                     router.push('/');
                 } else {
-                    setError('회원가입은 완료되었지만 자동 로그인에 실패했습니다. 로그인 페이지에서 다시 시도해주세요.');
+                    setError('?�원가?��? ?�료?�었지�??�동 로그?�에 ?�패?�습?�다. 로그???�이지?�서 ?�시 ?�도?�주?�요.');
                 }
             } else {
                 const data = await response.json();
-                setError(data.error || '회원가입 중 오류가 발생했습니다.');
+                setError(data.error || '?�원가??�??�류가 발생?�습?�다.');
             }
         } catch {
-            setError('회원가입 중 오류가 발생했습니다.');
+            setError('?�원가??�??�류가 발생?�습?�다.');
         } finally {
             setIsLoading(false);
         }
@@ -103,10 +103,10 @@ export default function SignUpPage() {
             <div className="max-w-md w-full space-y-8 p-8">
                 <div className="text-center">
                     <h2 className="mt-6 text-3xl font-bold text-white">
-                        회원가입
+                        ?�원가??
                     </h2>
                     <p className="mt-2 text-sm text-gray-300">
-                        아티스트 펀딩 협업 플랫폼에 참여하세요
+                        ?�티?�트 ?�???�업 ?�랫?�에 참여?�세??
                     </p>
                 </div>
 
@@ -114,7 +114,7 @@ export default function SignUpPage() {
                     <div className="space-y-4">
                         <div>
                             <label htmlFor="name" className="block text-sm font-medium text-gray-300">
-                                이름
+                                ?�름
                             </label>
                             <input
                                 id="name"
@@ -124,13 +124,13 @@ export default function SignUpPage() {
                                 value={formData.name}
                                 onChange={handleChange}
                                 className="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                placeholder="이름을 입력하세요"
+                                placeholder="?�름???�력?�세??
                             />
                         </div>
 
                         <div>
                             <label htmlFor="email" className="block text-sm font-medium text-gray-300">
-                                이메일
+                                ?�메??
                             </label>
                             <input
                                 id="email"
@@ -140,20 +140,20 @@ export default function SignUpPage() {
                                 value={formData.email}
                                 onChange={handleChange}
                                 className="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                placeholder="이메일을 입력하세요"
+                                placeholder="?�메?�을 ?�력?�세??
                             />
                         </div>
 
                         <div className="rounded-lg border border-white/10 bg-white/5 p-4 text-sm text-purple-100">
-                            <p className="font-medium">역할은 가입 후 전용 신청 플로우에서 전환해요</p>
+                            <p className="font-medium">??��?� 가?????�용 ?�청 ?�로?�에???�환?�요</p>
                             <p className="mt-1 text-xs text-purple-200/80">
-                                신규 가입은 참여자 역할로 시작되며, 파트너 또는 크리에이터로 활동하려면 전용 신청 절차를 통해 승인 요청을 보내주세요. 신청이 승인되면 계정 역할이 자동으로 업데이트됩니다.
+                                ?�규 가?��? 참여????���??�작?�며, ?�트???�는 ?�리?�이?�로 ?�동?�려�??�용 ?�청 ?�차�??�해 ?�인 ?�청??보내주세?? ?�청???�인?�면 계정 ??��???�동?�로 ?�데?�트?�니??
                             </p>
                         </div>
 
                         <div>
                             <label htmlFor="password" className="block text-sm font-medium text-gray-300">
-                                비밀번호
+                                비�?번호
                             </label>
                             <input
                                 id="password"
@@ -163,13 +163,13 @@ export default function SignUpPage() {
                                 value={formData.password}
                                 onChange={handleChange}
                                 className="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                placeholder="비밀번호를 입력하세요 (6자 이상)"
+                                placeholder="비�?번호�??�력?�세??(6???�상)"
                             />
                         </div>
 
                         <div>
                             <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300">
-                                비밀번호 확인
+                                비�?번호 ?�인
                             </label>
                             <input
                                 id="confirmPassword"
@@ -179,7 +179,7 @@ export default function SignUpPage() {
                                 value={formData.confirmPassword}
                                 onChange={handleChange}
                                 className="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                placeholder="비밀번호를 다시 입력하세요"
+                                placeholder="비�?번호�??�시 ?�력?�세??
                             />
                         </div>
                     </div>
@@ -196,18 +196,18 @@ export default function SignUpPage() {
                             disabled={isLoading}
                             className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {isLoading ? '회원가입 중...' : '회원가입'}
+                            {isLoading ? '?�원가??�?..' : '?�원가??}
                         </button>
                     </div>
 
                     <div className="text-center">
                         <p className="text-sm text-gray-300">
-                            이미 계정이 있으신가요?{' '}
+                            ?��? 계정???�으?��???{' '}
                             <Link
                                 href="/auth/signin"
                                 className="font-medium text-purple-400 hover:text-purple-300"
                             >
-                                로그인하기
+                                로그?�하�?
                             </Link>
                         </p>
                     </div>

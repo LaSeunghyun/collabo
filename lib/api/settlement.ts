@@ -1,4 +1,4 @@
-import { Settlement } from '@/types/prisma';
+import { Settlement } from '@/types/shared';
 
 export type SettlementRecord = Omit<Settlement, 'distributionBreakdown' | 'notes' | 'payouts' | 'updatedAt'> & {
   distributed: boolean;
@@ -9,8 +9,8 @@ export type SettlementRecord = Omit<Settlement, 'distributionBreakdown' | 'notes
 export const fetchSettlement = async (projectId: string): Promise<SettlementRecord[]> => {
   const res = await fetch(`/api/settlement?projectId=${projectId}`);
   if (!res.ok) {
-    const message = await res.json().catch(() => ({ error: '정산 정보를 불러오지 못했습니다.' }));
-    throw new Error(message.error ?? '정산 정보를 불러오지 못했습니다.');
+    const message = await res.json().catch(() => ({ error: '?�산 ?�보�?불러?��? 못했?�니??' }));
+    throw new Error(message.error ?? '?�산 ?�보�?불러?��? 못했?�니??');
   }
 
   return res.json();

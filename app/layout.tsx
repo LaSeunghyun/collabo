@@ -10,8 +10,8 @@ import { MobileTabBar } from '@/components/ui/layout/mobile-tab-bar';
 import { Providers } from '@/app/providers';
 
 export const metadata: Metadata = {
-  title: 'Collaborium – Artist Collaboration Platform',
-  description: '팬과 아티스트가 함께 만들어가는 펀딩 · 커뮤니티 플랫폼'
+  title: 'Collaborium ??Artist Collaboration Platform',
+  description: '?�과 ?�티?�트가 ?�께 만들?��????�??· 커�??�티 ?�랫??
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

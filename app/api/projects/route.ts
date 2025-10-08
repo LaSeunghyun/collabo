@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { UserRole } from '@/types/prisma';
+import { UserRole } from '@/types/shared';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import { createProject, ProjectValidationError } from '@/lib/server/projects';
 
 export async function GET() {
   try {
-    // 간단한 기본 응답으로 시작
+    // 간단??기본 ?�답?�로 ?�작
     return NextResponse.json([]);
   } catch (error) {
     console.error('Failed to load projects', error);
 
-    // 더 자세한 에러 정보 제공
+    // ???�세???�러 ?�보 ?�공
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const errorStack = error instanceof Error ? error.stack : undefined;
 
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     const project = await createProject(body, user);
 
     if (!project) {
-      return NextResponse.json({ message: '프로젝트 생성에 실패했습니다.' }, { status: 500 });
+      return NextResponse.json({ message: '?�로?�트 ?�성???�패?�습?�다.' }, { status: 500 });
     }
 
     return NextResponse.json(project, { status: 201 });

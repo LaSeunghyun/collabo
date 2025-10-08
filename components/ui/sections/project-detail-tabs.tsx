@@ -63,7 +63,7 @@ export function ProjectDetailTabs({
           return;
         }
 
-        setSettlementError(error instanceof Error ? error.message : '정산 정보를 불러오지 못했습니다.');
+        setSettlementError(error instanceof Error ? error.message : '?�산 ?�보�?불러?��? 못했?�니??');
       } finally {
         if (showLoading && active) {
           setIsSettlementLoading(false);
@@ -102,10 +102,10 @@ export function ProjectDetailTabs({
       <div className="mt-6 space-y-4">
         <TabsPrimitive.Content value="story" className="space-y-4 text-sm text-white/70">
           <p>
-            팬들의 서포트로 완성되는 공연. 참여자 피드백을 바탕으로 매주 시나리오와 무대를 업데이트합니다.
+            ?�들???�포?�로 ?�성?�는 공연. 참여???�드백을 바탕?�로 매주 ?�나리오?� 무�?�??�데?�트?�니??
           </p>
           <p>
-            프리미엄 티켓과 메타버스 중계, 한정판 굿즈까지 다양한 리워드를 제공하며, 글로벌 팬과의 실시간 인터랙션을 지원합니다.
+            ?�리미엄 ?�켓�?메�?버스 중계, ?�정??굿즈까�? ?�양??리워?��? ?�공?�며, 글로벌 ?�과???�시�??�터?�션??지?�합?�다.
           </p>
         </TabsPrimitive.Content>
         <TabsPrimitive.Content value="updates">
@@ -118,22 +118,22 @@ export function ProjectDetailTabs({
           <div className="grid gap-3">
             <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
               <h4 className="text-sm font-semibold text-white">Pre-production</h4>
-              <p className="mt-1 text-xs text-white/60">9월 1주차 – 콘셉트 디자인 확정</p>
+              <p className="mt-1 text-xs text-white/60">9??1주차 ??콘셉???�자???�정</p>
             </div>
             <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
               <h4 className="text-sm font-semibold text-white">Live Recording</h4>
-              <p className="mt-1 text-xs text-white/60">10월 4주차 – 라이브 공연 진행</p>
+              <p className="mt-1 text-xs text-white/60">10??4주차 ???�이�?공연 진행</p>
             </div>
             <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
               <h4 className="text-sm font-semibold text-white">Settlement</h4>
-              <p className="mt-1 text-xs text-white/60">11월 1주차 – 정산 리포트 공유</p>
+              <p className="mt-1 text-xs text-white/60">11??1주차 ???�산 리포??공유</p>
             </div>
           </div>
         </TabsPrimitive.Content>
         <TabsPrimitive.Content value="settlement" className="space-y-4 text-sm text-white/70">
           {isSettlementLoading ? (
             <div className="rounded-3xl border border-white/10 bg-white/5 p-4 text-xs text-white/60">
-              정산 데이터를 불러오는 중입니다...
+              ?�산 ?�이?��? 불러?�는 중입?�다...
             </div>
           ) : settlementError ? (
             <div className="rounded-3xl border border-red-500/40 bg-red-500/10 p-4 text-xs text-red-200">
@@ -142,23 +142,23 @@ export function ProjectDetailTabs({
           ) : latestSettlement ? (
             <div className="space-y-4">
               <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-                <p className="text-xs text-white/60">최신 정산 금액</p>
+                <p className="text-xs text-white/60">최신 ?�산 금액</p>
                 <p className="mt-2 text-lg font-semibold text-white">
                   {currencyFormatter.format(latestSettlement.totalAmount)}
                 </p>
                 <p className="mt-2 text-xs text-white/60">
-                  제작자 {currencyFormatter.format(latestSettlement.creatorShare)} · 플랫폼{' '}
+                  ?�작??{currencyFormatter.format(latestSettlement.creatorShare)} · ?�랫??' '}
                   {currencyFormatter.format(latestSettlement.platformShare)}
                 </p>
                 <p className="mt-2 text-xs text-white/50">
-                  {latestSettlement.distributed ? '분배 완료' : '분배 대기'} ·{' '}
+                  {latestSettlement.distributed ? '분배 ?�료' : '분배 ?��?} ·{' '}
                   {dateFormatter.format(new Date(latestSettlement.createdAt))}
                 </p>
               </div>
 
               {settlementHistory.length ? (
                 <div className="space-y-3">
-                  <p className="text-xs font-medium uppercase tracking-[0.2em] text-white/60">정산 히스토리</p>
+                  <p className="text-xs font-medium uppercase tracking-[0.2em] text-white/60">?�산 ?�스?�리</p>
                   <ul className="space-y-3 text-xs text-white/60">
                     {settlementHistory.map((item) => (
                       <li
@@ -169,7 +169,7 @@ export function ProjectDetailTabs({
                           {currencyFormatter.format(item.totalAmount)}
                         </span>
                         <span>{dateFormatter.format(new Date(item.createdAt))}</span>
-                        <span className="text-white/40">{item.distributed ? '분배 완료' : '분배 준비'}</span>
+                        <span className="text-white/40">{item.distributed ? '분배 ?�료' : '분배 준�?}</span>
                       </li>
                     ))}
                   </ul>
@@ -178,7 +178,7 @@ export function ProjectDetailTabs({
             </div>
           ) : (
             <div className="rounded-3xl border border-white/10 bg-white/5 p-4 text-xs text-white/60">
-              아직 정산 내역이 없습니다. 목표 금액을 달성하면 정산 리포트가 자동으로 갱신됩니다.
+              ?�직 ?�산 ?�역???�습?�다. 목표 금액???�성?�면 ?�산 리포?��? ?�동?�로 갱신?�니??
             </div>
           )}
         </TabsPrimitive.Content>

@@ -3,12 +3,12 @@ import { randomUUID } from 'crypto';
 import { eq } from 'drizzle-orm';
 
 import { getDb } from '@/lib/db/client';
-import { permission, userPermission, user } from '@/drizzle/schema';
+import { permission, userPermission, user as userSchema } from '@/drizzle/schema';
 
-type UserRecord = typeof user.$inferSelect;
+type UserRecord = typeof userSchema.$inferSelect;
 type UserPermissionRecord = typeof userPermission.$inferSelect;
 type PermissionRecord = typeof permission.$inferSelect;
-type UserInsert = typeof user.$inferInsert;
+type UserInsert = typeof userSchema.$inferInsert;
 
 export type UserWithPermissions = UserRecord & {
   permission: Array<UserPermissionRecord & { permission: PermissionRecord }>;
@@ -22,9 +22,9 @@ export const fetchUserWithPermissions = async (
   identifier: UserIdentifier
 ): Promise<UserWithPermissions | null> => {
   const where = identifier.id
-    ? eq(user.id, identifier.id)
+    ? eq(userSchema.id, identifier.id)
     : identifier.email
-    ? eq(user.email, identifier.email)
+    ? eq(userSchema.email, identifier.email)
     : null;
 
   if (!where) {
@@ -33,7 +33,7 @@ export const fetchUserWithPermissions = async (
 
   const db = await getDb();
 
-  const userRecord = await db.select().from(user).where(where).limit(1).then(rows => rows[0] || null);
+  const userRecord = await db.select().from(userSchema).where(where).limit(1).then(rows => rows[0] || null);
 
   if (!userRecord) {
     return null;
@@ -47,7 +47,7 @@ export const fetchUserWithPermissions = async (
 
 export const findUserByEmail = async (email: string) => {
   const db = await getDb();
-  return db.select().from(user).where(eq(user.email, email)).limit(1).then(rows => rows[0] || null);
+  return db.select().from(userSchema).where(eq(userSchema.email, email)).limit(1).then(rows => rows[0] || null);
 };
 
 interface CreateParticipantUserInput {
@@ -65,21 +65,22 @@ export const createParticipantUser = async (
   const db = await getDb();
 
   const [record] = await db
-    .insert(user)
+    .insert(userSchema)
     .values({
       id: randomUUID(),
       name: input.name,
       email: input.email,
       passwordHash: input.passwordHash,
       role: 'PARTICIPANT',
+      createdAt: now,
       updatedAt: now
     } satisfies UserInsert)
     .returning({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      createdAt: user.createdAt
+      id: userSchema.id,
+      name: userSchema.name,
+      email: userSchema.email,
+      role: userSchema.role,
+      createdAt: userSchema.createdAt
     });
 
   if (!record) {
@@ -96,21 +97,22 @@ export const createAdminUser = async (
   const db = await getDb();
 
   const [record] = await db
-    .insert(user)
+    .insert(userSchema)
     .values({
       id: randomUUID(),
       name: input.name,
       email: input.email,
       passwordHash: input.passwordHash,
       role: 'ADMIN',
+      createdAt: now,
       updatedAt: now
     } satisfies UserInsert)
     .returning({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      createdAt: user.createdAt
+      id: userSchema.id,
+      name: userSchema.name,
+      email: userSchema.email,
+      role: userSchema.role,
+      createdAt: userSchema.createdAt
     });
 
   if (!record) {

@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 
 import { communityCategory, post as posts, user as users } from '@/drizzle/schema';
-import { getDb } from '@/lib/db/client';
+import { getDb, isDrizzleAvailable } from '@/lib/db/client';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import type { SessionUser } from '@/lib/auth/session';
@@ -104,13 +104,24 @@ const isTrendingCandidate = (post: PostWithAuthor) => {
 
 export async function GET(request: NextRequest) {
   try {
+    // ?°ì´?°ë² ?´ìŠ¤ ?¬ìš© ê°€???¬ë? ?•ì¸
+    if (!isDrizzleAvailable()) {
+      return NextResponse.json(
+        { 
+          error: '?°ì´?°ë² ?´ìŠ¤???°ê²°?????†ìŠµ?ˆë‹¤.',
+          details: 'DATABASE_URL???¤ì •?˜ì? ?Šì•˜?µë‹ˆ??'
+        },
+        { status: 503 }
+      );
+    }
+
     const authContext = { headers: request.headers };
     const { searchParams } = new URL(request.url);
     const sortParam = searchParams.get('sort');
     const sort = sortParam === 'popular' || sortParam === 'trending' ? sortParam : 'recent';
     const limitParam = Number.parseInt(searchParams.get('limit') ?? '10', 10);
     const limit = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(limitParam, 50) : 10;
-    // const cursor = searchParams.get('cursor'); // TODO: Drizzleë¡œ ì „í™˜ í•„ìš”
+    // const cursor = searchParams.get('cursor'); // TODO: Drizzleë¡??„í™˜ ?„ìš”
     const projectId = searchParams.get('projectId');
     const authorId = searchParams.get('authorId');
     const search = searchParams.get('search')?.trim() ?? '';
@@ -121,12 +132,12 @@ export async function GET(request: NextRequest) {
 
     const { user: viewer } = await evaluateAuthorization({}, authContext);
 
-    // TODO: Drizzleë¡œ ì „í™˜ í•„ìš”
+    // TODO: Drizzleë¡??„í™˜ ?„ìš”
     const posts: PostWithAuthor[] = [];
 
-    // const popularityPoolSize = Math.max(limit * 3, FEED_CONFIG.popularLimit * 3, FEED_CONFIG.trendingLimit * 3); // TODO: Drizzleë¡œ ì „í™˜ í•„ìš”
+    // const popularityPoolSize = Math.max(limit * 3, FEED_CONFIG.popularLimit * 3, FEED_CONFIG.trendingLimit * 3); // TODO: Drizzleë¡??„í™˜ ?„ìš”
 
-    // TODO: Drizzleë¡œ ì „í™˜ í•„ìš”
+    // TODO: Drizzleë¡??„í™˜ ?„ìš”
     const pinnedRaw: PostWithAuthor[] = [];
     const popularityPool: PostWithAuthor[] = [];
 
@@ -174,13 +185,13 @@ export async function GET(request: NextRequest) {
     let likedSet: Set<string> | undefined;
     let dislikedSet: Set<string> | undefined;
 
-    // TODO: Drizzleë¡œ ì „í™˜ í•„ìš”
+    // TODO: Drizzleë¡??„í™˜ ?„ìš”
     if (viewer && allPostIds.size > 0) {
       likedSet = new Set();
       dislikedSet = new Set();
     }
 
-    // TODO: Drizzleë¡œ ì „í™˜ í•„ìš”
+    // TODO: Drizzleë¡??„í™˜ ?„ìš”
     let reportMap: Map<string, number> | undefined;
     if (allPostIds.size > 0) {
       reportMap = new Map();
@@ -194,7 +205,7 @@ export async function GET(request: NextRequest) {
       popular: popularRaw.map((post) => mapPostToResponse(post, likedSet, dislikedSet, reportMap, trendingIds)),
       meta: {
         nextCursor,
-        total: 0, // TODO: Drizzleë¡œ ì „í™˜ í•„ìš”
+        total: 0, // TODO: Drizzleë¡??„í™˜ ?„ìš”
         sort: sort as 'recent' | 'popular' | 'trending',
         categories: normalizedCategories.length
           ? normalizedCategories.map((category) => toCategorySlug(category))
@@ -241,28 +252,69 @@ export async function GET(request: NextRequest) {
     };
 
     return NextResponse.json(fallbackResponse);
+  } catch (error) {
+    console.error('ì»¤ë??ˆí‹° ?¼ë“œ ì¡°íšŒ ì¤??¤ë¥˜ ë°œìƒ:', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      sort: request.nextUrl.searchParams.get('sort') || 'recent'
+    });
+    
+    return NextResponse.json(
+      { 
+        error: 'ì»¤ë??ˆí‹° ?¼ë“œë¥?ë¶ˆëŸ¬?¤ëŠ”???¤íŒ¨?ˆìŠµ?ˆë‹¤.',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    // ?°ì´?°ë² ?´ìŠ¤ ?¬ìš© ê°€???¬ë? ?•ì¸
+    if (!isDrizzleAvailable()) {
+      return NextResponse.json(
+        { 
+          error: '?°ì´?°ë² ?´ìŠ¤???°ê²°?????†ìŠµ?ˆë‹¤.',
+          details: 'DATABASE_URL???¤ì •?˜ì? ?Šì•˜?µë‹ˆ??'
+        },
+        { status: 503 }
+      );
+    }
+
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: '?˜ëª»???”ì²­ ë³¸ë¬¸?…ë‹ˆ??' },
+        { status: 400 }
+      );
+    }
+
     console.log('Received POST request body:', { 
-      title: body.title?.substring(0, 50) + '...', 
-      content: body.content?.substring(0, 50) + '...', 
-      category: body.category,
-      hasProjectId: !!body.projectId 
+      title: (body as any).title?.substring(0, 50) + '...', 
+      content: (body as any).content?.substring(0, 50) + '...', 
+      category: (body as any).category,
+      hasProjectId: !!(body as any).projectId 
     });
     
-    const title = body.title?.trim();
-    const content = body.content?.trim();
-    const projectId = body.projectId ? String(body.projectId) : undefined;
-    const category = parseCategory(body.category ?? null) ?? 'GENERAL';
+    const { title, content, category, projectId } = body as {
+      title?: string;
+      content?: string;
+      category?: string;
+      projectId?: string;
+    };
+    
+    const trimmedTitle = title?.trim();
+    const trimmedContent = content?.trim();
+    const projectIdValue = projectId ? String(projectId) : undefined;
+    const categoryValue = parseCategory(category ?? null) ?? 'GENERAL';
     const authContext = { headers: request.headers };
 
-    if (!title || !content) {
-      console.log('Validation failed: missing title or content', { title: !!title, content: !!content });
-      return NextResponse.json({ message: 'Title and content are required.' }, { status: 400 });
+    if (!trimmedTitle || !trimmedContent) {
+      console.log('Validation failed: missing title or content', { title: !!trimmedTitle, content: !!trimmedContent });
+      return NextResponse.json({ error: '?œëª©ê³??´ìš©?€ ?„ìˆ˜?…ë‹ˆ??' }, { status: 400 });
     }
 
     let sessionUser: SessionUser;
@@ -282,23 +334,23 @@ export async function POST(request: NextRequest) {
 
     try {
       console.log('Creating post with data:', { 
-        title: title.substring(0, 50) + '...', 
-        category, 
+        title: trimmedTitle.substring(0, 50) + '...', 
+        category: categoryValue, 
         authorId: sessionUser.id,
-        projectId: projectId || 'none'
+        projectId: projectIdValue || 'none'
       });
       
-      // Drizzleë¡œ ê²Œì‹œê¸€ ìƒì„±
+      // Drizzleë¡?ê²Œì‹œê¸€ ?ì„±
       const db = await getDb();
       const [createdPost] = await db
         .insert(posts)
         .values({
           id: randomUUID(),
-          title,
-          content,
-          category: category as 'GENERAL' | 'NOTICE' | 'COLLAB' | 'SUPPORT' | 'SHOWCASE',
+          title: trimmedTitle,
+          content: trimmedContent,
+          category: categoryValue as 'GENERAL' | 'NOTICE' | 'COLLAB' | 'SUPPORT' | 'SHOWCASE',
           type: 'DISCUSSION',
-          projectId: projectId ?? null,
+          projectId: projectIdValue ?? null,
           authorId: sessionUser.id,
           isPinned: false,
           updatedAt: new Date().toISOString(),
@@ -321,7 +373,7 @@ export async function POST(request: NextRequest) {
         throw new Error('Failed to create post');
       }
 
-      // ì‘ì„±ì ì •ë³´ ì¡°íšŒ
+      // ?‘ì„±???•ë³´ ì¡°íšŒ
       const [author] = await db
         .select({
           id: users.id,

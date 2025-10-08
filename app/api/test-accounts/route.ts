@@ -6,9 +6,9 @@ import { getDb } from '@/lib/db/client';
 
 export async function POST() {
   try {
-    console.log('🔐 테스트 계정 생성 시작...');
+    console.log('?�� ?�스??계정 ?�성 ?�작...');
 
-    // 기존 계정 삭제 (선택사항)
+    // 기존 계정 ??�� (?�택?�항)
     const db = await getDb();
     await db.delete(users).where(
       inArray(users.email, ['admin@collabo.com', 'fan@collabo.com', 'partner@collabo.com'])
@@ -16,7 +16,7 @@ export async function POST() {
 
     const hashedPassword = await hash('1234', 10);
 
-    // 1. 관리자 계정 생성
+    // 1. 관리자 계정 ?�성
     const admin = await db.insert(users).values({
       id: crypto.randomUUID(),
       name: '관리자',
@@ -26,35 +26,35 @@ export async function POST() {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }).returning();
-    console.log('✅ 관리자 계정 생성 완료:', admin[0].email);
+    console.log('??관리자 계정 ?�성 ?�료:', admin[0].email);
 
-    // 2. 팬 계정 생성 (참여자)
+    // 2. ??계정 ?�성 (참여??
     const fan = await db.insert(users).values({
       id: crypto.randomUUID(),
-      name: '팬',
+      name: '??,
       email: 'fan@collabo.com',
       passwordHash: hashedPassword,
       role: 'PARTICIPANT',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }).returning();
-    console.log('✅ 팬 계정 생성 완료:', fan[0].email);
+    console.log('????계정 ?�성 ?�료:', fan[0].email);
 
-    // 3. 파트너 계정 생성
+    // 3. ?�트??계정 ?�성
     const partner = await db.insert(users).values({
       id: crypto.randomUUID(),
-      name: '파트너',
+      name: '?�트??,
       email: 'partner@collabo.com',
       passwordHash: hashedPassword,
       role: 'PARTNER',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }).returning();
-    console.log('✅ 파트너 계정 생성 완료:', partner[0].email);
+    console.log('???�트??계정 ?�성 ?�료:', partner[0].email);
 
     return NextResponse.json({
       success: true,
-      message: '모든 테스트 계정이 성공적으로 생성되었습니다!',
+      message: '모든 ?�스??계정???�공?�으�??�성?�었?�니??',
       accounts: [
         { email: 'admin@collabo.com', role: 'ADMIN', password: '1234' },
         { email: 'fan@collabo.com', role: 'PARTICIPANT', password: '1234' },
@@ -63,11 +63,11 @@ export async function POST() {
     });
 
   } catch (error) {
-    console.error('❌ 계정 생성 중 오류 발생:', error);
+    console.error('??계정 ?�성 �??�류 발생:', error);
     return NextResponse.json(
       { 
         success: false, 
-        error: '계정 생성 중 오류가 발생했습니다.',
+        error: '계정 ?�성 �??�류가 발생?�습?�다.',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }

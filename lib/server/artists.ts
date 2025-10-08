@@ -1,4 +1,4 @@
-ï»¿import { cache } from 'react';
+import { cache } from 'react';
 import { eq, and, count } from 'drizzle-orm';
 
 import type { SessionUser } from '@/lib/auth/session';
@@ -102,7 +102,7 @@ const parseSocialLinks = (links: unknown | null): ArtistSocialLink[] => {
 
 const fetchArtistEvents = async (artistId: string): Promise<ArtistEventSummary[]> => {
   try {
-    // í”„ë¡œì íŠ¸ ë§ˆì¼ìŠ¤í†¤ì„ ì´ë²¤íŠ¸ë¡œ í™œìš©
+    // ÇÁ·ÎÁ§Æ® ¸¶ÀÏ½ºÅæÀ» ÀÌº¥Æ®·Î È°¿ë
     const db = await getDb();
     const milestones = await db
       .select({

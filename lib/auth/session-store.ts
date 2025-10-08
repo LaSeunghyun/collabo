@@ -57,6 +57,8 @@ interface IssueSessionInput {
   userAgent?: string | null;
   deviceFingerprint?: string | null;
   deviceLabel?: string | null;
+  name?: string;
+  email?: string;
 }
 
 export interface IssuedSession {
@@ -105,7 +107,7 @@ function hydrateRefreshTokenRow(token: RefreshTokenRow): HydratedRefreshToken {
 }
 
 const loadUserPermissions = async (userId: string, fallbackRole: UserRoleType) => {
-  // 단순화: 기본 권한만 사용
+  // ?�순?? 기본 권한�??�용
   const effectivePermissions = deriveEffectivePermissions(fallbackRole, []);
   return { role: fallbackRole, permissions: effectivePermissions };
 };
@@ -157,7 +159,9 @@ export const issueSessionWithTokens = async ({
   ipAddress,
   userAgent,
   deviceFingerprint,
-  deviceLabel
+  deviceLabel,
+  name,
+  email
 }: IssueSessionInput): Promise<IssuedSession> => {
   try {
     const policy = resolveSessionPolicy({ role, remember, client });
@@ -221,7 +225,9 @@ export const issueSessionWithTokens = async ({
       sessionId: session.id,
       role: resolvedRole,
       permissions,
-      expiresIn: policy.accessTokenTtl
+      expiresIn: policy.accessTokenTtl,
+      name,
+      email
     });
 
     return {
@@ -324,7 +330,7 @@ export const rotateRefreshToken = async (
 
   const user = await fetchUserWithPermissions({ id: session.userId });
   const baseRole: UserRoleType = session.isAdmin ? ADMIN_ROLE : (user?.role ?? 'PARTICIPANT');
-  const explicitPermissions = user?.permission.map((entry) => entry.permission.key) ?? [];
+  const explicitPermissions = user?.permission.map((entry: any) => entry.permission.key) ?? [];
   const permissions = deriveEffectivePermissions(baseRole, explicitPermissions);
 
   const ipHash = hashClientHint(ipAddress ?? undefined);

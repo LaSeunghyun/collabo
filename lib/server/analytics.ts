@@ -1,4 +1,4 @@
-﻿import { createHash } from 'crypto';
+import { createHash } from 'crypto';
 import { gte } from 'drizzle-orm';
 
 import { getDbClient } from '@/lib/db/client';

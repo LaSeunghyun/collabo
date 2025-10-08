@@ -1,7 +1,6 @@
 ﻿// import { moderationTargetTypeEnum } from '@/lib/db/schema'; // TODO: Drizzle로 전환 필요
 import { NextRequest, NextResponse } from 'next/server';
 
-// import { prisma } from '@/lib/prisma'; // TODO: Drizzle로 전환 필요
 
 export async function POST(
   request: NextRequest,

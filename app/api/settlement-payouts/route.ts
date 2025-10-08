@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// import { SettlementStakeholderType } from '@prisma/client'; // TODO: Drizzle로 전환 필요
 import { requireApiUser } from '@/lib/auth/guards';
-// import { prisma } from '@/lib/prisma'; // TODO: Drizzle로 전환 필요
 import { GuardRequirement } from '@/lib/auth/session';
 
 export async function GET(request: NextRequest) {

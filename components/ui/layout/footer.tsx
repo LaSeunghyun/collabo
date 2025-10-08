@@ -6,22 +6,22 @@ export function Footer() {
                     <div className="col-span-1 md:col-span-2">
                         <h3 className="text-lg font-semibold mb-4">Collaborium</h3>
                         <p className="text-neutral-400 text-sm">
-                            팬과 아티스트가 함께 만들어가는 펀딩 · 커뮤니티 플랫폼
+                            ?�과 ?�티?�트가 ?�께 만들?��????�??· 커�??�티 ?�랫??
                         </p>
                     </div>
                     <div>
-                        <h4 className="font-medium mb-4">서비스</h4>
+                        <h4 className="font-medium mb-4">?�비??/h4>
                         <ul className="space-y-2 text-sm text-neutral-400">
-                            <li><a href="/projects" className="hover:text-white transition-colors">프로젝트</a></li>
-                            <li><a href="/partners" className="hover:text-white transition-colors">파트너</a></li>
-                            <li><a href="/community" className="hover:text-white transition-colors">커뮤니티</a></li>
+                            <li><a href="/projects" className="hover:text-white transition-colors">?�로?�트</a></li>
+                            <li><a href="/partners" className="hover:text-white transition-colors">?�트??/a></li>
+                            <li><a href="/community" className="hover:text-white transition-colors">커�??�티</a></li>
                         </ul>
                     </div>
                     <div>
-                        <h4 className="font-medium mb-4">지원</h4>
+                        <h4 className="font-medium mb-4">지??/h4>
                         <ul className="space-y-2 text-sm text-neutral-400">
-                            <li><a href="/help" className="hover:text-white transition-colors">도움말</a></li>
-                            <li><a href="/contact" className="hover:text-white transition-colors">문의하기</a></li>
+                            <li><a href="/help" className="hover:text-white transition-colors">?��?�?/a></li>
+                            <li><a href="/contact" className="hover:text-white transition-colors">문의?�기</a></li>
                         </ul>
                     </div>
                 </div>

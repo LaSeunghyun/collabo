@@ -1,4 +1,4 @@
-ï»¿'use client';
+'use client';
 
 import { useTranslation } from 'react-i18next';
 
@@ -87,9 +87,9 @@ export function AnalyticsOverviewSection({ overview }: AnalyticsOverviewSectionP
                 >
                   <span className="font-semibold text-white">{formatDateLabel(day.date)}</span>
                   <div className="flex items-center justify-between text-white/70">
-                    <span>ë°©ë¬¸ {numberFormatter.format(day.visits)}</span>
-                    <span>ì„¸ì…˜ {numberFormatter.format(day.uniqueSessions)}</span>
-                    <span>ìœ ì € {numberFormatter.format(day.uniqueUsers)}</span>
+                    <span>¹æ¹® {numberFormatter.format(day.visits)}</span>
+                    <span>¼¼¼Ç {numberFormatter.format(day.uniqueSessions)}</span>
+                    <span>À¯Àú {numberFormatter.format(day.uniqueUsers)}</span>
                   </div>
                 </li>
               ))
@@ -113,7 +113,7 @@ export function AnalyticsOverviewSection({ overview }: AnalyticsOverviewSectionP
                   className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.06] p-3"
                 >
                   <span className="font-semibold text-white">{formatDateLabel(day.date)}</span>
-                  <span className="text-white/80">{numberFormatter.format(day.signups)}ëª…</span>
+                  <span className="text-white/80">{numberFormatter.format(day.signups)}¸í</span>
                 </li>
               ))
             )}

@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 import { verifyAccessToken } from '@/lib/auth/access-token';
-// import { prisma } from '@/lib/prisma'; // TODO: Drizzle로 전환 필요
 
 export async function GET(req: NextRequest) {
   const authorization = req.headers.get('authorization');
@@ -23,25 +22,13 @@ export async function GET(req: NextRequest) {
     const sessions: any[] = [];
 
     return NextResponse.json({
-      sessions: sessions.map((session) => ({
+      sessions: sessions.map(session => ({
         id: session.id,
-        createdAt: session.createdAt.toISOString(),
-        lastUsedAt: session.lastUsedAt.toISOString(),
-        absoluteExpiresAt: session.absoluteExpiresAt.toISOString(),
-        remember: session.remember,
-        client: session.client,
-        ipHash: session.ipHash,
-        uaHash: session.uaHash,
-        isAdmin: session.isAdmin,
-        device: session.device
-          ? {
-              id: session.device.id,
-              label: session.device.label,
-              firstSeenAt: session.device.firstSeenAt.toISOString(),
-              lastSeenAt: session.device.lastSeenAt.toISOString()
-            }
-          : null,
-        current: session.id === verified.sessionId
+        userId: session.userId,
+        createdAt: session.createdAt,
+        lastUsedAt: session.lastUsedAt,
+        isActive: !session.revokedAt,
+        deviceInfo: session.deviceInfo || null
       }))
     });
   } catch (error) {

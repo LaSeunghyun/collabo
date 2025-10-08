@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     try {
       await revokeSessionByRefreshToken(refreshToken);
     } catch (error) {
-      console.warn('세션 폐기 중 오류', error);
+      console.warn('?�션 ?�기 �??�류', error);
     }
   }
 
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
         const verified = await verifyAccessToken(token);
         await blacklistToken(verified.jti, verified.expiresAt);
       } catch (error) {
-        console.warn('액세스 토큰 블랙리스트 처리 실패', error);
+        console.warn('?�세???�큰 블랙리스??처리 ?�패', error);
       }
     }
   }
