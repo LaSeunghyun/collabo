@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -267,26 +267,26 @@ export default function CommunityPostDetailPage() {
     }
   });
 
-  const resetReportFields = () => {
+  const resetReportFields = useCallback(() => {
     setReportStatus('idle');
     setReportReasonKey(null);
     setReportCustomReason('');
     setReportError(null);
-  };
+  }, []);
 
-  const closeReportModal = () => {
+  const closeReportModal = useCallback(() => {
     setReportOpen(false);
     resetReportFields();
     reportMutation.reset();
-  };
+  }, [resetReportFields, reportMutation]);
 
-  const openReportModal = () => {
+  const openReportModal = useCallback(() => {
     resetReportFields();
     reportMutation.reset();
     setReportOpen(true);
-  };
+  }, [resetReportFields, reportMutation]);
 
-  const handleReportSubmit = () => {
+  const handleReportSubmit = useCallback(() => {
     if (reportStatus === 'submitted') {
       closeReportModal();
       return;
@@ -327,7 +327,17 @@ export default function CommunityPostDetailPage() {
 
     setReportError(null);
     reportMutation.mutate({ reporterId: session.user.id, reason: finalReason });
-  };
+  }, [
+    reportStatus,
+    closeReportModal,
+    isAuthenticated,
+    session?.user?.id,
+    selectedReportReason,
+    isOtherReportReason,
+    trimmedCustomReportReason,
+    reportMutation,
+    t
+  ]);
 
   const messageIsValid = useMemo(() => messageDraft.trim().length > 0, [messageDraft]);
 
@@ -367,7 +377,7 @@ export default function CommunityPostDetailPage() {
       setReportError(null);
       reportMutation.reset();
     }
-  }, [reportOpen, reportMutation]);
+  }, [reportOpen]);
 
   if (isLoading) {
     return (
