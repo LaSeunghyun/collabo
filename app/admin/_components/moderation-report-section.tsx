@@ -1,25 +1,20 @@
-import {
-  ModerationStatus,
-  ModerationTargetType,
-  type ModerationStatusValue,
-  type ModerationTargetTypeValue
-} from '@/types/prisma';
+// import { moderationStatusEnum, moderationTargetTypeEnum } from '@/lib/db/schema'; // TODO: Drizzle로 전환 필요
 import { getModerationStats, getOpenModerationReports } from '@/lib/server/moderation';
 import Link from 'next/link';
 
-const statusLabels: Record<ModerationStatusValue, string> = {
-  [ModerationStatus.PENDING]: '대기중',
-  [ModerationStatus.REVIEWING]: '검토중',
-  [ModerationStatus.ACTION_TAKEN]: '조치완료',
-  [ModerationStatus.DISMISSED]: '기각됨'
+const statusLabels: Record<string, string> = {
+  'PENDING': '대기중',
+  'REVIEWING': '검토중',
+  'ACTION_TAKEN': '조치완료',
+  'DISMISSED': '기각됨'
 };
 
-const targetLabels: Record<ModerationTargetTypeValue, string> = {
-  [ModerationTargetType.POST]: '게시글',
-  [ModerationTargetType.COMMENT]: '댓글'
-} as const satisfies Record<ModerationTargetTypeValue, string>;
+const targetLabels: Record<string, string> = {
+  'POST': '게시글',
+  'COMMENT': '댓글'
+};
 
-const getTargetLabel = (type: ModerationTargetTypeValue) => targetLabels[type];
+const getTargetLabel = (type: string) => targetLabels[type];
 
 const dateFormatter = new Intl.DateTimeFormat('ko-KR', {
   dateStyle: 'medium',
@@ -104,7 +99,7 @@ export async function ModerationReportSection() {
         <h3 className="text-sm font-semibold text-white mb-4">최근 신고</h3>
         {reports.length > 0 ? (
           <ul className="space-y-3">
-            {reports.map((report) => (
+            {reports.map((report: any) => (
               <li
                 key={report.id}
                 className="flex items-start justify-between rounded-xl border border-white/5 bg-white/5 px-4 py-3"

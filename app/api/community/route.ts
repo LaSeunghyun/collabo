@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { eq, and, desc, count, sql } from 'drizzle-orm';
 
-import { CommunityCategory, ModerationTargetType, PostType } from '@prisma/client';
-import type { Prisma } from '@prisma/client';
+import { communityCategoryEnum, posts, users, postLikes, postDislikes, moderationReports } from '@/lib/db/schema';
+import { getDb } from '@/lib/db/client';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import type { SessionUser } from '@/lib/auth/session';
 import { evaluateAuthorization } from '@/lib/auth/session';
-import { prisma } from '@/lib/prisma';
 
 import type { CommunityFeedResponse } from '@/lib/data/community';
 
@@ -21,7 +21,7 @@ const FEED_CONFIG = {
   popularMinComments: 2
 } as const;
 
-const parseCategory = (value: string | null): CommunityCategory | undefined => {
+const parseCategory = (value: string | null): string | undefined => {
   if (!value) {
     return undefined;
   }
@@ -31,26 +31,36 @@ const parseCategory = (value: string | null): CommunityCategory | undefined => {
   }
 
   const normalized = value.toUpperCase();
-  const match = (Object.values(CommunityCategory) as string[]).find(
+  const match = (Object.values(communityCategoryEnum.enumValues) as string[]).find(
     (option) => option === normalized
   );
 
   if (match) {
-    return match as CommunityCategory;
+    return match;
   }
 
   return undefined;
 };
 
-const toCategorySlug = (category: CommunityCategory | null | undefined) =>
-  String(category ?? CommunityCategory.GENERAL).toLowerCase();
+const toCategorySlug = (category: string | null | undefined) =>
+  String(category ?? 'GENERAL').toLowerCase();
 
-const postInclude = {
-  author: { select: { id: true, name: true, avatarUrl: true } },
-  _count: { select: { likes: true, dislikes: true, comments: true } }
-} as const;
+// const postInclude = {
+//   author: { select: { id: true, name: true, avatarUrl: true } },
+//   _count: { select: { likes: true, dislikes: true, comments: true } }
+// } as const;
 
-type PostWithAuthor = Prisma.PostGetPayload<{ include: typeof postInclude }>;
+type PostWithAuthor = {
+  id: string;
+  title: string;
+  content: string;
+  category: string;
+  projectId: string | null;
+  createdAt: string;
+  isPinned: boolean;
+  author: { id: string; name: string; avatarUrl: string | null } | null;
+  _count: { likes: number; dislikes: number; comments: number };
+};
 
 const mapPostToResponse = (
   post: PostWithAuthor,
@@ -68,7 +78,7 @@ const mapPostToResponse = (
   reports: reportMap?.get(post.id) ?? 0,
   category: toCategorySlug(post.category),
   projectId: post.projectId ?? undefined,
-  createdAt: post.createdAt.toISOString(),
+  createdAt: String(post.createdAt),
   liked: likedSet?.has(post.id) ?? false,
   disliked: dislikedSet?.has(post.id) ?? false,
   isPinned: post.isPinned,
@@ -84,8 +94,9 @@ const isTrendingCandidate = (post: PostWithAuthor) => {
   const { trendingDays, trendingMinComments, trendingMinLikes } = FEED_CONFIG;
   const thresholdDate = new Date(Date.now() - trendingDays * 24 * 60 * 60 * 1000);
 
+  const createdAt = new Date(post.createdAt);
   return (
-    post.createdAt >= thresholdDate &&
+    createdAt >= thresholdDate &&
     ((post._count.comments ?? 0) >= trendingMinComments || (post._count.likes ?? 0) >= trendingMinLikes)
   );
 };
@@ -98,60 +109,25 @@ export async function GET(request: NextRequest) {
     const sort = sortParam === 'popular' || sortParam === 'trending' ? sortParam : 'recent';
     const limitParam = Number.parseInt(searchParams.get('limit') ?? '10', 10);
     const limit = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(limitParam, 50) : 10;
-    const cursor = searchParams.get('cursor');
+    // const cursor = searchParams.get('cursor'); // TODO: Drizzle로 전환 필요
     const projectId = searchParams.get('projectId');
     const authorId = searchParams.get('authorId');
     const search = searchParams.get('search')?.trim() ?? '';
     const categoryParams = searchParams.getAll('category');
     const normalizedCategories = categoryParams
       .map((value) => parseCategory(value))
-      .filter((value): value is CommunityCategory => Boolean(value));
+      .filter((value): value is string => Boolean(value));
 
     const { user: viewer } = await evaluateAuthorization({}, authContext);
 
-    const baseWhere: Prisma.PostWhereInput = {
-      type: PostType.DISCUSSION,
-      ...(projectId ? { projectId } : {}),
-      ...(authorId ? { authorId } : {}),
-      ...(normalizedCategories.length ? { category: { in: normalizedCategories } } : {}),
-      ...(search
-        ? {
-          OR: [
-            { title: { contains: search, mode: 'insensitive' } },
-            { content: { contains: search, mode: 'insensitive' } }
-          ]
-        }
-        : {})
-    };
+    // TODO: Drizzle로 전환 필요
+    const posts: PostWithAuthor[] = [];
 
-    const baseOrderBy: Prisma.PostOrderByWithRelationInput[] = [{ createdAt: 'desc' }];
+    // const popularityPoolSize = Math.max(limit * 3, FEED_CONFIG.popularLimit * 3, FEED_CONFIG.trendingLimit * 3); // TODO: Drizzle로 전환 필요
 
-    const applyCursor = sort === 'recent' && cursor;
-
-    const posts = await prisma.post.findMany({
-      where: baseWhere,
-      include: postInclude,
-      orderBy: baseOrderBy,
-      take: limit,
-      ...(applyCursor ? { skip: 1, cursor: { id: cursor } } : {})
-    });
-
-    const popularityPoolSize = Math.max(limit * 3, FEED_CONFIG.popularLimit * 3, FEED_CONFIG.trendingLimit * 3);
-
-    const [pinnedRaw, popularityPool] = await Promise.all([
-      prisma.post.findMany({
-        where: { ...baseWhere, isPinned: true },
-        include: postInclude,
-        take: FEED_CONFIG.pinnedLimit,
-        orderBy: { updatedAt: 'desc' }
-      }),
-      prisma.post.findMany({
-        where: baseWhere,
-        include: postInclude,
-        orderBy: baseOrderBy,
-        take: popularityPoolSize
-      })
-    ]);
+    // TODO: Drizzle로 전환 필요
+    const pinnedRaw: PostWithAuthor[] = [];
+    const popularityPool: PostWithAuthor[] = [];
 
     const popularityScore = (post: PostWithAuthor) => post._count.likes * 3 + post._count.comments * 2;
 
@@ -160,7 +136,7 @@ export async function GET(request: NextRequest) {
       if (scoreDiff !== 0) {
         return scoreDiff;
       }
-      return b.createdAt.getTime() - a.createdAt.getTime();
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
     const popularRaw = popularSorted
@@ -173,7 +149,7 @@ export async function GET(request: NextRequest) {
 
     const trendingRaw = popularityPool
       .filter(isTrendingCandidate)
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, FEED_CONFIG.trendingLimit);
 
     let feedPosts = posts;
@@ -197,39 +173,16 @@ export async function GET(request: NextRequest) {
     let likedSet: Set<string> | undefined;
     let dislikedSet: Set<string> | undefined;
 
+    // TODO: Drizzle로 전환 필요
     if (viewer && allPostIds.size > 0) {
-      const [likes, dislikes] = await Promise.all([
-        prisma.postLike.findMany({
-          where: {
-            userId: viewer.id,
-            postId: { in: Array.from(allPostIds) }
-          }
-        }),
-        prisma.postDislike.findMany({
-          where: {
-            userId: viewer.id,
-            postId: { in: Array.from(allPostIds) }
-          }
-        })
-      ]);
-
-      likedSet = new Set(likes.map((entry) => entry.postId));
-      dislikedSet = new Set(dislikes.map((entry) => entry.postId));
+      likedSet = new Set();
+      dislikedSet = new Set();
     }
 
+    // TODO: Drizzle로 전환 필요
     let reportMap: Map<string, number> | undefined;
     if (allPostIds.size > 0) {
-      const reportCounts = await prisma.moderationReport.groupBy({
-        by: ['targetId'],
-        where: {
-          targetType: ModerationTargetType.POST,
-          targetId: { in: Array.from(allPostIds) }
-        },
-        _count: { _all: true }
-      });
-      reportMap = new Map(
-        reportCounts.map((entry) => [entry.targetId, entry._count?._all ?? 0])
-      );
+      reportMap = new Map();
     }
 
     const trendingIds = new Set(trendingRaw.map((post) => post.id));
@@ -240,7 +193,7 @@ export async function GET(request: NextRequest) {
       popular: popularRaw.map((post) => mapPostToResponse(post, likedSet, dislikedSet, reportMap, trendingIds)),
       meta: {
         nextCursor,
-        total: await prisma.post.count({ where: baseWhere }),
+        total: 0, // TODO: Drizzle로 전환 필요
         sort: sort as 'recent' | 'popular' | 'trending',
         categories: normalizedCategories.length
           ? normalizedCategories.map((category) => toCategorySlug(category))
@@ -266,7 +219,7 @@ export async function GET(request: NextRequest) {
     const fallbackCategories = searchParams
       .getAll('category')
       .map((value) => parseCategory(value))
-      .filter((value): value is CommunityCategory => Boolean(value));
+      .filter((value): value is string => Boolean(value));
     const fallbackCategorySlugs = fallbackCategories.length
       ? fallbackCategories.map((category) => toCategorySlug(category))
       : ['all'];
@@ -303,7 +256,7 @@ export async function POST(request: NextRequest) {
     const title = body.title?.trim();
     const content = body.content?.trim();
     const projectId = body.projectId ? String(body.projectId) : undefined;
-    const category = parseCategory(body.category ?? null) ?? CommunityCategory.GENERAL;
+    const category = parseCategory(body.category ?? null) ?? 'GENERAL';
     const authContext = { headers: request.headers };
 
     if (!title || !content) {
@@ -334,20 +287,61 @@ export async function POST(request: NextRequest) {
         projectId: projectId || 'none'
       });
       
-      const post = await prisma.post.create({
-        data: {
+      // Drizzle로 게시글 생성
+      const db = await getDb();
+      const [createdPost] = await db
+        .insert(posts)
+        .values({
+          id: crypto.randomUUID(),
           title,
           content,
-          type: PostType.DISCUSSION,
           category,
+          type: 'DISCUSSION',
+          projectId: projectId ?? null,
           authorId: sessionUser.id,
-          projectId: projectId ?? undefined
-        },
-        include: {
-          author: { select: { id: true, name: true, avatarUrl: true } },
-          _count: { select: { likes: true, dislikes: true, comments: true } }
-        }
-      });
+          isPinned: false,
+          updatedAt: new Date().toISOString(),
+        })
+        .returning({
+          id: posts.id,
+          title: posts.title,
+          content: posts.content,
+          category: posts.category,
+          projectId: posts.projectId,
+          createdAt: posts.createdAt,
+          isPinned: posts.isPinned,
+        });
+
+      if (!createdPost) {
+        throw new Error('Failed to create post');
+      }
+
+      // 작성자 정보 조회
+      const [author] = await db
+        .select({
+          id: users.id,
+          name: users.name,
+          avatarUrl: users.avatarUrl,
+        })
+        .from(users)
+        .where(eq(users.id, sessionUser.id))
+        .limit(1);
+
+      const post: PostWithAuthor = {
+        id: createdPost.id,
+        title: createdPost.title,
+        content: createdPost.content,
+        category: createdPost.category,
+        projectId: createdPost.projectId,
+        createdAt: createdPost.createdAt,
+        isPinned: createdPost.isPinned,
+        author: author ? { 
+          id: author.id, 
+          name: author.name ?? 'Guest', 
+          avatarUrl: author.avatarUrl 
+        } : null,
+        _count: { likes: 0, dislikes: 0, comments: 0 }
+      };
 
       console.log('Post created successfully:', { postId: post.id });
       const created = mapPostToResponse(post);

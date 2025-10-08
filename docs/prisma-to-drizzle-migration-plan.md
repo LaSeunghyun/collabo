@@ -20,7 +20,7 @@ Success is achieved when no Prisma runtime dependency remains (`@prisma/client`,
 
 ## Phase 1 – Tooling Bootstrap
 1. **Introduce Drizzle dependencies**
-   - Add `drizzle-orm`, `drizzle-kit`, and the Postgres driver layer we rely on (`pg` or `@neondatabase/serverless` depending on deployment).
+   - Add `drizzle-orm`, `drizzle-kit`, and the Postgres driver layer we rely on (`pg` or `postgres` depending on deployment).
    - Replace Prisma-specific adapters: swap `@next-auth/prisma-adapter` for `@auth/drizzle-adapter` or a custom Drizzle adapter once schema parity exists.
 2. **Scaffold configuration**
    - Create `drizzle.config.ts` with connection options mirroring `lib/prisma.ts` normalization (Data Proxy, pgbouncer params).

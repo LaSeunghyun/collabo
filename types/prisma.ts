@@ -1,115 +1,150 @@
-// Shared Prisma client types and enums
-import {
-  UserRole,
-  ProjectStatus,
-  FundingStatus,
-  PartnerType,
-  OrderStatus,
-  PostType,
-  NotificationType,
-  ModerationTargetType,
-  ModerationStatus,
-  PaymentProvider,
-  SettlementPayoutStatus,
-  SettlementStakeholderType,
-  PartnerMatchStatus,
-  ProductType,
-  MilestoneStatus,
-  CommunityCategory
-} from '@prisma/client';
+// Shared types and enums (Drizzle-based)
+// Auth related types and enums
+export enum UserRole {
+  CREATOR = 'CREATOR',
+  PARTICIPANT = 'PARTICIPANT', 
+  PARTNER = 'PARTNER',
+  ADMIN = 'ADMIN'
+}
 
-import type {
-  ProjectStatus as ProjectStatusType,
-  FundingStatus as FundingStatusType,
-  PartnerType as PartnerTypeType,
-  OrderStatus as OrderStatusType,
-  PostType as PostTypeType,
-  NotificationType as NotificationTypeType
-} from '@prisma/client';
+export type UserRoleType = keyof typeof UserRole;
 
-export type {
-  // Announcement, // ?�키마에 ?�음
-  // AnnouncementRead, // ?�키마에 ?�음
-  User,
-  Project,
-  ProjectCollaborator,
-  Funding,
-  Settlement,
-  Partner,
-  PartnerMatch,
-  Product,
-  Order,
-  Post,
-  Comment,
-  PostLike,
-  Notification,
-  Wallet,
-  AuditLog,
-  Permission,
-  UserPermission,
-  PaymentTransaction,
-  SettlementPayout,
-  ProjectMilestone,
-  ProjectRewardTier,
-  ProjectRequirement,
-  OrderItem,
-  UserFollow,
-  CommentReaction,
-  ModerationReport,
-  UserBlock
-} from '@prisma/client';
+export const USER_ROLE_VALUES = Object.values(UserRole);
+export const USER_ROLE_LABELS = {
+  [UserRole.CREATOR]: '크리에이터',
+  [UserRole.PARTICIPANT]: '참여자',
+  [UserRole.PARTNER]: '파트너',
+  [UserRole.ADMIN]: '관리자'
+} as const;
 
-export type {
-  UserRole as UserRoleType,
-  ProjectStatus as ProjectStatusType,
-  FundingStatus as FundingStatusType,
-  PaymentProvider as PaymentProviderType,
-  SettlementPayoutStatus as SettlementPayoutStatusType,
-  SettlementStakeholderType as SettlementStakeholderTypeType,
-  PartnerType as PartnerTypeType,
-  PartnerMatchStatus as PartnerMatchStatusType,
-  ProductType as ProductTypeType,
-  OrderStatus as OrderStatusType,
-  PostType as PostTypeType,
-  NotificationType as NotificationTypeType,
-  MilestoneStatus as MilestoneStatusType,
-  ModerationTargetType as ModerationTargetTypeType,
-  ModerationStatus as ModerationStatusType,
-  CommunityCategory as CommunityCategoryType
-} from '@prisma/client';
+// Project related enums
+export enum ProjectStatus {
+  DRAFT = 'DRAFT',
+  REVIEWING = 'REVIEWING',
+  LIVE = 'LIVE',
+  SUCCESSFUL = 'SUCCESSFUL',
+  FAILED = 'FAILED',
+  EXECUTING = 'EXECUTING',
+  COMPLETED = 'COMPLETED'
+}
 
-// Prisma client and types are only available on the server
-// Use lib/prisma.ts for server-side Prisma client access
+export enum FundingStatus {
+  PENDING = 'PENDING',
+  SUCCEEDED = 'SUCCEEDED',
+  FAILED = 'FAILED',
+  REFUNDED = 'REFUNDED',
+  CANCELLED = 'CANCELLED'
+}
 
-// Export enums for client-side usage
-export {
-  UserRole,
-  ProjectStatus,
-  FundingStatus,
-  PaymentProvider,
-  SettlementPayoutStatus,
-  SettlementStakeholderType,
-  PartnerType,
-  PartnerMatchStatus,
-  ProductType,
-  OrderStatus,
-  PostType,
-  NotificationType,
-  MilestoneStatus,
-  ModerationTargetType,
-  ModerationStatus,
-  CommunityCategory
-};
+// Moderation related enums
+export enum ModerationStatus {
+  PENDING = 'PENDING',
+  REVIEWING = 'REVIEWING',
+  ACTION_TAKEN = 'ACTION_TAKEN',
+  DISMISSED = 'DISMISSED'
+}
 
-export type UserRoleValue = (typeof UserRole)[keyof typeof UserRole];
-export type ProjectStatusValue = (typeof ProjectStatus)[keyof typeof ProjectStatus];
-export type PartnerTypeValue = (typeof PartnerType)[keyof typeof PartnerType];
-export type SettlementPayoutStatusValue =
-  (typeof SettlementPayoutStatus)[keyof typeof SettlementPayoutStatus];
-export type ModerationStatusValue =
-  (typeof ModerationStatus)[keyof typeof ModerationStatus];
-export type ModerationTargetTypeValue =
-  (typeof ModerationTargetType)[keyof typeof ModerationTargetType];
+// Other commonly used enums
+export enum NotificationType {
+  FUNDING_SUCCESS = 'FUNDING_SUCCESS',
+  NEW_COMMENT = 'NEW_COMMENT',
+  PROJECT_MILESTONE = 'PROJECT_MILESTONE',
+  PARTNER_REQUEST = 'PARTNER_REQUEST',
+  SETTLEMENT_PAID = 'SETTLEMENT_PAID',
+  SYSTEM = 'SYSTEM'
+}
+
+export enum OrderStatus {
+  PENDING = 'PENDING',
+  PAID = 'PAID',
+  SHIPPED = 'SHIPPED',
+  DELIVERED = 'DELIVERED',
+  REFUNDED = 'REFUNDED',
+  CANCELLED = 'CANCELLED'
+}
+
+export enum PartnerType {
+  STUDIO = 'STUDIO',
+  VENUE = 'VENUE',
+  PRODUCTION = 'PRODUCTION',
+  MERCHANDISE = 'MERCHANDISE',
+  OTHER = 'OTHER'
+}
+
+export enum PartnerMatchStatus {
+  REQUESTED = 'REQUESTED',
+  ACCEPTED = 'ACCEPTED',
+  DECLINED = 'DECLINED',
+  CANCELLED = 'CANCELLED',
+  COMPLETED = 'COMPLETED'
+}
+
+export enum PaymentProvider {
+  STRIPE = 'STRIPE',
+  TOSS = 'TOSS',
+  PAYPAL = 'PAYPAL',
+  MANUAL = 'MANUAL'
+}
+
+export enum PostType {
+  UPDATE = 'UPDATE',
+  DISCUSSION = 'DISCUSSION',
+  AMA = 'AMA'
+}
+
+export enum ProductType {
+  PHYSICAL = 'PHYSICAL',
+  DIGITAL = 'DIGITAL'
+}
+
+export enum SettlementPayoutStatus {
+  PENDING = 'PENDING',
+  IN_PROGRESS = 'IN_PROGRESS',
+  PAID = 'PAID'
+}
+
+export enum SettlementStakeholderType {
+  PLATFORM = 'PLATFORM',
+  CREATOR = 'CREATOR',
+  PARTNER = 'PARTNER',
+  COLLABORATOR = 'COLLABORATOR',
+  OTHER = 'OTHER'
+}
+
+export enum CommunityCategory {
+  GENERAL = 'GENERAL',
+  NOTICE = 'NOTICE',
+  COLLAB = 'COLLAB',
+  SUPPORT = 'SUPPORT',
+  SHOWCASE = 'SHOWCASE'
+}
+
+export enum MilestoneStatus {
+  PLANNED = 'PLANNED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  RELEASED = 'RELEASED'
+}
+
+export enum ModerationTargetType {
+  POST = 'POST',
+  COMMENT = 'COMMENT'
+}
+
+// Type aliases for compatibility
+export type ProjectStatusType = ProjectStatus;
+export type FundingStatusType = FundingStatus;
+export type PartnerTypeType = PartnerType;
+export type OrderStatusType = OrderStatus;
+export type PostTypeType = PostType;
+export type NotificationTypeType = NotificationType;
+export type SettlementPayoutStatusType = SettlementPayoutStatus;
+export type UserRoleValue = UserRole;
+export type ProjectStatusValue = ProjectStatus;
+export type PartnerTypeValue = PartnerType;
+export type SettlementPayoutStatusValue = SettlementPayoutStatus;
+export type ModerationStatusValue = ModerationStatus;
+export type ModerationTargetTypeValue = ModerationTargetType;
 
 // PostVisibility enum was removed, using string type instead
 export const POST_VISIBILITY_VALUES = ['PUBLIC', 'PRIVATE', 'FRIENDS'];
@@ -178,7 +213,6 @@ export type PartnerSummary = {
 };
 
 // Enum 값 배열들
-export const USER_ROLE_VALUES = Object.values(UserRole);
 export const PROJECT_STATUS_VALUES = Object.values(ProjectStatus);
 export const FUNDING_STATUS_VALUES = Object.values(FundingStatus);
 export const PAYMENT_PROVIDER_VALUES = Object.values(PaymentProvider);
@@ -195,16 +229,6 @@ export const MODERATION_TARGET_TYPE_VALUES = Object.values(ModerationTargetType)
 export const MODERATION_STATUS_VALUES = Object.values(ModerationStatus);
 
 // 한국어 라벨 매핑
-export const USER_ROLE_LABELS: Record<UserRoleValue, string> = {
-  [UserRole.CREATOR]: '크리에이터',
-  [UserRole.PARTICIPANT]: '참여자',
-  [UserRole.PARTNER]: '파트너',
-  [UserRole.ADMIN]: '관리자'
-};
-
-// ROLE_LABELS 별칭 (하위 호환성)
-export const ROLE_LABELS = USER_ROLE_LABELS;
-
 export const PROJECT_STATUS_LABELS: Record<ProjectStatusType, string> = {
   [ProjectStatus.DRAFT]: '초안',
   [ProjectStatus.REVIEWING]: '검토중',
@@ -225,9 +249,9 @@ export const FUNDING_STATUS_LABELS: Record<FundingStatusType, string> = {
 
 export const PARTNER_TYPE_LABELS: Record<PartnerTypeType, string> = {
   [PartnerType.STUDIO]: '스튜디오',
-  [PartnerType.VENUE]: '공연장',
-  [PartnerType.PRODUCTION]: '제작 스튜디오',
-  [PartnerType.MERCHANDISE]: '머천다이즈',
+  [PartnerType.VENUE]: '장소',
+  [PartnerType.PRODUCTION]: '제작',
+  [PartnerType.MERCHANDISE]: '상품',
   [PartnerType.OTHER]: '기타'
 };
 
@@ -252,6 +276,8 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationTypeType, string> = {
   [NotificationType.PROJECT_MILESTONE]: '프로젝트 마일스톤',
   [NotificationType.PARTNER_REQUEST]: '파트너 요청',
   [NotificationType.SETTLEMENT_PAID]: '정산 완료',
-  [NotificationType.SYSTEM]: '시스템 알림',
-  // [NotificationType.ANNOUNCEMENT]: '공지 알림' // 스키마에 없음
+  [NotificationType.SYSTEM]: '시스템 알림'
 };
+
+// ROLE_LABELS 별칭 (하위 호환성)
+export const ROLE_LABELS = USER_ROLE_LABELS;

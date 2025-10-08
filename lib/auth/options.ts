@@ -7,7 +7,7 @@ import KakaoProvider from 'next-auth/providers/kakao';
 import { compare } from 'bcryptjs';
 import { eq } from 'drizzle-orm';
 
-import { db } from '@/lib/db/client';
+import { getDb } from '@/lib/db/client';
 import { users } from '@/lib/db/schema';
 
 import { AUTH_V3_ENABLED } from './flags';

@@ -1,0 +1,73 @@
+# Page snapshot
+
+```yaml
+- generic [active]:
+  - alert [ref=e1]
+  - dialog [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - heading "Build Error" [level=1] [ref=e7]
+        - paragraph [ref=e8]: Failed to compile
+        - generic [ref=e9]:
+          - generic "An outdated version detected (latest is 15.5.4), upgrade is highly recommended!" [ref=e11]: Next.js (14.2.33) is outdated
+          - link "(learn more)" [ref=e12] [cursor=pointer]:
+            - /url: https://nextjs.org/docs/messages/version-staleness
+      - generic [ref=e13]:
+        - generic [ref=e14]:
+          - link "./app/api/community/route.ts:3:1" [ref=e15] [cursor=pointer]:
+            - text: ./app/api/community/route.ts:3:1
+            - img
+          - generic [ref=e19]:
+            - generic [ref=e20]: Module not found
+            - generic [ref=e21]: ": Can't resolve '"
+            - generic [ref=e22]: "@prisma/client"
+            - generic [ref=e23]: "'"
+            - generic [ref=e25]: 1 |
+            - generic [ref=e27]: import
+            - generic [ref=e28]: "{"
+            - generic [ref=e29]: NextRequest
+            - generic [ref=e30]: ","
+            - generic [ref=e32]: NextResponse
+            - generic [ref=e33]: "}"
+            - generic [ref=e34]: from
+            - generic [ref=e36]: "'next/server'"
+            - generic [ref=e37]: ;
+            - generic [ref=e39]: 2 |
+            - generic [ref=e40]: ">"
+            - generic [ref=e41]: 3 |
+            - generic [ref=e43]: import
+            - generic [ref=e44]: "{"
+            - generic [ref=e45]: CommunityCategory
+            - generic [ref=e46]: ","
+            - generic [ref=e48]: ModerationTargetType
+            - generic [ref=e49]: ","
+            - generic [ref=e51]: PostType
+            - generic [ref=e52]: "}"
+            - generic [ref=e53]: from
+            - generic [ref=e55]: "'@prisma/client'"
+            - generic [ref=e56]: ;
+            - generic [ref=e58]: "|"
+            - generic [ref=e60]: ^
+            - generic [ref=e62]: 4 |
+            - generic [ref=e64]: import
+            - generic [ref=e65]: "type {"
+            - generic [ref=e66]: Prisma
+            - generic [ref=e67]: "}"
+            - generic [ref=e68]: from
+            - generic [ref=e70]: "'@prisma/client'"
+            - generic [ref=e71]: ;
+            - generic [ref=e73]: 5 |
+            - generic [ref=e75]: 6 |
+            - generic [ref=e77]: import
+            - generic [ref=e78]: "{ handleAuthorizationError"
+            - generic [ref=e79]: ","
+            - generic [ref=e80]: "requireApiUser }"
+            - generic [ref=e81]: from
+            - generic [ref=e83]: "'@/lib/auth/guards'"
+            - generic [ref=e84]: ;
+            - link "https://nextjs.org/docs/messages/module-not-found" [ref=e86] [cursor=pointer]:
+              - /url: https://nextjs.org/docs/messages/module-not-found
+        - contentinfo [ref=e87]:
+          - paragraph [ref=e88]:
+            - generic [ref=e89]: This error occurred during the build process and can only be dismissed by fixing the error.
+```

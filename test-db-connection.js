@@ -1,35 +1,26 @@
-const { PrismaClient } = require('@prisma/client');
+// 데이터베이스 연결 및 사용자 확인 테스트
+const { db } = require('./lib/db/client');
+const { users } = require('./lib/db/schema');
+const { eq } = require('drizzle-orm');
 
-async function testConnection() {
-  const prisma = new PrismaClient();
-  
+const testDatabaseConnection = async () => {
   try {
-    await prisma.$connect();
-    console.log('✅ Database connected successfully');
+    console.log('데이터베이스 연결 테스트 시작...');
     
-    // 테이블 목록 확인
-    const tables = await prisma.$queryRaw`
-      SELECT table_name 
-      FROM information_schema.tables 
-      WHERE table_schema = 'public'
-      ORDER BY table_name;
-    `;
-    console.log('📋 Available tables:', tables);
+    // 사용자 목록 조회
+    const userList = await db.select().from(users).limit(5);
+    console.log('✅ 데이터베이스 연결 성공!');
+    console.log('사용자 목록:', userList);
     
-    // Post 테이블 구조 확인
-    const postColumns = await prisma.$queryRaw`
-      SELECT column_name, data_type, is_nullable
-      FROM information_schema.columns 
-      WHERE table_name = 'Post' AND table_schema = 'public'
-      ORDER BY ordinal_position;
-    `;
-    console.log('📝 Post table columns:', postColumns);
+    if (userList.length > 0) {
+      console.log('✅ 사용자가 존재합니다. 게시글 작성 테스트 가능');
+    } else {
+      console.log('⚠️ 사용자가 없습니다. 먼저 사용자를 생성해야 합니다.');
+    }
     
   } catch (error) {
-    console.error('❌ Connection failed:', error.message);
-  } finally {
-    await prisma.$disconnect();
+    console.error('❌ 데이터베이스 연결 실패:', error);
   }
-}
+};
 
-testConnection();
+testDatabaseConnection();

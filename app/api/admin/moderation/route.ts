@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireApiUser } from '@/lib/auth/guards';
 import { UserRole } from '@/types/prisma';
 import { getReportedPostDetails, updateModerationStatus } from '@/lib/server/moderation';
-import { ModerationStatus } from '@prisma/client';
+import { moderationStatusEnum } from '@/lib/db/schema';
 
 export async function GET(request: NextRequest) {
   try {
@@ -39,7 +39,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // 유효한 상태인지 확인
-    if (!Object.values(ModerationStatus).includes(status)) {
+    if (!Object.values(moderationStatusEnum.enumValues).includes(status)) {
       return NextResponse.json(
         { message: 'Invalid status' },
         { status: 400 }

@@ -1,14 +1,29 @@
 ﻿import { revalidatePath } from 'next/cache';
-import { Prisma, type Prisma as PrismaTypes } from '@prisma/client';
-import {
-  UserRole,
-  PartnerSummary,
-  type PartnerTypeType
-} from '@/types/prisma';
+import { eq, and, or, like, desc, count, inArray, not } from 'drizzle-orm';
 import { ZodError } from 'zod';
 
 import type { SessionUser } from '@/lib/auth/session';
-import { prisma } from '@/lib/prisma';
+import { getDb } from '@/lib/db/client';
+import { partners, users, partnerMatches } from '@/lib/db/schema';
+
+export interface PartnerSummary {
+  id: string;
+  name: string;
+  description: string | null;
+  type: string;
+  contactInfo: string;
+  location: string | null;
+  portfolioUrl: string | null;
+  verified: boolean;
+  createdAt: string;
+  updatedAt: string;
+  user: {
+    id: string;
+    name: string | null;
+    avatarUrl: string | null;
+  };
+  matchCount: number;
+}
 import {
   createPartnerSchema,
   updatePartnerSchema,
@@ -40,7 +55,7 @@ const sanitizeTags = (value?: string[] | null) => {
 
 const sanitizeAvailability = (
   value: unknown
-): PrismaTypes.InputJsonValue | null => {
+): any | null => {
   if (!value || typeof value !== 'object') {
     return null;
   }
@@ -74,20 +89,20 @@ const sanitizeAvailability = (
           return null;
         }
 
-        const payload: PrismaTypes.JsonObject = note
+        const payload: any = note
           ? { day, start, end, note }
           : { day, start, end };
 
         return payload;
       })
-      .filter((slot): slot is PrismaTypes.JsonObject => Boolean(slot))
+      .filter((slot): slot is any => Boolean(slot))
     : [];
 
   if (!timezone && slots.length === 0) {
     return null;
   }
 
-  const payload: PrismaTypes.JsonObject = {
+  const payload: any = {
     ...(timezone ? { timezone } : {}),
     ...(slots.length ? { slots } : {})
   };
@@ -95,12 +110,27 @@ const sanitizeAvailability = (
   return payload;
 };
 
-type PartnerWithRelations = PrismaTypes.PartnerGetPayload<{
-  include: {
-    user: { select: { id: true; name: true; avatarUrl: true; role: true } };
-    _count: { select: { matches: true } };
+type PartnerWithRelations = {
+  id: string;
+  name: string;
+  type: string;
+  verified: boolean;
+  description: string | null;
+  location: string | null;
+  portfolioUrl: string | null;
+  contactInfo: string;
+  user: {
+    id: string;
+    name: string | null;
+    avatarUrl: string | null;
+    role: string;
   };
-}>;
+  _count: {
+    matches: number;
+  };
+  createdAt: string;
+  updatedAt: string;
+};
 
 // PartnerSummary 타입은 @/types/prisma에서 import합니다
 
@@ -109,7 +139,7 @@ const toPartnerSummary = (partner: PartnerWithRelations): PartnerSummary => {
   //   ? partner.services.filter((item: unknown): item is string => typeof item === 'string')
   //   : [];
 
-  // const availability = (partner.availability ?? null) as Prisma.JsonValue | null;
+  // const availability = (partner.availability ?? null) as any | null;
 
   return {
     id: partner.id,
@@ -197,7 +227,7 @@ export class PartnerAccessDeniedError extends Error {
 }
 
 export interface ListPartnersParams {
-  type?: PartnerTypeType;
+  type?: string;
   search?: string;
   cursor?: string;
   limit?: number;
@@ -222,49 +252,98 @@ const resolvePageSize = (limit?: number) => {
 export const listPartners = async (params: ListPartnersParams = {}): Promise<ListPartnersResult> => {
   const { type, search, cursor, excludeOwnerId } = params;
   const take = resolvePageSize(params.limit);
-  const where: PrismaTypes.PartnerWhereInput = {};
+
+  // Apply filters
+  const conditions = [];
 
   if (type) {
-    where.type = type;
+    conditions.push(eq(partners.type, type as any));
   }
 
   if (excludeOwnerId) {
-    where.userId = { not: excludeOwnerId };
+    conditions.push(not(eq(partners.userId, excludeOwnerId)));
   }
 
   if (params.includeUnverified) {
     if (typeof params.verified === 'boolean') {
-      where.verified = params.verified;
+      conditions.push(eq(partners.verified, params.verified));
     }
   } else {
-    where.verified = typeof params.verified === 'boolean' ? params.verified : true;
+    const verifiedValue = typeof params.verified === 'boolean' ? params.verified : true;
+    conditions.push(eq(partners.verified, verifiedValue));
   }
 
   if (search) {
     const term = search.trim();
     if (term) {
-      where.OR = [
-        { name: { contains: term, mode: 'insensitive' } },
-        { description: { contains: term, mode: 'insensitive' } },
-        { contactInfo: { contains: term, mode: 'insensitive' } },
-        { location: { contains: term, mode: 'insensitive' } }
-      ];
+      conditions.push(or(
+        like(partners.name, `%${term}%`),
+        like(partners.description, `%${term}%`),
+        like(partners.contactInfo, `%${term}%`),
+        like(partners.location, `%${term}%`)
+      ));
     }
   }
 
-  const partners = await prisma.partner.findMany({
-    where,
-    include: {
-      user: { select: { id: true, name: true, avatarUrl: true, role: true } },
-      _count: { select: { matches: true } }
-    },
-    orderBy: { createdAt: 'desc' },
-    take: take + 1,
-    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {})
-  });
+  if (cursor) {
+    conditions.push(eq(partners.id, cursor));
+  }
 
-  const hasNext = partners.length > take;
-  const pageItems = hasNext ? partners.slice(0, -1) : partners;
+  const db = await getDb();
+  const query = db
+    .select({
+      id: partners.id,
+      name: partners.name,
+      type: partners.type,
+      verified: partners.verified,
+      description: partners.description,
+      location: partners.location,
+      portfolioUrl: partners.portfolioUrl,
+      contactInfo: partners.contactInfo,
+      createdAt: partners.createdAt,
+      updatedAt: partners.updatedAt,
+      user: {
+        id: users.id,
+        name: users.name,
+        avatarUrl: users.avatarUrl,
+        role: users.role
+      }
+    })
+    .from(partners)
+    .innerJoin(users, eq(partners.userId, users.id))
+    .orderBy(desc(partners.createdAt))
+    .limit(take + 1);
+
+  const finalQuery = query.where(conditions.length > 0 ? and(...conditions) : undefined as any);
+
+  const partnersData = await finalQuery;
+
+  // Get match counts for each partner
+  const partnerIds = partnersData.map(p => p.id);
+  const matchCounts = partnerIds.length > 0 
+    ? await db
+        .select({
+          partnerId: partnerMatches.partnerId,
+          count: count()
+        })
+        .from(partnerMatches)
+        .where(inArray(partnerMatches.partnerId, partnerIds))
+        .groupBy(partnerMatches.partnerId)
+    : [];
+
+  const matchCountMap = new Map(
+    matchCounts.map(mc => [mc.partnerId, mc.count])
+  );
+
+  const partnersWithCounts = partnersData.map(partner => ({
+    ...partner,
+    _count: {
+      matches: matchCountMap.get(partner.id) || 0
+    }
+  }));
+
+  const hasNext = partnersWithCounts.length > take;
+  const pageItems = hasNext ? partnersWithCounts.slice(0, -1) : partnersWithCounts;
 
   return {
     items: pageItems.map(toPartnerSummary),
@@ -283,43 +362,105 @@ export const getPartnersAwaitingApproval = async (limit = 5) => {
 };
 
 export const getPartnerById = async (id: string): Promise<PartnerSummary | null> => {
-  const partner = await prisma.partner.findUnique({
-    where: { id },
-    include: {
-      user: { select: { id: true, name: true, avatarUrl: true, role: true } },
-      _count: { select: { matches: true } }
-    }
-  });
+  const partnerData = await db
+    .select({
+      id: partners.id,
+      name: partners.name,
+      type: partners.type,
+      verified: partners.verified,
+      description: partners.description,
+      location: partners.location,
+      portfolioUrl: partners.portfolioUrl,
+      contactInfo: partners.contactInfo,
+      createdAt: partners.createdAt,
+      updatedAt: partners.updatedAt,
+      user: {
+        id: users.id,
+        name: users.name,
+        avatarUrl: users.avatarUrl,
+        role: users.role
+      }
+    })
+    .from(partners)
+    .innerJoin(users, eq(partners.userId, users.id))
+    .where(eq(partners.id, id))
+    .limit(1);
 
-  if (!partner) {
+  if (partnerData.length === 0) {
     return null;
   }
 
-  return toPartnerSummary(partner);
+  const partner = partnerData[0];
+
+  // Get match count
+  const matchCountResult = await db
+    .select({ count: count() })
+    .from(partnerMatches)
+    .where(eq(partnerMatches.partnerId, id));
+
+  const partnerWithCount = {
+    ...partner,
+    _count: {
+      matches: matchCountResult[0]?.count || 0
+    }
+  };
+
+  return toPartnerSummary(partnerWithCount);
 };
 
 export const getPartnerProfileForUser = async (
   userId: string
 ): Promise<PartnerSummary | null> => {
-  const partner = await prisma.partner.findUnique({
-    where: { userId },
-    include: {
-      user: { select: { id: true, name: true, avatarUrl: true, role: true } },
-      _count: { select: { matches: true } }
-    }
-  });
+  const partnerData = await db
+    .select({
+      id: partners.id,
+      name: partners.name,
+      type: partners.type,
+      verified: partners.verified,
+      description: partners.description,
+      location: partners.location,
+      portfolioUrl: partners.portfolioUrl,
+      contactInfo: partners.contactInfo,
+      createdAt: partners.createdAt,
+      updatedAt: partners.updatedAt,
+      user: {
+        id: users.id,
+        name: users.name,
+        avatarUrl: users.avatarUrl,
+        role: users.role
+      }
+    })
+    .from(partners)
+    .innerJoin(users, eq(partners.userId, users.id))
+    .where(eq(partners.userId, userId))
+    .limit(1);
 
-  if (!partner) {
+  if (partnerData.length === 0) {
     return null;
   }
 
-  return toPartnerSummary(partner);
+  const partner = partnerData[0];
+
+  // Get match count
+  const matchCountResult = await db
+    .select({ count: count() })
+    .from(partnerMatches)
+    .where(eq(partnerMatches.partnerId, partner.id));
+
+  const partnerWithCount = {
+    ...partner,
+    _count: {
+      matches: matchCountResult[0]?.count || 0
+    }
+  };
+
+  return toPartnerSummary(partnerWithCount);
 };
 
 const buildCreateData = (
   input: CreatePartnerInput,
   ownerId: string
-): PrismaTypes.PartnerCreateInput => {
+): any => {
   const description = sanitizeText(input.description);
   const services = sanitizeTags(input.services ?? null);
   const pricingModel = sanitizeText(input.pricingModel);
@@ -328,7 +469,8 @@ const buildCreateData = (
   const portfolioUrl = sanitizeText(input.portfolioUrl);
 
   return {
-    user: { connect: { id: ownerId } },
+    id: crypto.randomUUID(),
+    userId: ownerId,
     type: input.type,
     name: input.name.trim(),
     contactInfo: input.contactInfo.trim(),
@@ -338,15 +480,17 @@ const buildCreateData = (
     ...(location ? { location } : {}),
     ...(availability ? { availability } : {}),
     ...(portfolioUrl ? { portfolioUrl } : {}),
-    verified: input.verified ?? false
+    verified: input.verified ?? false,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   };
 };
 
 const buildUpdateData = (
   input: UpdatePartnerInput,
   sessionUser: SessionUser
-): PrismaTypes.PartnerUpdateInput => {
-  const data: PrismaTypes.PartnerUpdateInput = {};
+): any => {
+  const data: any = {};
 
   if (input.name !== undefined) {
     data.name = input.name.trim();
@@ -382,7 +526,7 @@ const buildUpdateData = (
 
   if (input.availability !== undefined) {
     const availability = sanitizeAvailability(input.availability);
-    data.availability = availability ?? Prisma.JsonNull;
+    data.availability = availability ?? null;
   }
 
   if (input.portfolioUrl !== undefined) {
@@ -395,7 +539,7 @@ const buildUpdateData = (
   }
 
   if (input.verified !== undefined) {
-    if (sessionUser.role !== UserRole.ADMIN) {
+    if (sessionUser.role !== 'ADMIN') {
       throw new PartnerAccessDeniedError();
     }
 
@@ -407,31 +551,42 @@ const buildUpdateData = (
 
 export const createPartnerProfile = async (payload: unknown, sessionUser: SessionUser) => {
   const input = parseCreateInput(payload);
-  const ownerId = sessionUser.role === UserRole.ADMIN && input.ownerId ? input.ownerId : sessionUser.id;
+  const ownerId = sessionUser.role === 'ADMIN' && input.ownerId ? input.ownerId : sessionUser.id;
 
-  const owner = await prisma.user.findUnique({
-    where: { id: ownerId },
-    select: { id: true, role: true }
-  });
+  const ownerData = await db
+    .select({ id: users.id, role: users.role })
+    .from(users)
+    .where(eq(users.id, ownerId))
+    .limit(1);
 
-  if (!owner) {
+  if (ownerData.length === 0) {
     throw new PartnerOwnerNotFoundError();
   }
 
-  const existingProfile = await prisma.partner.findUnique({ where: { userId: ownerId } });
+  const owner = ownerData[0];
 
-  if (existingProfile) {
+  const existingProfileData = await db
+    .select({ id: partners.id })
+    .from(partners)
+    .where(eq(partners.userId, ownerId))
+    .limit(1);
+
+  if (existingProfileData.length > 0) {
     throw new PartnerProfileExistsError();
   }
 
-  const partner = await prisma.$transaction(async (tx: PrismaTypes.TransactionClient) => {
-    const created = await tx.partner.create({ data: buildCreateData(input, ownerId) });
+  const db = await getDb();
+  const partner = await db.transaction(async (tx) => {
+    const createData = buildCreateData(input, ownerId);
+    const created = await tx.insert(partners).values(createData).returning();
 
-    if (owner.role !== UserRole.ADMIN && owner.role !== UserRole.PARTNER) {
-      await tx.user.update({ where: { id: ownerId }, data: { role: UserRole.PARTNER } });
+    if (owner.role !== 'ADMIN' && owner.role !== 'PARTNER') {
+      await tx.update(users)
+        .set({ role: 'PARTNER' })
+        .where(eq(users.id, ownerId));
     }
 
-    return created;
+    return created[0];
   });
 
   revalidatePartners();
@@ -450,31 +605,53 @@ export const updatePartnerProfile = async (
   sessionUser: SessionUser
 ): Promise<PartnerSummary> => {
   const input = parseUpdateInput(payload);
-  const partner = await prisma.partner.findUnique({
-    where: { id },
-    include: {
-      user: { select: { id: true, name: true, avatarUrl: true, role: true } },
-      _count: { select: { matches: true } }
-    }
-  });
+  
+  const partnerData = await db
+    .select({
+      id: partners.id,
+      userId: partners.userId,
+      user: {
+        id: users.id,
+        name: users.name,
+        avatarUrl: users.avatarUrl,
+        role: users.role
+      }
+    })
+    .from(partners)
+    .innerJoin(users, eq(partners.userId, users.id))
+    .where(eq(partners.id, id))
+    .limit(1);
 
-  if (!partner) {
+  if (partnerData.length === 0) {
     throw new PartnerNotFoundError();
   }
 
-  if (sessionUser.role !== UserRole.ADMIN && partner.user.id !== sessionUser.id) {
+  const partner = partnerData[0];
+
+  if (sessionUser.role !== 'ADMIN' && partner.user.id !== sessionUser.id) {
     throw new PartnerAccessDeniedError();
   }
 
   const data = buildUpdateData(input, sessionUser);
 
-  const updated = await prisma.partner.update({
-    where: { id },
-    data
-  });
+  if (Object.keys(data).length === 0) {
+    const result = await getPartnerById(id);
+    if (!result) {
+      throw new PartnerNotFoundError();
+    }
+    return result;
+  }
+
+  const db = await getDb();
+  await db.update(partners)
+    .set({
+      ...data,
+      updatedAt: new Date().toISOString()
+    })
+    .where(eq(partners.id, id));
 
   revalidatePartners();
-  const refreshed = await getPartnerById(updated.id);
+  const refreshed = await getPartnerById(id);
 
   if (!refreshed) {
     throw new PartnerNotFoundError();
@@ -482,5 +659,6 @@ export const updatePartnerProfile = async (
 
   return refreshed;
 };
+
 
 

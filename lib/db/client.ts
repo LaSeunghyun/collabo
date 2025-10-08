@@ -1,24 +1,30 @@
-import { neon, neonConfig } from '@neondatabase/serverless';
-import { drizzle as drizzleNeon, type NeonHttpDatabase } from 'drizzle-orm/neon-http';
-import { drizzle as drizzlePg, type NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { drizzle } from 'drizzle-orm/postgres-js';
 import { eq } from 'drizzle-orm';
-import { Pool, type PoolConfig } from 'pg';
 
 import { normalizeServerlessConnectionString } from '@/lib/db/connection-string';
 import * as schema from '@/lib/db/schema';
 
-neonConfig.fetchConnectionCache = true;
+// 서버 사이드에서만 postgres 모듈을 동적으로 import
+const getPostgres = async () => {
+  if (typeof window !== 'undefined') {
+    throw new Error('Database client can only be used on the server side');
+  }
+  const postgres = (await import('postgres')).default;
+  return postgres;
+};
 
-export type DrizzleNodeClient = NodePgDatabase<typeof schema>;
-export type DrizzleHttpClient = NeonHttpDatabase<typeof schema>;
-export type DatabaseClient = DrizzleNodeClient | DrizzleHttpClient;
+// 스키마가 제대로 로드되었는지 확인
+if (!schema || typeof schema !== 'object') {
+  throw new Error('Failed to load Drizzle schema');
+}
 
-type InstanceKind = 'node' | 'serverless' | 'disabled';
+export type DatabaseClient = ReturnType<typeof drizzle>;
+
+type InstanceKind = 'serverless' | 'disabled';
 
 interface DrizzleInstance {
   db: DatabaseClient;
   kind: InstanceKind;
-  pool?: Pool;
   reason?: string;
 }
 
@@ -28,60 +34,41 @@ const globalForDrizzle = globalThis as unknown as {
 
 const loggerEnabled = () => process.env.NODE_ENV === 'development';
 
-const createPgPool = (connectionString: string) => {
-  const poolConfig: PoolConfig = {
-    connectionString,
-    max: Number(process.env.DATABASE_POOL_MAX ?? '5'),
-    idleTimeoutMillis: Number(process.env.DATABASE_POOL_IDLE_TIMEOUT ?? '0'),
-  };
+// Node.js 관련 코드 제거됨 - 서버리스 환경만 지원
 
+const createServerlessInstance = async (connectionString: string): Promise<DrizzleInstance> => {
   try {
-    const url = new URL(connectionString);
-    const isLocalhost = ['localhost', '127.0.0.1'].includes(url.hostname);
+    const postgres = await getPostgres();
+    const client = postgres(connectionString, {
+      max: 1,
+      idle_timeout: 20,
+      connect_timeout: 10,
+    });
+    const db = drizzle(client, {
+      schema,
+      logger: loggerEnabled(),
+    });
 
-    if (!isLocalhost) {
-      poolConfig.ssl = {
-        rejectUnauthorized: false,
-      };
-    }
+    return {
+      db,
+      kind: 'serverless',
+    };
   } catch (error) {
-    console.warn('[db] Failed to parse connection string for SSL configuration.', error);
+    const reason = error instanceof Error ? error.message : String(error);
+    console.error('Failed to create serverless instance:', reason);
+    
+    // Vercel 환경에서 연결 실패 시 더 자세한 로깅
+    if (process.env.VERCEL) {
+      console.error('Vercel environment detected. Connection string format:', {
+        hasUrl: !!connectionString,
+        urlLength: connectionString?.length,
+        startsWithPostgres: connectionString?.startsWith('postgresql://'),
+        containsPooler: connectionString?.includes('pooler'),
+      });
+    }
+    
+    return createDisabledInstance(`Serverless instance creation failed: ${reason}`);
   }
-
-  const pool = new Pool(poolConfig);
-
-  pool.on('error', (error) => {
-    console.error('[db] Unexpected error on idle client', error);
-  });
-
-  return pool;
-};
-
-const createNodeInstance = (connectionString: string): DrizzleInstance => {
-  const pool = createPgPool(connectionString);
-  const db = drizzlePg(pool, {
-    schema,
-    logger: loggerEnabled(),
-  });
-
-  return {
-    db,
-    kind: 'node',
-    pool,
-  };
-};
-
-const createServerlessInstance = (connectionString: string): DrizzleInstance => {
-  const client = neon(connectionString);
-  const db = drizzleNeon(client, {
-    schema,
-    logger: loggerEnabled(),
-  });
-
-  return {
-    db,
-    kind: 'serverless',
-  };
 };
 
 const createDisabledInstance = (reason: string): DrizzleInstance => {
@@ -90,17 +77,25 @@ const createDisabledInstance = (reason: string): DrizzleInstance => {
 
   console.warn(message);
 
+  // 더미 객체 생성 (실제 postgres 연결 없이)
+  const dummyDb = {} as DatabaseClient;
+
   const proxy = new Proxy(
-    {},
+    dummyDb,
     {
-      get(_target, prop) {
+      get(target, prop) {
         if (prop === Symbol.toStringTag) {
           return 'DrizzleClientStub';
         }
 
-        return () => {
-          throw new Error(message);
-        };
+        // Drizzle의 내부 메서드들은 더미 객체에서 처리
+        if (typeof prop === 'string' && ['select', 'insert', 'update', 'delete', 'from'].includes(prop)) {
+          return () => {
+            throw new Error(message);
+          };
+        }
+
+        return target[prop as keyof typeof target];
       },
     },
   ) as DatabaseClient;
@@ -112,32 +107,16 @@ const createDisabledInstance = (reason: string): DrizzleInstance => {
   };
 };
 
-const installLifecycleHooks = (instance: DrizzleInstance) => {
-  if (instance.kind !== 'node' || !instance.pool) {
-    return;
-  }
+// Node.js 관련 코드 제거됨 - 서버리스 환경만 지원
 
-  if (typeof window !== 'undefined') {
-    return;
-  }
-
-  if (typeof process === 'undefined' || typeof process.on !== 'function') {
-    return;
-  }
-
-  process.on('beforeExit', async () => {
-    try {
-      await instance.pool?.end();
-    } catch (error) {
-      console.warn('[db] Failed to gracefully close the Postgres pool.', error);
-    }
-  });
-};
-
-const instantiateDrizzle = (): DrizzleInstance => {
+const instantiateDrizzle = async (): Promise<DrizzleInstance> => {
   const databaseUrl = process.env.DATABASE_URL;
 
   if (!databaseUrl) {
+    // 빌드 시에는 데이터베이스 연결 없이도 스키마만으로 작동할 수 있도록
+    if (process.env.NODE_ENV === 'production' && process.env.VERCEL) {
+      return createDisabledInstance('DATABASE_URL is not set in production environment.');
+    }
     throw new Error('DATABASE_URL is not set.');
   }
 
@@ -147,22 +126,16 @@ const instantiateDrizzle = (): DrizzleInstance => {
     throw new Error('Prisma Data Proxy URLs are not supported by Drizzle.');
   }
 
-  const preferHttpDriver =
-    process.env.DRIZZLE_DRIVER === 'http' || process.env.NEXT_RUNTIME === 'edge';
-
-  const instance = preferHttpDriver
-    ? createServerlessInstance(normalizedUrl)
-    : createNodeInstance(normalizedUrl);
-
-  installLifecycleHooks(instance);
+  // 서버리스 환경만 지원
+  const instance = await createServerlessInstance(normalizedUrl);
 
   return instance;
 };
 
-const getDrizzleInstance = (): DrizzleInstance => {
+const getDrizzleInstance = async (): Promise<DrizzleInstance> => {
   if (!globalForDrizzle.drizzle) {
     try {
-      globalForDrizzle.drizzle = instantiateDrizzle();
+      globalForDrizzle.drizzle = await instantiateDrizzle();
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
       globalForDrizzle.drizzle = createDisabledInstance(reason);
@@ -172,18 +145,23 @@ const getDrizzleInstance = (): DrizzleInstance => {
   return globalForDrizzle.drizzle;
 };
 
-export const getDbClient = (): DatabaseClient => getDrizzleInstance().db;
+export const getDbClient = async (): Promise<DatabaseClient> => {
+  const instance = await getDrizzleInstance();
+  return instance.db;
+};
 
-export const db = getDbClient();
+// topLevelAwait 제거 - db export 제거
+// 모든 곳에서 getDbClient() 사용
+export const getDb = () => getDbClient();
 
-export const isDrizzleAvailable = () => getDrizzleInstance().kind !== 'disabled';
+export const isDrizzleAvailable = async () => {
+  const instance = await getDrizzleInstance();
+  return instance.kind !== 'disabled';
+};
 
 export const closeDb = async () => {
-  const instance = getDrizzleInstance();
-
-  if (instance.kind === 'node' && instance.pool) {
-    await instance.pool.end();
-  }
+  // 서버리스 환경에서는 연결 정리가 필요하지 않음
+  return;
 };
 
 export { schema, eq };

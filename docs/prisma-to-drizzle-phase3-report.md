@@ -8,7 +8,7 @@
 ## 세부 작업
 1. **Drizzle 클라이언트 계층 도입**
    - `normalizeServerlessConnectionString` 유틸을 Prisma와 공유해 서버리스 환경에서도 pgbouncer 파라미터가 자동 적용되도록 했습니다.
-   - Node 런타임 기본값(`pg` 풀)과 `DRIZZLE_DRIVER=http`/`NEXT_RUNTIME=edge` 조건의 Neon HTTP 드라이버를 지원하며, 개발 모드에서 SQL 로깅과 커넥션 종료 훅을 제공합니다.
+   - Supabase PostgreSQL 연결을 위한 postgres-js 기반 클라이언트를 지원하며, 개발 모드에서 SQL 로깅과 커넥션 종료 훅을 제공합니다.
    - 데이터베이스 미구성 환경에서도 친절한 오류 메시지를 던지는 Disabled 스텁을 추가해 테스트 시나리오에서의 예외 처리를 단순화했습니다.
 2. **초기 런타임 마이그레이션**
    - `app/api/health`, `app/api/test-db` 라우트를 Drizzle `db.execute` 기반으로 재작성하여 배포 환경의 커넥션 점검이 Prisma 독립적으로 수행됩니다.

@@ -4,7 +4,7 @@ import { SignJWT, jwtVerify } from 'jose';
 
 import { eq } from 'drizzle-orm';
 
-import { db } from '@/lib/db/client';
+import { getDb } from '@/lib/db/client';
 import { tokenBlacklist } from '@/lib/db/schema';
 import type { UserRoleType } from '@/types/prisma';
 

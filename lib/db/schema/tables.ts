@@ -43,7 +43,7 @@ export const users = pgTable(
     timezone: text('timezone'),
     bio: text('bio'),
     socialLinks: jsonb('socialLinks'),
-    createdAt: timestamp('createdAt', { mode: 'string' }).notNull().defaultNow(),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
     updatedAt: timestamp('updatedAt', { mode: 'string' }).notNull(),
   },
   (table) => ({
@@ -71,7 +71,7 @@ export const projects = pgTable(
     ownerId: text('ownerId')
       .notNull()
       .references(() => users.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
-    createdAt: timestamp('createdAt', { mode: 'string' }).notNull().defaultNow(),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
     updatedAt: timestamp('updatedAt', { mode: 'string' }).notNull(),
   },
 );
@@ -91,7 +91,7 @@ export const projectMilestones = pgTable(
     order: integer('order').notNull().default(0),
     completedAt: timestamp('completedAt', { mode: 'string' }),
     releasedAt: timestamp('releasedAt', { mode: 'string' }),
-    createdAt: timestamp('createdAt', { mode: 'string' }).notNull().defaultNow(),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
     updatedAt: timestamp('updatedAt', { mode: 'string' }).notNull(),
   },
 );
@@ -108,10 +108,10 @@ export const projectRewardTiers = pgTable(
     minimumAmount: integer('minimumAmount').notNull(),
     limit: integer('limit'),
     claimed: integer('claimed').notNull().default(0),
-    includes: text('includes').array().notNull().default(sql`ARRAY[]::text[]`),
+    includes: text('includes').array().notNull().default(['RAY']),
     estimatedDelivery: timestamp('estimatedDelivery', { mode: 'string' }),
     metadata: jsonb('metadata'),
-    createdAt: timestamp('createdAt', { mode: 'string' }).notNull().defaultNow(),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
     updatedAt: timestamp('updatedAt', { mode: 'string' }).notNull(),
   },
 );
@@ -127,11 +127,11 @@ export const projectRequirements = pgTable(
     minBudget: integer('minBudget'),
     maxBudget: integer('maxBudget'),
     location: text('location'),
-    services: text('services').array().notNull().default(sql`ARRAY[]::text[]`),
+    services: text('services').array().notNull().default(['RAY']),
     startDate: timestamp('startDate', { mode: 'string' }),
     endDate: timestamp('endDate', { mode: 'string' }),
     notes: jsonb('notes'),
-    createdAt: timestamp('createdAt', { mode: 'string' }).notNull().defaultNow(),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
     updatedAt: timestamp('updatedAt', { mode: 'string' }).notNull(),
   },
 );
@@ -154,7 +154,7 @@ export const partners = pgTable(
     location: text('location'),
     availability: jsonb('availability'),
     portfolioUrl: text('portfolioUrl'),
-    createdAt: timestamp('createdAt', { mode: 'string' }).notNull().defaultNow(),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
     updatedAt: timestamp('updatedAt', { mode: 'string' }).notNull(),
   },
   (table) => ({
@@ -182,7 +182,7 @@ export const partnerMatches = pgTable(
     acceptedAt: timestamp('acceptedAt', { mode: 'string' }),
     completedAt: timestamp('completedAt', { mode: 'string' }),
     cancelledAt: timestamp('cancelledAt', { mode: 'string' }),
-    createdAt: timestamp('createdAt', { mode: 'string' }).notNull().defaultNow(),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
     updatedAt: timestamp('updatedAt', { mode: 'string' }).notNull(),
   },
 );
@@ -199,7 +199,7 @@ export const projectCollaborators = pgTable(
       .references(() => users.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
     role: text('role'),
     share: integer('share'),
-    createdAt: timestamp('createdAt', { mode: 'string' }).notNull().defaultNow(),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
   },
   (table) => ({
     projectUserUnique: uniqueIndex('ProjectCollaborator_projectId_userId_key').on(
@@ -216,16 +216,22 @@ export const authDevices = pgTable(
     userId: text('userId')
       .notNull()
       .references(() => users.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
-    deviceFingerprint: text('deviceFingerprint').notNull(),
-    firstSeenAt: timestamp('firstSeenAt', { mode: 'string' }).notNull().defaultNow(),
-    lastSeenAt: timestamp('lastSeenAt', { mode: 'string' }).notNull().defaultNow(),
-    label: text('label'),
+    deviceName: text('deviceName'),
+    deviceType: text('deviceType'),
+    os: text('os'),
+    client: text('client').notNull().default('web'),
+    uaHash: text('uaHash'),
+    ipHash: text('ipHash'),
+    fingerprint: text('fingerprint'),
+    trusted: boolean('trusted').notNull().default(false),
+    revokedAt: timestamp('revokedAt', { mode: 'string' }),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt', { mode: 'string' }).defaultNow().notNull(),
   },
   (table) => ({
-    userFingerprintUnique: uniqueIndex('AuthDevice_userId_deviceFingerprint_key').on(
-      table.userId,
-      table.deviceFingerprint,
-    ),
+    fingerprintIdx: index('AuthDevice_fingerprint_idx').on(table.fingerprint),
+    lastSeenAtIdx: index('AuthDevice_lastSeenAt_idx').on(table.updatedAt),
+    userIdIdx: index('AuthDevice_userId_idx').on(table.userId),
   }),
 );
 
@@ -240,8 +246,8 @@ export const authSessions = pgTable(
       onDelete: 'set null',
       onUpdate: 'cascade',
     }),
-    createdAt: timestamp('createdAt', { mode: 'string' }).notNull().defaultNow(),
-    lastUsedAt: timestamp('lastUsedAt', { mode: 'string' }).notNull().defaultNow(),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
+    lastUsedAt: timestamp('lastUsedAt', { mode: 'string' }).defaultNow().notNull(),
     ipHash: text('ipHash'),
     uaHash: text('uaHash'),
     remember: boolean('remember').notNull().default(false),
@@ -265,7 +271,7 @@ export const refreshTokens = pgTable(
       .references(() => authSessions.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
     tokenHash: text('tokenHash').notNull(),
     tokenFingerprint: text('tokenFingerprint').notNull(),
-    createdAt: timestamp('createdAt', { mode: 'string' }).notNull().defaultNow(),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
     inactivityExpiresAt: timestamp('inactivityExpiresAt', { mode: 'string' }).notNull(),
     absoluteExpiresAt: timestamp('absoluteExpiresAt', { mode: 'string' }).notNull(),
     usedAt: timestamp('usedAt', { mode: 'string' }),
@@ -305,7 +311,7 @@ export const fundings = pgTable(
     paymentStatus: fundingStatusEnum('paymentStatus').notNull().default('PENDING'),
     rewardTier: jsonb('rewardTier'),
     metadata: jsonb('metadata'),
-    createdAt: timestamp('createdAt', { mode: 'string' }).notNull().defaultNow(),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
     updatedAt: timestamp('updatedAt', { mode: 'string' }).notNull(),
     refundedAt: timestamp('refundedAt', { mode: 'string' }),
   },
@@ -335,7 +341,7 @@ export const settlements = pgTable(
       .default('PENDING'),
     distributionBreakdown: jsonb('distributionBreakdown'),
     notes: jsonb('notes'),
-    createdAt: timestamp('createdAt', { mode: 'string' }).notNull().defaultNow(),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
     updatedAt: timestamp('updatedAt', { mode: 'string' }).notNull(),
   },
 );
@@ -355,7 +361,7 @@ export const settlementPayouts = pgTable(
     dueDate: timestamp('dueDate', { mode: 'string' }),
     paidAt: timestamp('paidAt', { mode: 'string' }),
     metadata: jsonb('metadata'),
-    createdAt: timestamp('createdAt', { mode: 'string' }).notNull().defaultNow(),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
     updatedAt: timestamp('updatedAt', { mode: 'string' }).notNull(),
   },
 );
@@ -372,11 +378,11 @@ export const products = pgTable(
     price: integer('price').notNull(),
     currency: text('currency').notNull().default('KRW'),
     inventory: integer('inventory'),
-    images: text('images').array().notNull().default(sql`ARRAY[]::text[]`),
+    images: text('images').array().notNull().default(['RAY']),
     metadata: jsonb('metadata'),
     sku: text('sku'),
     isActive: boolean('isActive').notNull().default(true),
-    createdAt: timestamp('createdAt', { mode: 'string' }).notNull().defaultNow(),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
     updatedAt: timestamp('updatedAt', { mode: 'string' }).notNull(),
   },
 );
@@ -398,7 +404,7 @@ export const orders = pgTable(
     shippingInfo: jsonb('shippingInfo'),
     transactionId: text('transactionId'),
     metadata: jsonb('metadata'),
-    createdAt: timestamp('createdAt', { mode: 'string' }).notNull().defaultNow(),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
     updatedAt: timestamp('updatedAt', { mode: 'string' }).notNull(),
   },
 );
@@ -417,7 +423,7 @@ export const orderItems = pgTable(
     unitPrice: integer('unitPrice').notNull(),
     totalPrice: integer('totalPrice').notNull(),
     metadata: jsonb('metadata'),
-    createdAt: timestamp('createdAt', { mode: 'string' }).notNull().defaultNow(),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
     updatedAt: timestamp('updatedAt', { mode: 'string' }).notNull(),
   },
 );
@@ -443,13 +449,13 @@ export const posts = pgTable(
       onUpdate: 'cascade',
     }),
     excerpt: text('excerpt'),
-    tags: text('tags').array().notNull().default(sql`ARRAY[]::text[]`),
+    tags: text('tags').array().notNull().default(['RAY']),
     category: communityCategoryEnum('category').notNull().default('GENERAL'),
     language: text('language').notNull().default('ko'),
     scheduledAt: timestamp('scheduledAt', { mode: 'string' }),
     publishedAt: timestamp('publishedAt', { mode: 'string' }),
     isPinned: boolean('isPinned').notNull().default(false),
-    createdAt: timestamp('createdAt', { mode: 'string' }).notNull().defaultNow(),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
     updatedAt: timestamp('updatedAt', { mode: 'string' }).notNull(),
   },
 );
@@ -469,7 +475,7 @@ export const comments = pgTable(
       onDelete: 'set null',
       onUpdate: 'cascade',
     }),
-    createdAt: timestamp('createdAt', { mode: 'string' }).notNull().defaultNow(),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
     updatedAt: timestamp('updatedAt', { mode: 'string' }).notNull(),
     editedAt: timestamp('editedAt', { mode: 'string' }),
     deletedAt: timestamp('deletedAt', { mode: 'string' }),
@@ -487,7 +493,7 @@ export const postLikes = pgTable(
     userId: text('userId')
       .notNull()
       .references(() => users.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
-    createdAt: timestamp('createdAt', { mode: 'string' }).notNull().defaultNow(),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
   },
   (table) => ({
     postUserUnique: uniqueIndex('PostLike_postId_userId_key').on(
@@ -507,7 +513,7 @@ export const postDislikes = pgTable(
     userId: text('userId')
       .notNull()
       .references(() => users.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
-    createdAt: timestamp('createdAt', { mode: 'string' }).notNull().defaultNow(),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
   },
   (table) => ({
     postUserUnique: uniqueIndex('PostDislike_postId_userId_key').on(
@@ -527,7 +533,7 @@ export const notifications = pgTable(
     type: notificationTypeEnum('type').notNull(),
     payload: jsonb('payload').notNull(),
     read: boolean('read').notNull().default(false),
-    createdAt: timestamp('createdAt', { mode: 'string' }).notNull().defaultNow(),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
   },
 );
 
@@ -543,7 +549,7 @@ export const visitLogs = pgTable(
     path: text('path'),
     userAgent: text('userAgent'),
     ipHash: text('ipHash'),
-    occurredAt: timestamp('occurredAt', { mode: 'string' }).notNull().defaultNow(),
+    occurredAt: timestamp('occurredAt', { mode: 'string' }).defaultNow().notNull(),
   },
   (table) => ({
     occurredAtIdx: index('VisitLog_occurredAt_idx').on(table.occurredAt),
@@ -562,7 +568,7 @@ export const wallets = pgTable(
     balance: integer('balance').notNull().default(0),
     pendingBalance: integer('pendingBalance').notNull().default(0),
     currency: text('currency').notNull().default('KRW'),
-    createdAt: timestamp('createdAt', { mode: 'string' }).notNull().defaultNow(),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
     updatedAt: timestamp('updatedAt', { mode: 'string' }).notNull(),
   },
   (table) => ({
@@ -585,7 +591,7 @@ export const auditLogs = pgTable(
     ipAddress: text('ipAddress'),
     userAgent: text('userAgent'),
     metadata: jsonb('metadata'),
-    createdAt: timestamp('createdAt', { mode: 'string' }).notNull().defaultNow(),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
   },
 );
 
@@ -595,7 +601,7 @@ export const permissions = pgTable(
     id: text('id').notNull().primaryKey(),
     key: text('key').notNull(),
     description: text('description'),
-    createdAt: timestamp('createdAt', { mode: 'string' }).notNull().defaultNow(),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
   },
   (table) => ({
     keyUnique: uniqueIndex('Permission_key_key').on(table.key),
@@ -612,7 +618,7 @@ export const userPermissions = pgTable(
     permissionId: text('permissionId')
       .notNull()
       .references(() => permissions.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
-    assignedAt: timestamp('assignedAt', { mode: 'string' }).notNull().defaultNow(),
+    assignedAt: timestamp('assignedAt', { mode: 'string' }).defaultNow().notNull(),
   },
   (table) => ({
     userPermissionUnique: uniqueIndex('UserPermission_userId_permissionId_key').on(
@@ -637,7 +643,7 @@ export const paymentTransactions = pgTable(
     gatewayFee: integer('gatewayFee').default(0),
     rawPayload: jsonb('rawPayload'),
     metadata: jsonb('metadata'),
-    createdAt: timestamp('createdAt', { mode: 'string' }).notNull().defaultNow(),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
     updatedAt: timestamp('updatedAt', { mode: 'string' }).notNull(),
   },
   (table) => ({
@@ -655,7 +661,7 @@ export const userFollows = pgTable(
     followingId: text('followingId')
       .notNull()
       .references(() => users.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
-    createdAt: timestamp('createdAt', { mode: 'string' }).notNull().defaultNow(),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
   },
   (table) => ({
     followerFollowingUnique: uniqueIndex('UserFollow_followerId_followingId_key').on(
@@ -676,7 +682,7 @@ export const commentReactions = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
     type: text('type').notNull().default('LIKE'),
-    createdAt: timestamp('createdAt', { mode: 'string' }).notNull().defaultNow(),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
   },
   (table) => ({
     commentUserTypeUnique: uniqueIndex(
@@ -698,7 +704,7 @@ export const moderationReports = pgTable(
     reason: text('reason'),
     status: moderationStatusEnum('status').notNull().default('PENDING'),
     notes: jsonb('notes'),
-    createdAt: timestamp('createdAt', { mode: 'string' }).notNull().defaultNow(),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
     resolvedAt: timestamp('resolvedAt', { mode: 'string' }),
   },
 );
@@ -713,7 +719,7 @@ export const userBlocks = pgTable(
     blockedUserId: text('blockedUserId')
       .notNull()
       .references(() => users.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
-    createdAt: timestamp('createdAt', { mode: 'string' }).notNull().defaultNow(),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
   },
   (table) => ({
     blockerBlockedUnique: uniqueIndex('UserBlock_blockerId_blockedUserId_key').on(
@@ -866,6 +872,8 @@ export const refreshTokensRelations = relations(refreshTokens, ({ one }) => ({
     relationName: 'RefreshTokenRotation',
   }),
   rotatedFrom: one(refreshTokens, {
+    fields: [refreshTokens.rotatedToId],
+    references: [refreshTokens.id],
     relationName: 'RefreshTokenRotation',
   }),
 }));

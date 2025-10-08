@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { sql } from 'drizzle-orm';
 
-import { db, isDrizzleAvailable } from '@/lib/db/client';
+import { getDb, isDrizzleAvailable } from '@/lib/db/client';
 
 export async function GET() {
     try {
@@ -14,6 +14,7 @@ export async function GET() {
         }
 
         // 데이터베이스 연결 테스트
+        const db = await getDb();
         await db.execute(sql`select 1`);
 
         return NextResponse.json({

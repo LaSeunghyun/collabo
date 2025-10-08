@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 
-import { prisma } from '@/lib/prisma';
+import { drizzle } from '@/lib/drizzle';
 import { authOptions } from '@/lib/auth/options';
 
 export async function GET(
@@ -20,7 +20,7 @@ export async function GET(
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
-        const user = await prisma.user.findUnique({
+        const user = await drizzle.user.findUnique({
             where: { id: params.id },
             select: {
                 id: true,

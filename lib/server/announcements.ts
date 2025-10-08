@@ -1,11 +1,8 @@
-// import { NotificationType } from '@prisma/client';
-
 import {
   ANNOUNCEMENT_CATEGORY_LABELS,
   DEFAULT_ANNOUNCEMENT_CATEGORY,
   type AnnouncementCategory
 } from '@/lib/constants/announcements';
-// import { prisma } from '@/lib/prisma';
 
 export interface AnnouncementListItem {
   id: string;

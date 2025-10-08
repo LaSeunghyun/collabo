@@ -1,12 +1,15 @@
 import { getPartnersAwaitingApproval } from '@/lib/server/partners';
-import { PartnerType, type PartnerTypeType } from '@/types/prisma';
+// import { PartnerType, type PartnerTypeType } from '@/types/prisma'; // TODO: Drizzle로 전환 필요
 
-const partnerTypeLabels: Record<PartnerTypeType, string> = {
-  [PartnerType.STUDIO]: '스튜디오',
-  [PartnerType.VENUE]: '공연장',
-  [PartnerType.PRODUCTION]: '제작사',
-  [PartnerType.MERCHANDISE]: '굿즈',
-  [PartnerType.OTHER]: '기타'
+// 동적 렌더링 강제 - 빌드 시 데이터베이스 접근 방지
+export const dynamic = 'force-dynamic';
+
+const partnerTypeLabels: Record<string, string> = {
+  'STUDIO': '스튜디오',
+  'VENUE': '공연장',
+  'PRODUCTION': '제작사',
+  'MERCHANDISE': '굿즈',
+  'OTHER': '기타'
 };
 
 const dateFormatter = new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium' });

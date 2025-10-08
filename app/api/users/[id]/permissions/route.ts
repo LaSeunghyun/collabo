@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { requireApiUser } from '@/lib/auth/guards';
-import { prisma } from '@/lib/prisma';
+import { drizzle } from '@/lib/drizzle';
 import { GuardRequirement } from '@/lib/auth/session';
 
 export async function GET(
@@ -19,7 +19,7 @@ export async function GET(
       );
     }
 
-    const userPermissions = await prisma.userPermission.findMany({
+    const userPermissions = await drizzle.userPermission.findMany({
       where: { userId: params.id },
       include: {
         permission: true,
@@ -69,7 +69,7 @@ export async function POST(
     }
 
     // 사용자 존재 확인
-    const targetUser = await prisma.user.findUnique({
+    const targetUser = await drizzle.user.findUnique({
       where: { id: params.id },
       select: { id: true, name: true, email: true }
     });
@@ -82,7 +82,7 @@ export async function POST(
     }
 
     // 권한 존재 확인
-    const permission = await prisma.permission.findUnique({
+    const permission = await drizzle.permission.findUnique({
       where: { id: permissionId }
     });
 
@@ -94,7 +94,7 @@ export async function POST(
     }
 
     // 기존 권한 확인
-    const existingUserPermission = await prisma.userPermission.findUnique({
+    const existingUserPermission = await drizzle.userPermission.findUnique({
       where: {
         userId_permissionId: {
           userId: params.id,
@@ -111,7 +111,7 @@ export async function POST(
     }
 
     // 사용자 권한 부여
-    const userPermission = await prisma.userPermission.create({
+    const userPermission = await drizzle.userPermission.create({
       data: {
         userId: params.id,
         permissionId
@@ -163,7 +163,7 @@ export async function DELETE(
     }
 
     // 사용자 권한 제거
-    await prisma.userPermission.delete({
+    await drizzle.userPermission.delete({
       where: {
         userId_permissionId: {
           userId: params.id,

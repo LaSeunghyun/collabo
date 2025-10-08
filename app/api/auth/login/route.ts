@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import { eq } from 'drizzle-orm';
 
-import { db } from '@/lib/db/client';
+import { getDb } from '@/lib/db/client';
 import { users } from '@/lib/db/schema';
 import { buildRefreshCookie } from '@/lib/auth/cookies';
 import type { ClientKind } from '@/lib/auth/policy';
@@ -56,6 +56,7 @@ export async function POST(req: NextRequest) {
 
   const data = parsed.data;
 
+  const db = await getDb();
   const user = await db.query.users.findFirst({
     where: eq(users.email, data.email)
   });

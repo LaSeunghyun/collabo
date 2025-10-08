@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 
 import { eq } from 'drizzle-orm';
 
-import { db } from '@/lib/db/client';
+import { getDb } from '@/lib/db/client';
 import { permissions, userPermissions, users } from '@/lib/db/schema';
 import { UserRole } from '@/types/prisma';
 

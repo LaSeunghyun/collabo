@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { X, EyeOff, XCircle } from 'lucide-react';
 import Image from 'next/image';
-import { ModerationStatus } from '@/types/prisma';
+// import { ModerationStatus } from '@/types/prisma'; // TODO: Drizzle로 전환 필요
 
 interface Post {
   id: string;
@@ -114,13 +114,13 @@ export function ReportDetailModal({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case ModerationStatus.PENDING:
+      case 'PENDING':
         return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      case ModerationStatus.REVIEWING:
+      case 'REVIEWING':
         return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-      case ModerationStatus.ACTION_TAKEN:
+      case 'ACTION_TAKEN':
         return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case ModerationStatus.DISMISSED:
+      case 'DISMISSED':
         return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
       default:
         return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
@@ -129,13 +129,13 @@ export function ReportDetailModal({
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case ModerationStatus.PENDING:
+      case 'PENDING':
         return '대기중';
-      case ModerationStatus.REVIEWING:
+      case 'REVIEWING':
         return '검토중';
-      case ModerationStatus.ACTION_TAKEN:
+      case 'ACTION_TAKEN':
         return '조치완료';
-      case ModerationStatus.DISMISSED:
+      case 'DISMISSED':
         return '기각됨';
       default:
         return status;
@@ -230,10 +230,10 @@ export function ReportDetailModal({
                       )}
 
                       {/* 처리 버튼들 */}
-                      {report.status === ModerationStatus.PENDING && (
+                      {report.status === 'PENDING' && (
                         <div className="flex gap-2 mt-4">
                           <button
-                            onClick={() => handleStatusUpdate(report.id, ModerationStatus.ACTION_TAKEN)}
+                            onClick={() => handleStatusUpdate(report.id, 'ACTION_TAKEN')}
                             disabled={processing && selectedReportId === report.id}
                             className="flex items-center gap-2 px-4 py-2 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/30 transition-colors disabled:opacity-50"
                           >
@@ -241,7 +241,7 @@ export function ReportDetailModal({
                             블라인드 처리
                           </button>
                           <button
-                            onClick={() => handleStatusUpdate(report.id, ModerationStatus.DISMISSED)}
+                            onClick={() => handleStatusUpdate(report.id, 'DISMISSED')}
                             disabled={processing && selectedReportId === report.id}
                             className="flex items-center gap-2 px-4 py-2 bg-gray-500/20 text-gray-400 border border-gray-500/30 rounded-lg hover:bg-gray-500/30 transition-colors disabled:opacity-50"
                           >

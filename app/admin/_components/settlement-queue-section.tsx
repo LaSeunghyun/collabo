@@ -1,14 +1,11 @@
-import {
-  SettlementPayoutStatus,
-  type SettlementPayoutStatusType
-} from '@/types/prisma';
+// import { SettlementPayoutStatus, type SettlementPayoutStatusType } from '@/types/prisma'; // TODO: Drizzle로 전환 필요
 
 import { getSettlementsPendingPayout } from '@/lib/server/settlement-queries';
 
-const statusLabels: Record<SettlementPayoutStatusType, string> = {
-  [SettlementPayoutStatus.PENDING]: '대기중',
-  [SettlementPayoutStatus.IN_PROGRESS]: '진행중',
-  [SettlementPayoutStatus.PAID]: '완료'
+const statusLabels: Record<string, string> = {
+  'PENDING': '대기중',
+  'IN_PROGRESS': '진행중',
+  'PAID': '완료'
 };
 
 const currencyFormatter = new Intl.NumberFormat('ko-KR', {
@@ -38,7 +35,7 @@ export async function SettlementQueueSection() {
 
         {settlements.length > 0 ? (
           <ul className="mt-6 space-y-3">
-            {settlements.map((settlement) => (
+            {settlements.map((settlement: any) => (
               <li
                 key={settlement.id}
                 className="flex items-center justify-between rounded-2xl border border-white/5 bg-white/[0.05] px-4 py-3"
