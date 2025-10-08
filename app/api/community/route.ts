@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { eq, and, desc, count, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
-import { communityCategoryEnum, posts, users, postLikes, postDislikes, moderationReports } from '@/lib/db/schema';
+import { communityCategoryEnum, posts, users } from '@/lib/db/schema';
 import { getDb } from '@/lib/db/client';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';

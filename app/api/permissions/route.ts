@@ -1,7 +1,8 @@
+import { randomUUID } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { eq, and, count, desc } from 'drizzle-orm';
+import { count, desc, eq } from 'drizzle-orm';
 
-import { permissions, userPermissions, users } from '@/lib/db/schema';
+import { permissions } from '@/lib/db/schema';
 import { getDb } from '@/lib/db/client';
 import { requireApiUser } from '@/lib/auth/guards';
 import { GuardRequirement } from '@/lib/auth/session';
@@ -9,7 +10,8 @@ import { GuardRequirement } from '@/lib/auth/session';
 export async function GET(request: NextRequest) {
   try {
     const user = await requireApiUser(request as NextRequest & GuardRequirement);
-    
+    const db = await getDb();
+
     // 관리자만 권한 목록 조회 가능
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
@@ -64,7 +66,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const user = await requireApiUser(request as NextRequest & GuardRequirement);
-    
+    const db = await getDb();
+
     // 관리자만 권한 생성 가능
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
@@ -83,9 +86,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: Drizzle로 전환 필요
-    // 권한 키 중복 확인
-    const existingPermission = null;
+    const [existingPermission] = await db
+      .select({ id: permissions.id })
+      .from(permissions)
+      .where(eq(permissions.key, key))
+      .limit(1);
 
     if (existingPermission) {
       return NextResponse.json(
@@ -94,13 +99,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: Drizzle로 전환 필요
-    // 권한 생성
-    const permission = {
-      id: 'temp-permission-id',
-      key,
-      description
-    };
+    const [permission] = await db
+      .insert(permissions)
+      .values({
+        id: randomUUID(),
+        key,
+        description: description ?? null,
+      })
+      .returning({
+        id: permissions.id,
+        key: permissions.key,
+        description: permissions.description,
+        createdAt: permissions.createdAt,
+      });
 
     return NextResponse.json(permission, { status: 201 });
   } catch (error) {

@@ -1,8 +1,11 @@
+import { randomUUID } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
+import { and, eq } from 'drizzle-orm';
 
 import { requireApiUser } from '@/lib/auth/guards';
-import { drizzle } from '@/lib/drizzle';
 import { GuardRequirement } from '@/lib/auth/session';
+import { getDb } from '@/lib/db/client';
+import { permissions, userPermissions, users } from '@/lib/db/schema';
 
 export async function GET(
   request: NextRequest,
@@ -10,7 +13,8 @@ export async function GET(
 ) {
   try {
     const user = await requireApiUser(request as NextRequest & GuardRequirement);
-    
+    const db = await getDb();
+
     // 본인 또는 관리자만 조회 가능
     if (params.id !== user.id && user.role !== 'ADMIN') {
       return NextResponse.json(
@@ -19,21 +23,30 @@ export async function GET(
       );
     }
 
-    const userPermissions = await drizzle.userPermission.findMany({
-      where: { userId: params.id },
-      include: {
-        permission: true,
+    const userPermissionsList = await db
+      .select({
+        id: userPermissions.id,
+        userId: userPermissions.userId,
+        permissionId: userPermissions.permissionId,
+        assignedAt: userPermissions.assignedAt,
+        permission: {
+          id: permissions.id,
+          key: permissions.key,
+          description: permissions.description,
+          createdAt: permissions.createdAt,
+        },
         user: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        }
-      }
-    });
+          id: users.id,
+          name: users.name,
+          email: users.email,
+        },
+      })
+      .from(userPermissions)
+      .innerJoin(permissions, eq(userPermissions.permissionId, permissions.id))
+      .innerJoin(users, eq(userPermissions.userId, users.id))
+      .where(eq(userPermissions.userId, params.id));
 
-    return NextResponse.json(userPermissions);
+    return NextResponse.json(userPermissionsList);
   } catch (error) {
     console.error('Failed to fetch user permissions:', error);
     return NextResponse.json(
@@ -49,7 +62,8 @@ export async function POST(
 ) {
   try {
     const user = await requireApiUser(request as NextRequest & GuardRequirement);
-    
+    const db = await getDb();
+
     // 관리자만 권한 부여 가능
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
@@ -69,10 +83,11 @@ export async function POST(
     }
 
     // 사용자 존재 확인
-    const targetUser = await drizzle.user.findUnique({
-      where: { id: params.id },
-      select: { id: true, name: true, email: true }
-    });
+    const [targetUser] = await db
+      .select({ id: users.id, name: users.name, email: users.email })
+      .from(users)
+      .where(eq(users.id, params.id))
+      .limit(1);
 
     if (!targetUser) {
       return NextResponse.json(
@@ -82,9 +97,16 @@ export async function POST(
     }
 
     // 권한 존재 확인
-    const permission = await drizzle.permission.findUnique({
-      where: { id: permissionId }
-    });
+    const [permission] = await db
+      .select({
+        id: permissions.id,
+        key: permissions.key,
+        description: permissions.description,
+        createdAt: permissions.createdAt,
+      })
+      .from(permissions)
+      .where(eq(permissions.id, permissionId))
+      .limit(1);
 
     if (!permission) {
       return NextResponse.json(
@@ -94,14 +116,16 @@ export async function POST(
     }
 
     // 기존 권한 확인
-    const existingUserPermission = await drizzle.userPermission.findUnique({
-      where: {
-        userId_permissionId: {
-          userId: params.id,
-          permissionId
-        }
-      }
-    });
+    const [existingUserPermission] = await db
+      .select({ id: userPermissions.id })
+      .from(userPermissions)
+      .where(
+        and(
+          eq(userPermissions.userId, params.id),
+          eq(userPermissions.permissionId, permissionId)
+        )
+      )
+      .limit(1);
 
     if (existingUserPermission) {
       return NextResponse.json(
@@ -111,22 +135,44 @@ export async function POST(
     }
 
     // 사용자 권한 부여
-    const userPermission = await drizzle.userPermission.create({
-      data: {
+    const now = new Date().toISOString();
+    const [created] = await db
+      .insert(userPermissions)
+      .values({
+        id: randomUUID(),
         userId: params.id,
-        permissionId
-      },
-      include: {
-        permission: true,
+        permissionId,
+        assignedAt: now,
+      })
+      .returning({ id: userPermissions.id });
+
+    const [userPermission] = await db
+      .select({
+        id: userPermissions.id,
+        userId: userPermissions.userId,
+        permissionId: userPermissions.permissionId,
+        assignedAt: userPermissions.assignedAt,
+        permission: {
+          id: permissions.id,
+          key: permissions.key,
+          description: permissions.description,
+          createdAt: permissions.createdAt,
+        },
         user: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        }
-      }
-    });
+          id: users.id,
+          name: users.name,
+          email: users.email,
+        },
+      })
+      .from(userPermissions)
+      .innerJoin(permissions, eq(userPermissions.permissionId, permissions.id))
+      .innerJoin(users, eq(userPermissions.userId, users.id))
+      .where(eq(userPermissions.id, created.id))
+      .limit(1);
+
+    if (!userPermission) {
+      throw new Error('Failed to load created user permission');
+    }
 
     return NextResponse.json(userPermission, { status: 201 });
   } catch (error) {
@@ -162,15 +208,17 @@ export async function DELETE(
       );
     }
 
+    const db = await getDb();
+
     // 사용자 권한 제거
-    await drizzle.userPermission.delete({
-      where: {
-        userId_permissionId: {
-          userId: params.id,
-          permissionId
-        }
-      }
-    });
+    await db
+      .delete(userPermissions)
+      .where(
+        and(
+          eq(userPermissions.userId, params.id),
+          eq(userPermissions.permissionId, permissionId)
+        )
+      );
 
     return NextResponse.json({ message: 'Permission removed successfully' });
   } catch (error) {

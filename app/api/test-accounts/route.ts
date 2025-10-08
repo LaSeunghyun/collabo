@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { hash } from 'bcryptjs';
-import { eq, inArray } from 'drizzle-orm';
-import { users, userRoleEnum } from '@/lib/db/schema';
+import { inArray } from 'drizzle-orm';
+import { users } from '@/lib/db/schema';
 import { getDb } from '@/lib/db/client';
 
 export async function POST() {
