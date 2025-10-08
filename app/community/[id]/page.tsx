@@ -267,9 +267,28 @@ export default function CommunityPostDetailPage() {
     }
   });
 
+  const resetReportFields = () => {
+    setReportStatus('idle');
+    setReportReasonKey(null);
+    setReportCustomReason('');
+    setReportError(null);
+  };
+
+  const closeReportModal = () => {
+    setReportOpen(false);
+    resetReportFields();
+    reportMutation.reset();
+  };
+
+  const openReportModal = () => {
+    resetReportFields();
+    reportMutation.reset();
+    setReportOpen(true);
+  };
+
   const handleReportSubmit = () => {
     if (reportStatus === 'submitted') {
-      setReportOpen(false);
+      closeReportModal();
       return;
     }
 
@@ -340,15 +359,6 @@ export default function CommunityPostDetailPage() {
 
   // 싫어요 상태는 서버에서 관리하므로 로컬 useEffect 제거
 
-  useEffect(() => {
-    if (!reportOpen) {
-      setReportStatus('idle');
-      setReportReasonKey(null);
-      setReportCustomReason('');
-      setReportError(null);
-      reportMutation.reset();
-    }
-  }, [reportOpen, reportMutation]);
 
   if (isLoading) {
     return (
@@ -462,7 +472,7 @@ export default function CommunityPostDetailPage() {
           </button>
           <button
             type="button"
-            onClick={() => setReportOpen(true)}
+            onClick={openReportModal}
             className="inline-flex items-center gap-2 rounded-full border border-red-400/40 bg-red-500/10 px-4 py-2 text-sm text-red-200 transition hover:border-red-300/60 hover:text-red-100"
           >
             <Flag className="h-4 w-4" />
@@ -700,7 +710,7 @@ export default function CommunityPostDetailPage() {
               <h3 className="text-lg font-semibold">{t('community.detail.reportTitle')}</h3>
               <button
                 type="button"
-                onClick={() => setReportOpen(false)}
+                onClick={closeReportModal}
                 className="rounded-full bg-white/10 p-2 text-white/70 transition hover:bg-white/20"
               >
                 <X className="h-4 w-4" />
@@ -774,7 +784,7 @@ export default function CommunityPostDetailPage() {
             <div className="flex justify-end gap-2">
               <button
                 type="button"
-                onClick={() => setReportOpen(false)}
+                onClick={closeReportModal}
                 className="rounded-full border border-white/20 px-4 py-2 text-sm text-white/80 transition hover:border-white/40 hover:text-white"
               >
                 {t('community.detail.reportCancel')}
