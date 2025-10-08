@@ -7,7 +7,7 @@
 
 ## 세부 작업
 1. **의존성 부트스트랩**
-   - `drizzle-orm`, `drizzle-kit`, `pg`, `@neondatabase/serverless` 패키지를 추가해 Node/서버리스 양쪽 드라이버를 모두 지원할 준비를 마쳤습니다.
+   - `drizzle-orm`, `drizzle-kit`, `pg`, `postgres` 패키지를 추가해 Node/서버리스 양쪽 드라이버를 모두 지원할 준비를 마쳤습니다.
    - `npm run db:drizzle:*` 커맨드를 추가해 Prisma 스크립트와 병행 운영할 수 있습니다.
 2. **구성/디렉터리 정비**
    - `drizzle.config.ts`에서 `.env.local`/`.env`를 읽어 기본 연결 문자열을 로드하고, 출력 경로를 `drizzle/`로 고정했습니다.

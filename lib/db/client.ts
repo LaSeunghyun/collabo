@@ -1,5 +1,5 @@
-import { neon, neonConfig } from '@neondatabase/serverless';
-import { drizzle as drizzleNeon, type NeonHttpDatabase } from 'drizzle-orm/neon-http';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 import { eq } from 'drizzle-orm';
 
 import { normalizeServerlessConnectionString } from '@/lib/db/connection-string';
@@ -10,11 +10,7 @@ if (!schema || typeof schema !== 'object') {
   throw new Error('Failed to load Drizzle schema');
 }
 
-neonConfig.fetchConnectionCache = true;
-neonConfig.fetchTimeout = 30000; // 30초 타임아웃
-
-export type DrizzleHttpClient = NeonHttpDatabase<typeof schema>;
-export type DatabaseClient = DrizzleHttpClient;
+export type DatabaseClient = ReturnType<typeof drizzle>;
 
 type InstanceKind = 'serverless' | 'disabled';
 
@@ -34,8 +30,12 @@ const loggerEnabled = () => process.env.NODE_ENV === 'development';
 
 const createServerlessInstance = (connectionString: string): DrizzleInstance => {
   try {
-    const client = neon(connectionString);
-    const db = drizzleNeon(client, {
+    const client = postgres(connectionString, {
+      max: 1,
+      idle_timeout: 20,
+      connect_timeout: 10,
+    });
+    const db = drizzle(client, {
       schema,
       logger: loggerEnabled(),
     });
@@ -69,8 +69,12 @@ const createDisabledInstance = (reason: string): DrizzleInstance => {
   console.warn(message);
 
   // 빌드 시에는 더미 스키마로 더미 클라이언트 생성
-  const dummyClient = neon('postgresql://dummy:dummy@dummy:5432/dummy');
-  const dummyDb = drizzleNeon(dummyClient, {
+  const dummyClient = postgres('postgresql://dummy:dummy@dummy:5432/dummy', {
+    max: 1,
+    idle_timeout: 20,
+    connect_timeout: 10,
+  });
+  const dummyDb = drizzle(dummyClient, {
     schema,
     logger: false,
   });
