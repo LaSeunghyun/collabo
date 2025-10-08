@@ -11,6 +11,7 @@ if (!schema || typeof schema !== 'object') {
 }
 
 neonConfig.fetchConnectionCache = true;
+neonConfig.fetchTimeout = 30000; // 30초 타임아웃
 
 export type DrizzleHttpClient = NeonHttpDatabase<typeof schema>;
 export type DatabaseClient = DrizzleHttpClient;
@@ -46,6 +47,17 @@ const createServerlessInstance = (connectionString: string): DrizzleInstance => 
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
     console.error('Failed to create serverless instance:', reason);
+    
+    // Vercel 환경에서 연결 실패 시 더 자세한 로깅
+    if (process.env.VERCEL) {
+      console.error('Vercel environment detected. Connection string format:', {
+        hasUrl: !!connectionString,
+        urlLength: connectionString?.length,
+        startsWithPostgres: connectionString?.startsWith('postgresql://'),
+        containsPooler: connectionString?.includes('pooler'),
+      });
+    }
+    
     return createDisabledInstance(`Serverless instance creation failed: ${reason}`);
   }
 };
