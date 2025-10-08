@@ -1,6 +1,28 @@
 import { revalidatePath } from 'next/cache';
 import { eq, and, inArray, desc, count } from 'drizzle-orm';
-import { ProjectStatus, UserRole, ProjectSummary, type ProjectStatusType } from '@/types/prisma';
+
+export interface ProjectSummary {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  thumbnail: string;
+  targetAmount: number;
+  currentAmount: number;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+  owner: {
+    id: string;
+    name: string;
+    avatarUrl: string | null;
+  };
+  _count: {
+    fundings: number;
+  };
+  participants: number;
+  remainingDays: number;
+}
 import { ZodError } from 'zod';
 
 import type { SessionUser } from '@/lib/auth/session';
@@ -39,12 +61,25 @@ export class ProjectAccessDeniedError extends Error {
 
 export type ProjectSummaryOptions = {
   ownerId?: string;
-  statuses?: ProjectStatusType[];
+  statuses?: string[];
   take?: number;
 };
 
 const fetchProjectsFromDb = async (options?: ProjectSummaryOptions) => {
-  let query = db
+  // Apply filters
+  const conditions = [];
+  
+  if (options?.ownerId) {
+    conditions.push(eq(projects.ownerId, options.ownerId));
+  }
+
+  if (options?.statuses?.length) {
+    conditions.push(inArray(projects.status, options.statuses as any));
+  }
+
+  const limit = options?.take && options.take > 0 ? options.take : 10;
+
+  const query = db
     .select({
       id: projects.id,
       title: projects.title,
@@ -65,28 +100,12 @@ const fetchProjectsFromDb = async (options?: ProjectSummaryOptions) => {
     })
     .from(projects)
     .innerJoin(users, eq(projects.ownerId, users.id))
-    .orderBy(desc(projects.createdAt));
+    .orderBy(desc(projects.createdAt))
+    .limit(limit);
 
-  // Apply filters
-  const conditions = [];
-  
-  if (options?.ownerId) {
-    conditions.push(eq(projects.ownerId, options.ownerId));
-  }
+  const finalQuery = query.where(conditions.length > 0 ? and(...conditions) : undefined as any);
 
-  if (options?.statuses?.length) {
-    conditions.push(inArray(projects.status, options.statuses));
-  }
-
-  if (conditions.length > 0) {
-    query = query.where(and(...conditions));
-  }
-
-  if (options?.take && options.take > 0) {
-    query = query.limit(options.take);
-  }
-
-  const projectsData = await query;
+  const projectsData = await finalQuery;
 
   // Get funding counts for each project
   const projectIds = projectsData.map(p => p.id);
@@ -131,9 +150,9 @@ const toProjectSummary = (project: ProjectWithCounts): ProjectSummary => {
     remainingDays,
     targetAmount: project.targetAmount,
     currentAmount: project.currentAmount,
-    status: project.status as ProjectStatusType,
-    createdAt: project.createdAt,
-    updatedAt: project.updatedAt,
+    status: project.status,
+    createdAt: new Date(project.createdAt),
+    updatedAt: new Date(project.updatedAt),
     owner: {
       id: project.owner.id,
       name: project.owner.name,
@@ -160,7 +179,7 @@ export const getProjectSummaries = async (options?: ProjectSummaryOptions) => {
 };
 
 export const getProjectsPendingReview = async (limit = 5) =>
-  getProjectSummaries({ statuses: [ProjectStatus.REVIEWING], take: limit });
+  getProjectSummaries({ statuses: ['REVIEWING'], take: limit });
 
 export const getProjectSummaryById = async (id: string) => {
   const projectData = await db
@@ -233,7 +252,7 @@ const buildProjectCreateData = (
   rewardTiers: toJsonInput(input.rewardTiers),
   milestones: toJsonInput(input.milestones),
   thumbnail: input.thumbnail ? input.thumbnail : null,
-  status: ProjectStatus.DRAFT,
+  status: 'DRAFT',
   ownerId,
   currentAmount: 0
 });
@@ -315,7 +334,7 @@ const parseUpdateInput = (rawInput: unknown) => {
 };
 
 const assertProjectOwnership = (projectOwnerId: string, user: SessionUser) => {
-  if (user.role === UserRole.ADMIN) {
+  if (user.role === 'ADMIN') {
     return;
   }
 
@@ -326,7 +345,7 @@ const assertProjectOwnership = (projectOwnerId: string, user: SessionUser) => {
 
 export const createProject = async (rawInput: unknown, user: SessionUser) => {
   const input = parseCreateInput(rawInput);
-  const ownerId = user.role === UserRole.ADMIN && input.ownerId ? input.ownerId : user.id;
+  const ownerId = user.role === 'ADMIN' && input.ownerId ? input.ownerId : user.id;
 
   const createData = buildProjectCreateData(input, ownerId);
   const projectId = crypto.randomUUID();

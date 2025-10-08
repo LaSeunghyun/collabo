@@ -1,8 +1,6 @@
-import { eq, and, inArray, desc } from 'drizzle-orm';
-import { SettlementPayoutStatus, type SettlementPayoutStatusType } from '@/types/prisma';
-
+import { eq, inArray, desc } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
-import { settlements, projects } from '@/lib/db/schema';
+import { projects, settlements } from '@/lib/db/schema';
 
 export interface SettlementSummary {
   id: string;
@@ -10,7 +8,7 @@ export interface SettlementSummary {
   projectTitle: string;
   totalRaised: number;
   netAmount: number;
-  payoutStatus: SettlementPayoutStatusType;
+  payoutStatus: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -20,7 +18,7 @@ const toSummary = (settlement: {
   projectId: string;
   totalRaised: number;
   netAmount: number;
-  payoutStatus: SettlementPayoutStatusType;
+  payoutStatus: string;
   createdAt: string;
   updatedAt: string;
   project: { id: string; title: string };
@@ -36,7 +34,7 @@ const toSummary = (settlement: {
 });
 
 export const getSettlementsPendingPayout = async (limit = 5) => {
-  const settlements = await db
+  const settlementsData = await db
     .select({
       id: settlements.id,
       projectId: settlements.projectId,
@@ -52,9 +50,9 @@ export const getSettlementsPendingPayout = async (limit = 5) => {
     })
     .from(settlements)
     .innerJoin(projects, eq(settlements.projectId, projects.id))
-    .where(inArray(settlements.payoutStatus, [SettlementPayoutStatus.PENDING, SettlementPayoutStatus.IN_PROGRESS]))
+    .where(inArray(settlements.payoutStatus, ['PENDING', 'IN_PROGRESS']))
     .orderBy(desc(settlements.updatedAt))
     .limit(limit);
 
-  return settlements.map(toSummary);
+  return settlementsData.map(toSummary);
 };

@@ -1,15 +1,29 @@
 ﻿import { revalidatePath } from 'next/cache';
-import { eq, and, or, like, desc, count, inArray } from 'drizzle-orm';
-import {
-  UserRole,
-  PartnerSummary,
-  type PartnerTypeType
-} from '@/types/prisma';
+import { eq, and, or, like, desc, count, inArray, not } from 'drizzle-orm';
 import { ZodError } from 'zod';
 
 import type { SessionUser } from '@/lib/auth/session';
 import { db } from '@/lib/db/client';
 import { partners, users, partnerMatches } from '@/lib/db/schema';
+
+export interface PartnerSummary {
+  id: string;
+  name: string;
+  description: string | null;
+  type: string;
+  contactInfo: string;
+  location: string | null;
+  portfolioUrl: string | null;
+  verified: boolean;
+  createdAt: string;
+  updatedAt: string;
+  user: {
+    id: string;
+    name: string | null;
+    avatarUrl: string | null;
+  };
+  matchCount: number;
+}
 import {
   createPartnerSchema,
   updatePartnerSchema,
@@ -213,7 +227,7 @@ export class PartnerAccessDeniedError extends Error {
 }
 
 export interface ListPartnersParams {
-  type?: PartnerTypeType;
+  type?: string;
   search?: string;
   cursor?: string;
   limit?: number;
@@ -239,38 +253,15 @@ export const listPartners = async (params: ListPartnersParams = {}): Promise<Lis
   const { type, search, cursor, excludeOwnerId } = params;
   const take = resolvePageSize(params.limit);
 
-  let query = db
-    .select({
-      id: partners.id,
-      name: partners.name,
-      type: partners.type,
-      verified: partners.verified,
-      description: partners.description,
-      location: partners.location,
-      portfolioUrl: partners.portfolioUrl,
-      contactInfo: partners.contactInfo,
-      createdAt: partners.createdAt,
-      updatedAt: partners.updatedAt,
-      user: {
-        id: users.id,
-        name: users.name,
-        avatarUrl: users.avatarUrl,
-        role: users.role
-      }
-    })
-    .from(partners)
-    .innerJoin(users, eq(partners.userId, users.id))
-    .orderBy(desc(partners.createdAt));
-
   // Apply filters
   const conditions = [];
 
   if (type) {
-    conditions.push(eq(partners.type, type));
+    conditions.push(eq(partners.type, type as any));
   }
 
   if (excludeOwnerId) {
-    conditions.push(eq(partners.userId, excludeOwnerId));
+    conditions.push(not(eq(partners.userId, excludeOwnerId)));
   }
 
   if (params.includeUnverified) {
@@ -294,17 +285,37 @@ export const listPartners = async (params: ListPartnersParams = {}): Promise<Lis
     }
   }
 
-  if (conditions.length > 0) {
-    query = query.where(and(...conditions));
-  }
-
   if (cursor) {
-    query = query.where(and(...conditions, eq(partners.id, cursor)));
+    conditions.push(eq(partners.id, cursor));
   }
 
-  query = query.limit(take + 1);
+  const query = db
+    .select({
+      id: partners.id,
+      name: partners.name,
+      type: partners.type,
+      verified: partners.verified,
+      description: partners.description,
+      location: partners.location,
+      portfolioUrl: partners.portfolioUrl,
+      contactInfo: partners.contactInfo,
+      createdAt: partners.createdAt,
+      updatedAt: partners.updatedAt,
+      user: {
+        id: users.id,
+        name: users.name,
+        avatarUrl: users.avatarUrl,
+        role: users.role
+      }
+    })
+    .from(partners)
+    .innerJoin(users, eq(partners.userId, users.id))
+    .orderBy(desc(partners.createdAt))
+    .limit(take + 1);
 
-  const partnersData = await query;
+  const finalQuery = query.where(conditions.length > 0 ? and(...conditions) : undefined as any);
+
+  const partnersData = await finalQuery;
 
   // Get match counts for each partner
   const partnerIds = partnersData.map(p => p.id);
@@ -527,7 +538,7 @@ const buildUpdateData = (
   }
 
   if (input.verified !== undefined) {
-    if (sessionUser.role !== UserRole.ADMIN) {
+    if (sessionUser.role !== 'ADMIN') {
       throw new PartnerAccessDeniedError();
     }
 
@@ -539,7 +550,7 @@ const buildUpdateData = (
 
 export const createPartnerProfile = async (payload: unknown, sessionUser: SessionUser) => {
   const input = parseCreateInput(payload);
-  const ownerId = sessionUser.role === UserRole.ADMIN && input.ownerId ? input.ownerId : sessionUser.id;
+  const ownerId = sessionUser.role === 'ADMIN' && input.ownerId ? input.ownerId : sessionUser.id;
 
   const ownerData = await db
     .select({ id: users.id, role: users.role })
@@ -567,9 +578,9 @@ export const createPartnerProfile = async (payload: unknown, sessionUser: Sessio
     const createData = buildCreateData(input, ownerId);
     const created = await tx.insert(partners).values(createData).returning();
 
-    if (owner.role !== UserRole.ADMIN && owner.role !== UserRole.PARTNER) {
+    if (owner.role !== 'ADMIN' && owner.role !== 'PARTNER') {
       await tx.update(users)
-        .set({ role: UserRole.PARTNER })
+        .set({ role: 'PARTNER' })
         .where(eq(users.id, ownerId));
     }
 
@@ -615,14 +626,18 @@ export const updatePartnerProfile = async (
 
   const partner = partnerData[0];
 
-  if (sessionUser.role !== UserRole.ADMIN && partner.user.id !== sessionUser.id) {
+  if (sessionUser.role !== 'ADMIN' && partner.user.id !== sessionUser.id) {
     throw new PartnerAccessDeniedError();
   }
 
   const data = buildUpdateData(input, sessionUser);
 
   if (Object.keys(data).length === 0) {
-    return getPartnerById(id);
+    const result = await getPartnerById(id);
+    if (!result) {
+      throw new PartnerNotFoundError();
+    }
+    return result;
   }
 
   await db.update(partners)

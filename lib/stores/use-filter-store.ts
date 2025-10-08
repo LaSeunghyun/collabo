@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-
 export type SortOption = 'popular' | 'closing' | 'newest';
 
 interface FilterState {

@@ -1,5 +1,3 @@
-import { postTypeEnum } from '@/lib/db/schema';
-import { UserRole } from '@/types/prisma';
 import { eq, and, desc, inArray } from 'drizzle-orm';
 
 import type { SessionUser } from '@/lib/auth/session';
@@ -42,7 +40,7 @@ export type ProjectUpdateRecord = {
   milestone: {
     id: string;
     title: string;
-    status: MilestoneStatus;
+    status: string;
   } | null;
   createdAt: Date;
   updatedAt: Date;
@@ -53,7 +51,7 @@ export type ProjectUpdateRecord = {
     id: string;
     name: string | null;
     avatarUrl: string | null;
-  };
+  } | null;
   canEdit: boolean;
 };
 
@@ -135,7 +133,8 @@ type PostWithRelations = {
   milestoneId: string | null;
   createdAt: string;
   updatedAt: string;
-  author: { id: string; name: string; avatarUrl: string | null };
+  attachments: any;
+  author: { id: string; name: string | null; avatarUrl: string | null } | null;
   milestone: { id: string; title: string; status: string } | null;
   _count: { likes: number; comments: number };
 };
@@ -182,18 +181,18 @@ const toProjectUpdateRecord = (
         status: post.milestone.status
       }
     : null,
-  createdAt: post.createdAt,
-  updatedAt: post.updatedAt,
+  createdAt: new Date(post.createdAt),
+  updatedAt: new Date(post.updatedAt),
   likes: post._count.likes,
   comments: post._count.comments,
   liked: Boolean(viewer && likedPostIds?.has(post.id)),
-  author: {
+  author: post.author ? {
     id: post.author.id,
     name: post.author.name,
     avatarUrl: post.author.avatarUrl
-  },
+  } : null,
   canEdit: Boolean(
-    viewer && (viewer.role === UserRole.ADMIN || viewer.id === project.ownerId)
+    viewer && (viewer.role === 'ADMIN' || viewer.id === project.ownerId)
   )
 });
 
@@ -224,7 +223,7 @@ export const assertProjectOwner = async (
   projectId: string,
   user: SessionUser
 ): Promise<ProjectInfo> => {
-  if (user.role !== UserRole.CREATOR && user.role !== UserRole.ADMIN) {
+  if (user.role !== 'CREATOR' && user.role !== 'ADMIN') {
     throw new ProjectUpdateAccessDeniedError();
   }
 
@@ -242,7 +241,7 @@ export const assertProjectOwner = async (
       throw new ProjectUpdateNotFoundError('프로젝트를 찾을 수 없습니다.');
     }
 
-    if (user.role !== UserRole.ADMIN && project.ownerId !== user.id) {
+    if (user.role !== 'ADMIN' && project.ownerId !== user.id) {
       throw new ProjectUpdateAccessDeniedError();
     }
 
@@ -303,7 +302,7 @@ export const listProjectUpdates = async (
       .leftJoin(projectMilestones, eq(posts.milestoneId, projectMilestones.id))
       .where(and(
         eq(posts.projectId, projectId),
-        eq(posts.type, postTypeEnum.enumValues.UPDATE)
+        eq(posts.type, 'UPDATE' as any)
       ))
       .orderBy(desc(posts.createdAt));
 
@@ -348,7 +347,7 @@ export const createProjectUpdate = async (
         authorId: user.id,
         title: input.title,
         content: input.content,
-        type: postTypeEnum.enumValues.UPDATE,
+        type: 'UPDATE',
         attachments: toJsonInput(input.attachments),
         milestoneId: input.milestoneId ?? null,
         createdAt: new Date().toISOString(),
@@ -359,7 +358,7 @@ export const createProjectUpdate = async (
     // 간단한 post 데이터 구성
     const postWithRelations = {
       ...post,
-      author: { id: user.id, name: user.name, avatarUrl: user.avatarUrl },
+      author: { id: user.id, name: user.name || '', avatarUrl: null },
       milestone: null, // 필요시 별도 조회
       _count: { likes: 0, comments: 0 }
     };
@@ -391,7 +390,7 @@ export const updateProjectUpdate = async (
       .where(and(
         eq(posts.id, updateId),
         eq(posts.projectId, projectId),
-        eq(posts.type, postTypeEnum.enumValues.UPDATE)
+        eq(posts.type, 'UPDATE' as any)
       ))
       .limit(1);
 
@@ -432,7 +431,7 @@ export const updateProjectUpdate = async (
     // 간단한 post 데이터 구성
     const postWithRelations = {
       ...updatedPost,
-      author: { id: user.id, name: user.name, avatarUrl: user.avatarUrl },
+      author: { id: user.id, name: user.name || '', avatarUrl: null },
       milestone: null, // 필요시 별도 조회
       _count: { likes: 0, comments: 0 }
     };
@@ -463,7 +462,7 @@ export const deleteProjectUpdate = async (
       .where(and(
         eq(posts.id, updateId),
         eq(posts.projectId, projectId),
-        eq(posts.type, postTypeEnum.enumValues.UPDATE)
+        eq(posts.type, 'UPDATE' as any)
       ))
       .limit(1);
 

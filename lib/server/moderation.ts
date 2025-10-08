@@ -1,10 +1,4 @@
 import { eq, and, inArray, desc, count, notInArray } from 'drizzle-orm';
-import {
-  ModerationStatus,
-  ModerationTargetType,
-  type ModerationReport
-} from '@/types/prisma';
-
 import { db } from '@/lib/db/client';
 import { moderationReports, users, posts } from '@/lib/db/schema';
 
@@ -35,12 +29,15 @@ export interface ModerationHandledPostSummary {
   latestStatus: string;
 }
 
-const ACTIVE_REVIEW_STATUSES: string[] = [
-  ModerationStatus.PENDING,
-  ModerationStatus.REVIEWING
-];
+const ACTIVE_REVIEW_STATUSES = ['PENDING', 'REVIEWING'] as ('PENDING' | 'REVIEWING')[];
 
-type ReportWithRelations = ModerationReport & {
+type ReportWithRelations = {
+  id: string;
+  targetType: string;
+  targetId: string;
+  status: string;
+  reason: string | null;
+  createdAt: string;
   reporter: { id: string; name: string | null } | null;
 };
 
@@ -92,9 +89,9 @@ export const getModerationStats = async () => {
     const [totalReportsResult, pendingReportsResult, completedReportsResult] = await Promise.all([
       db.select({ count: count() }).from(moderationReports),
       db.select({ count: count() }).from(moderationReports).where(inArray(moderationReports.status, ACTIVE_REVIEW_STATUSES)),
-      db.select({ count: count() }).from(moderationReports).where(and(
-        eq(moderationReports.status, ModerationStatus.RESOLVED)
-      ))
+      db.select({ count: count() }).from(moderationReports).where(
+        eq(moderationReports.status, 'ACTION_TAKEN')
+      )
     ]);
 
     return {
@@ -147,7 +144,7 @@ export const getReportedPostDetails = async (postId: string) => {
         .from(moderationReports)
         .leftJoin(users, eq(moderationReports.reporterId, users.id))
         .where(and(
-          eq(moderationReports.targetType, ModerationTargetType.POST),
+          eq(moderationReports.targetType, 'POST'),
           eq(moderationReports.targetId, postId)
         ))
         .orderBy(desc(moderationReports.createdAt))
@@ -178,7 +175,7 @@ export const getReportedPostDetails = async (postId: string) => {
 
 export const updateModerationStatus = async (
   reportId: string, 
-  status: ModerationStatusType, 
+  status: 'PENDING' | 'REVIEWING' | 'ACTION_TAKEN' | 'DISMISSED', 
   adminId: string,
   actionNote?: string
 ) => {
@@ -187,7 +184,7 @@ export const updateModerationStatus = async (
       .update(moderationReports)
       .set({
         status,
-        resolvedAt: new Date(),
+        resolvedAt: new Date().toISOString(),
         notes: actionNote ? { note: actionNote, adminId } : undefined
       })
       .where(eq(moderationReports.id, reportId))
@@ -202,7 +199,7 @@ export const updateModerationStatus = async (
 
 export const getHandledModerationReportsByPost = async (limit = 8) => {
   try {
-    // 간단??구현?�로 변�?- 복잡??groupBy ?�??기본 쿼리 ?�용
+    // 간단한 구현으로 변경 - 복잡한 groupBy 대신 기본 쿼리 사용
     const reports = await db
       .select({
         id: moderationReports.id,
@@ -218,7 +215,7 @@ export const getHandledModerationReportsByPost = async (limit = 8) => {
       .leftJoin(posts, eq(moderationReports.targetId, posts.id))
       .leftJoin(users, eq(posts.authorId, users.id))
       .where(and(
-        eq(moderationReports.targetType, ModerationTargetType.POST),
+        eq(moderationReports.targetType, 'POST'),
         notInArray(moderationReports.status, ACTIVE_REVIEW_STATUSES)
       ))
       .orderBy(desc(moderationReports.resolvedAt))
@@ -233,7 +230,7 @@ export const getHandledModerationReportsByPost = async (limit = 8) => {
       } : null,
       totalReports: 1, // 단순화
       lastResolvedAt: report.resolvedAt ?? report.createdAt ?? null,
-      latestStatus: report.status ?? ModerationStatus.ACTION_TAKEN
+      latestStatus: report.status ?? 'ACTION_TAKEN'
     } satisfies ModerationHandledPostSummary));
   } catch (error) {
     console.error('Failed to get handled moderation reports by post:', error);

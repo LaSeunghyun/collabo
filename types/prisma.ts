@@ -20,105 +20,115 @@ export const USER_ROLE_LABELS = {
 // Project related enums
 export enum ProjectStatus {
   DRAFT = 'DRAFT',
-  PENDING = 'PENDING',
-  ACTIVE = 'ACTIVE',
-  COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED'
+  REVIEWING = 'REVIEWING',
+  LIVE = 'LIVE',
+  SUCCESSFUL = 'SUCCESSFUL',
+  FAILED = 'FAILED',
+  EXECUTING = 'EXECUTING',
+  COMPLETED = 'COMPLETED'
 }
 
 export enum FundingStatus {
   PENDING = 'PENDING',
-  COMPLETED = 'COMPLETED',
+  SUCCEEDED = 'SUCCEEDED',
   FAILED = 'FAILED',
-  REFUNDED = 'REFUNDED'
+  REFUNDED = 'REFUNDED',
+  CANCELLED = 'CANCELLED'
 }
 
 // Moderation related enums
 export enum ModerationStatus {
   PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED'
+  REVIEWING = 'REVIEWING',
+  ACTION_TAKEN = 'ACTION_TAKEN',
+  DISMISSED = 'DISMISSED'
 }
 
 // Other commonly used enums
 export enum NotificationType {
-  PROJECT_UPDATE = 'PROJECT_UPDATE',
-  FUNDING_RECEIVED = 'FUNDING_RECEIVED',
-  MILESTONE_REACHED = 'MILESTONE_REACHED'
+  FUNDING_SUCCESS = 'FUNDING_SUCCESS',
+  NEW_COMMENT = 'NEW_COMMENT',
+  PROJECT_MILESTONE = 'PROJECT_MILESTONE',
+  PARTNER_REQUEST = 'PARTNER_REQUEST',
+  SETTLEMENT_PAID = 'SETTLEMENT_PAID',
+  SYSTEM = 'SYSTEM'
 }
 
 export enum OrderStatus {
   PENDING = 'PENDING',
-  CONFIRMED = 'CONFIRMED',
+  PAID = 'PAID',
   SHIPPED = 'SHIPPED',
   DELIVERED = 'DELIVERED',
+  REFUNDED = 'REFUNDED',
   CANCELLED = 'CANCELLED'
 }
 
 export enum PartnerType {
-  INDIVIDUAL = 'INDIVIDUAL',
-  COMPANY = 'COMPANY',
-  AGENCY = 'AGENCY'
+  STUDIO = 'STUDIO',
+  VENUE = 'VENUE',
+  PRODUCTION = 'PRODUCTION',
+  MERCHANDISE = 'MERCHANDISE',
+  OTHER = 'OTHER'
 }
 
 export enum PartnerMatchStatus {
   REQUESTED = 'REQUESTED',
   ACCEPTED = 'ACCEPTED',
-  REJECTED = 'REJECTED',
-  COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED'
+  DECLINED = 'DECLINED',
+  CANCELLED = 'CANCELLED',
+  COMPLETED = 'COMPLETED'
 }
 
 export enum PaymentProvider {
   STRIPE = 'STRIPE',
+  TOSS = 'TOSS',
   PAYPAL = 'PAYPAL',
-  TOSS = 'TOSS'
+  MANUAL = 'MANUAL'
 }
 
 export enum PostType {
   UPDATE = 'UPDATE',
-  ANNOUNCEMENT = 'ANNOUNCEMENT',
-  MILESTONE = 'MILESTONE'
+  DISCUSSION = 'DISCUSSION',
+  AMA = 'AMA'
 }
 
 export enum ProductType {
   PHYSICAL = 'PHYSICAL',
-  DIGITAL = 'DIGITAL',
-  SERVICE = 'SERVICE'
+  DIGITAL = 'DIGITAL'
 }
 
 export enum SettlementPayoutStatus {
   PENDING = 'PENDING',
-  PROCESSING = 'PROCESSING',
-  COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED'
+  IN_PROGRESS = 'IN_PROGRESS',
+  PAID = 'PAID'
 }
 
 export enum SettlementStakeholderType {
+  PLATFORM = 'PLATFORM',
   CREATOR = 'CREATOR',
   PARTNER = 'PARTNER',
-  COLLABORATOR = 'COLLABORATOR'
+  COLLABORATOR = 'COLLABORATOR',
+  OTHER = 'OTHER'
 }
 
 export enum CommunityCategory {
   GENERAL = 'GENERAL',
-  ANNOUNCEMENT = 'ANNOUNCEMENT',
-  QUESTION = 'QUESTION',
-  FEEDBACK = 'FEEDBACK'
+  NOTICE = 'NOTICE',
+  COLLAB = 'COLLAB',
+  SUPPORT = 'SUPPORT',
+  SHOWCASE = 'SHOWCASE'
 }
 
 export enum MilestoneStatus {
   PLANNED = 'PLANNED',
   IN_PROGRESS = 'IN_PROGRESS',
   COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED'
+  RELEASED = 'RELEASED'
 }
 
 export enum ModerationTargetType {
   POST = 'POST',
-  COMMENT = 'COMMENT',
-  USER = 'USER',
-  PROJECT = 'PROJECT'
+  COMMENT = 'COMMENT'
 }
 
 // Type aliases for compatibility
@@ -128,6 +138,7 @@ export type PartnerTypeType = PartnerType;
 export type OrderStatusType = OrderStatus;
 export type PostTypeType = PostType;
 export type NotificationTypeType = NotificationType;
+export type SettlementPayoutStatusType = SettlementPayoutStatus;
 export type UserRoleValue = UserRole;
 export type ProjectStatusValue = ProjectStatus;
 export type PartnerTypeValue = PartnerType;
@@ -220,43 +231,52 @@ export const MODERATION_STATUS_VALUES = Object.values(ModerationStatus);
 // 한국어 라벨 매핑
 export const PROJECT_STATUS_LABELS: Record<ProjectStatusType, string> = {
   [ProjectStatus.DRAFT]: '초안',
-  [ProjectStatus.PENDING]: '검토중',
-  [ProjectStatus.ACTIVE]: '진행중',
-  [ProjectStatus.COMPLETED]: '완료',
-  [ProjectStatus.CANCELLED]: '취소됨'
+  [ProjectStatus.REVIEWING]: '검토중',
+  [ProjectStatus.LIVE]: '진행중',
+  [ProjectStatus.SUCCESSFUL]: '성공',
+  [ProjectStatus.FAILED]: '실패',
+  [ProjectStatus.EXECUTING]: '실행중',
+  [ProjectStatus.COMPLETED]: '완료'
 };
 
 export const FUNDING_STATUS_LABELS: Record<FundingStatusType, string> = {
   [FundingStatus.PENDING]: '대기중',
-  [FundingStatus.COMPLETED]: '성공',
+  [FundingStatus.SUCCEEDED]: '성공',
   [FundingStatus.FAILED]: '실패',
-  [FundingStatus.REFUNDED]: '환불됨'
+  [FundingStatus.REFUNDED]: '환불됨',
+  [FundingStatus.CANCELLED]: '취소됨'
 };
 
 export const PARTNER_TYPE_LABELS: Record<PartnerTypeType, string> = {
-  [PartnerType.INDIVIDUAL]: '개인',
-  [PartnerType.COMPANY]: '회사',
-  [PartnerType.AGENCY]: '에이전시'
+  [PartnerType.STUDIO]: '스튜디오',
+  [PartnerType.VENUE]: '장소',
+  [PartnerType.PRODUCTION]: '제작',
+  [PartnerType.MERCHANDISE]: '상품',
+  [PartnerType.OTHER]: '기타'
 };
 
 export const ORDER_STATUS_LABELS: Record<OrderStatusType, string> = {
   [OrderStatus.PENDING]: '대기중',
-  [OrderStatus.CONFIRMED]: '확인됨',
+  [OrderStatus.PAID]: '결제완료',
   [OrderStatus.SHIPPED]: '배송중',
   [OrderStatus.DELIVERED]: '배송완료',
+  [OrderStatus.REFUNDED]: '환불됨',
   [OrderStatus.CANCELLED]: '취소됨'
 };
 
 export const POST_TYPE_LABELS: Record<PostTypeType, string> = {
   [PostType.UPDATE]: '업데이트',
-  [PostType.ANNOUNCEMENT]: '공지',
-  [PostType.MILESTONE]: '마일스톤'
+  [PostType.DISCUSSION]: '토론',
+  [PostType.AMA]: 'Q&A'
 };
 
 export const NOTIFICATION_TYPE_LABELS: Record<NotificationTypeType, string> = {
-  [NotificationType.PROJECT_UPDATE]: '프로젝트 업데이트',
-  [NotificationType.FUNDING_RECEIVED]: '펀딩 수령',
-  [NotificationType.MILESTONE_REACHED]: '마일스톤 달성'
+  [NotificationType.FUNDING_SUCCESS]: '펀딩 성공',
+  [NotificationType.NEW_COMMENT]: '새 댓글',
+  [NotificationType.PROJECT_MILESTONE]: '프로젝트 마일스톤',
+  [NotificationType.PARTNER_REQUEST]: '파트너 요청',
+  [NotificationType.SETTLEMENT_PAID]: '정산 완료',
+  [NotificationType.SYSTEM]: '시스템 알림'
 };
 
 // ROLE_LABELS 별칭 (하위 호환성)

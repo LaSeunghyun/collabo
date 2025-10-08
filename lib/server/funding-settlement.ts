@@ -1,7 +1,6 @@
-import { FundingStatus, SettlementPayoutStatus } from '@/types/prisma';
 import { db } from '@/lib/db/client';
 import { calculateSettlementBreakdown } from './settlements';
-import { eq, and, inArray } from 'drizzle-orm';
+import { eq, and, inArray, desc } from 'drizzle-orm';
 import { 
   projects, 
   fundings, 
@@ -95,7 +94,7 @@ export async function createSettlementIfTargetReached(
             .from(settlements)
             .where(and(
                 eq(settlements.projectId, projectId),
-                inArray(settlements.payoutStatus, [SettlementPayoutStatus.PENDING, SettlementPayoutStatus.IN_PROGRESS])
+                inArray(settlements.payoutStatus, ['PENDING', 'IN_PROGRESS'])
             ))
             .limit(1);
 
@@ -110,10 +109,10 @@ export async function createSettlementIfTargetReached(
                 gatewayFee: paymentTransactions.gatewayFee
             })
             .from(fundings)
-            .leftJoin(paymentTransactions, eq(fundings.transactionId, paymentTransactions.id))
+            .leftJoin(paymentTransactions, eq(fundings.paymentIntentId, paymentTransactions.id))
             .where(and(
                 eq(fundings.projectId, projectId),
-                eq(fundings.paymentStatus, FundingStatus.SUCCEEDED)
+                eq(fundings.paymentStatus, 'SUCCEEDED')
             ));
 
         const totalRaised = fundingsData.reduce((acc, funding) => acc + funding.amount, 0);
@@ -168,7 +167,7 @@ export async function createSettlementIfTargetReached(
                     collaboratorShare: breakdown.collaboratorShareTotal,
                     gatewayFees: breakdown.gatewayFees,
                     netAmount: breakdown.netAmount,
-                    payoutStatus: SettlementPayoutStatus.PENDING,
+                    payoutStatus: 'PENDING',
                     distributionBreakdown: breakdown as any,
                     notes: notes ?? null,
                     createdAt: new Date().toISOString(),
@@ -213,7 +212,7 @@ export async function createSettlementIfTargetReached(
                         stakeholderId: payout.stakeholderId,
                         amount: payout.amount,
                         percentage: payout.percentage,
-                        status: SettlementPayoutStatus.PENDING,
+                        status: 'PENDING',
                         createdAt: new Date().toISOString(),
                         updatedAt: new Date().toISOString()
                     })
@@ -253,7 +252,7 @@ export async function validateFundingSettlementConsistency(projectId: string) {
             .from(fundings)
             .where(and(
                 eq(fundings.projectId, projectId),
-                eq(fundings.paymentStatus, FundingStatus.SUCCEEDED)
+                eq(fundings.paymentStatus, 'SUCCEEDED')
             ));
 
         // 정산 데이터 조회
