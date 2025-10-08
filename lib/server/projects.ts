@@ -26,7 +26,7 @@ export interface ProjectSummary {
 import { ZodError } from 'zod';
 
 import type { SessionUser } from '@/lib/auth/session';
-import { db } from '@/lib/db/client';
+import { getDb } from '@/lib/db/client';
 import { projects, users, fundings, auditLogs } from '@/lib/db/schema';
 import {
   createProjectSchema,
@@ -79,6 +79,7 @@ const fetchProjectsFromDb = async (options?: ProjectSummaryOptions) => {
 
   const limit = options?.take && options.take > 0 ? options.take : 10;
 
+  const db = await getDb();
   const query = db
     .select({
       id: projects.id,
@@ -350,6 +351,7 @@ export const createProject = async (rawInput: unknown, user: SessionUser) => {
   const createData = buildProjectCreateData(input, ownerId);
   const projectId = crypto.randomUUID();
 
+  const db = await getDb();
   await db.transaction(async (tx) => {
     // Create project
     await tx.insert(projects).values({
@@ -396,6 +398,7 @@ export const updateProject = async (id: string, rawInput: unknown, user: Session
     return getProjectSummaryById(id);
   }
 
+  const db = await getDb();
   await db.transaction(async (tx) => {
     // Update project
     await tx.update(projects)
@@ -436,6 +439,7 @@ export const deleteProject = async (id: string, user: SessionUser) => {
   const project = projectData[0];
   assertProjectOwnership(project.ownerId, user);
 
+  const db = await getDb();
   await db.transaction(async (tx) => {
     // Delete project
     await tx.delete(projects).where(eq(projects.id, id));

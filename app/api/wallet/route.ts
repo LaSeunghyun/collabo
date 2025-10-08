@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { requireApiUser } from '@/lib/auth/guards';
-import { prisma } from '@/lib/prisma';
+import { drizzle } from '@/lib/drizzle';
 import { GuardRequirement } from '@/lib/auth/session';
 
 export async function GET(request: NextRequest) {
   try {
     const user = await requireApiUser(request as NextRequest & GuardRequirement);
     
-    const wallet = await prisma.wallet.findUnique({
+    const wallet = await drizzle.wallet.findUnique({
       where: { userId: user.id },
       include: {
         user: {
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
 
     if (!wallet) {
       // 지갑이 없으면 생성
-      const newWallet = await prisma.wallet.create({
+      const newWallet = await drizzle.wallet.create({
         data: {
           userId: user.id,
           balance: 0,
@@ -74,12 +74,12 @@ export async function POST(request: NextRequest) {
     }
 
     // 지갑이 없으면 생성
-    let wallet = await prisma.wallet.findUnique({
+    let wallet = await drizzle.wallet.findUnique({
       where: { userId: user.id }
     });
 
     if (!wallet) {
-      wallet = await prisma.wallet.create({
+      wallet = await drizzle.wallet.create({
         data: {
           userId: user.id,
           balance: 0,
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const updatedWallet = await prisma.wallet.update({
+    const updatedWallet = await drizzle.wallet.update({
       where: { id: wallet.id },
       data: {
         balance: newBalance,

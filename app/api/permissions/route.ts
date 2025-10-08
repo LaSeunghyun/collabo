@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { eq, and, count, desc } from 'drizzle-orm';
 
 import { permissions, userPermissions, users } from '@/lib/db/schema';
-import { db } from '@/lib/db/client';
+import { getDb } from '@/lib/db/client';
 import { requireApiUser } from '@/lib/auth/guards';
 import { GuardRequirement } from '@/lib/auth/session';
 

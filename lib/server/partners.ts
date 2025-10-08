@@ -3,7 +3,7 @@ import { eq, and, or, like, desc, count, inArray, not } from 'drizzle-orm';
 import { ZodError } from 'zod';
 
 import type { SessionUser } from '@/lib/auth/session';
-import { db } from '@/lib/db/client';
+import { getDb } from '@/lib/db/client';
 import { partners, users, partnerMatches } from '@/lib/db/schema';
 
 export interface PartnerSummary {
@@ -289,6 +289,7 @@ export const listPartners = async (params: ListPartnersParams = {}): Promise<Lis
     conditions.push(eq(partners.id, cursor));
   }
 
+  const db = await getDb();
   const query = db
     .select({
       id: partners.id,
@@ -574,6 +575,7 @@ export const createPartnerProfile = async (payload: unknown, sessionUser: Sessio
     throw new PartnerProfileExistsError();
   }
 
+  const db = await getDb();
   const partner = await db.transaction(async (tx) => {
     const createData = buildCreateData(input, ownerId);
     const created = await tx.insert(partners).values(createData).returning();
@@ -640,6 +642,7 @@ export const updatePartnerProfile = async (
     return result;
   }
 
+  const db = await getDb();
   await db.update(partners)
     .set({
       ...data,

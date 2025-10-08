@@ -2,13 +2,14 @@ import { NextResponse } from 'next/server';
 import { hash } from 'bcryptjs';
 import { eq, inArray } from 'drizzle-orm';
 import { users, userRoleEnum } from '@/lib/db/schema';
-import { db } from '@/lib/db/client';
+import { getDb } from '@/lib/db/client';
 
 export async function POST() {
   try {
     console.log('🔐 테스트 계정 생성 시작...');
 
     // 기존 계정 삭제 (선택사항)
+    const db = await getDb();
     await db.delete(users).where(
       inArray(users.email, ['admin@collabo.com', 'fan@collabo.com', 'partner@collabo.com'])
     );

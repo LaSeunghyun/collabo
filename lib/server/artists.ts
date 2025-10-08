@@ -2,7 +2,7 @@
 import { eq, and, count } from 'drizzle-orm';
 
 import type { SessionUser } from '@/lib/auth/session';
-import { db } from '@/lib/db/client';
+import { getDb } from '@/lib/db/client';
 import { 
   users, 
   posts, 
@@ -223,6 +223,7 @@ const fetchIsFollowing = async (artistId: string, viewer?: SessionUser | null) =
 
 export const getArtistProfile = cache(async (artistId: string, viewer?: SessionUser | null) => {
   try {
+    const db = await getDb();
     const artistResult = await db
       .select({
         id: users.id,

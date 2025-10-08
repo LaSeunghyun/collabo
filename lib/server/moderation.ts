@@ -1,5 +1,5 @@
 import { eq, and, inArray, desc, count, notInArray } from 'drizzle-orm';
-import { db } from '@/lib/db/client';
+import { getDb } from '@/lib/db/client';
 import { moderationReports, users, posts } from '@/lib/db/schema';
 
 export interface ModerationReportSummary {
@@ -86,6 +86,7 @@ export const getOpenModerationReports = async (limit = 5) => {
 
 export const getModerationStats = async () => {
   try {
+    const db = await getDb();
     const [totalReportsResult, pendingReportsResult, completedReportsResult] = await Promise.all([
       db.select({ count: count() }).from(moderationReports),
       db.select({ count: count() }).from(moderationReports).where(inArray(moderationReports.status, ACTIVE_REVIEW_STATUSES)),

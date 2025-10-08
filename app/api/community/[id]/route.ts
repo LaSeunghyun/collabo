@@ -9,7 +9,7 @@ import {
   moderationReports,
   comments
 } from '@/lib/db/schema';
-import { db } from '@/lib/db/client';
+import { getDb } from '@/lib/db/client';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import { evaluateAuthorization } from '@/lib/auth/session';
@@ -62,6 +62,7 @@ const buildPostResponse = async (postId: string, viewerId?: string | null) => {
     }
 
     // 좋아요, 싫어요, 댓글 수를 별도로 조회
+    const db = await getDb();
     const [likesResult, dislikesResult, commentsResult] = await Promise.all([
       db.select({ count: count() }).from(postLikes).where(eq(postLikes.postId, postId)),
       db.select({ count: count() }).from(postDislikes).where(eq(postDislikes.postId, postId)),

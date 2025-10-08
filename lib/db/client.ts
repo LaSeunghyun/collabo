@@ -150,7 +150,9 @@ export const getDbClient = async (): Promise<DatabaseClient> => {
   return instance.db;
 };
 
-export const db = await getDbClient();
+// topLevelAwait 제거 - db export 제거
+// 모든 곳에서 getDbClient() 사용
+export const getDb = () => getDbClient();
 
 export const isDrizzleAvailable = async () => {
   const instance = await getDrizzleInstance();

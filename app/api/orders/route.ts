@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { eq, and, count, desc, inArray } from 'drizzle-orm';
 
 import { orders, orderItems, products, orderStatusEnum } from '@/lib/db/schema';
-import { db } from '@/lib/db/client';
+import { getDb } from '@/lib/db/client';
 import { requireApiUser } from '@/lib/auth/guards';
 import { GuardRequirement } from '@/lib/auth/session';
 
@@ -181,6 +181,7 @@ export async function POST(request: NextRequest) {
       .returning();
 
     // 주문 아이템 생성
+    const db = await getDb();
     const newOrderItems = await Promise.all(
       orderItemsData.map(item => 
         db.insert(orderItems).values({

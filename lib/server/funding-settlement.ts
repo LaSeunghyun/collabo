@@ -1,4 +1,4 @@
-import { db } from '@/lib/db/client';
+import { getDb } from '@/lib/db/client';
 import { calculateSettlementBreakdown } from './settlements';
 import { eq, and, inArray, desc } from 'drizzle-orm';
 import { 
@@ -154,6 +154,7 @@ export async function createSettlementIfTargetReached(
     });
 
         // 정산 레코드 생성
+        const db = await getDb();
         const settlement = await db.transaction(async (tx) => {
             const [created] = await tx
                 .insert(settlements)
@@ -297,6 +298,7 @@ export async function safeUpdateFundingData(
     updateProjectAmount = true
 ) {
     try {
+        const db = await getDb();
         return await db.transaction(async (tx) => {
             // 펀딩 데이터 업데이트
             if (updateProjectAmount) {

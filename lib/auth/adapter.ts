@@ -9,7 +9,7 @@ import type {
 } from 'next-auth/adapters';
 import { eq } from 'drizzle-orm';
 
-import { db } from '@/lib/db/client';
+import { getDb } from '@/lib/db/client';
 import { users } from '@/lib/db/schema';
 
 type DatabaseClient = typeof db;

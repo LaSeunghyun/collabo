@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth';
 import type { Session } from 'next-auth';
 import { eq } from 'drizzle-orm';
 
-import { db } from '@/lib/db/client';
+import { getDb } from '@/lib/db/client';
 import { authSessions, userPermissions } from '@/lib/db/schema';
 import type { UserRoleType } from '@/types/prisma';
 

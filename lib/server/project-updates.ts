@@ -1,7 +1,7 @@
 import { eq, and, desc, inArray } from 'drizzle-orm';
 
 import type { SessionUser } from '@/lib/auth/session';
-import { db } from '@/lib/db/client';
+import { getDb } from '@/lib/db/client';
 import { posts, users, projectMilestones, postLikes, projects } from '@/lib/db/schema';
 
 export class ProjectUpdateNotFoundError extends Error {

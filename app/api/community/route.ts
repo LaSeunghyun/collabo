@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { eq, and, desc, count, sql } from 'drizzle-orm';
 
 import { communityCategoryEnum, posts, users, postLikes, postDislikes, moderationReports } from '@/lib/db/schema';
-import { db } from '@/lib/db/client';
+import { getDb } from '@/lib/db/client';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import type { SessionUser } from '@/lib/auth/session';
@@ -288,6 +288,7 @@ export async function POST(request: NextRequest) {
       });
       
       // Drizzle로 게시글 생성
+      const db = await getDb();
       const [createdPost] = await db
         .insert(posts)
         .values({

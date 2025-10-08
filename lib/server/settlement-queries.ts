@@ -1,5 +1,5 @@
 import { eq, inArray, desc } from 'drizzle-orm';
-import { db } from '@/lib/db/client';
+import { getDb } from '@/lib/db/client';
 import { projects, settlements } from '@/lib/db/schema';
 
 export interface SettlementSummary {

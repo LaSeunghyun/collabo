@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 
 import { eq, inArray } from 'drizzle-orm';
 
-import { db } from '@/lib/db/client';
+import { getDb } from '@/lib/db/client';
 import {
   authDevices,
   authSessions,

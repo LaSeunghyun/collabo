@@ -5,7 +5,7 @@ import {
   settlementPayoutStatusEnum,
   settlementStakeholderTypeEnum
 } from '@/lib/db/schema';
-import { db } from '@/lib/db/client';
+import { getDb } from '@/lib/db/client';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import { calculateSettlementBreakdown } from '@/lib/server/settlements';

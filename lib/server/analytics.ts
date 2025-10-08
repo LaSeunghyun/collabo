@@ -1,7 +1,7 @@
 ﻿import { createHash } from 'crypto';
 import { gte } from 'drizzle-orm';
 
-import { db } from '@/lib/db/client';
+import { getDb } from '@/lib/db/client';
 import { visitLogs, users } from '@/lib/db/schema';
 import { evaluateAuthorization } from '@/lib/auth/session';
 
@@ -65,6 +65,7 @@ export const recordVisit = async ({
       authorization ? { authorization } : undefined
     );
 
+    const db = await getDb();
     await db.insert(visitLogs).values({
       id: crypto.randomUUID(),
       sessionId: normalizedSessionId,
