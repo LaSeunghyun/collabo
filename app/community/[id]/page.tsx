@@ -359,6 +359,15 @@ export default function CommunityPostDetailPage() {
 
   // 싫어요 상태는 서버에서 관리하므로 로컬 useEffect 제거
 
+  useEffect(() => {
+    if (!reportOpen) {
+      setReportStatus('idle');
+      setReportReasonKey(null);
+      setReportCustomReason('');
+      setReportError(null);
+      reportMutation.reset();
+    }
+  }, [reportOpen, reportMutation]);
 
   if (isLoading) {
     return (

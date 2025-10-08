@@ -30,6 +30,7 @@ function CommunityNewPostForm() {
   const { t } = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const searchParamsString = searchParams.toString();
   const { status } = useSession();
   const [formValues, setFormValues] = useState<NewPostFormValues>({
     title: '',
@@ -42,20 +43,23 @@ function CommunityNewPostForm() {
 
   // 로그인 상태 체크 및 리다이렉트
   useEffect(() => {
-    if (status === 'loading') return; // 로딩 중이면 대기
+    if (status === 'loading') {
+      return; // 로딩 중이면 대기
+    }
 
     if (status === 'unauthenticated') {
       setIsRedirecting(true);
-      // 현재 URL을 callbackUrl로 설정하여 로그인 후 돌아올 수 있도록 함
-      const callbackUrl = `/community/new?${searchParams.toString()}`;
-      signIn(undefined, { callbackUrl });
+      const callbackUrl = searchParamsString
+        ? `/community/new?${searchParamsString}`
+        : '/community/new';
+      void signIn(undefined, { callbackUrl });
       return;
     }
 
     if (status === 'authenticated') {
       setIsRedirecting(false);
     }
-  }, [status, searchParams]);
+  }, [status, searchParamsString]);
 
   const isValid = useMemo(() => {
     return formValues.title.trim().length > 0 && formValues.content.trim().length > 0;
