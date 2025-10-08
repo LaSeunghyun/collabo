@@ -291,12 +291,15 @@ export async function POST(request: NextRequest) {
       const [createdPost] = await db
         .insert(posts)
         .values({
+          id: crypto.randomUUID(),
           title,
           content,
           category,
+          type: 'DISCUSSION',
           projectId: projectId ?? null,
           authorId: sessionUser.id,
           isPinned: false,
+          updatedAt: new Date().toISOString(),
         })
         .returning({
           id: posts.id,
@@ -329,7 +332,7 @@ export async function POST(request: NextRequest) {
         content: createdPost.content,
         category: createdPost.category,
         projectId: createdPost.projectId,
-        createdAt: createdPost.createdAt.toISOString(),
+        createdAt: createdPost.createdAt,
         isPinned: createdPost.isPinned,
         author: author ? { 
           id: author.id, 
