@@ -1,9 +1,14 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { eq, and, desc } from 'drizzle-orm';
 
 import { 
-  settlementPayoutStatusEnum,
-  settlementStakeholderTypeEnum
+  settlements,
+  settlementPayouts,
+  projects,
+  fundings,
+  partnerMatches,
+  projectCollaborators
 } from '@/lib/db/schema';
 import { getDb } from '@/lib/db/client';
 
@@ -26,13 +31,12 @@ function buildError(message: string, status = 400) {
 export async function GET(request: NextRequest) {
   const authContext = { headers: request.headers };
   try {
-    await requireApiUser({ roles: ['CREATOR', 'ADMIN', 'PARTNER'] }, authContext); // TODO: Drizzle로 전환 필요
+    await requireApiUser({ roles: ['CREATOR', 'ADMIN', 'PARTNER'] }, authContext);
   } catch (error) {
     const response = handleAuthorizationError(error);
     if (response) {
       return response;
     }
-
     throw error;
   }
 
@@ -43,22 +47,41 @@ export async function GET(request: NextRequest) {
     return buildError('projectId 파라미터가 필요합니다.');
   }
 
-  // TODO: Drizzle로 전환 필요
-  const settlements: any[] = [];
+  try {
+    const db = await getDb();
+    const settlementsList = await db
+      .select({
+        id: settlements.id,
+        projectId: settlements.projectId,
+        totalRaised: settlements.totalRaised,
+        platformFee: settlements.platformFee,
+        gatewayFees: settlements.gatewayFees,
+        netAmount: settlements.netAmount,
+        payoutStatus: settlements.payoutStatus,
+        notes: settlements.notes,
+        createdAt: settlements.createdAt,
+        updatedAt: settlements.updatedAt
+      })
+      .from(settlements)
+      .where(eq(settlements.projectId, projectId))
+      .orderBy(desc(settlements.createdAt));
 
-  return NextResponse.json(settlements);
+    return NextResponse.json(settlementsList);
+  } catch (error) {
+    console.error('정산 조회 오류:', error);
+    return buildError('정산 정보를 조회할 수 없습니다.', 500);
+  }
 }
 
 export async function POST(request: NextRequest) {
   const authContext = { headers: request.headers };
   try {
-    await requireApiUser({ roles: ['ADMIN'], permissions: ['settlement:manage'] }, authContext); // TODO: Drizzle로 전환 필요
+    await requireApiUser({ roles: ['ADMIN'], permissions: ['settlement:manage'] }, authContext);
   } catch (error) {
     const response = handleAuthorizationError(error);
     if (response) {
       return response;
     }
-
     throw error;
   }
 
@@ -71,97 +94,128 @@ export async function POST(request: NextRequest) {
     if (error instanceof z.ZodError) {
       return buildError(error.issues.map((issue) => issue.message).join(', '));
     }
-
     return buildError('요청 본문을 확인할 수 없습니다.');
   }
 
   const { projectId, platformFeeRate = 0.05, gatewayFeeOverride, notes } = payload;
 
-  // TODO: Drizzle로 전환 필요
-  const project = {
-    ownerId: 'temp-owner-id',
-    targetAmount: 100000,
-    status: 'COMPLETED',
-    partnerMatches: [],
-    collaborators: []
-  };
-
-  if (!project) {
-    return buildError('해당 프로젝트를 찾을 수 없습니다.', 404);
-  }
-
-  if (
-    project.status !== 'SUCCESSFUL' &&
-    project.status !== 'EXECUTING' &&
-    project.status !== 'COMPLETED'
-  ) { // TODO: Drizzle로 전환 필요
-    return buildError('정산이 가능한 상태의 프로젝트만 정산을 생성할 수 있습니다.', 409);
-  }
-
-  // TODO: Drizzle로 전환 필요
-  const existingPending = null;
-
-  if (existingPending) {
-    return NextResponse.json(existingPending);
-  }
-
-  // 정산 데이터 일관성 검증
   try {
-    const consistencyCheck = await validateFundingSettlementConsistency(projectId);
-    if (!consistencyCheck.isValid) {
-      console.warn('정산 데이터 일관성 문제:', consistencyCheck.issues);
-      // 로그만 남기고 계속 진행 (데이터 불일치 시 후속 조치 필요)
+    const db = await getDb();
+    
+    // 프로젝트 정보 조회
+    const [project] = await db
+      .select({
+        id: projects.id,
+        ownerId: projects.ownerId,
+        targetAmount: projects.targetAmount,
+        currentAmount: projects.currentAmount,
+        status: projects.status
+      })
+      .from(projects)
+      .where(eq(projects.id, projectId))
+      .limit(1);
+
+    if (!project) {
+      return buildError('해당 프로젝트를 찾을 수 없습니다.', 404);
     }
-  } catch (error) {
-    console.warn('정산 데이터 검증 오류:', error);
-  }
 
-  // TODO: Drizzle로 전환 필요
-  const fundings: any[] = [];
+    if (
+      project.status !== 'SUCCESSFUL' &&
+      project.status !== 'EXECUTING' &&
+      project.status !== 'COMPLETED'
+    ) {
+      return buildError('정산이 가능한 상태의 프로젝트만 정산을 생성할 수 있습니다.', 409);
+    }
 
-  const totalRaised = fundings.reduce((acc: number, funding: { amount: number }) => acc + funding.amount, 0);
-  if (totalRaised <= 0) {
-    return buildError('모금액이 부족합니다.', 409);
-  }
+    // 기존 대기 중인 정산 확인
+    const [existingPending] = await db
+      .select()
+      .from(settlements)
+      .where(and(
+        eq(settlements.projectId, projectId),
+        eq(settlements.payoutStatus, 'PENDING')
+      ))
+      .limit(1);
 
-  if (totalRaised < project.targetAmount) {
-    return buildError('목표 금액을 아직 달성하지 못했습니다.', 409);
-  }
+    if (existingPending) {
+      return NextResponse.json(existingPending);
+    }
 
-  // TODO: Drizzle로 전환 필요
-  // 프로젝트 currentAmount와 최근 결제 금액 일치 여부 확인
-  const projectCurrentAmount = { currentAmount: totalRaised };
+    // 정산 데이터 일관성 검증
+    try {
+      const consistencyCheck = await validateFundingSettlementConsistency(projectId);
+      if (!consistencyCheck.isValid) {
+        console.warn('정산 데이터 일관성 문제:', consistencyCheck.issues);
+        // 로그만 남기고 계속 진행 (데이터 불일치 시 후속 조치 필요)
+      }
+    } catch (error) {
+      console.warn('정산 데이터 검증 오류:', error);
+    }
 
-  if (projectCurrentAmount && projectCurrentAmount.currentAmount !== totalRaised) {
-    console.warn(`프로젝트 currentAmount(${projectCurrentAmount.currentAmount})와 최근 결제 금액(${totalRaised})이 일치하지 않습니다.`);
-    // TODO: Drizzle로 전환 필요
-    // 데이터 일관성을 위해 currentAmount를 업데이트
-    // await prisma.project.update({
-    //   where: { id: projectId },
-    //   data: { currentAmount: totalRaised }
-    // });
-  }
+    // 펀딩 정보 조회
+    const fundingsList = await db
+      .select({
+        id: fundings.id,
+        amount: fundings.amount
+      })
+      .from(fundings)
+      .where(eq(fundings.projectId, projectId));
 
-  const inferredGatewayFees = fundings.reduce(
-    (acc: number, funding: { transaction: { gatewayFee: number | null } | null }) => acc + (funding.transaction?.gatewayFee ?? 0),
-    0
-  );
+    const totalRaised = fundingsList.reduce((acc, funding) => acc + funding.amount, 0);
+    if (totalRaised <= 0) {
+      return buildError('모금액이 부족합니다.', 409);
+    }
 
-  const partnerShares = project.partnerMatches
-    .filter((match: { settlementShare: number | null }) => typeof match.settlementShare === 'number')
-    .map((match: { partnerId: string; settlementShare: number | null }) => ({
-      stakeholderId: match.partnerId,
-      share: normaliseShare(match.settlementShare ?? 0)
-    }))
-    .filter((entry: { share: number }) => entry.share > 0);
+    if (totalRaised < project.targetAmount) {
+      return buildError('목표 금액을 아직 달성하지 못했습니다.', 409);
+    }
 
-  const collaboratorShares = project.collaborators
-    .filter((collab: { share: number | null }) => typeof collab.share === 'number')
-    .map((collab: { userId: string; share: number | null }) => ({
-      stakeholderId: collab.userId,
-      share: normaliseShare(collab.share ?? 0, true)
-    }))
-    .filter((entry: { share: number }) => entry.share > 0);
+    // 프로젝트 currentAmount와 최근 결제 금액 일치 여부 확인
+    if (project.currentAmount !== totalRaised) {
+      console.warn(`프로젝트 currentAmount(${project.currentAmount})와 최근 결제 금액(${totalRaised})이 일치하지 않습니다.`);
+      // 데이터 일관성을 위해 currentAmount를 업데이트
+      await db
+        .update(projects)
+        .set({ currentAmount: totalRaised })
+        .where(eq(projects.id, projectId));
+    }
+
+    // Gateway fee는 별도로 계산하거나 기본값 사용
+    const inferredGatewayFees = gatewayFeeOverride ?? (totalRaised * 0.03); // 기본 3% 수수료
+
+    // 파트너 매치 정보 조회
+    const partnerMatchesList = await db
+      .select({
+        partnerId: partnerMatches.partnerId,
+        settlementShare: partnerMatches.settlementShare
+      })
+      .from(partnerMatches)
+      .where(eq(partnerMatches.projectId, projectId));
+
+    const partnerShares = partnerMatchesList
+      .filter(match => typeof match.settlementShare === 'number')
+      .map(match => ({
+        stakeholderId: match.partnerId,
+        share: normaliseShare(match.settlementShare ?? 0)
+      }))
+      .filter(entry => entry.share > 0);
+
+    // 협업자 정보 조회
+    const collaboratorsList = await db
+      .select({
+        userId: projectCollaborators.userId,
+        share: projectCollaborators.share
+      })
+      .from(projectCollaborators)
+      .where(eq(projectCollaborators.projectId, projectId));
+
+    const collaboratorShares = collaboratorsList
+      .filter(collab => typeof collab.share === 'number')
+      .map(collab => ({
+        stakeholderId: collab.userId,
+        share: normaliseShare(collab.share ?? 0, true)
+      }))
+      .filter(entry => entry.share > 0);
 
   let breakdown;
   try {
@@ -177,73 +231,93 @@ export async function POST(request: NextRequest) {
     return buildError(message, 422);
   }
 
-  // TODO: Drizzle로 전환 필요 - 트랜잭션 구현
-  const settlement = (() => {
-    const created = {
-      id: 'temp-settlement-id',
-      projectId,
-      totalRaised: breakdown.totalRaised,
-      platformFee: breakdown.platformFee,
-      gatewayFees: breakdown.gatewayFees,
-      netAmount: breakdown.netAmount,
-      payoutStatus: 'PENDING',
-      notes,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
+    // Drizzle 트랜잭션으로 정산 생성
+    const settlement = await db.transaction(async (tx) => {
+      const settlementId = crypto.randomUUID();
+      const now = new Date().toISOString();
 
-    const payoutPayload = [
-      {
-        stakeholderType: 'PLATFORM' as const,
-        stakeholderId: null,
-        amount: breakdown.platformFee,
-        percentage:
-          breakdown.totalRaised > 0
-            ? breakdown.platformFee / breakdown.totalRaised
-            : 0
-      },
-      {
-        stakeholderType: 'CREATOR' as const,
-        stakeholderId: project.ownerId,
-        amount: breakdown.creatorShare,
-        percentage:
-          breakdown.totalRaised > 0
-            ? breakdown.creatorShare / breakdown.totalRaised
-            : 0
-      },
-      ...breakdown.partners.map((partner) => ({
-        stakeholderType: 'PARTNER' as const,
-        stakeholderId: partner.stakeholderId,
-        amount: partner.amount,
-        percentage: partner.percentage
-      })),
-      ...breakdown.collaborators.map((collaborator) => ({
-        stakeholderType: 'COLLABORATOR' as const,
-        stakeholderId: collaborator.stakeholderId,
-        amount: collaborator.amount,
-        percentage: collaborator.percentage
-      }))
-    ].filter((payout) => payout.amount > 0);
+      // 정산 생성
+      const [createdSettlement] = await tx
+        .insert(settlements)
+        .values({
+          id: settlementId,
+          projectId,
+          totalRaised: breakdown.totalRaised,
+          platformFee: breakdown.platformFee,
+          creatorShare: breakdown.creatorShare,
+          partnerShare: breakdown.partners.reduce((sum, p) => sum + p.amount, 0),
+          collaboratorShare: breakdown.collaborators.reduce((sum, c) => sum + c.amount, 0),
+          gatewayFees: breakdown.gatewayFees,
+          netAmount: breakdown.netAmount,
+          payoutStatus: 'PENDING',
+          notes,
+          createdAt: now,
+          updatedAt: now
+        })
+        .returning();
 
-    // TODO: Drizzle 트랜잭션으로 전환 필요
-    // 임시로 기본 settlement 객체 반환
-    return {
-      ...created,
-      payouts: payoutPayload.map((payout) => ({
-        id: `temp-payout-${Math.random()}`,
-        settlementId: created.id,
+      const payoutPayload = [
+        {
+          stakeholderType: 'PLATFORM' as const,
+          stakeholderId: null,
+          amount: breakdown.platformFee,
+          percentage:
+            breakdown.totalRaised > 0
+              ? breakdown.platformFee / breakdown.totalRaised
+              : 0
+        },
+        {
+          stakeholderType: 'CREATOR' as const,
+          stakeholderId: project.ownerId,
+          amount: breakdown.creatorShare,
+          percentage:
+            breakdown.totalRaised > 0
+              ? breakdown.creatorShare / breakdown.totalRaised
+              : 0
+        },
+        ...breakdown.partners.map((partner) => ({
+          stakeholderType: 'PARTNER' as const,
+          stakeholderId: partner.stakeholderId,
+          amount: partner.amount,
+          percentage: partner.percentage
+        })),
+        ...breakdown.collaborators.map((collaborator) => ({
+          stakeholderType: 'COLLABORATOR' as const,
+          stakeholderId: collaborator.stakeholderId,
+          amount: collaborator.amount,
+          percentage: collaborator.percentage
+        }))
+      ].filter((payout) => payout.amount > 0);
+
+      // 정산 지급 내역 생성
+      const payoutValues = payoutPayload.map((payout) => ({
+        id: crypto.randomUUID(),
+        settlementId,
         stakeholderType: payout.stakeholderType,
         stakeholderId: payout.stakeholderId,
         amount: payout.amount,
         percentage: payout.percentage,
         status: 'PENDING' as const,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }))
-    };
-  });
+        createdAt: now,
+        updatedAt: now
+      }));
 
-  return NextResponse.json(settlement, { status: 201 });
+      const createdPayouts = await tx
+        .insert(settlementPayouts)
+        .values(payoutValues)
+        .returning();
+
+      return {
+        ...createdSettlement,
+        payouts: createdPayouts
+      };
+    });
+
+    return NextResponse.json(settlement, { status: 201 });
+  } catch (error) {
+    console.error('정산 생성 오류:', error);
+    return buildError('정산 생성에 실패했습니다.', 500);
+  }
 }
 
 function normaliseShare(value: number, hundredScale = false) {

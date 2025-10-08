@@ -362,6 +362,7 @@ export const getPartnersAwaitingApproval = async (limit = 5) => {
 };
 
 export const getPartnerById = async (id: string): Promise<PartnerSummary | null> => {
+  const db = await getDb();
   const partnerData = await db
     .select({
       id: partners.id,
@@ -411,6 +412,7 @@ export const getPartnerById = async (id: string): Promise<PartnerSummary | null>
 export const getPartnerProfileForUser = async (
   userId: string
 ): Promise<PartnerSummary | null> => {
+  const db = await getDb();
   const partnerData = await db
     .select({
       id: partners.id,
@@ -553,6 +555,7 @@ export const createPartnerProfile = async (payload: unknown, sessionUser: Sessio
   const input = parseCreateInput(payload);
   const ownerId = sessionUser.role === 'ADMIN' && input.ownerId ? input.ownerId : sessionUser.id;
 
+  const db = await getDb();
   const ownerData = await db
     .select({ id: users.id, role: users.role })
     .from(users)
@@ -564,7 +567,6 @@ export const createPartnerProfile = async (payload: unknown, sessionUser: Sessio
   }
 
   const owner = ownerData[0];
-
   const existingProfileData = await db
     .select({ id: partners.id })
     .from(partners)
@@ -574,8 +576,6 @@ export const createPartnerProfile = async (payload: unknown, sessionUser: Sessio
   if (existingProfileData.length > 0) {
     throw new PartnerProfileExistsError();
   }
-
-  const db = await getDb();
   const partner = await db.transaction(async (tx) => {
     const createData = buildCreateData(input, ownerId);
     const created = await tx.insert(partners).values(createData).returning();
@@ -606,6 +606,7 @@ export const updatePartnerProfile = async (
 ): Promise<PartnerSummary> => {
   const input = parseUpdateInput(payload);
   
+  const db = await getDb();
   const partnerData = await db
     .select({
       id: partners.id,
@@ -642,7 +643,6 @@ export const updatePartnerProfile = async (
     return result;
   }
 
-  const db = await getDb();
   await db.update(partners)
     .set({
       ...data,
