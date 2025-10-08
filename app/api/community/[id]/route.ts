@@ -86,7 +86,11 @@ const buildPostResponse = async (postId: string, viewerId?: string | null) => {
       try {
         const [likeRecord, dislikeRecord] = await Promise.all([
           db.select().from(postLikes).where(and(eq(postLikes.postId, postId), eq(postLikes.userId, viewerId))).limit(1),
-          db.select().from(postDislikes).where(and(eq(postDislikes.postId, postId), eq(postDislikes.userId, viewerId))).limit(1)
+          db
+            .select()
+            .from(postDislikes)
+            .where(and(eq(postDislikes.postId, postId), eq(postDislikes.userId, viewerId)))
+            .limit(1)
         ]);
         liked = Boolean(likeRecord[0]);
         disliked = Boolean(dislikeRecord[0]);
@@ -103,10 +107,7 @@ const buildPostResponse = async (postId: string, viewerId?: string | null) => {
       const reportsResult = await db
         .select({ count: count() })
         .from(moderationReports)
-        .where(and(
-          eq(moderationReports.targetType, 'POST'),
-          eq(moderationReports.targetId, postId)
-        ));
+        .where(and(eq(moderationReports.targetType, 'POST'), eq(moderationReports.targetId, postId)));
       reports = reportsResult[0]?.count || 0;
     } catch (reportError) {
       console.warn('Failed to count reports:', reportError);
@@ -127,7 +128,11 @@ const buildPostResponse = async (postId: string, viewerId?: string | null) => {
       disliked,
       category: toCategorySlug(postWithCounts.category),
       isPinned: postWithCounts.isPinned || false,
-      isTrending: isTrendingPost(new Date(postWithCounts.createdAt), postWithCounts._count?.comments || 0, postWithCounts._count?.likes || 0),
+      isTrending: isTrendingPost(
+        new Date(postWithCounts.createdAt),
+        postWithCounts._count?.comments || 0,
+        postWithCounts._count?.likes || 0
+      ),
       author: {
         id: postWithCounts.author?.id || '',
         name: postWithCounts.author?.name || 'Unknown',
