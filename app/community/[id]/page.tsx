@@ -72,10 +72,10 @@ export default function CommunityPostDetailPage() {
   const commentInputRef = useRef<HTMLTextAreaElement | null>(null);
   const [commentValue, setCommentValue] = useState('');
 
-  const redirectToSignIn = () => {
+  const redirectToSignIn = useCallback(() => {
     const callbackUrl = typeof window !== 'undefined' ? window.location.href : undefined;
     void signIn(undefined, { callbackUrl });
-  };
+  }, []);
 
   const toggleLikeMutation = useMutation({
     mutationFn: async (like: boolean) => {
@@ -278,13 +278,13 @@ export default function CommunityPostDetailPage() {
     setReportOpen(false);
     resetReportFields();
     reportMutation.reset();
-  }, [resetReportFields, reportMutation]);
+  }, [resetReportFields]);
 
   const openReportModal = useCallback(() => {
     resetReportFields();
     reportMutation.reset();
     setReportOpen(true);
-  }, [resetReportFields, reportMutation]);
+  }, [resetReportFields]);
 
   const handleReportSubmit = useCallback(() => {
     if (reportStatus === 'submitted') {
@@ -335,13 +335,12 @@ export default function CommunityPostDetailPage() {
     selectedReportReason,
     isOtherReportReason,
     trimmedCustomReportReason,
-    reportMutation,
     t
   ]);
 
   const messageIsValid = useMemo(() => messageDraft.trim().length > 0, [messageDraft]);
 
-  const handleSendMessage = (event: FormEvent<HTMLFormElement>) => {
+  const handleSendMessage = useCallback((event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!messageIsValid) {
       return;
@@ -365,7 +364,7 @@ export default function CommunityPostDetailPage() {
         }
       ]);
     }, 800);
-  };
+  }, [messageIsValid, messageDraft, t]);
 
   // 싫어요 상태는 서버에서 관리하므로 로컬 useEffect 제거
 
@@ -375,7 +374,7 @@ export default function CommunityPostDetailPage() {
       setReportReasonKey(null);
       setReportCustomReason('');
       setReportError(null);
-      reportMutation.reset();
+      // reportMutation.reset()은 모달이 닫힐 때만 호출하도록 제거
     }
   }, [reportOpen]);
 
