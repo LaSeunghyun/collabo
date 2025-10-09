@@ -1,25 +1,37 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { eq, desc } from 'drizzle-orm';
 
+import { getDbClient } from '@/lib/db/client';
+import { authSessions, users } from '@/lib/db/schema';
 import { verifyAccessToken } from '@/lib/auth/access-token';
+import { getServerAuthSession } from '@/lib/auth/session';
 
 export async function GET(req: NextRequest) {
-  const authorization = req.headers.get('authorization');
-
-  if (!authorization?.startsWith('Bearer ')) {
-    return NextResponse.json({ error: '인증 토큰이 필요합니다.' }, { status: 401 });
-  }
-
-  const token = authorization.slice(7).trim();
-
-  if (!token) {
-    return NextResponse.json({ error: '인증 토큰이 필요합니다.' }, { status: 401 });
-  }
-
   try {
-    await verifyAccessToken(token);
+    // NextAuth 세션 확인
+    const session = await getServerAuthSession();
+    
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: '인증이 필요합니다.' }, { status: 401 });
+    }
 
-    // 세션 조회 기능은 추후 구현 예정
-    const sessions: any[] = [];
+    const db = await getDbClient();
+    
+    // 사용자의 활성 세션 목록 조회
+    const sessions = await db
+      .select({
+        id: authSessions.id,
+        userId: authSessions.userId,
+        createdAt: authSessions.createdAt,
+        lastUsedAt: authSessions.lastUsedAt,
+        revokedAt: authSessions.revokedAt,
+        deviceInfo: authSessions.deviceInfo,
+        ipAddress: authSessions.ipAddress,
+        userAgent: authSessions.userAgent
+      })
+      .from(authSessions)
+      .where(eq(authSessions.userId, session.user.id))
+      .orderBy(desc(authSessions.lastUsedAt));
 
     return NextResponse.json({
       sessions: sessions.map(session => ({
@@ -28,11 +40,13 @@ export async function GET(req: NextRequest) {
         createdAt: session.createdAt,
         lastUsedAt: session.lastUsedAt,
         isActive: !session.revokedAt,
-        deviceInfo: session.deviceInfo || null
+        deviceInfo: session.deviceInfo || null,
+        ipAddress: session.ipAddress || null,
+        userAgent: session.userAgent || null
       }))
     });
   } catch (error) {
     console.error('세션 조회 실패', error);
-    return NextResponse.json({ error: '인증 토큰이 유효하지 않습니다.' }, { status: 401 });
+    return NextResponse.json({ error: '세션 조회에 실패했습니다.' }, { status: 500 });
   }
 }

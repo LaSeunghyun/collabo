@@ -473,7 +473,7 @@ interface CommunityPostCardProps {
 function CommunityPostCard({ post, onToggleLike, isLiking }: CommunityPostCardProps) {
   const { t } = useTranslation();
 
-  const displayCategory = t(`community.filters.${post.category}`);
+  const displayCategory = t(`community.categories.${post.category}`);
   const authorName = post.author?.name ?? t('community.defaultGuestName');
   const createdAt = post.createdAt ? new Date(post.createdAt) : null;
 
@@ -487,7 +487,7 @@ function CommunityPostCard({ post, onToggleLike, isLiking }: CommunityPostCardPr
           <div className="flex items-center gap-2 text-xs text-white/60">
             {post.isPinned ? (
               <>
-                <span>{t(`community.filters.${post.category}`)}</span>
+                <span>{t(`community.categories.${post.category}`)}</span>
                 <span>•</span>
                 <span>{t('community.badges.pinned')}</span>
               </>

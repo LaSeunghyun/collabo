@@ -51,7 +51,7 @@ function CommunityFeed({ featuredPost, highlightedPosts }: CommunityFeedProps) {
         >
           <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.3em] text-white/60">
             <span className="rounded-full bg-white/10 px-3 py-1 text-white">
-              {t(`community.filters.${featuredPost.category}`)}
+              {t(`community.categories.${featuredPost.category}`)}
             </span>
             {featuredPost.isTrending ? (
               <span className="rounded-full bg-primary/20 px-3 py-1 text-primary">
@@ -89,7 +89,7 @@ function CommunityFeed({ featuredPost, highlightedPosts }: CommunityFeedProps) {
               >
                 <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.3em] text-white/50">
                   <span className="truncate text-white/70">
-                    {t(`community.filters.${post.category}`)}
+                    {t(`community.categories.${post.category}`)}
                   </span>
                   {post.isTrending ? (
                     <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary">

@@ -1,5 +1,11 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
+import { eq, and, count } from 'drizzle-orm';
+import { randomUUID } from 'crypto';
+
+import { getDbClient } from '@/lib/db/client';
+import { userFollows, users } from '@/lib/db/schema';
 import { getServerAuthSession } from '@/lib/auth/session';
+import { withCSRFProtection } from '@/lib/auth/csrf';
 
 const unauthorized = () =>
   NextResponse.json({ message: 'Authentication required to follow artists.' }, { status: 401 });
@@ -7,16 +13,44 @@ const unauthorized = () =>
 const cannotFollowSelf = () =>
   NextResponse.json({ message: 'You cannot follow yourself.' }, { status: 400 });
 
-const getFollowerCount = () => Promise.resolve(0);
-
 const notFound = () => NextResponse.json({ message: 'Artist not found' }, { status: 404 });
 
-const ensureArtistExists = async () => {
-  // 아티스트 존재 확인 기능은 추후 구현 예정
-  return true;
+const ensureArtistExists = async (artistId: string) => {
+  const db = await getDbClient();
+  const artist = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.id, artistId))
+    .limit(1);
+  
+  return artist.length > 0;
 };
 
-export async function POST(_request: NextRequest, { params }: { params: { id: string } }) {
+const getFollowerCount = async (artistId: string) => {
+  const db = await getDbClient();
+  const result = await db
+    .select({ count: count() })
+    .from(userFollows)
+    .where(eq(userFollows.followingId, artistId));
+  
+  return result[0]?.count || 0;
+};
+
+const isFollowing = async (userId: string, artistId: string) => {
+  const db = await getDbClient();
+  const follow = await db
+    .select({ id: userFollows.id })
+    .from(userFollows)
+    .where(and(
+      eq(userFollows.followerId, userId),
+      eq(userFollows.followingId, artistId)
+    ))
+    .limit(1);
+  
+  return follow.length > 0;
+};
+
+export const POST = withCSRFProtection(async (request: NextRequest, { params }: { params: { id: string } }) => {
   const session = await getServerAuthSession();
 
   if (!session?.user?.id) {
@@ -29,23 +63,48 @@ export async function POST(_request: NextRequest, { params }: { params: { id: st
     return cannotFollowSelf();
   }
 
-  if (!(await ensureArtistExists())) {
+  if (!(await ensureArtistExists(artistId))) {
     return notFound();
   }
 
   try {
-    // 팔로우 기능은 추후 구현 예정
-    console.log('Follow artist:', { artistId: params.id, userId: session.user.id });
+    const db = await getDbClient();
+    
+    // 이미 팔로우 중인지 확인
+    const alreadyFollowing = await isFollowing(session.user.id, artistId);
+    if (alreadyFollowing) {
+      const followerCount = await getFollowerCount(artistId);
+      return NextResponse.json({ 
+        message: 'Already following this artist',
+        followerCount, 
+        isFollowing: true 
+      });
+    }
+
+    // 팔로우 관계 생성
+    const now = new Date().toISOString();
+    await db
+      .insert(userFollows)
+      .values({
+        id: randomUUID(),
+        followerId: session.user.id,
+        followingId: artistId,
+        createdAt: now
+      });
+
+    const followerCount = await getFollowerCount(artistId);
+    return NextResponse.json({ 
+      message: 'Successfully followed artist',
+      followerCount, 
+      isFollowing: true 
+    });
   } catch (error) {
     console.error('Failed to follow artist', error);
     return NextResponse.json({ message: 'Could not follow artist.' }, { status: 500 });
   }
+});
 
-  const followerCount = await getFollowerCount();
-  return NextResponse.json({ followerCount, isFollowing: true });
-}
-
-export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }) {
+export const DELETE = withCSRFProtection(async (request: NextRequest, { params }: { params: { id: string } }) => {
   const session = await getServerAuthSession();
 
   if (!session?.user?.id) {
@@ -58,18 +117,40 @@ export async function DELETE(_request: NextRequest, { params }: { params: { id: 
     return cannotFollowSelf();
   }
 
-  if (!(await ensureArtistExists())) {
+  if (!(await ensureArtistExists(artistId))) {
     return notFound();
   }
 
   try {
-    // 언팔로우 기능은 추후 구현 예정
-    console.log('Unfollow artist:', { artistId: params.id, userId: session.user.id });
+    const db = await getDbClient();
+    
+    // 팔로우 관계가 존재하는지 확인
+    const isCurrentlyFollowing = await isFollowing(session.user.id, artistId);
+    if (!isCurrentlyFollowing) {
+      const followerCount = await getFollowerCount(artistId);
+      return NextResponse.json({ 
+        message: 'Not following this artist',
+        followerCount, 
+        isFollowing: false 
+      });
+    }
+
+    // 팔로우 관계 삭제
+    await db
+      .delete(userFollows)
+      .where(and(
+        eq(userFollows.followerId, session.user.id),
+        eq(userFollows.followingId, artistId)
+      ));
+
+    const followerCount = await getFollowerCount(artistId);
+    return NextResponse.json({ 
+      message: 'Successfully unfollowed artist',
+      followerCount, 
+      isFollowing: false 
+    });
   } catch (error) {
     console.error('Failed to unfollow artist', error);
     return NextResponse.json({ message: 'Could not unfollow artist.' }, { status: 500 });
   }
-
-  const followerCount = await getFollowerCount();
-  return NextResponse.json({ followerCount, isFollowing: false });
-}
+});

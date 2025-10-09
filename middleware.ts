@@ -7,9 +7,19 @@ import {
   findMatchingGuard,
   isAuthorizedForGuard
 } from '@/lib/auth/role-guards';
+import { getRateLimiterForPath } from '@/lib/middleware/rate-limit';
 
 export default withAuth(
   function middleware(req: NextRequestWithAuth) {
+    // 레이트 리미팅 적용
+    const rateLimiter = getRateLimiterForPath(req.nextUrl.pathname);
+    if (rateLimiter) {
+      const rateLimitResponse = rateLimiter.middleware()(req);
+      if (rateLimitResponse) {
+        return rateLimitResponse;
+      }
+    }
+
     const guard = findMatchingGuard(req.nextUrl.pathname);
 
     if (!guard) {

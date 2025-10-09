@@ -2,13 +2,13 @@
 import { eq, and, count } from 'drizzle-orm';
 
 import { 
-  post as posts,
-  user as users,
-  postLike as postLikes,
-  postDislike as postDislikes,
-  moderationReport as moderationReports,
-  comment as comments
-} from '@/drizzle/schema';
+  communityPosts,
+  users,
+  postLikes,
+  postDislikes,
+  moderationReports,
+  comments
+} from '@/lib/db/schema';
 import { getDb } from '@/lib/db/client';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
@@ -39,22 +39,22 @@ const buildPostResponse = async (postId: string, viewerId?: string | null) => {
     // 게시글과 작성자 정보를 함께 조회
     const postResult = await db
       .select({
-        id: posts.id,
-        title: posts.title,
-        content: posts.content,
-        category: posts.category,
-        projectId: posts.projectId,
-        isPinned: posts.isPinned,
-        createdAt: posts.createdAt,
+        id: communityPosts.id,
+        title: communityPosts.title,
+        content: communityPosts.content,
+        category: communityPosts.category,
+        projectId: communityPosts.projectId,
+        isPinned: communityPosts.isPinned,
+        createdAt: communityPosts.createdAt,
         author: {
           id: users.id,
           name: users.name,
           avatarUrl: users.avatarUrl
         }
       })
-      .from(posts)
-      .innerJoin(users, eq(posts.authorId, users.id))
-      .where(eq(posts.id, postId))
+      .from(communityPosts)
+      .innerJoin(users, eq(communityPosts.authorId, users.id))
+      .where(eq(communityPosts.id, postId))
       .limit(1);
 
     const post = postResult[0];
@@ -189,7 +189,7 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   const body = await request.json();
-  const action = body.action; // 'like', 'dislike', 'unlike', 'undislike'
+  const action = body.action; // 'like', 'dislike', 'unlike', 'undislike', 'update'
   const authContext = { headers: request.headers };
 
   let sessionUser: SessionUser;
@@ -207,18 +207,80 @@ export async function PATCH(
 
   try {
     const db = await getDb();
-    // 게시글 존재 여부 확인
+    
+    // 게시글 존재 여부 및 작성자 확인
     const existingPost = await db
-      .select({ id: posts.id })
-      .from(posts)
-      .where(eq(posts.id, params.id))
+      .select({ 
+        id: communityPosts.id, 
+        authorId: communityPosts.authorId,
+        title: communityPosts.title,
+        content: communityPosts.content,
+        category: communityPosts.category
+      })
+      .from(communityPosts)
+      .where(eq(communityPosts.id, params.id))
       .limit(1);
 
     if (!existingPost[0]) {
       return NextResponse.json({ message: 'Post not found' }, { status: 404 });
     }
 
-    // 좋아요와 싫어요를 상호 배타적으로 처리
+    // 게시글 수정인 경우
+    if (action === 'update') {
+      const { title, content, category } = body;
+      
+      // 권한 확인 (작성자 또는 관리자만 수정 가능)
+      if (existingPost[0].authorId !== sessionUser.id && sessionUser.role !== 'ADMIN') {
+        return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+      }
+
+      // 입력 검증
+      if (title !== undefined && (title.length < 1 || title.length > 200)) {
+        return NextResponse.json(
+          { error: '제목은 1자 이상 200자 이하여야 합니다.' },
+          { status: 400 }
+        );
+      }
+
+      if (content !== undefined && (content.length < 1 || content.length > 10000)) {
+        return NextResponse.json(
+          { error: '내용은 1자 이상 10000자 이하여야 합니다.' },
+          { status: 400 }
+        );
+      }
+
+      // 카테고리 검증
+      if (category !== undefined) {
+        const validCategories = ['GENERAL', 'NOTICE', 'COLLAB', 'SUPPORT', 'SHOWCASE'];
+        const normalizedCategory = category.toUpperCase();
+        
+        if (!validCategories.includes(normalizedCategory)) {
+          return NextResponse.json(
+            { error: '유효하지 않은 카테고리입니다.' },
+            { status: 400 }
+          );
+        }
+      }
+
+      // 게시글 업데이트
+      const updateData: any = {
+        updatedAt: new Date().toISOString()
+      };
+
+      if (title !== undefined) updateData.title = title.trim();
+      if (content !== undefined) updateData.content = content.trim();
+      if (category !== undefined) updateData.category = category.toUpperCase();
+
+      await db
+        .update(communityPosts)
+        .set(updateData)
+        .where(eq(communityPosts.id, params.id));
+
+      const updated = await buildPostResponse(params.id, sessionUser.id);
+      return NextResponse.json(updated);
+    }
+
+    // 좋아요/싫어요 처리 (기존 로직)
     if (action === 'like') {
       // 싫어요가 있다면 먼저 제거
       await db
@@ -271,7 +333,68 @@ export async function PATCH(
 
     return NextResponse.json(updated);
   } catch (error) {
-    console.error('Failed to update post likes/dislikes.', error);
-    return NextResponse.json({ message: 'Unable to update like/dislike state.' }, { status: 500 });
+    console.error('Failed to update post.', error);
+    return NextResponse.json({ message: 'Unable to update post.' }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const authContext = { headers: request.headers };
+
+  let sessionUser: SessionUser;
+
+  try {
+    sessionUser = await requireApiUser({}, authContext);
+  } catch (error) {
+    const response = handleAuthorizationError(error);
+    if (response) {
+      return response;
+    }
+
+    throw error;
+  }
+
+  try {
+    const db = await getDb();
+    
+    // 게시글 존재 여부 및 작성자 확인
+    const existingPost = await db
+      .select({ 
+        id: communityPosts.id, 
+        authorId: communityPosts.authorId,
+        title: communityPosts.title
+      })
+      .from(communityPosts)
+      .where(eq(communityPosts.id, params.id))
+      .limit(1);
+
+    if (!existingPost[0]) {
+      return NextResponse.json({ message: 'Post not found' }, { status: 404 });
+    }
+
+    // 권한 확인 (작성자 또는 관리자만 삭제 가능)
+    if (existingPost[0].authorId !== sessionUser.id && sessionUser.role !== 'ADMIN') {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+    }
+
+    // Soft delete: status를 'DELETED'로 변경
+    await db
+      .update(communityPosts)
+      .set({ 
+        status: 'DELETED',
+        updatedAt: new Date().toISOString()
+      })
+      .where(eq(communityPosts.id, params.id));
+
+    return NextResponse.json({ 
+      message: 'Post deleted successfully',
+      id: params.id
+    });
+  } catch (error) {
+    console.error('Failed to delete post.', error);
+    return NextResponse.json({ message: 'Unable to delete post.' }, { status: 500 });
   }
 }

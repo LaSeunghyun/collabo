@@ -1,5 +1,5 @@
 {
-  "filters": {
+  "categories": {
     "all": "전체",
     "notice": "공지",
     "general": "자유",
@@ -8,6 +8,11 @@
     "showcase": "쇼케이스"
   },
   "searchPlaceholder": "게시글 검색 또는 @멘션하기",
+  "sort": {
+    "recent": "최신순",
+    "popular": "인기순",
+    "trending": "트렌딩"
+  },
   "sortTrending": "트렌딩",
   "badges": {
     "pinned": "고정됨",
@@ -36,6 +41,7 @@
     "backToList": "목록으로 돌아가기",
     "cancel": "취소"
   },
+  "createPost": "글 작성",
   "labels": {
     "total": "전체 {{count}}건",
     "selectedCategories": "선택한 카테고리 {{count}}개"

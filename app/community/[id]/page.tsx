@@ -412,7 +412,7 @@ export default function CommunityPostDetailPage() {
   const likeLabel = t('community.likesLabel_other', { count: post.likes });
   const commentLabel = t('community.commentsLabel_other', { count: comments.length });
   const authorName = post.author?.name ?? t('community.defaultGuestName');
-  const categoryLabel = t(`community.filters.${post.category}`);
+  const categoryLabel = t(`community.categories.${post.category}`);
   const createdAt = post.createdAt ? new Date(post.createdAt) : null;
   const formattedDate = createdAt
     ? createdAt.toLocaleString('ko-KR', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })

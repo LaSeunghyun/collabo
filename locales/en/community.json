@@ -1,5 +1,5 @@
 {
-  "filters": {
+  "categories": {
     "all": "All",
     "notice": "Notices",
     "general": "General",
@@ -8,6 +8,11 @@
     "showcase": "Showcase"
   },
   "searchPlaceholder": "Search posts or @mention people",
+  "sort": {
+    "recent": "Recent",
+    "popular": "Popular",
+    "trending": "Trending"
+  },
   "sortTrending": "Trending",
   "badges": {
     "pinned": "Pinned",
@@ -36,6 +41,7 @@
     "backToList": "Back to list",
     "cancel": "Cancel"
   },
+  "createPost": "Create Post",
   "labels": {
     "total": "Total {{count}} posts",
     "selectedCategories": "{{count}} categories selected"
