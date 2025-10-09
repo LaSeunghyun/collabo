@@ -1,12 +1,11 @@
-import { NextResponse, type NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { eq, desc } from 'drizzle-orm';
 
 import { getDbClient } from '@/lib/db/client';
-import { authSessions, users } from '@/lib/db/schema';
-import { verifyAccessToken } from '@/lib/auth/access-token';
+import { authSessions } from '@/lib/db/schema';
 import { getServerAuthSession } from '@/lib/auth/session';
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     // NextAuth 세션 확인
     const session = await getServerAuthSession();
@@ -25,9 +24,7 @@ export async function GET(req: NextRequest) {
         createdAt: authSessions.createdAt,
         lastUsedAt: authSessions.lastUsedAt,
         revokedAt: authSessions.revokedAt,
-        deviceInfo: authSessions.deviceInfo,
-        ipAddress: authSessions.ipAddress,
-        userAgent: authSessions.userAgent
+        deviceId: authSessions.deviceId
       })
       .from(authSessions)
       .where(eq(authSessions.userId, session.user.id))
@@ -40,9 +37,7 @@ export async function GET(req: NextRequest) {
         createdAt: session.createdAt,
         lastUsedAt: session.lastUsedAt,
         isActive: !session.revokedAt,
-        deviceInfo: session.deviceInfo || null,
-        ipAddress: session.ipAddress || null,
-        userAgent: session.userAgent || null
+        deviceId: session.deviceId || null
       }))
     });
   } catch (error) {

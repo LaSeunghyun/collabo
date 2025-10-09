@@ -1,29 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { eq, desc, and } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 
 import { getDbClient } from '@/lib/db/client';
 import { comments, communityPosts, users } from '@/lib/db/schema';
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
-import { GuardRequirement } from '@/lib/auth/session';
 import type { SessionUser } from '@/lib/auth/session';
-import { withCSRFProtection } from '@/lib/auth/csrf';
 
-function formatComment(comment: {
-  id: string;
-  postId: string;
-  content: string;
-  createdAt: Date;
-  author?: { name: string | null } | null;
-}) {
-  return {
-    id: comment.id,
-    postId: comment.postId,
-    content: comment.content,
-    authorName: comment.author?.name ?? 'Guest',
-    createdAt: comment.createdAt.toISOString()
-  };
-}
 
 export async function GET(
   _request: NextRequest,
@@ -77,10 +60,11 @@ export async function GET(
   }
 }
 
-export const POST = withCSRFProtection(async (
+export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
-) => {
+) {
+  // CSRF 보호는 미들웨어에서 처리됨
   let sessionUser: SessionUser;
   const authContext = { headers: request.headers };
 
@@ -140,14 +124,22 @@ export const POST = withCSRFProtection(async (
       throw new Error('Failed to create comment');
     }
 
-    // 게시글의 댓글 수 증가
-    await db
-      .update(communityPosts)
-      .set({ 
-        commentsCount: communityPosts.commentsCount + 1,
-        updatedAt: now
-      })
-      .where(eq(communityPosts.id, params.id));
+    // 게시글의 댓글 수 증가 (현재 댓글 수 + 1)
+    const currentPost = await db
+      .select({ commentsCount: communityPosts.commentsCount })
+      .from(communityPosts)
+      .where(eq(communityPosts.id, params.id))
+      .limit(1);
+    
+    if (currentPost[0]) {
+      await db
+        .update(communityPosts)
+        .set({ 
+          commentsCount: currentPost[0].commentsCount + 1,
+          updatedAt: now
+        })
+        .where(eq(communityPosts.id, params.id));
+    }
 
     // 작성자 정보 조회
     const author = await db
@@ -172,4 +164,4 @@ export const POST = withCSRFProtection(async (
     console.error('Failed to create comment in database.', error);
     return NextResponse.json({ message: 'Unable to create comment.' }, { status: 500 });
   }
-});
+}

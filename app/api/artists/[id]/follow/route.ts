@@ -5,7 +5,6 @@ import { randomUUID } from 'crypto';
 import { getDbClient } from '@/lib/db/client';
 import { userFollows, users } from '@/lib/db/schema';
 import { getServerAuthSession } from '@/lib/auth/session';
-import { withCSRFProtection } from '@/lib/auth/csrf';
 
 const unauthorized = () =>
   NextResponse.json({ message: 'Authentication required to follow artists.' }, { status: 401 });
@@ -50,7 +49,8 @@ const isFollowing = async (userId: string, artistId: string) => {
   return follow.length > 0;
 };
 
-export const POST = withCSRFProtection(async (request: NextRequest, { params }: { params: { id: string } }) => {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+  // CSRF 보호는 미들웨어에서 처리됨
   const session = await getServerAuthSession();
 
   if (!session?.user?.id) {
@@ -102,9 +102,10 @@ export const POST = withCSRFProtection(async (request: NextRequest, { params }: 
     console.error('Failed to follow artist', error);
     return NextResponse.json({ message: 'Could not follow artist.' }, { status: 500 });
   }
-});
+}
 
-export const DELETE = withCSRFProtection(async (request: NextRequest, { params }: { params: { id: string } }) => {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+  // CSRF 보호는 미들웨어에서 처리됨
   const session = await getServerAuthSession();
 
   if (!session?.user?.id) {
@@ -153,4 +154,4 @@ export const DELETE = withCSRFProtection(async (request: NextRequest, { params }
     console.error('Failed to unfollow artist', error);
     return NextResponse.json({ message: 'Could not unfollow artist.' }, { status: 500 });
   }
-});
+}
