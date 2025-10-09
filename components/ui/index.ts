@@ -13,7 +13,7 @@ export { SectionHeader } from './headers/section-header';
 
 // Layout
 // export { default as Footer } from './layout/footer';
-// export { default as Header } from './layout/header';
+export { Header } from './layout/header';
 // export { default as MobileTabBar } from './layout/mobile-tab-bar';
 
 // Sections

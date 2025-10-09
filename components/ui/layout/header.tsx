@@ -11,11 +11,11 @@ export function Header() {
   const { data: unreadCount = 0 } = useAnnouncementUnreadCount(Boolean(session?.user));
 
   const navigationItems = [
+    { href: '/announcements', label: '공지사항', unreadCount },
+    { href: '/community', label: '커뮤니티' },
     { href: '/projects', label: '프로젝트' },
     { href: '/artists', label: '아티스트' },
     { href: '/partners', label: '파트너' },
-    { href: '/community', label: '커뮤니티' },
-    { href: '/announcements', label: '공지사항', unreadCount }
   ];
 
   if (session?.user && canAccessRoute(session.user, '/partners/dashboard')) {
