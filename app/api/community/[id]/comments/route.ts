@@ -26,7 +26,7 @@ export async function GET(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { id } = params;
   try {
-    // TODO: Drizzle로 전환 필요
+    // 댓글 조회 기능은 추후 구현 예정
     const comments: any[] = [];
 
     return NextResponse.json(comments.map((comment: { id: string; postId: string; content: string; createdAt: Date; author?: { name: string | null } | null }) => formatComment(comment)));
@@ -62,13 +62,13 @@ export async function POST(
   }
 
   try {
-    // TODO: Drizzle로 전환 필요
+    // 게시글 확인 (추후 구현 예정)
     const post = { id: params.id };
     if (!post) {
       return NextResponse.json({ message: 'Post not found.' }, { status: 404 });
     }
 
-    // TODO: Drizzle로 전환 필요
+    // 댓글 생성 (추후 구현 예정)
     const comment = {
       id: 'temp-comment-id',
       content,

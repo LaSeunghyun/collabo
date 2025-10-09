@@ -6,6 +6,7 @@ import { userRole } from '@/drizzle/schema';
 import { verifyAccessToken } from './access-token';
 import { authOptions } from './options';
 import { deriveEffectivePermissions, hasAllPermissions, normalizeRole } from './permissions';
+// import { getDbClient } from '../db/client';
 
 export interface SessionUser {
   id: string;

@@ -32,7 +32,7 @@ const buildInitialValues = (initialData?: Partial<PartnerFormData>): PartnerForm
   portfolioUrl: initialData?.portfolioUrl ?? ''
 });
 
-const SUBMIT_ERROR_FALLBACK = '?�트???�록 ?�청???�료?��? 못했?�요. ?�시 ???�시 ?�도??주세??';
+const SUBMIT_ERROR_FALLBACK = '파트너 등록 신청을 완료하지 못했습니다. 다시 시도해 주세요.';
 
 export function PartnerForm({ onSubmit, initialData, onSuccess }: PartnerFormProps) {
   const initialValues = useMemo(() => buildInitialValues(initialData), [initialData]);
@@ -82,66 +82,66 @@ export function PartnerForm({ onSubmit, initialData, onSuccess }: PartnerFormPro
   return (
     <form onSubmit={handleSubmit} className="space-y-6" noValidate>
       <div className="space-y-2">
-        <Label htmlFor="name">?�트?�명 *</Label>
+        <Label htmlFor="name">파트너명 *</Label>
         <Input
           id="name"
           value={formData.name}
           onChange={(event) => handleChange('name', event.target.value)}
-          placeholder="?�트?�명???�력?�세??
+          placeholder="파트너명을 입력해주세요"
           required
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="description">?�명</Label>
+        <Label htmlFor="description">설명</Label>
         <Textarea
           id="description"
           value={formData.description}
           onChange={(event) => handleChange('description', event.target.value)}
-          placeholder="?�공 ?�비?��? ?�로?�트 경험???�개??주세??
+          placeholder="제공 서비스나 프로젝트 경험을 간단히 설명해주세요"
           rows={3}
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="type">?�트???�형 *</Label>
+        <Label htmlFor="type">파트너 유형 *</Label>
         <Select value={formData.type} onValueChange={(value) => handleChange('type', value as PartnerTypeType)}>
           <SelectTrigger>
-            <SelectValue placeholder="?�트???�형???�택?�세?? />
+            <SelectValue placeholder="파트너 유형을 선택해주세요" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={PartnerType.STUDIO}>?�튜?�오</SelectItem>
-            <SelectItem value={PartnerType.VENUE}>공연??/SelectItem>
-            <SelectItem value={PartnerType.PRODUCTION}>?�작 ?�튜?�오</SelectItem>
-            <SelectItem value={PartnerType.MERCHANDISE}>머천?�이�?/SelectItem>
-            <SelectItem value={PartnerType.OTHER}>기�?</SelectItem>
+            <SelectItem value={PartnerType.STUDIO}>스튜디오</SelectItem>
+            <SelectItem value={PartnerType.VENUE}>공연장</SelectItem>
+            <SelectItem value={PartnerType.PRODUCTION}>제작 스튜디오</SelectItem>
+            <SelectItem value={PartnerType.MERCHANDISE}>머천다이즈</SelectItem>
+            <SelectItem value={PartnerType.OTHER}>기타</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="contactInfo">?�락�?*</Label>
+        <Label htmlFor="contactInfo">연락처 *</Label>
         <Input
           id="contactInfo"
           value={formData.contactInfo}
           onChange={(event) => handleChange('contactInfo', event.target.value)}
-          placeholder="?�락 가?�한 ?�메???�는 ?�화번호"
+          placeholder="연락 가능한 이메일이나 전화번호"
           required
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="location">?�치</Label>
+        <Label htmlFor="location">위치</Label>
         <Input
           id="location"
           value={formData.location}
           onChange={(event) => handleChange('location', event.target.value)}
-          placeholder="기반 지??�� ?�력?�세??
+          placeholder="기반 지역을 입력해주세요"
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="portfolioUrl">?�트?�리??URL</Label>
+        <Label htmlFor="portfolioUrl">포트폴리오 URL</Label>
         <Input
           id="portfolioUrl"
           type="url"
@@ -159,10 +159,10 @@ export function PartnerForm({ onSubmit, initialData, onSuccess }: PartnerFormPro
 
       <div className="flex justify-end space-x-2">
         <Button type="button" variant="outline" onClick={handleReset} disabled={isSubmitting}>
-          초기??
+          초기화
         </Button>
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? '?�록 ?�청 중�? : '?�트???�록 ?�청'}
+          {isSubmitting ? '등록 신청 중...' : '파트너 등록 신청'}
         </Button>
       </div>
     </form>

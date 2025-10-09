@@ -728,6 +728,50 @@ export const visitLog = pgTable("VisitLog", {
 		}).onUpdate("cascade").onDelete("set null"),
 ]);
 
+// Community tables
+export const communityPosts = pgTable("CommunityPost", {
+	id: text().primaryKey().notNull(),
+	title: text().notNull(),
+	content: text().notNull(),
+	category: communityCategory().notNull(),
+	authorId: text().notNull(),
+	projectId: text(),
+	likesCount: integer().default(0).notNull(),
+	commentsCount: integer().default(0).notNull(),
+	isPinned: boolean().default(false).notNull(),
+	status: text().default('PUBLISHED').notNull(),
+	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp({ mode: 'string' }).notNull(),
+}, (table) => [
+	foreignKey({
+		columns: [table.authorId],
+		foreignColumns: [user.id],
+		name: "CommunityPost_authorId_User_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
+	foreignKey({
+		columns: [table.projectId],
+		foreignColumns: [project.id],
+		name: "CommunityPost_projectId_Project_id_fk"
+	}).onUpdate("cascade").onDelete("set null"),
+]);
+
+export const communityReports = pgTable("CommunityReport", {
+	id: text().primaryKey().notNull(),
+	reporterId: text().notNull(),
+	targetType: moderationTargetType().notNull(),
+	targetId: text().notNull(),
+	reason: text(),
+	status: moderationStatus().default('PENDING').notNull(),
+	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp({ mode: 'string' }).notNull(),
+}, (table) => [
+	foreignKey({
+		columns: [table.reporterId],
+		foreignColumns: [user.id],
+		name: "CommunityReport_reporterId_User_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
+]);
+
 // Export aliases for compatibility
 export const users = user;
 export const authSessions = authSession;

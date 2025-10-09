@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { users } from '@/drizzle/schema';
 import { hashPassword } from '@/lib/auth/password';
 import { randomUUID } from 'crypto';
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     const db = await getDb();
     const hashedPassword = await hashPassword('test123!');

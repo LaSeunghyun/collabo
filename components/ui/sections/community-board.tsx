@@ -4,8 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { InfiniteData, QueryKey } from '@tanstack/react-query';
-import { ArrowRight, Heart, MessageCircle, Search, Sparkles } from 'lucide-react';
+import type { InfiniteData } from '@tanstack/react-query';
+import { Heart, MessageCircle, Search, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { signIn, useSession } from 'next-auth/react';
 import clsx from 'clsx';
@@ -100,7 +100,7 @@ function useCommunityFeed(params: {
 
       const res = await fetch(`/api/community?${query.toString()}`);
       if (!res.ok) {
-        throw new Error('Failed to load community posts');
+        throw new Error('커뮤니티 게시글을 불러오지 못했습니다.');
       }
 
       const json = (await res.json()) as CommunityFeedResponse;
@@ -173,8 +173,8 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
   });
 
   const firstPage = useMemo(() => data?.pages[0], [data?.pages]);
-  const totalCount = firstPage?.meta.total ?? 0;
-  const metaPinned = firstPage?.pinned ?? [];
+  // const totalCount = firstPage?.meta.total ?? 0;
+  // const metaPinned = firstPage?.pinned ?? [];
 
   useEffect(() => {
     if (!onMetaChange || !firstPage) {
@@ -223,7 +223,7 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
       });
 
       if (!response.ok) {
-        throw new Error('Failed to toggle like');
+        throw new Error('좋아요를 변경하지 못했습니다.');
       }
 
       return response.json();
@@ -274,7 +274,7 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
                   ? {
                       ...post,
                       liked: !post.liked,
-                      likeCount: post.liked ? post.likeCount - 1 : post.likeCount + 1
+                      likes: post.liked ? post.likes - 1 : post.likes + 1
                     }
                   : post
               )
@@ -477,8 +477,8 @@ function CommunityPostCard({ post, onToggleLike, isLiking }: CommunityPostCardPr
   const authorName = post.author?.name ?? t('community.defaultGuestName');
   const createdAt = post.createdAt ? new Date(post.createdAt) : null;
 
-  const commentLabel = t('community.labels.comments', { count: post.commentCount });
-  const likeLabel = t('community.labels.likes', { count: post.likeCount });
+  const commentLabel = t('community.labels.comments', { count: post.comments });
+  const likeLabel = t('community.labels.likes', { count: post.likes });
 
   return (
     <article className="rounded-2xl border border-white/10 bg-white/5 p-6 transition hover:border-white/20">
@@ -535,7 +535,7 @@ function CommunityPostCard({ post, onToggleLike, isLiking }: CommunityPostCardPr
             )}
           >
             <Heart className={clsx('h-3 w-3', post.liked && 'fill-current')} />
-            {post.likeCount}
+            {post.likes}
           </button>
 
           <Link
@@ -543,7 +543,7 @@ function CommunityPostCard({ post, onToggleLike, isLiking }: CommunityPostCardPr
             className="flex items-center gap-1 rounded-full bg-white/5 px-3 py-1.5 text-xs font-medium text-white/60 transition hover:bg-white/10"
           >
             <MessageCircle className="h-3 w-3" />
-            {post.commentCount}
+            {post.comments}
           </Link>
         </div>
       </div>

@@ -6,7 +6,7 @@ import { PartnerApprovalSection } from './_components/partner-approval-section';
 import { ProjectReviewSection } from './_components/project-review-section';
 import { SettlementQueueSection } from './_components/settlement-queue-section';
 
-// ?�적 ?�더�?강제 - 빌드 ???�이?�베?�스 ?�근 방�?
+// 정적 렌더링 강제 - 빌드 시 데이터베이스 접근 방지
 export const dynamic = 'force-dynamic';
 
 export default async function AdminDashboardPage() {

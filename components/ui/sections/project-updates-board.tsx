@@ -4,9 +4,9 @@ import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CalendarDays, Edit3, Paperclip, Plus, ShieldCheck, Trash2, X } from 'lucide-react';
 
-import { CommunityPostCard } from '@/components/ui/sections/community-board';
-import type { CommunityPost } from '@/lib/data/community';
-// import { PostVisibility } from '@/types/shared'; // ?�키마에 ?�음
+// import { CommunityPostCard } from '@/components/ui/sections/community-board';
+// import type { CommunityPost } from '@/lib/data/community';
+// import { PostVisibility } from '@/types/shared'; // 스키마에 없음
 
 type ProjectUpdateAttachment = {
   url: string;
@@ -112,7 +112,7 @@ const useProjectUpdates = (projectId: string) =>
     queryFn: async () => {
       const res = await fetch(`/api/projects/${projectId}/updates`);
       if (!res.ok) {
-        throw new Error('?�데?�트�?불러?��? 못했?�니??');
+        throw new Error('업데이트를 불러오지 못했습니다.');
       }
 
       const data = await res.json();
@@ -134,15 +134,6 @@ const formatDateTime = (value: string) => {
   }
 };
 
-const toCommunityPost = (update: ProjectUpdate): CommunityPost => ({
-  id: update.id,
-  title: update.title,
-  content: update.content,
-  likes: update.likes,
-  comments: update.comments,
-  liked: update.liked,
-  category: 'general'
-});
 
 interface ProjectUpdatesBoardProps {
   projectId: string;
@@ -161,65 +152,65 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
   const [editState, setEditState] = useState<UpdateFormState | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
 
-  const toggleLikeMutation = useMutation<
-    CommunityPost,
-    Error,
-    { updateId: string; like: boolean },
-    { previous: ProjectUpdate[] | undefined }
-  >({
-    mutationFn: async ({ updateId, like }) => {
-      const res = await fetch(`/api/community/${updateId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: like ? 'like' : 'unlike' })
-      });
+  // const toggleLikeMutation = useMutation<
+  //   CommunityPost,
+  //   Error,
+  //   { updateId: string; like: boolean },
+  //   { previous: ProjectUpdate[] | undefined }
+  // >({
+  //   mutationFn: async ({ updateId, like }) => {
+  //     const res = await fetch(`/api/community/${updateId}`, {
+  //       method: 'PATCH',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify({ action: like ? 'like' : 'unlike' })
+  //     });
 
-      if (!res.ok) {
-        throw new Error('좋아?��? 변경하지 못했?�니??');
-      }
+  //     if (!res.ok) {
+  //       throw new Error('좋아요를 변경하지 못했습니다.');
+  //     }
 
-      return (await res.json()) as CommunityPost;
-    },
-    onMutate: async ({ updateId, like }) => {
-      const previous = queryClient.getQueryData<ProjectUpdate[]>(['projects', projectId, 'updates']);
-      if (!previous) {
-        return { previous };
-      }
+  //     return (await res.json()) as CommunityPost;
+  //   },
+  //   onMutate: async ({ updateId, like }) => {
+  //     const previous = queryClient.getQueryData<ProjectUpdate[]>(['projects', projectId, 'updates']);
+  //     if (!previous) {
+  //       return { previous };
+  //     }
 
-      queryClient.setQueryData<ProjectUpdate[]>(['projects', projectId, 'updates'], (current) =>
-        current?.map((item) =>
-          item.id === updateId
-            ? {
-              ...item,
-              liked: like,
-              likes: Math.max(0, item.likes + (like ? 1 : -1))
-            }
-            : item
-        ) ?? []
-      );
+  //     queryClient.setQueryData<ProjectUpdate[]>(['projects', projectId, 'updates'], (current) =>
+  //       current?.map((item) =>
+  //         item.id === updateId
+  //           ? {
+  //             ...item,
+  //             liked: like,
+  //             likes: Math.max(0, item.likes + (like ? 1 : -1))
+  //           }
+  //           : item
+  //       ) ?? []
+  //     );
 
-      return { previous };
-    },
-    onError: (_error, _variables, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(['projects', projectId, 'updates'], context.previous);
-      }
-    },
-    onSuccess: (post) => {
-      queryClient.setQueryData<ProjectUpdate[]>(['projects', projectId, 'updates'], (current) =>
-        current?.map((item) =>
-          item.id === post.id
-            ? {
-              ...item,
-              likes: post.likes,
-              comments: post.comments,
-              liked: post.liked ?? false
-            }
-            : item
-        ) ?? []
-      );
-    }
-  });
+  //     return { previous };
+  //   },
+  //   onError: (_error, _variables, context) => {
+  //     if (context?.previous) {
+  //       queryClient.setQueryData(['projects', projectId, 'updates'], context.previous);
+  //     }
+  //   },
+  //   onSuccess: (post) => {
+  //     queryClient.setQueryData<ProjectUpdate[]>(['projects', projectId, 'updates'], (current) =>
+  //       current?.map((item) =>
+  //         item.id === post.id
+  //           ? {
+  //             ...item,
+  //             likes: post.likes,
+  //             comments: post.comments,
+  //             liked: post.liked ?? false
+  //           }
+  //           : item
+  //       ) ?? []
+  //     );
+  //   }
+  // });
 
   const createMutation = useMutation<ProjectUpdate, Error, CreateUpdatePayload>({
     mutationFn: async (payload) => {
@@ -231,7 +222,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
 
       if (!res.ok) {
         const errorBody = await res.json().catch(() => ({}));
-        throw new Error(errorBody?.message ?? '?�데?�트�??�성?��? 못했?�니??');
+        throw new Error(errorBody?.message ?? '업데이트를 생성하지 못했습니다.');
       }
 
       const json = await res.json();
@@ -261,7 +252,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
 
       if (!res.ok) {
         const errorBody = await res.json().catch(() => ({}));
-        throw new Error(errorBody?.message ?? '?�데?�트�??�정?��? 못했?�니??');
+        throw new Error(errorBody?.message ?? '업데이트를 수정하지 못했습니다.');
       }
 
       const json = await res.json();
@@ -319,7 +310,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
 
       if (!res.ok) {
         const errorBody = await res.json().catch(() => ({}));
-        throw new Error(errorBody?.message ?? '?�데?�트�???��?��? 못했?�니??');
+        throw new Error(errorBody?.message ?? '업데이트를 삭제하지 못했습니다.');
       }
     },
     onMutate: async ({ updateId }) => {
@@ -376,7 +367,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
 
   const submitCreate = () => {
     if (!composerState.title.trim() || !composerState.content.trim()) {
-      setComposerError('?�목�??�용???�력?�주?�요.');
+      setComposerError('제목과 내용을 입력해주세요.');
       return;
     }
 
@@ -397,7 +388,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
     }
 
     if (!editState.title.trim() || !editState.content.trim()) {
-      setEditError('?�목�??�용???�력?�주?�요.');
+      setEditError('제목과 내용을 입력해주세요.');
       return;
     }
 
@@ -417,7 +408,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
       {canManageUpdates ? (
         <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-xl shadow-black/20">
           <header className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-white">?�로?�트 ?�데?�트</h3>
+            <h3 className="text-lg font-semibold text-white">프로젝트 업데이트</h3>
             <button
               type="button"
               onClick={() => {
@@ -429,12 +420,12 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
               {composerOpen ? (
                 <>
                   <X className="h-4 w-4" />
-                  ?�기
+                  닫기
                 </>
               ) : (
                 <>
                   <Plus className="h-4 w-4" />
-                  ???�데?�트 ?�성
+                  새 업데이트 생성
                 </>
               )}
             </button>
@@ -444,7 +435,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
             <div className="mt-6 space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-white/80" htmlFor="update-title">
-                  ?�목
+                  제목
                 </label>
                 <input
                   id="update-title"
@@ -454,13 +445,13 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                     setComposerState({ ...composerState, title: event.target.value })
                   }
                   className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
-                  placeholder="?�들?�게 공유???�식???�어주세??
+                  placeholder="흥미롭게 공유할 소식을 작성해주세요"
                 />
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-white/80" htmlFor="update-content">
-                  ?�용
+                  내용
                 </label>
                 <textarea
                   id="update-content"
@@ -469,7 +460,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                     setComposerState({ ...composerState, content: event.target.value })
                   }
                   className="min-h-[140px] w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
-                  placeholder="?�데?�트 ?�용???�세???�성?�주?�요"
+                  placeholder="업데이트 내용을 자세히 작성해주세요"
                 />
               </div>
 
@@ -484,7 +475,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                       setComposerState({ ...composerState, visibility: 'PUBLIC' })
                     }
                   />
-                  ?�체 공개
+                  전체 공개
                 </label>
                 <label className="flex items-center gap-2">
                   <input
@@ -496,16 +487,16 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                       setComposerState({ ...composerState, visibility: 'SUPPORTERS' })
                     }
                   />
-                  ?�원???�용
+                  후원자 전용
                 </label>
               </div>
 
               <div className="space-y-3">
-                <p className="text-sm font-medium text-white/80">첨�? ?�료</p>
+                <p className="text-sm font-medium text-white/80">첨부 자료</p>
                 <div className="flex flex-col gap-3 sm:flex-row">
                   <input
                     type="url"
-                    placeholder="?�료 링크"
+                    placeholder="자료 링크"
                     value={composerState.attachmentDraft.url}
                     onChange={(event) =>
                       setComposerState({
@@ -520,7 +511,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                   />
                   <input
                     type="text"
-                    placeholder="?�시 ?�름 (?�택)"
+                    placeholder="표시 이름 (선택)"
                     value={composerState.attachmentDraft.label}
                     onChange={(event) =>
                       setComposerState({
@@ -538,7 +529,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                     onClick={() => handleAddAttachment(composerState, setComposerState)}
                     className="inline-flex items-center gap-2 rounded-full border border-primary/40 px-4 py-2 text-sm text-primary"
                   >
-                    <Plus className="h-4 w-4" /> 추�?
+                    <Plus className="h-4 w-4" /> 추가
                   </button>
                 </div>
                 {composerState.attachments.length ? (
@@ -554,7 +545,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                           onClick={() => handleRemoveAttachment(composerState, setComposerState, index)}
                           className="text-xs text-red-300"
                         >
-                          ??��
+                          삭제
                         </button>
                       </li>
                     ))}
@@ -564,7 +555,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-white/80" htmlFor="update-milestone">
-                  ?�결??마일?�톤 (?�택)
+                  연결된 마일스톤 (선택)
                 </label>
                 <input
                   id="update-milestone"
@@ -574,7 +565,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                     setComposerState({ ...composerState, milestoneId: event.target.value })
                   }
                   className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-sm text-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
-                  placeholder="마일?�톤 ID�??�력?�세??
+                  placeholder="마일스톤 ID를 입력해주세요"
                 />
               </div>
 
@@ -587,7 +578,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                   disabled={createMutation.isPending}
                   className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
                 >
-                  {createMutation.isPending ? '?�성 �?..' : '?�데?�트 ?�록'}
+                  {createMutation.isPending ? '생성 중...' : '업데이트 등록'}
                 </button>
               </div>
             </div>
@@ -595,8 +586,8 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
         </div>
       ) : null}
 
-      {isLoading ? <p className="text-sm text-white/60">불러?�는 중입?�다...</p> : null}
-      {isError ? <p className="text-sm text-red-400">?�데?�트�?불러?��? 못했?�니??</p> : null}
+      {isLoading ? <p className="text-sm text-white/60">불러오는 중입니다...</p> : null}
+      {isError ? <p className="text-sm text-red-400">업데이트를 불러오지 못했습니다.</p> : null}
 
       <ol className="relative ml-2 space-y-8 border-l border-white/10 pl-6">
         {visibleUpdates.map((update) => {
@@ -606,10 +597,17 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
             <li key={update.id} className="relative">
               <span className="absolute -left-[1.375rem] top-6 inline-flex h-3 w-3 items-center justify-center rounded-full border-2 border-primary bg-neutral-950" />
 
-              <CommunityPostCard
-                post={toCommunityPost(update)}
-                onToggleLike={(like) => toggleLikeMutation.mutate({ updateId: update.id, like })}
-              />
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+                <h3 className="text-lg font-semibold text-white">{update.title}</h3>
+                <p className="mt-2 text-sm text-white/70">{update.content}</p>
+                <div className="mt-4 flex items-center gap-4 text-xs text-white/60">
+                  <span className="font-semibold text-white">{update.author.name}</span>
+                  <span>•</span>
+                  <span>댓글 {update.comments}</span>
+                  <span>•</span>
+                  <span>좋아요 {update.likes}</span>
+                </div>
+              </div>
               <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-white/60">
                 <div className="inline-flex items-center gap-2">
                   <CalendarDays className="h-4 w-4" />
@@ -618,7 +616,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                 <div className="flex flex-wrap items-center gap-2">
                   {update.visibility === 'SUPPORTERS' ? (
                     <span className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white/80">
-                      <ShieldCheck className="h-3 w-3" /> ?�원???�용
+                      <ShieldCheck className="h-3 w-3" /> 후원자 전용
                     </span>
                   ) : null}
                   {update.milestone ? (
@@ -633,7 +631,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                 <div className="mt-4 space-y-4 rounded-2xl border border-white/10 bg-black/30 p-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-white/80" htmlFor={`edit-title-${update.id}`}>
-                      ?�목
+                      제목
                     </label>
                     <input
                       id={`edit-title-${update.id}`}
@@ -647,7 +645,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-white/80" htmlFor={`edit-content-${update.id}`}>
-                      ?�용
+                      내용
                     </label>
                     <textarea
                       id={`edit-content-${update.id}`}
@@ -670,7 +668,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                           setEditState({ ...editState, visibility: 'PUBLIC' })
                         }
                       />
-                      ?�체 공개
+                      전체 공개
                     </label>
                     <label className="flex items-center gap-2">
                       <input
@@ -682,16 +680,16 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                           setEditState({ ...editState, visibility: 'SUPPORTERS' })
                         }
                       />
-                      ?�원???�용
+                      후원자 전용
                     </label>
                   </div>
 
                   <div className="space-y-3">
-                    <p className="text-sm font-medium text-white/80">첨�? ?�료</p>
+                    <p className="text-sm font-medium text-white/80">첨부 자료</p>
                     <div className="flex flex-col gap-3 sm:flex-row">
                       <input
                         type="url"
-                        placeholder="?�료 링크"
+                        placeholder="자료 링크"
                         value={editState.attachmentDraft.url}
                         onChange={(event) =>
                           setEditState({
@@ -706,7 +704,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                       />
                       <input
                         type="text"
-                        placeholder="?�시 ?�름 (?�택)"
+                        placeholder="표시 이름 (선택)"
                         value={editState.attachmentDraft.label}
                         onChange={(event) =>
                           setEditState({
@@ -726,7 +724,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                         }
                         className="inline-flex items-center gap-2 rounded-full border border-primary/40 px-4 py-2 text-sm text-primary"
                       >
-                        <Plus className="h-4 w-4" /> 추�?
+                        <Plus className="h-4 w-4" /> 추가
                       </button>
                     </div>
                     {editState.attachments.length ? (
@@ -745,7 +743,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                               }
                               className="text-xs text-red-300"
                             >
-                              ??��
+                              삭제
                             </button>
                           </li>
                         ))}
@@ -755,7 +753,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
 
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-white/80" htmlFor={`edit-milestone-${update.id}`}>
-                      ?�결??마일?�톤 (?�택)
+                      연결된 마일스톤 (선택)
                     </label>
                     <input
                       id={`edit-milestone-${update.id}`}
@@ -765,7 +763,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                         setEditState({ ...editState, milestoneId: event.target.value })
                       }
                       className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
-                      placeholder="마일?�톤 ID�??�력?�세??
+                      placeholder="마일스톤 ID를 입력해주세요"
                     />
                   </div>
 
@@ -789,7 +787,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                       disabled={updateMutation.isPending}
                       className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
                     >
-                      {updateMutation.isPending ? '?�??�?..' : '변�??�항 ?�??}
+                      {updateMutation.isPending ? '수정 중...' : '변경사항 저장'}
                     </button>
                   </div>
                 </div>
@@ -798,7 +796,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                   {update.attachments.length ? (
                     <div className="space-y-2">
                       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/60">
-                        첨�? ?�료
+                        첨부 자료
                       </p>
                       <ul className="space-y-2">
                         {update.attachments.map((attachment, index) => (
@@ -839,7 +837,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                         }}
                         className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-white/70 hover:text-white"
                       >
-                        <Edit3 className="h-3 w-3" /> ?�정
+                        <Edit3 className="h-3 w-3" /> 수정
                       </button>
                       <button
                         type="button"
@@ -847,7 +845,7 @@ export function ProjectUpdatesBoard({ projectId, canManageUpdates = false }: Pro
                         disabled={deleteMutation.isPending}
                         className="inline-flex items-center gap-2 rounded-full border border-red-400/40 px-4 py-2 text-red-300 hover:text-red-200 disabled:opacity-60"
                       >
-                        <Trash2 className="h-3 w-3" /> ??��
+                        <Trash2 className="h-3 w-3" /> 삭제
                       </button>
                     </div>
                   ) : null}

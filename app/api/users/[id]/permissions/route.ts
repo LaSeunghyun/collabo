@@ -4,7 +4,7 @@ import { and, eq } from 'drizzle-orm';
 
 import { requireApiUser } from '@/lib/auth/guards';
 import { GuardRequirement } from '@/lib/auth/session';
-import { getDb } from '@/lib/db/client';
+import { getDbClient } from '@/lib/db/client';
 import { permissions, userPermissions, users } from '@/lib/db/schema';
 
 export async function GET(
@@ -13,7 +13,7 @@ export async function GET(
 ) {
   try {
     const user = await requireApiUser(request as NextRequest & GuardRequirement);
-    const db = await getDb();
+    const db = await getDbClient();
 
     // 본인 또는 관리자만 조회 가능
     if (params.id !== user.id && user.role !== 'ADMIN') {
@@ -62,7 +62,7 @@ export async function POST(
 ) {
   try {
     const user = await requireApiUser(request as NextRequest & GuardRequirement);
-    const db = await getDb();
+    const db = await getDbClient();
 
     // 관리자만 권한 부여 가능
     if (user.role !== 'ADMIN') {
@@ -208,7 +208,7 @@ export async function DELETE(
       );
     }
 
-    const db = await getDb();
+    const db = await getDbClient();
 
     // 사용자 권한 제거
     await db

@@ -14,10 +14,10 @@ export async function GET() {
             });
         }
 
-        // ?�이?�베?�스 ?�결 ?�스??
+        // 데이터베이스 연결 테스트
         const db = await getDb();
         
-        // execute 메서?��? ?�는지 ?�인
+        // execute 메서드가 있는지 확인
         if (typeof db.execute !== 'function') {
             return NextResponse.json({
                 status: 'degraded',
@@ -37,7 +37,7 @@ export async function GET() {
     } catch (error) {
         console.error('Health check error:', error);
 
-        // ?�이?�베?�스가 비활?�화??경우 degraded ?�태�?반환
+        // 데이터베이스가 비활성화된 경우 degraded 상태로 반환
         if (error instanceof Error && error.message.includes('Database access is disabled')) {
             return NextResponse.json({
                 status: 'degraded',

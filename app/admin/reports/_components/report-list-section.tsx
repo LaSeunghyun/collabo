@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-// import { ModerationStatus, ModerationTargetType, type ModerationStatusValue, type ModerationTargetTypeValue } from '@/types/shared'; // TODO: Drizzle로 전환 필요
 import { ReportDetailModal } from './report-detail-modal';
 
 const statusLabels: Record<string, string> = {

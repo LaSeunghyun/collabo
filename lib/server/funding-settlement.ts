@@ -1,4 +1,4 @@
-import { getDb } from '@/lib/db/client';
+import { getDbClient } from '@/lib/db/client';
 import { calculateSettlementBreakdown } from './settlements';
 import { eq, and, inArray, desc } from 'drizzle-orm';
 import { 
@@ -39,7 +39,7 @@ export async function createSettlementIfTargetReached(
     notes?: any
 ) {
     try {
-        const db = await getDb();
+        const db = await getDbClient();
         
         // 프로젝트 정보 조회
         const [projectData] = await db
@@ -237,7 +237,7 @@ export async function createSettlementIfTargetReached(
  */
 export async function validateFundingSettlementConsistency(projectId: string) {
     try {
-        const db = await getDb();
+        const db = await getDbClient();
         
         const [project] = await db
             .select({
@@ -296,13 +296,13 @@ export async function validateFundingSettlementConsistency(projectId: string) {
 /**
  * 펀딩 데이터를 안전하게 업데이트하는 함수
  */
-export async function safeUpdateFundingData(
+export async function updateProjectAmount(
     projectId: string,
     amount: number,
     updateProjectAmount = true
 ) {
     try {
-        const db = await getDb();
+        const db = await getDbClient();
         return await db.transaction(async (tx) => {
             // 프로젝트 데이터 업데이트
             if (updateProjectAmount) {

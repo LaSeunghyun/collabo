@@ -2,6 +2,7 @@ import { relations } from 'drizzle-orm';
 import {
   boolean,
   doublePrecision,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -275,10 +276,7 @@ export const refreshTokens = pgTable(
     inactivityExpiresAt: timestamp('inactivityExpiresAt', { mode: 'string' }).notNull(),
     absoluteExpiresAt: timestamp('absoluteExpiresAt', { mode: 'string' }).notNull(),
     usedAt: timestamp('usedAt', { mode: 'string' }),
-    rotatedToId: text('rotatedToId').references(() => refreshTokens.id, {
-      onDelete: 'set null',
-      onUpdate: 'cascade',
-    }),
+    rotatedToId: text('rotatedToId'),
     revokedAt: timestamp('revokedAt', { mode: 'string' }),
   },
   (table) => ({
@@ -471,10 +469,7 @@ export const comments = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
     content: text('content').notNull(),
-    parentCommentId: text('parentCommentId').references(() => comments.id, {
-      onDelete: 'set null',
-      onUpdate: 'cascade',
-    }),
+    parentCommentId: text('parentCommentId'),
     createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
     updatedAt: timestamp('updatedAt', { mode: 'string' }).notNull(),
     editedAt: timestamp('editedAt', { mode: 'string' }),
@@ -866,16 +861,16 @@ export const refreshTokensRelations = relations(refreshTokens, ({ one }) => ({
     fields: [refreshTokens.sessionId],
     references: [authSessions.id],
   }),
-  rotatedTo: one(refreshTokens, {
-    fields: [refreshTokens.rotatedToId],
-    references: [refreshTokens.id],
-    relationName: 'RefreshTokenRotation',
-  }),
-  rotatedFrom: one(refreshTokens, {
-    fields: [refreshTokens.rotatedToId],
-    references: [refreshTokens.id],
-    relationName: 'RefreshTokenRotation',
-  }),
+  // rotatedTo: one(refreshTokens, {
+  //   fields: [refreshTokens.rotatedToId],
+  //   references: [refreshTokens.id],
+  //   relationName: 'RefreshTokenRotation',
+  // }),
+  // rotatedFrom: one(refreshTokens, {
+  //   fields: [refreshTokens.rotatedToId],
+  //   references: [refreshTokens.id],
+  //   relationName: 'RefreshTokenRotation',
+  // }),
 }));
 
 export const fundingsRelations = relations(fundings, ({ one }) => ({
@@ -963,14 +958,14 @@ export const commentsRelations = relations(comments, ({ one, many }) => ({
     fields: [comments.authorId],
     references: [users.id],
   }),
-  parent: one(comments, {
-    fields: [comments.parentCommentId],
-    references: [comments.id],
-    relationName: 'CommentReplies',
-  }),
-  replies: many(comments, {
-    relationName: 'CommentReplies',
-  }),
+  // parent: one(comments, {
+  //   fields: [comments.parentCommentId],
+  //   references: [comments.id],
+  //   relationName: 'CommentReplies',
+  // }),
+  // replies: many(comments, {
+  //   relationName: 'CommentReplies',
+  // }),
   reactions: many(commentReactions),
 }));
 
@@ -1096,3 +1091,47 @@ export const userBlocksRelations = relations(userBlocks, ({ one }) => ({
     relationName: 'UserBlocked',
   }),
 }));
+
+// Community tables
+export const communityPosts = pgTable('CommunityPost', {
+  id: text().primaryKey().notNull(),
+  title: text().notNull(),
+  content: text().notNull(),
+  category: communityCategoryEnum().notNull(),
+  authorId: text().notNull(),
+  projectId: text(),
+  likesCount: integer().default(0).notNull(),
+  commentsCount: integer().default(0).notNull(),
+  isPinned: boolean().default(false).notNull(),
+  status: text().default('PUBLISHED').notNull(),
+  createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+  updatedAt: timestamp({ mode: 'string' }).notNull(),
+}, (table) => [
+  foreignKey({
+    columns: [table.authorId],
+    foreignColumns: [users.id],
+    name: 'CommunityPost_authorId_User_id_fk'
+  }).onUpdate('cascade').onDelete('restrict'),
+  foreignKey({
+    columns: [table.projectId],
+    foreignColumns: [projects.id],
+    name: 'CommunityPost_projectId_Project_id_fk'
+  }).onUpdate('cascade').onDelete('set null'),
+]);
+
+export const communityReports = pgTable('CommunityReport', {
+  id: text().primaryKey().notNull(),
+  reporterId: text().notNull(),
+  targetType: moderationTargetTypeEnum().notNull(),
+  targetId: text().notNull(),
+  reason: text(),
+  status: moderationStatusEnum().default('PENDING').notNull(),
+  createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+  updatedAt: timestamp({ mode: 'string' }).notNull(),
+}, (table) => [
+  foreignKey({
+    columns: [table.reporterId],
+    foreignColumns: [users.id],
+    name: 'CommunityReport_reporterId_User_id_fk'
+  }).onUpdate('cascade').onDelete('restrict'),
+]);

@@ -6,12 +6,12 @@ import { createProject, ProjectValidationError } from '@/lib/server/projects';
 
 export async function GET() {
   try {
-    // 간단??기본 ?�답?�로 ?�작
+    // 간단한 기본 응답으로 시작
     return NextResponse.json([]);
   } catch (error) {
     console.error('Failed to load projects', error);
 
-    // ???�세???�러 ?�보 ?�공
+    // 상세한 에러 정보 제공
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const errorStack = error instanceof Error ? error.stack : undefined;
 
@@ -28,34 +28,36 @@ export async function POST(request: NextRequest) {
   const authContext = { headers: request.headers };
 
   try {
-    user = await requireApiUser({ roles: [UserRole.CREATOR, UserRole.ADMIN] }, authContext);
+    user = await requireApiUser(authContext as any);
   } catch (error) {
-    const response = handleAuthorizationError(error);
-    if (response) {
-      return response;
-    }
+    return handleAuthorizationError(error);
+  }
 
-    throw error;
+  if (user.role !== UserRole.CREATOR && user.role !== UserRole.ADMIN) {
+    return NextResponse.json(
+      { error: '프로젝트 생성 권한이 없습니다.' },
+      { status: 403 }
+    );
   }
 
   try {
     const body = await request.json();
-    const project = await createProject(body, user);
-
-    if (!project) {
-      return NextResponse.json({ message: '?�로?�트 ?�성???�패?�습?�다.' }, { status: 500 });
-    }
+    const project = await createProject(body, user.id);
 
     return NextResponse.json(project, { status: 201 });
   } catch (error) {
+    console.error('프로젝트 생성 실패:', error);
+
     if (error instanceof ProjectValidationError) {
       return NextResponse.json(
-        { message: error.message, issues: error.issues },
+        { error: error.message },
         { status: 400 }
       );
     }
 
-    console.error('Failed to create project', error);
-    return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json(
+      { error: '프로젝트 생성에 실패했습니다.' },
+      { status: 500 }
+    );
   }
 }

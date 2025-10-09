@@ -32,7 +32,7 @@ export default function SignInPage() {
           router.push('/');
         }
       }
-    } catch (error) {
+    } catch {
       setError('로그인 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);

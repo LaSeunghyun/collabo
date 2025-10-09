@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { userRole } from '@/drizzle/schema';
 
-import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
+import { requireApiUser } from '@/lib/auth/guards';
 import {
   deleteProjectUpdate,
   ProjectUpdateAccessDeniedError,
@@ -21,21 +20,10 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string; updateId: string } }
 ) {
-  let user;
   const authContext = { headers: request.headers };
 
   try {
-    user = await requireApiUser({ roles: ['CREATOR', 'ADMIN'] }, authContext);
-  } catch (error) {
-    const response = handleAuthorizationError(error);
-    if (response) {
-      return response;
-    }
-
-    throw error;
-  }
-
-  try {
+    const user = await requireApiUser({ roles: ['CREATOR', 'ADMIN'] }, authContext);
     const body = await request.json();
     const hasMilestoneField = Object.prototype.hasOwnProperty.call(body, 'milestoneId');
 
@@ -49,12 +37,12 @@ export async function PATCH(
       attachments: Array.isArray(body.attachments) ? body.attachments : undefined,
       milestoneId: hasMilestoneField
         ? body.milestoneId === null
-          ? null
+          ? undefined
           : String(body.milestoneId)
         : undefined
     };
 
-    const update = await updateProjectUpdate(params.id, params.updateId, input, user);
+    const update = await updateProjectUpdate(params.updateId, input, user);
     return NextResponse.json(serializeUpdate(update));
   } catch (error) {
     if (error instanceof ProjectUpdateValidationError) {
@@ -78,22 +66,11 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string; updateId: string } }
 ) {
-  let user;
   const authContext = { headers: request.headers };
 
   try {
-    user = await requireApiUser({ roles: ['CREATOR', 'ADMIN'] }, authContext);
-  } catch (error) {
-    const response = handleAuthorizationError(error);
-    if (response) {
-      return response;
-    }
-
-    throw error;
-  }
-
-  try {
-    await deleteProjectUpdate(params.id, params.updateId, user);
+    const user = await requireApiUser({ roles: ['CREATOR', 'ADMIN'] }, authContext);
+    await deleteProjectUpdate(params.updateId, user);
     return NextResponse.json({ message: 'Deleted' });
   } catch (error) {
     if (error instanceof ProjectUpdateAccessDeniedError) {

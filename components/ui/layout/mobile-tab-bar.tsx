@@ -8,11 +8,11 @@ import { canAccessRoute } from '@/lib/auth/role-guards';
 // import { useAnnouncementUnreadCount } from '@/hooks/use-announcement-read';
 
 const baseTabs = [
-  { href: '/', label: '??, icon: '?��' },
-  { href: '/projects', label: '?�로?�트', icon: '?��' },
-  { href: '/artists', label: '?�티?�트', icon: '?��' },
-  { href: '/partners', label: '?�트??, icon: '?��' },
-  { href: '/community', label: '커�??�티', icon: '?��' }
+  { href: '/', label: '홈', icon: '🏠' },
+  { href: '/projects', label: '프로젝트', icon: '🎵' },
+  { href: '/artists', label: '아티스트', icon: '👤' },
+  { href: '/partners', label: '파트너', icon: '🤝' },
+  { href: '/community', label: '커뮤니티', icon: '💬' }
 ];
 
 export function MobileTabBar() {
@@ -21,14 +21,14 @@ export function MobileTabBar() {
   // const { data: unreadCount = 0 } = useAnnouncementUnreadCount(Boolean(session?.user));
 
   const tabs = [...baseTabs];
-  tabs.splice(4, 0, { href: '/announcements', label: '공�?', icon: '?��' });
+  tabs.splice(4, 0, { href: '/announcements', label: '공지', icon: '📢' });
 
   if (session?.user && canAccessRoute(session.user, '/partners/dashboard')) {
-    tabs.push({ href: '/partners/dashboard', label: '?�브', icon: '??' });
+    tabs.push({ href: '/partners/dashboard', label: '대시', icon: '📊' });
   }
 
   if (session?.user && canAccessRoute(session.user, '/admin')) {
-    tabs.push({ href: '/admin', label: '관�?, icon: '?���? });
+    tabs.push({ href: '/admin', label: '관리', icon: '⚙️' });
   }
 
   return (

@@ -1,9 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-// import {
-//   FundingStatus,
-//   NotificationType,
-//   UserRole
-// } from '@/types/shared'; // TODO: Drizzle로 전환 필요
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import { evaluateAuthorization } from '@/lib/auth/session';
@@ -27,41 +22,8 @@ const createSupporterNotification = async (
   update: ProjectUpdateRecord,
   actorId: string
 ) => {
-  // TODO: Drizzle로 전환 필요
-  const project = { id: projectId, ownerId: actorId, title: 'Sample Project' };
-
-  if (!project) {
-    return;
-  }
-
-  // TODO: Drizzle로 전환 필요
-  const [followers, backers] = [[], []];
-
-  const recipients = new Set<string>();
-  followers.forEach(({ followerId }) => recipients.add(followerId));
-  backers.forEach(({ userId }) => recipients.add(userId));
-  recipients.delete(actorId);
-
-  if (!recipients.size) {
-    return;
-  }
-
-  // const payload = {
-  //   type: 'PROJECT_UPDATE',
-  //   projectId: project.id,
-  //   projectTitle: project.title,
-  //   postId: update.id,
-  //   title: update.title
-  // } satisfies Record<string, unknown>;
-
-  // TODO: Drizzle로 전환 필요
-  // await prisma.notification.createMany({
-  //   data: Array.from(recipients).map((userId) => ({
-  //     userId,
-  //     type: 'SYSTEM',
-  //     payload
-  //   }))
-  // });
+  // 알림 기능은 추후 구현 예정
+  console.log('Project update notification:', { projectId, updateId: update.id, actorId });
 };
 
 export async function GET(
@@ -72,7 +34,7 @@ export async function GET(
     const authContext = { headers: request.headers };
     const { user } = await evaluateAuthorization({}, authContext);
     const updates = await listProjectUpdates(params.id, user ?? undefined);
-    return NextResponse.json(updates.map(serializeUpdate));
+    return NextResponse.json(updates);
   } catch (error) {
     if (error instanceof ProjectUpdateNotFoundError) {
       return NextResponse.json({ message: error.message }, { status: 404 });
@@ -91,7 +53,7 @@ export async function POST(
   const authContext = { headers: request.headers };
 
   try {
-    user = await requireApiUser({ roles: ['CREATOR', 'ADMIN'] }, authContext); // TODO: Drizzle로 전환 필요
+    user = await requireApiUser({ roles: ['CREATOR', 'ADMIN'] }, authContext);
   } catch (error) {
     const response = handleAuthorizationError(error);
     if (response) {
@@ -111,7 +73,7 @@ export async function POST(
       attachments: Array.isArray(body.attachments) ? body.attachments : undefined,
       milestoneId: hasMilestoneField
         ? body.milestoneId === null
-          ? null
+          ? undefined
           : String(body.milestoneId)
         : undefined
     };

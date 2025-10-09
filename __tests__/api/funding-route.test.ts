@@ -1,16 +1,23 @@
-﻿import { describe, expect, it, beforeEach } from '@jest/globals';
+﻿import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import { NextRequest } from 'next/server';
 
-import { POST } from '@/app/api/funding/route';
-import { AuthorizationError, requireApiUser } from '@/lib/auth/guards';
+// AuthorizationError 클래스 정의
+class AuthorizationError extends Error {
+  constructor(message: string, public statusCode: number) {
+    super(message);
+    this.name = 'AuthorizationError';
+  }
+}
 
-jest.mock('@/lib/auth/guards', () => {
-  const actual = jest.requireActual('@/lib/auth/guards');
-  return {
-    ...actual,
-    requireApiUser: jest.fn()
-  };
-});
+// requireApiUser 모킹
+const mockRequireApiUser = jest.fn();
+
+jest.mock('@/lib/auth/guards', () => ({
+  requireApiUser: mockRequireApiUser,
+  AuthorizationError: AuthorizationError
+}));
+
+import { POST } from '@/app/api/funding/route';
 
 describe('Funding API authentication', () => {
   beforeEach(() => {
@@ -18,8 +25,11 @@ describe('Funding API authentication', () => {
   });
 
   it('returns 401 when session is not authenticated', async () => {
-    const mockRequireApiUser = requireApiUser as jest.MockedFunction<typeof requireApiUser>;
-    mockRequireApiUser.mockRejectedValueOnce(new AuthorizationError('인증이 필요합니다.', 401));
+    // requireApiUser가 AuthorizationError를 던지도록 설정
+    mockRequireApiUser.mockImplementation(() => {
+      const error = new AuthorizationError('인증이 필요합니다.', 401);
+      return Promise.reject(error);
+    });
 
     const request = new NextRequest('http://localhost:3000/api/funding', {
       method: 'POST',

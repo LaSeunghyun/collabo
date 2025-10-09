@@ -300,7 +300,7 @@ export const getProjectUpdate = async (
   const likeCount = likeCountResult.length;
 
   // 댓글 수 조회 (실제로는 comments 테이블에서 조회해야 함)
-  const commentCount = 0; // TODO: comments 테이블 구현 후 수정
+  const commentCount = 0; // 댓글 기능은 추후 구현 예정
 
   // 사용자가 좋아요를 눌렀는지 확인
   let isLiked = false;
@@ -475,7 +475,7 @@ export const listProjectUpdates = async (
 
   if (filters.search) {
     // 검색 조건은 LIKE 연산자를 사용해야 하므로 별도 처리
-    // TODO: Drizzle의 like 연산자 사용으로 수정 필요
+    // 검색 기능은 추후 개선 예정
   }
 
   // 정렬 조건
@@ -573,7 +573,7 @@ export const listProjectUpdates = async (
       project: project || { id: projectId, title: 'Unknown Project', ownerId: update.authorId },
       _count: { 
         likes: likeCountMap.get(update.id) || 0, 
-        comments: 0 // TODO: comments 테이블 구현 후 수정
+        comments: 0 // 댓글 기능은 추후 구현 예정
       },
       isLiked: userLikes.has(update.id)
     }));

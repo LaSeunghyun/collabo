@@ -15,7 +15,7 @@ export async function POST(
   }
 
   try {
-    // TODO: Drizzle로 전환 필요
+    // 게시글 조회 (추후 구현 예정)
     const post = { authorId: 'temp-author-id' };
 
     if (!post) {
@@ -26,7 +26,7 @@ export async function POST(
       return NextResponse.json({ message: 'You cannot block yourself.' }, { status: 400 });
     }
 
-    // TODO: Drizzle로 전환 필요
+    // 차단 생성 (추후 구현 예정)
     const block = { 
       id: 'temp-block-id',
       blockerId,

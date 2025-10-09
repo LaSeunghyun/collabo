@@ -189,12 +189,17 @@ const resolvePublishedAt = (publishedAt?: string | Date | null): Date => {
     return publishedAt;
   }
 
-  const parsed = Date.parse(publishedAt);
-  if (Number.isNaN(parsed)) {
-    return new Date();
+  // 문자열인 경우 Date.parse로 파싱
+  if (typeof publishedAt === 'string') {
+    const parsed = Date.parse(publishedAt);
+    if (Number.isNaN(parsed)) {
+      return new Date();
+    }
+    return new Date(parsed);
   }
 
-  return new Date(parsed);
+  // 기타 경우 현재 시간 반환
+  return new Date();
 };
 
 export async function createAnnouncement(

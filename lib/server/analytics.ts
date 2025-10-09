@@ -62,7 +62,7 @@ export const recordVisit = async ({
   try {
     const { user } = await evaluateAuthorization(
       {},
-      authorization ? { authorization } : undefined
+      authorization ? { headers: new Headers({ authorization }) } : undefined
     );
 
     const db = await getDbClient();

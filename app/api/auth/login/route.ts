@@ -45,13 +45,13 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: '?�못???�청 본문?�니??' }, { status: 400 });
+    return NextResponse.json({ error: '잘못된 요청 본문입니다.' }, { status: 400 });
   }
 
   const parsed = requestSchema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json({ error: '?�청 ?�식???�바르�? ?�습?�다.' }, { status: 400 });
+    return NextResponse.json({ error: '요청 형식이 올바르지 않습니다.' }, { status: 400 });
   }
 
   const data = parsed.data;
@@ -60,13 +60,13 @@ export async function POST(req: NextRequest) {
   const userRecord = await db.select().from(user).where(eq(user.email, data.email)).limit(1).then(rows => rows[0] || null);
 
   if (!userRecord || !userRecord.passwordHash) {
-    return NextResponse.json({ error: '?�이???�는 비�?번호가 ?�바르�? ?�습?�다.' }, { status: 401 });
+    return NextResponse.json({ error: '이메일 또는 비밀번호가 올바르지 않습니다.' }, { status: 401 });
   }
 
   const passwordMatches = await verifyPassword(userRecord.passwordHash, data.password);
 
   if (!passwordMatches) {
-    return NextResponse.json({ error: '?�이???�는 비�?번호가 ?�바르�? ?�습?�다.' }, { status: 401 });
+    return NextResponse.json({ error: '이메일 또는 비밀번호가 올바르지 않습니다.' }, { status: 401 });
   }
 
   const remember = userRecord.role === 'ADMIN' ? false : data.rememberMe ?? false;
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
   const userAgent = req.headers.get('user-agent');
 
   try {
-    console.log('로그???�도:', { userId: userRecord.id, role: userRecord.role, email: userRecord.email });
+    console.log('로그인 시도:', { userId: userRecord.id, role: userRecord.role, email: userRecord.email });
     
     const issued = await issueSessionWithTokens({
       userId: userRecord.id,
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
       email: userRecord.email
     });
     
-    console.log('?�션 ?�성 ?�공:', { sessionId: issued.session.id });
+    console.log('세션 생성 성공:', { sessionId: issued.session.id });
 
     const refreshMaxAge = Math.max(
       0,
@@ -124,14 +124,14 @@ export async function POST(req: NextRequest) {
       }
     );
   } catch (error) {
-    console.error('로그??처리 �??�류 발생:', {
+    console.error('로그인 처리 중 오류 발생:', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
       userId: userRecord?.id,
       email: userRecord?.email
     });
     return NextResponse.json({ 
-      error: '로그??처리???�패?�습?�다.',
+      error: '로그인 처리에 실패했습니다.',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }

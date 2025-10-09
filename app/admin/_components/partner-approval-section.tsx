@@ -1,4 +1,3 @@
-// import { PartnerType, type PartnerTypeType } from '@/types/shared'; // TODO: Drizzle로 전환 필요
 
 import { getPartnersAwaitingApproval } from '@/lib/server/partners';
 

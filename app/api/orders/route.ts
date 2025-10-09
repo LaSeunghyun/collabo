@@ -8,12 +8,12 @@ import { GuardRequirement } from '@/lib/auth/session';
 
 export async function GET(request: NextRequest) {
   try {
-    // ?�이?�베?�스 ?�용 가???��? ?�인
+    // 데이터베이스 사용 가능 여부 확인
     if (!isDrizzleAvailable()) {
       return NextResponse.json(
         { 
-          error: '?�이?�베?�스???�결?????�습?�다.',
-          details: 'DATABASE_URL???�정?��? ?�았?�니??'
+          error: '데이터베이스에 연결할 수 없습니다.',
+          details: 'DATABASE_URL이 설정되지 않았습니다.'
         },
         { status: 503 }
       );
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const offset = (page - 1) * limit;
 
-    // 조건부 ?�터�?
+    // 조건부 필터링
     const conditions = [eq(orders.userId, user.id)];
     if (status && Object.values(orderStatusEnum.enumValues).includes(status as any)) {
       conditions.push(eq(orders.orderStatus, status as any));
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .offset(offset);
 
-    // �?주문???�이?�들 조회
+    // 각 주문의 아이템들 조회
     const ordersWithItems = await Promise.all(
       ordersList.map(async (order) => {
         const items = await db
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
       })
     );
 
-    // ?�체 개수 조회
+    // 전체 개수 조회
     const totalResult = await db
       .select({ count: count() })
       .from(orders)
@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('주문 목록 조회 �??�류 발생:', {
+    console.error('주문 목록 조회 중 오류 발생:', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
       userId: request.headers.get('user-id') || 'unknown'
@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json(
       { 
-        error: '주문 목록??불러?�는???�패?�습?�다.',
+        error: '주문 목록을 불러오는데 실패했습니다.',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
@@ -121,12 +121,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // ?�이?�베?�스 ?�용 가???��? ?�인
+    // 데이터베이스 사용 가능 여부 확인
     if (!isDrizzleAvailable()) {
       return NextResponse.json(
         { 
-          error: '?�이?�베?�스???�결?????�습?�다.',
-          details: 'DATABASE_URL???�정?��? ?�았?�니??'
+          error: '데이터베이스에 연결할 수 없습니다.',
+          details: 'DATABASE_URL이 설정되지 않았습니다.'
         },
         { status: 503 }
       );
@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
       body = await request.json();
     } catch {
       return NextResponse.json(
-        { error: '?�못???�청 본문?�니??' },
+        { error: '잘못된 요청 본문입니다.' },
         { status: 400 }
       );
     }
@@ -152,12 +152,12 @@ export async function POST(request: NextRequest) {
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
-        { error: '주문???�품???�요?�니??' },
+        { error: '주문할 상품이 필요합니다.' },
         { status: 400 }
       );
     }
 
-    // ?�품 ?�보 조회 �?검�?
+    // 상품 정보 조회 및 검증
     const productIds = items.map((item: any) => item.productId);
     const productsList = await db
       .select({
@@ -175,17 +175,17 @@ export async function POST(request: NextRequest) {
 
     if (productsList.length !== productIds.length) {
       return NextResponse.json(
-        { error: '?��? ?�품??찾을 ???�습?�다.' },
+        { error: '일부 상품을 찾을 수 없습니다.' },
         { status: 400 }
       );
     }
 
-    // ?�고 ?�인
+    // 재고 확인
     for (const item of items) {
       const product = productsList.find(p => p.id === item.productId);
       if (!product || (product.inventory && product.inventory < item.quantity)) {
         return NextResponse.json(
-          { error: `${product?.name || '?�품'}???�고가 부족합?�다.` },
+          { error: `${product?.name || '상품'}의 재고가 부족합니다.` },
           { status: 400 }
         );
       }
@@ -206,12 +206,12 @@ export async function POST(request: NextRequest) {
       };
     });
 
-    const totalPrice = subtotal; // 배송�???추�? 가??
+    const totalPrice = subtotal; // 배송비 등 추가 가격
 
-    // ?�랜??��?�로 주문 ?�성 �??�고 차감
+    // 트랜잭션으로 주문 생성 및 재고 차감
     const orderId = crypto.randomUUID();
     
-    // 주문 ?�성
+    // 주문 생성
     const newOrder = await db
       .insert(orders)
       .values({
@@ -225,7 +225,7 @@ export async function POST(request: NextRequest) {
       })
       .returning();
 
-    // 주문 ?�이???�성
+    // 주문 아이템 생성
     const newOrderItems = await Promise.all(
       orderItemsData.map(item => 
         db.insert(orderItems).values({
@@ -239,7 +239,7 @@ export async function POST(request: NextRequest) {
       )
     );
 
-    // ?�고 차감
+    // 재고 차감
     for (const item of items) {
       const product = productsList.find(p => p.id === item.productId)!;
       if (product.inventory !== null) {
@@ -251,7 +251,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!newOrder[0]) {
-      throw new Error('주문 ?�성???�패?�습?�다.');
+      throw new Error('주문 생성에 실패했습니다.');
     }
 
     return NextResponse.json({
@@ -259,7 +259,7 @@ export async function POST(request: NextRequest) {
       items: newOrderItems.map(item => item[0])
     }, { status: 201 });
   } catch (error) {
-    console.error('주문 ?�성 �??�류 발생:', {
+    console.error('주문 생성 중 오류 발생:', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
       userId: request.headers.get('user-id') || 'unknown'
@@ -267,7 +267,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(
       { 
-        error: '주문 ?�성???�패?�습?�다.',
+        error: '주문 생성에 실패했습니다.',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }

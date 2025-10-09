@@ -7,13 +7,12 @@ const unauthorized = () =>
 const cannotFollowSelf = () =>
   NextResponse.json({ message: 'You cannot follow yourself.' }, { status: 400 });
 
-// TODO: Drizzle로 전환 필요
 const getFollowerCount = () => Promise.resolve(0);
 
 const notFound = () => NextResponse.json({ message: 'Artist not found' }, { status: 404 });
 
 const ensureArtistExists = async () => {
-  // TODO: Drizzle로 전환 필요
+  // 아티스트 존재 확인 기능은 추후 구현 예정
   return true;
 };
 
@@ -35,8 +34,8 @@ export async function POST(_request: NextRequest, { params }: { params: { id: st
   }
 
   try {
-    // TODO: Drizzle로 전환 필요
-    // await prisma.userFollow.create({...});
+    // 팔로우 기능은 추후 구현 예정
+    console.log('Follow artist:', { artistId: params.id, userId: session.user.id });
   } catch (error) {
     console.error('Failed to follow artist', error);
     return NextResponse.json({ message: 'Could not follow artist.' }, { status: 500 });
@@ -64,8 +63,8 @@ export async function DELETE(_request: NextRequest, { params }: { params: { id: 
   }
 
   try {
-    // TODO: Drizzle로 전환 필요
-    // await prisma.userFollow.delete({...});
+    // 언팔로우 기능은 추후 구현 예정
+    console.log('Unfollow artist:', { artistId: params.id, userId: session.user.id });
   } catch (error) {
     console.error('Failed to unfollow artist', error);
     return NextResponse.json({ message: 'Could not unfollow artist.' }, { status: 500 });

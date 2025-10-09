@@ -30,57 +30,65 @@ export async function GET(request: NextRequest) {
       includeScheduled: includeScheduled && userRole === UserRole.ADMIN
     });
 
-    if (meta === 'unread-count') {
-      return NextResponse.json({ unreadCount });
+    const response: any = { announcements };
+
+    if (meta === 'true') {
+      response.unreadCount = unreadCount;
     }
 
-    return NextResponse.json({ announcements, unreadCount });
+    return NextResponse.json(response);
   } catch (error) {
-    console.error('Failed to load announcements', error);
-    return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+    console.error('공지사항 조회 실패:', error);
+    return NextResponse.json(
+      { error: '공지사항을 불러오는데 실패했습니다.' },
+      { status: 500 }
+    );
   }
 }
 
 export async function POST(request: NextRequest) {
+  let user;
   const authContext = { headers: request.headers };
-  let admin;
 
   try {
-    admin = await requireApiUser({ roles: [UserRole.ADMIN] }, authContext);
+    user = await requireApiUser(authContext as any);
   } catch (error) {
-    const response = handleAuthorizationError(error);
+    return handleAuthorizationError(error);
+  }
 
-    if (response) {
-      return response;
-    }
-
-    throw error;
+  if (user.role !== UserRole.ADMIN) {
+    return NextResponse.json(
+      { error: '관리자만 공지사항을 작성할 수 있습니다.' },
+      { status: 403 }
+    );
   }
 
   try {
-    const payload = await request.json();
+    const body = await request.json();
+    const { title, content, category, isScheduled, scheduledAt } = body;
 
-    if (!payload?.title || !payload?.content) {
+    if (!title || !content) {
       return NextResponse.json(
-        { message: '?�목�??�용??모두 ?�력??주세??' },
+        { error: '제목과 내용은 필수입니다.' },
         { status: 400 }
       );
     }
 
-    const announcement = await createAnnouncement(
-      {
-        title: payload.title,
-        content: payload.content,
-        category: payload.category,
-        isPinned: Boolean(payload.isPinned),
-        publishedAt: payload.publishedAt
-      },
-      admin.id
-    );
+    const announcement = await createAnnouncement({
+      title,
+      content,
+      category: category || 'GENERAL',
+      isScheduled: isScheduled || false,
+      scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+      authorId: user.id
+    });
 
     return NextResponse.json(announcement, { status: 201 });
   } catch (error) {
-    console.error('Failed to create announcement', error);
-    return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+    console.error('공지사항 생성 실패:', error);
+    return NextResponse.json(
+      { error: '공지사항 생성에 실패했습니다.' },
+      { status: 500 }
+    );
   }
 }

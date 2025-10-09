@@ -7,14 +7,14 @@ export async function GET(request: NextRequest) {
   try {
     const user = await requireApiUser(request as NextRequest & GuardRequirement);
     const { searchParams } = new URL(request.url);
-    const stakeholderType = searchParams.get('stakeholderType') as string | null; // TODO: Drizzle로 전환 필요
+    const stakeholderType = searchParams.get('stakeholderType') as string | null;
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
 
     const where: any = { stakeholderId: user.id };
     if (stakeholderType) where.stakeholderType = stakeholderType;
 
-    // TODO: Drizzle로 전환 필요
+    // 정산 지급 내역 조회 기능은 추후 구현 예정
     const [payouts, total] = [[], 0];
 
     return NextResponse.json({
@@ -48,8 +48,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: Drizzle로 전환 필요
-    // 정산 정보 확인
+    // 정산 정보 확인 (추후 구현 예정)
     const settlement = { 
       id: settlementId,
       project: {
@@ -72,8 +71,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: Drizzle로 전환 필요
-    // 정산 지급 생성
+    // 정산 지급 생성 (추후 구현 예정)
     const payout = {
       id: 'temp-payout-id',
       settlementId,

@@ -77,7 +77,7 @@ export default async function AdminPartnersPage() {
                         <span>•</span>
                         <span>{dateFormatter.format(new Date(partner.createdAt))}</span>
                         <span>•</span>
-                        <span>등록자: {partner.ownerId}</span>
+                        <span>등록자: {partner.user.id}</span>
                       </div>
                       <h3 className="mt-2 text-sm font-medium text-white">
                         {partner.name}
@@ -86,13 +86,13 @@ export default async function AdminPartnersPage() {
                         {partner.description}
                       </p>
                       <div className="mt-2 flex items-center gap-4 text-xs text-white/60">
-                        <span>연락처: {partner.contactEmail}</span>
+                        <span>연락처: {partner.contactInfo}</span>
                         <span>위치: {partner.location}</span>
                       </div>
                     </div>
                     <div className="ml-4 flex flex-col items-end gap-2">
                       <span className="rounded-full bg-amber-500/10 px-2 py-1 text-xs text-amber-300">
-                        {statusLabels[partner.status]}
+                        {partner.verified ? '승인됨' : '대기중'}
                       </span>
                       <div className="flex gap-2">
                         <button className="rounded-lg bg-green-500/10 px-3 py-1 text-xs text-green-300 transition hover:bg-green-500/20">

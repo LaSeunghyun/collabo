@@ -34,7 +34,7 @@ export default function TestPostPage() {
 
       const data = await response.json();
       setResult(data);
-    } catch (error) {
+    } catch {
       setResult({ error: '게시글 작성에 실패했습니다.' });
     } finally {
       setIsLoading(false);

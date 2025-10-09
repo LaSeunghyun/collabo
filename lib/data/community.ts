@@ -10,6 +10,8 @@ export interface CommunityPost {
   content: string;
   likes: number;
   comments: number;
+  likeCount: number;
+  commentCount: number;
   category: string;
   projectId?: string;
   createdAt?: string;

@@ -1,13 +1,13 @@
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/options';
+// import { getServerSession } from 'next-auth';
+// import { authOptions } from '@/lib/auth/options';
 import { PartnerRegistrationPanel } from './partner-registration-panel';
 
 const statusBadge = (verified: boolean) =>
   verified ? '인증' : '검토중';
 
 export default async function PartnersPage() {
-  const session = await getServerSession(authOptions);
-  const user = session?.user;
+  // const session = await getServerSession(authOptions);
+  // const user = session?.user;
 
   try {
     // 임시로 빈 파트너 데이터 사용

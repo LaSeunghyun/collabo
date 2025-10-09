@@ -3,9 +3,9 @@ import { getDb } from '@/lib/db/client';
 import { users, authSessions, authDevices } from '@/drizzle/schema';
 import { eq, and } from 'drizzle-orm';
 
-const unsupported = (operation: string) => {
-  throw new Error(`Operation "${operation}" is not supported by this adapter`);
-};
+// const unsupported = (operation: string) => {
+//   throw new Error(`Operation "${operation}" is not supported by this adapter`);
+// };
 
 export const drizzleAdapter: Adapter = {
   createUser: async (user: Omit<AdapterUser, 'id'>) => {

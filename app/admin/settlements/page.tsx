@@ -1,5 +1,4 @@
 import { getSettlementsPendingPayout } from '@/lib/server/settlement-queries';
-// import { SettlementPayoutStatus, type SettlementPayoutStatusType } from '@/types/shared'; // TODO: Drizzle로 전환 필요
 
 // 동적 데이터 강제 - 빌드 시 데이터베이스 접근 방지
 export const dynamic = 'force-dynamic';

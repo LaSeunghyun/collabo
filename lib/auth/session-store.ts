@@ -107,6 +107,7 @@ function hydrateRefreshTokenRow(token: RefreshTokenRow): HydratedRefreshToken {
 }
 
 const loadUserPermissions = async (userId: string, fallbackRole: UserRoleType) => {
+    // const db = await getDb();
   // ?�순?? 기본 권한�??�용
   const effectivePermissions = deriveEffectivePermissions(fallbackRole, []);
   return { role: fallbackRole, permissions: effectivePermissions };
@@ -250,7 +251,7 @@ const revokeSessionAndToken = async (
   timestamp: Date,
   options: { markUsed?: boolean } = {}
 ) => {
-  const iso = toIso(timestamp);
+    const iso = toIso(timestamp);
   const refreshUpdates = options.markUsed
     ? { revokedAt: iso, usedAt: iso }
     : { revokedAt: iso };
@@ -425,7 +426,7 @@ export const revokeSession = async (sessionId: string) => {
   return sessionRow ? hydrateSessionRow(sessionRow) : null;
 };
 
-export const revokeAllSessionsForUser = async (userId: string) => {
+export const revokeAllSessionsForUser = async (userId: string) => {      
   const timestamp = now();
   const iso = toIso(timestamp);
 
@@ -458,7 +459,7 @@ export const revokeAllSessionsForUser = async (userId: string) => {
   });
 };
 
-export const revokeSessionByRefreshToken = async (refreshTokenValue: string) => {
+export const revokeSessionByRefreshToken = async (refreshTokenValue: string) => {                                                                        
   const db = await getDbClient();
   const fingerprint = fingerprintToken(refreshTokenValue);
   const recordRow = await (db as any).query.refreshToken.findFirst({

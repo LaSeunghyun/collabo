@@ -278,13 +278,13 @@ export default function CommunityPostDetailPage() {
     setReportOpen(false);
     resetReportFields();
     reportMutation.reset();
-  }, [resetReportFields]);
+  }, [resetReportFields, reportMutation]);
 
   const openReportModal = useCallback(() => {
     resetReportFields();
     reportMutation.reset();
     setReportOpen(true);
-  }, [resetReportFields]);
+  }, [resetReportFields, reportMutation]);
 
   const handleReportSubmit = useCallback(() => {
     if (reportStatus === 'submitted') {
@@ -331,11 +331,13 @@ export default function CommunityPostDetailPage() {
     reportStatus,
     closeReportModal,
     isAuthenticated,
-    session?.user?.id,
     selectedReportReason,
     isOtherReportReason,
     trimmedCustomReportReason,
-    t
+    t,
+    reportMutation,
+    redirectToSignIn,
+    session
   ]);
 
   const messageIsValid = useMemo(() => messageDraft.trim().length > 0, [messageDraft]);

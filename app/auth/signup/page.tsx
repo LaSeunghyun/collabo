@@ -66,7 +66,7 @@ export default function SignUpPage() {
         const data = await response.json();
         setError(data.error || '회원가입에 실패했습니다.');
       }
-    } catch (error) {
+    } catch {
       setError('회원가입 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);

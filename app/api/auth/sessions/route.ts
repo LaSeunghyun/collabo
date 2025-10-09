@@ -16,9 +16,9 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const verified = await verifyAccessToken(token);
+    await verifyAccessToken(token);
 
-    // TODO: Drizzle로 전환 필요
+    // 세션 조회 기능은 추후 구현 예정
     const sessions: any[] = [];
 
     return NextResponse.json({

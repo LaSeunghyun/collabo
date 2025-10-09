@@ -1,4 +1,3 @@
-// import { moderationStatusEnum, moderationTargetTypeEnum } from '@/lib/db/schema'; // TODO: Drizzle로 전환 필요
 import { getModerationStats, getOpenModerationReports } from '@/lib/server/moderation';
 import Link from 'next/link';
 

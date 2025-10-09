@@ -8,14 +8,14 @@ import {
   paymentProviderEnum,
   fundingStatusEnum,
 } from '@/lib/db/schema';
-import { getDb } from '@/lib/db/client';
+import { getDbClient } from '@/lib/db/client';
 import { requireApiUser } from '@/lib/auth/guards';
 import { GuardRequirement } from '@/lib/auth/session';
 
 export async function GET(request: NextRequest) {
   try {
     const user = await requireApiUser(request as NextRequest & GuardRequirement);
-    const db = await getDb();
+    const db = await getDbClient();
     const { searchParams } = new URL(request.url);
     const provider = searchParams.get('provider') as string | null;
     const page = parseInt(searchParams.get('page') || '1');
@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const user = await requireApiUser(request as NextRequest & GuardRequirement);
-    const db = await getDb();
+    const db = await getDbClient();
     const body = await request.json();
     const { fundingId, provider, externalId, amount } = body;
 

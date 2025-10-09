@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { userRole } from '@/drizzle/schema';
+// import { userRole } from '@/drizzle/schema';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import {

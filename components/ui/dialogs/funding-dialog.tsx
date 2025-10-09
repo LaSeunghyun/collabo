@@ -64,8 +64,8 @@ export function FundingDialog({
         const data = await response.json();
         setError(data.error || '펀딩에 실패했습니다.');
       }
-    } catch (error) {
-      setError('펀딩 중 오류가 발생했습니다.');
+    } catch (error: any) {
+      setError(error.message || '펀딩 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }

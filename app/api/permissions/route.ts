@@ -1,18 +1,18 @@
 import { randomUUID } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { count, desc, eq } from 'drizzle-orm';
+import { count, desc } from 'drizzle-orm';
 
 import { permissions } from '@/lib/db/schema';
-import { getDb } from '@/lib/db/client';
+import { getDbClient } from '@/lib/db/client';
 import { requireApiUser } from '@/lib/auth/guards';
 import { GuardRequirement } from '@/lib/auth/session';
 
 export async function GET(request: NextRequest) {
   try {
     const user = await requireApiUser(request as NextRequest & GuardRequirement);
-    const db = await getDb();
+    const db = await getDbClient();
 
-    // 관리자�?권한 목록 조회 가??
+    // 관리자만 권한 목록 조회 가능
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
         { message: 'Unauthorized' },
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .offset(offset);
 
-    // ?�체 개수 조회
+    // 전체 개수 조회
     const totalResult = await db
       .select({ count: count() })
       .from(permissions);
@@ -55,9 +55,17 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('Failed to fetch permissions:', error);
+    console.error('권한 목록 조회 중 오류 발생:', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      userId: request.headers.get('user-id') || 'unknown'
+    });
+    
     return NextResponse.json(
-      { message: 'Failed to fetch permissions' },
+      { 
+        error: '권한 목록을 불러오는데 실패했습니다.',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
@@ -66,9 +74,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const user = await requireApiUser(request as NextRequest & GuardRequirement);
-    const db = await getDb();
+    const db = await getDbClient();
 
-    // 관리자�?권한 ?�성 가??
+    // 관리자만 권한 생성 가능
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
         { message: 'Unauthorized' },
@@ -76,48 +84,55 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
-    const { key, description } = body;
-
-    if (!key) {
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
       return NextResponse.json(
-        { message: 'Permission key is required' },
+        { error: '잘못된 요청 본문입니다.' },
         { status: 400 }
       );
     }
 
-    const [existingPermission] = await db
-      .select({ id: permissions.id })
-      .from(permissions)
-      .where(eq(permissions.key, key))
-      .limit(1);
+    const { key, description } = body as {
+      key?: string;
+      description?: string;
+    };
 
-    if (existingPermission) {
+    if (!key || !description) {
       return NextResponse.json(
-        { message: 'Permission key already exists' },
+        { error: '권한 키와 설명은 필수입니다.' },
         { status: 400 }
       );
     }
 
-    const [permission] = await db
+    // 권한 생성
+    const newPermission = await db
       .insert(permissions)
       .values({
         id: randomUUID(),
         key,
-        description: description ?? null,
+        description
       })
-      .returning({
-        id: permissions.id,
-        key: permissions.key,
-        description: permissions.description,
-        createdAt: permissions.createdAt,
-      });
+      .returning();
 
-    return NextResponse.json(permission, { status: 201 });
+    if (!newPermission[0]) {
+      throw new Error('권한 생성에 실패했습니다.');
+    }
+
+    return NextResponse.json(newPermission[0], { status: 201 });
   } catch (error) {
-    console.error('Failed to create permission:', error);
+    console.error('권한 생성 중 오류 발생:', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      userId: request.headers.get('user-id') || 'unknown'
+    });
+    
     return NextResponse.json(
-      { message: 'Failed to create permission' },
+      { 
+        error: '권한 생성에 실패했습니다.',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }

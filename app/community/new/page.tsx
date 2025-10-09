@@ -14,7 +14,7 @@ const CATEGORIES = [
 ] as const;
 
 export default function NewCommunityPostPage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const [formData, setFormData] = useState({
     title: '',
@@ -52,8 +52,8 @@ export default function NewCommunityPostPage() {
         const data = await response.json();
         setError(data.error || '게시글 작성에 실패했습니다.');
       }
-    } catch (error) {
-      setError('게시글 작성 중 오류가 발생했습니다.');
+    } catch (error: any) {
+      setError(error.message || '게시글 작성 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
