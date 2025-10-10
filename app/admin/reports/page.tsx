@@ -1,27 +1,19 @@
-import { getModerationStats, getOpenModerationReports } from '@/lib/server/moderation';
-import { ReportListSection } from './_components/report-list-section';
-import { ReportStatsSection } from './_components/report-stats-section';
+import { requireUser } from '@/lib/auth/guards';
+import { UserRole } from '@/types/shared';
 
-// ?™ì  ?°ì´??ê°•ì œ - ë¹Œë“œ ???°ì´?°ë² ?´ìŠ¤ ?‘ê·¼ ë°©ì?
 export const dynamic = 'force-dynamic';
 
-export default async function AdminReportsPage() {
-  const [stats, reports] = await Promise.all([
-    getModerationStats(),
-    getOpenModerationReports(50) // ìµœë? 50ê°?? ê³ ë§?ê°€?¸ì˜´
-  ]);
+export default async function ReportsPage() {
+  const user = await requireUser({ roles: [UserRole.ADMIN] });
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-white">? ê³  ê´€ë¦?/h1>
-        <p className="mt-2 text-sm text-white/60">
-          ì»¤ë??ˆí‹° ? ê³ ë¥?ê²€? í•˜ê³??ì ˆ??ì¡°ì¹˜ë¥?ì·¨í•˜?¸ìš”.
-        </p>
+    <div className="px-4 py-6 sm:px-0">
+      <div className="border-4 border-dashed border-gray-200 rounded-lg h-96 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">ì‹ ê³  ê´€ë¦¬</h2>
+          <p className="text-gray-600">ì‚¬ìš©ì ì‹ ê³ ë¥¼ ê´€ë¦¬í•©ë‹ˆë‹¤.</p>
+        </div>
       </div>
-      
-      <ReportStatsSection stats={stats} />
-      <ReportListSection reports ={reports} />
     </div>
   );
 }

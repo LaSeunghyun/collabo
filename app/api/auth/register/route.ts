@@ -1,92 +1,72 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { hash } from 'bcryptjs';
 
-import { createParticipantUser, findUserByEmail } from '@/lib/auth/user';
-import { getDb } from '@/lib/db/client';
-import { user as userSchema } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { getDb } from '@/lib/db/client';
+import { user } from '@/lib/db/schema';
+
+const registerSchema = z.object({
+  name: z.string().min(2, '이름은 최소 2자 이상이어야 합니다.'),
+  email: z.string().email('올바른 이메일 형식이 아닙니다.'),
+  password: z.string().min(6, '비밀번호는 최소 6자 이상이어야 합니다.'),
+  role: z.enum(['CREATOR', 'PARTICIPANT', 'PARTNER']).optional().default('PARTICIPANT')
+});
 
 export async function POST(request: NextRequest) {
-    try {
-        const body = await request.json();
-        const { name, email, password } = body;
+  try {
+    const body = await request.json();
+    const validatedData = registerSchema.parse(body);
 
-        // ?�력 검�?        if (!name || !email || !password) {
-            return NextResponse.json(
-                { error: '?�름, ?�메?? 비�?번호???�수?�니??' },
-                { status: 400 }
-            );
-        }
+    const { name, email, password, role } = validatedData;
 
-        if (name.length < 2 || name.length > 20) {
-            return NextResponse.json(
-                { error: '?�름?� 2???�상 20???�하?�야 ?�니??' },
-                { status: 400 }
-            );
-        }
+    const db = await getDb();
 
-        if (password.length < 6) {
-            return NextResponse.json(
-                { error: '비�?번호??6???�상?�어???�니??' },
-                { status: 400 }
-            );
-        }
-
-        // ?�메???�식 검�?        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            return NextResponse.json(
-                { error: '?�바�??�메???�식???�닙?�다.' },
-                { status: 400 }
-            );
-        }
-
-        // ?�메??중복 ?�인
-        const existingUser = await findUserByEmail(email);
-
-        if (existingUser) {
-            return NextResponse.json(
-                { error: '?��? ?�용 중인 ?�메?�입?�다.' },
-                { status: 400 }
-            );
-        }
-
-        // ?�름 중복 ?�인
-        const db = await getDb();
-        const existingName = await db.select().from(userSchema).where(eq(userSchema.name, name)).limit(1).then(rows => rows[0] || null);
-
-        if (existingName) {
-            return NextResponse.json(
-                { error: '?��? ?�용 중인 ?�름?�니??' },
-                { status: 400 }
-            );
-        }
-
-        // 비�?번호 ?�시??        const hashedPassword = await hash(password, 12);
-
-        // ?�용???�성
-        const user = await createParticipantUser({
-            name,
-            email,
-            passwordHash: hashedPassword,
-        });
-
-        return NextResponse.json({
-            message: '?�원가?�이 ?�료?�었?�니??',
-            user
-        });
-
-    } catch (error) {
-        console.error('?�원가???�류:', error);
-        console.error('?�류 ?�세:', {
-            message: error instanceof Error ? error.message : String(error),
-            stack: error instanceof Error ? error.stack : undefined
-        });
-        return NextResponse.json(
-            { 
-                error: '?�원가??�??�류가 발생?�습?�다.',
-                details: error instanceof Error ? error.message : 'Unknown error'
-            },
-            { status: 500 }
-        );
+    // 이메일 중복 확인
+    const existingUser = await db.select().from(user).where(eq(user.email, email)).limit(1);
+    
+    if (existingUser.length > 0) {
+      return NextResponse.json(
+        { error: '이미 존재하는 이메일입니다.' },
+        { status: 409 }
+      );
     }
+
+    // 비밀번호 해시화
+    const hashedPassword = await hash(password, 12);
+
+    // 사용자 생성
+    const [newUser] = await db.insert(user).values({
+      name,
+      email,
+      passwordHash: hashedPassword,
+      role: role as 'CREATOR' | 'PARTICIPANT' | 'PARTNER' | 'ADMIN',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }).returning();
+
+    return NextResponse.json({
+      message: '회원가입이 성공적으로 완료되었습니다.',
+      user: {
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role
+      }
+    }, { status: 201 });
+
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: '입력 데이터가 올바르지 않습니다.', details: error.errors },
+        { status: 400 }
+      );
+    }
+
+    console.error('회원가입 처리 중 오류:', error);
+    return NextResponse.json(
+      { error: '회원가입 처리에 실패했습니다.' },
+      { status: 500 }
+    );
+  }
 }

@@ -1,59 +1,26 @@
 import { NextResponse } from 'next/server';
 
-export interface Category {
-  id: string;
-  label: string;
-  subcategories: string[];
-  icon?: string;
-  color?: string;
-  isActive: boolean;
-  order: number;
-}
-
 export async function GET() {
   try {
-    const categories: Category[] = [
-      {
-        id: 'music',
-        label: 'Music',
-        subcategories: ['K-pop', 'Indie', 'Live Session'],
-        icon: '?��',
-        color: '#ff6b6b',
-        isActive: true,
-        order: 1
-      },
-      {
-        id: 'performance',
-        label: 'Performance',
-        subcategories: ['Musical', 'Play', 'Dance'],
-        icon: '?��',
-        color: '#4ecdc4',
-        isActive: true,
-        order: 2
-      },
-      {
-        id: 'art',
-        label: 'Art',
-        subcategories: ['Media Art', 'Exhibition', 'Workshop'],
-        icon: '?��',
-        color: '#45b7d1',
-        isActive: true,
-        order: 3
-      },
-      {
-        id: 'tech',
-        label: 'Tech',
-        subcategories: ['XR', 'Metaverse', 'AI Collab'],
-        icon: '?��',
-        color: '#96ceb4',
-        isActive: true,
-        order: 4
-      }
+    const categories = [
+      { id: 'music', name: '음악', description: '음악 관련 프로젝트' },
+      { id: 'art', name: '미술', description: '미술 및 시각 예술 프로젝트' },
+      { id: 'film', name: '영화', description: '영화 및 영상 프로젝트' },
+      { id: 'dance', name: '댄스', description: '댄스 및 무용 프로젝트' },
+      { id: 'theater', name: '연극', description: '연극 및 공연 프로젝트' },
+      { id: 'literature', name: '문학', description: '문학 및 출판 프로젝트' },
+      { id: 'photography', name: '사진', description: '사진 및 이미지 프로젝트' },
+      { id: 'design', name: '디자인', description: '디자인 및 그래픽 프로젝트' },
+      { id: 'tech', name: '기술', description: '기술 및 개발 프로젝트' },
+      { id: 'other', name: '기타', description: '기타 분야 프로젝트' }
     ];
 
-    return NextResponse.json(categories);
+    return NextResponse.json({ categories });
   } catch (error) {
-    console.error('Failed to load categories', error);
-    return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+    console.error('카테고리 조회 오류:', error);
+    return NextResponse.json(
+      { error: '카테고리 조회에 실패했습니다.' },
+      { status: 500 }
+    );
   }
 }

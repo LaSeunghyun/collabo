@@ -8,53 +8,54 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const { name, email, password } = body;
 
-        // ?�력 검�?
+        // 입력 검증
         if (!name || !email || !password) {
             return NextResponse.json(
-                { error: '?�름, ?�메?? 비�?번호???�수?�니??' },
+                { error: '이름, 이메일, 비밀번호는 필수입니다.' },
                 { status: 400 }
             );
         }
 
         if (password.length < 4) {
             return NextResponse.json(
-                { error: '비�?번호??4???�상?�어???�니??' },
+                { error: '비밀번호는 최소 4자 이상이어야 합니다.' },
                 { status: 400 }
             );
         }
 
-        // ?�메??중복 ?�인
+        // 이메일 중복 확인
         const existingUser = await findUserByEmail(email);
-
         if (existingUser) {
             return NextResponse.json(
-                { error: '?��? ?�용 중인 ?�메?�입?�다.' },
-                { status: 400 }
+                { error: '이미 존재하는 이메일입니다.' },
+                { status: 409 }
             );
         }
 
-        // 비�?번호 ?�시??
+        // 비밀번호 해시화
         const hashedPassword = await hash(password, 12);
 
-        // 관리자 ?�용???�성
-        const user = await createAdminUser({
+        // 관리자 사용자 생성
+        const adminUser = await createAdminUser({
             name,
             email,
-            passwordHash: hashedPassword,
+            password: hashedPassword
         });
 
         return NextResponse.json({
-            message: '관리자 계정???�성?�었?�니??',
-            user
-        });
+            message: '관리자 계정이 성공적으로 생성되었습니다.',
+            user: {
+                id: adminUser.id,
+                name: adminUser.name,
+                email: adminUser.email,
+                role: adminUser.role
+            }
+        }, { status: 201 });
 
     } catch (error) {
-        console.error('관리자 계정 ?�성 ?�류:', error);
+        console.error('관리자 계정 생성 오류:', error);
         return NextResponse.json(
-            { 
-                error: '관리자 계정 ?�성 �??�류가 발생?�습?�다.',
-                details: error instanceof Error ? error.message : 'Unknown error'
-            },
+            { error: '관리자 계정 생성에 실패했습니다.' },
             { status: 500 }
         );
     }
