@@ -34,7 +34,7 @@ async function upsertPaymentTransaction(
   amount: number,
   currency: string
 ) {
-  // 기존 ?�랜??�� ?�인
+  // 기존 ?�랜??�� ?�인
   const existing = await db
     .select()
     .from(paymentTransactions)
@@ -42,7 +42,7 @@ async function upsertPaymentTransaction(
     .limit(1);
 
   if (existing.length > 0) {
-    // ?�데?�트
+    // ?�데?�트
     return await db
       .update(paymentTransactions)
       .set({
@@ -56,7 +56,7 @@ async function upsertPaymentTransaction(
       .where(eq(paymentTransactions.fundingId, fundingId))
       .returning();
   } else {
-    // ?�성
+    // ?�성
     return await db
       .insert(paymentTransactions)
       .values({
@@ -83,7 +83,7 @@ async function createFundingWithTransaction(
   paymentIntentId: string
 ) {
   return await db.transaction(async (tx: any) => {
-    // 기존 ?�???�인
+    // 기존 ?�???�인
     const existing = await tx
       .select()
       .from(fundings)
@@ -109,7 +109,7 @@ async function createFundingWithTransaction(
           .where(eq(fundings.id, existingFunding.id))
           .returning();
 
-        // ?�랜??�� ?�보???�께 조회
+        // ?�랜??�� ?�보???�께 조회
         const transaction = await tx
           .select()
           .from(paymentTransactions)
@@ -121,7 +121,7 @@ async function createFundingWithTransaction(
           transaction: transaction[0] || null
         };
       } else {
-        // ?�랜??�� ?�보???�께 조회
+        // ?�랜??�� ?�보???�께 조회
         const transaction = await tx
           .select()
           .from(paymentTransactions)
@@ -135,7 +135,7 @@ async function createFundingWithTransaction(
       }
     }
 
-    // ???�???�성
+    // ???�???�성
     const newFunding = await tx
       .insert(fundings)
       .values({
@@ -151,10 +151,10 @@ async function createFundingWithTransaction(
       })
       .returning();
 
-    // 결제 ?�랜??�� ?�성
+    // 결제 ?�랜??�� ?�성
     await upsertPaymentTransaction(tx, newFunding[0].id, paymentIntentId, amount, currency);
 
-    // ?�랜??�� ?�보???�께 조회
+    // ?�랜??�� ?�보???�께 조회
     const transaction = await tx
       .select()
       .from(paymentTransactions)
@@ -185,18 +185,18 @@ export async function POST(request: NextRequest) {
   try {
     payload = await request.json();
   } catch {
-    return buildApiError('?�청 본문???�인?????�습?�다.');
+    return buildApiError('?�청 본문???�인?????�습?�다.');
   }
 
   const { projectId, amount, currency, paymentMethod, successUrl, cancelUrl, receiptEmail } = payload;
 
   if (!projectId) {
-    return buildApiError('?�로?�트 ?�보가 ?�락?�었?�니??');
+    return buildApiError('?�로?�트 ?�보가 ?�락?�었?�니??');
   }
 
   const user = await requireApiUser({}, { headers: request.headers });
 
-  // ?�로?�트 조회
+  // ?�로?�트 조회
   const db = await getDbClient();
   const projectResult = await db
     .select()
@@ -205,19 +205,19 @@ export async function POST(request: NextRequest) {
     .limit(1);
 
   if (projectResult.length === 0) {
-    return buildApiError('?�당 ?�로?�트�?찾을 ???�습?�다.', 404);
+    return buildApiError('?�당 ?�로?�트�?찾을 ???�습?�다.', 404);
   }
 
   const project = projectResult[0];
   if (!project || !['LIVE', 'EXECUTING'].includes(project.status)) {
-    return buildApiError('?�재 ?�태?�서??결제�?진행?????�습?�다.', 409);
+    return buildApiError('?�재 ?�태?�서??결제�?진행?????�습?�다.', 409);
   }
 
   let stripe: Stripe;
   try {
     stripe = createStripeClient();
   } catch (error) {
-    return buildApiError(error instanceof Error ? error.message : 'Stripe ?�라?�언?��? ?�성?????�습?�다.', 500);
+    return buildApiError(error instanceof Error ? error.message : 'Stripe ?�라?�언?��? ?�성?????�습?�다.', 500);
   }
 
   try {
@@ -266,10 +266,10 @@ export async function POST(request: NextRequest) {
         url: session.url
       });
     } else {
-      return buildApiError('지?�하지 ?�는 결제 방법?�니??');
+      return buildApiError('지?�하지 ?�는 결제 방법?�니??');
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : '결제 ?�청 처리 �??�류가 발생?�습?�다.';
+    const message = error instanceof Error ? error.message : '결제 ?�청 처리 �??�류가 발생?�습?�다.';
     return buildApiError(message, 500);
   }
 }
@@ -280,13 +280,13 @@ export async function PUT(request: NextRequest) {
   try {
     payload = await request.json();
   } catch {
-    return buildApiError('?�청 본문???�인?????�습?�다.');
+    return buildApiError('?�청 본문???�인?????�습?�다.');
   }
 
   const { paymentIntentId, sessionId } = payload;
 
   if (!paymentIntentId && !sessionId) {
-    return buildApiError('결제 ?�보가 ?�요?�니??');
+    return buildApiError('결제 ?�보가 ?�요?�니??');
   }
 
   const user = await requireApiUser({}, { headers: request.headers });
@@ -295,7 +295,7 @@ export async function PUT(request: NextRequest) {
   try {
     stripe = createStripeClient();
   } catch (error) {
-    return buildApiError(error instanceof Error ? error.message : 'Stripe ?�라?�언?��? ?�성?????�습?�다.', 500);
+    return buildApiError(error instanceof Error ? error.message : 'Stripe ?�라?�언?��? ?�성?????�습?�다.', 500);
   }
 
   try {
@@ -303,15 +303,15 @@ export async function PUT(request: NextRequest) {
       const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
       if (paymentIntent.status !== 'succeeded') {
-        return buildApiError(`결제 ?�태가 ?�료?��? ?�았?�니??(?�재 ?�태: ${paymentIntent.status})`, 409);
+        return buildApiError(`결제 ?�태가 ?�료?��? ?�았?�니??(?�재 ?�태: ${paymentIntent.status})`, 409);
       }
 
       const amountReceived = ensureIntegerAmount(paymentIntent.amount_received);
       if (!amountReceived) {
-        return buildApiError('결제 금액???�인?????�습?�다.', 422);
+        return buildApiError('결제 금액???�인?????�습?�다.', 422);
       }
 
-      // ?�???�성
+      // ?�???�성
       const db = await getDbClient();
       const funding = await createFundingWithTransaction(
         db,
@@ -322,7 +322,7 @@ export async function PUT(request: NextRequest) {
         paymentIntent.id
       );
 
-      // ?�산 ?�동 ?�성 로직
+      // ?�산 ?�동 ?�성 로직
       try {
         const settlement = await createSettlementIfTargetReached(paymentIntent.metadata.projectId);
         return NextResponse.json({
@@ -331,27 +331,27 @@ export async function PUT(request: NextRequest) {
           settlement
         });
       } catch (settlementError) {
-        console.warn('?�산 ?�동 ?�성 ?�패:', settlementError);
+        console.warn('?�산 ?�동 ?�성 ?�패:', settlementError);
         return NextResponse.json({
           status: 'recorded',
           funding,
           settlement: null,
-          warning: '목표 ?�성 ?��? ?�인 �??�산 ?�성???�패?�습?�다.'
+          warning: '목표 ?�성 ?��? ?�인 �??�산 ?�성???�패?�습?�다.'
         });
       }
     } else if (sessionId) {
       const session = await stripe.checkout.sessions.retrieve(sessionId);
 
       if (session.payment_status !== 'paid') {
-        return buildApiError(`체크?�웃 ?�션???�료?��? ?�았?�니??(?�재 ?�태: ${session.payment_status})`, 409);
+        return buildApiError(`체크?�웃 ?�션???�료?��? ?�았?�니??(?�재 ?�태: ${session.payment_status})`, 409);
       }
 
       const amountPaid = ensureIntegerAmount(session.amount_total);
       if (!amountPaid) {
-        return buildApiError('결제 금액???�인?????�습?�다.', 422);
+        return buildApiError('결제 금액???�인?????�습?�다.', 422);
       }
 
-      // ?�???�성
+      // ?�???�성
       const db = await getDbClient();
       const funding = await createFundingWithTransaction(
         db,
@@ -362,7 +362,7 @@ export async function PUT(request: NextRequest) {
         session.payment_intent as string
       );
 
-      // ?�산 ?�동 ?�성 로직
+      // ?�산 ?�동 ?�성 로직
       try {
         const settlement = await createSettlementIfTargetReached(session.metadata?.projectId || '');
         return NextResponse.json({
@@ -371,18 +371,18 @@ export async function PUT(request: NextRequest) {
           settlement
         });
       } catch (settlementError) {
-        console.warn('?�산 ?�동 ?�성 ?�패:', settlementError);
+        console.warn('?�산 ?�동 ?�성 ?�패:', settlementError);
         return NextResponse.json({
           status: 'recorded',
           funding,
           settlement: null,
-          warning: '목표 ?�성 ?��? ?�인 �??�산 ?�성???�패?�습?�다.'
+          warning: '목표 ?�성 ?��? ?�인 �??�산 ?�성???�패?�습?�다.'
         });
       }
     }
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : '결제 검�?과정?�서 ?�류가 발생?�습?�다.';
+      error instanceof Error ? error.message : '결제 검�?과정?�서 ?�류가 발생?�습?�다.';
     return buildApiError(message, 500);
   }
 }
@@ -398,18 +398,18 @@ export async function GET(request: NextRequest) {
   const receiptEmail = searchParams.get('receiptEmail');
 
   if (!projectId || !amount || !mode) {
-    return buildApiError('?�수 매개변?��? ?�락?�었?�니??');
+    return buildApiError('?�수 매개변?��? ?�락?�었?�니??');
   }
 
   const normalisedAmount = ensureIntegerAmount(amount);
   if (!normalisedAmount) {
-    return buildApiError('결제 금액???�바르�? ?�습?�다.');
+    return buildApiError('결제 금액???�바르�? ?�습?�다.');
   }
 
   try {
     if (mode === 'checkout') {
       if (!successUrl || !cancelUrl) {
-        return buildApiError('Checkout ?�션?�는 ?�공 �?취소 URL???�요?�니??');
+        return buildApiError('Checkout ?�션?�는 ?�공 �?취소 URL???�요?�니??');
       }
 
       const stripe = createStripeClient();
@@ -456,7 +456,7 @@ export async function GET(request: NextRequest) {
       });
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : '결제 ?�청 처리 �??�류가 발생?�습?�다.';
+    const message = error instanceof Error ? error.message : '결제 ?�청 처리 �??�류가 발생?�습?�다.';
     return buildApiError(message, 500);
   }
 }
