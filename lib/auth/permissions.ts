@@ -1,7 +1,5 @@
 import { userRoleEnum } from '@/lib/db/schema';
 import {
-  USER_ROLE_VALUES,
-  USER_ROLE_LABELS,
   type UserRoleValue,
 } from '@/lib/constants/enums';
 
@@ -112,7 +110,7 @@ export function deriveEffectivePermissions(role: AppUserRole, additionalPermissi
 }
 
 export function normalizeRole(role: string | undefined): AppUserRole {
-  if (!role || !userRoleEnum.enum.includes(role as any)) {
+  if (!role || !userRoleEnum.enumValues.includes(role as any)) {
     return 'PARTICIPANT';
   }
   return role as AppUserRole;

@@ -54,7 +54,10 @@ export async function POST(request: NextRequest) {
   const authContext = { headers: request.headers };
 
   try {
-    user = await requireApiUser(authContext as any);
+    user = await requireApiUser(
+      {} as GuardRequirement,
+      authContext
+    );
   } catch (error) {
     return handleAuthorizationError(error);
   }

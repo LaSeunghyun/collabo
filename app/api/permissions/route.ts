@@ -9,7 +9,10 @@ import { GuardRequirement } from '@/lib/auth/session';
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await requireApiUser(request as NextRequest & GuardRequirement);
+    const user = await requireApiUser(
+      {} as GuardRequirement,
+      { headers: request.headers }
+    );
     const db = await getDbClient();
 
     // 관리자만 권한 목록 조회 가능
@@ -73,7 +76,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await requireApiUser(request as NextRequest & GuardRequirement);
+    const user = await requireApiUser(
+      {} as GuardRequirement,
+      { headers: request.headers }
+    );
     const db = await getDbClient();
 
     // 관리자만 권한 생성 가능

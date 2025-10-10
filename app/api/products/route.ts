@@ -122,7 +122,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const user = await requireApiUser(request as NextRequest & GuardRequirement);
+    const user = await requireApiUser(
+      {} as GuardRequirement,
+      { headers: request.headers }
+    );
     const db = await getDbClient();
     
     let body: unknown;

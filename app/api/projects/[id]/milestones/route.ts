@@ -64,7 +64,10 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await requireApiUser(request as NextRequest & GuardRequirement);
+    const user = await requireApiUser(
+      {} as GuardRequirement,
+      { headers: request.headers }
+    );
     const db = await getDbClient();
     
     const body = await request.json();

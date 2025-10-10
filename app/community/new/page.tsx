@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import {
   COMMUNITY_CATEGORY_LABELS,
@@ -18,6 +19,7 @@ const CATEGORIES: Array<{ value: string; label: string }> = COMMUNITY_CATEGORY_V
 export default function NewCommunityPostPage() {
   const { status } = useSession();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -49,6 +51,10 @@ export default function NewCommunityPostPage() {
 
       if (response.ok) {
         const data = await response.json();
+        // 커뮤니티 쿼리 무효화하여 목록 새로고침
+        await queryClient.invalidateQueries({
+          queryKey: ['community']
+        });
         router.push(`/community/${data.id}`);
       } else {
         const data = await response.json();

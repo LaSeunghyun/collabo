@@ -5,7 +5,10 @@ import { GuardRequirement } from '@/lib/auth/session';
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await requireApiUser(request as NextRequest & GuardRequirement);
+    const user = await requireApiUser(
+      {} as GuardRequirement,
+      { headers: request.headers }
+    );
     const { searchParams } = new URL(request.url);
     const stakeholderType = searchParams.get('stakeholderType') as string | null;
     const page = parseInt(searchParams.get('page') || '1');
@@ -37,7 +40,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await requireApiUser(request as NextRequest & GuardRequirement);
+    const user = await requireApiUser(
+      {} as GuardRequirement,
+      { headers: request.headers }
+    );
     const body = await request.json();
     const { settlementId, stakeholderType, amount } = body;
 

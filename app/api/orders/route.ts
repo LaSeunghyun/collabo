@@ -19,7 +19,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const user = await requireApiUser(request as NextRequest & GuardRequirement);
+    const user = await requireApiUser(
+      {} as GuardRequirement,
+      { headers: request.headers }
+    );
     const db = await getDb();
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') as string | null;
@@ -132,7 +135,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const user = await requireApiUser(request as NextRequest & GuardRequirement);
+    const user = await requireApiUser(
+      {} as GuardRequirement,
+      { headers: request.headers }
+    );
     const db = await getDb();
     
     let body: unknown;

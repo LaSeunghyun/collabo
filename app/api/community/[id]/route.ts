@@ -4,8 +4,8 @@ import { eq, and, count } from 'drizzle-orm';
 import { 
   communityPosts,
   users,
-  postLikes,
-  postDislikes,
+  communityPostLikes,
+  communityPostDislikes,
   moderationReports,
   comments
 } from '@/lib/db/schema';
@@ -65,8 +65,8 @@ const buildPostResponse = async (postId: string, viewerId?: string | null) => {
 
     // 좋아요, 싫어요, 댓글 수를 별도로 조회
     const [likesResult, dislikesResult, commentsResult] = await Promise.all([
-      db.select({ count: count() }).from(postLikes).where(eq(postLikes.postId, postId)),
-      db.select({ count: count() }).from(postDislikes).where(eq(postDislikes.postId, postId)),
+      db.select({ count: count() }).from(communityPostLikes).where(eq(communityPostLikes.postId, postId)),
+      db.select({ count: count() }).from(communityPostDislikes).where(eq(communityPostDislikes.postId, postId)),
       db.select({ count: count() }).from(comments).where(eq(comments.postId, postId))
     ]);
 
@@ -85,11 +85,11 @@ const buildPostResponse = async (postId: string, viewerId?: string | null) => {
     if (viewerId) {
       try {
         const [likeRecord, dislikeRecord] = await Promise.all([
-          db.select().from(postLikes).where(and(eq(postLikes.postId, postId), eq(postLikes.userId, viewerId))).limit(1),
+          db.select().from(communityPostLikes).where(and(eq(communityPostLikes.postId, postId), eq(communityPostLikes.userId, viewerId))).limit(1),
           db
             .select()
-            .from(postDislikes)
-            .where(and(eq(postDislikes.postId, postId), eq(postDislikes.userId, viewerId)))
+            .from(communityPostDislikes)
+            .where(and(eq(communityPostDislikes.postId, postId), eq(communityPostDislikes.userId, viewerId)))
             .limit(1)
         ]);
         liked = Boolean(likeRecord[0]);
@@ -284,12 +284,12 @@ export async function PATCH(
     if (action === 'like') {
       // 싫어요가 있다면 먼저 제거
       await db
-        .delete(postDislikes)
-        .where(and(eq(postDislikes.postId, params.id), eq(postDislikes.userId, sessionUser.id)));
+        .delete(communityPostDislikes)
+        .where(and(eq(communityPostDislikes.postId, params.id), eq(communityPostDislikes.userId, sessionUser.id)));
       
       // 좋아요 추가 (중복 방지를 위해 INSERT ... ON CONFLICT 사용)
       await db
-        .insert(postLikes)
+        .insert(communityPostLikes)
         .values({
           id: crypto.randomUUID(),
           postId: params.id,
@@ -300,12 +300,12 @@ export async function PATCH(
     } else if (action === 'dislike') {
       // 좋아요가 있다면 먼저 제거
       await db
-        .delete(postLikes)
-        .where(and(eq(postLikes.postId, params.id), eq(postLikes.userId, sessionUser.id)));
+        .delete(communityPostLikes)
+        .where(and(eq(communityPostLikes.postId, params.id), eq(communityPostLikes.userId, sessionUser.id)));
       
       // 싫어요 추가 (중복 방지를 위해 INSERT ... ON CONFLICT 사용)
       await db
-        .insert(postDislikes)
+        .insert(communityPostDislikes)
         .values({
           id: crypto.randomUUID(),
           postId: params.id,
@@ -316,13 +316,13 @@ export async function PATCH(
     } else if (action === 'unlike') {
       // 좋아요 제거
       await db
-        .delete(postLikes)
-        .where(and(eq(postLikes.postId, params.id), eq(postLikes.userId, sessionUser.id)));
+        .delete(communityPostLikes)
+        .where(and(eq(communityPostLikes.postId, params.id), eq(communityPostLikes.userId, sessionUser.id)));
     } else if (action === 'undislike') {
       // 싫어요 제거
       await db
-        .delete(postDislikes)
-        .where(and(eq(postDislikes.postId, params.id), eq(postDislikes.userId, sessionUser.id)));
+        .delete(communityPostDislikes)
+        .where(and(eq(communityPostDislikes.postId, params.id), eq(communityPostDislikes.userId, sessionUser.id)));
     }
 
     const updated = await buildPostResponse(params.id, sessionUser.id);

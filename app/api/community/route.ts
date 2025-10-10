@@ -174,10 +174,28 @@ export async function GET(request: NextRequest) {
       : await countQuery;
     const total = totalResult[0]?.count || 0;
 
+    // 응답 데이터 변환 (enum 값 소문자 변환, 필드명 매핑)
+    const transformPost = (post: any) => ({
+      ...post,
+      category: post.category?.toLowerCase() || 'general',
+      likes: post.likesCount || 0,
+      comments: post.commentsCount || 0,
+      author: post.author ? {
+        id: post.author.id,
+        name: post.author.name,
+        avatarUrl: post.author.avatar
+      } : null,
+      project: post.project ? {
+        id: post.project.id,
+        title: post.project.title,
+        ownerId: post.project.ownerId
+      } : null
+    });
+
     const result = {
-      posts,
-      pinned: pinnedPosts,
-      popular: popularPosts,
+      posts: posts.map(transformPost),
+      pinned: pinnedPosts.map(transformPost),
+      popular: popularPosts.map(transformPost),
       meta: {
         total,
         hasMore: posts.length === limit,
@@ -217,7 +235,10 @@ export async function GET(request: NextRequest) {
 
 export const POST = withCSRFProtection(async (request: NextRequest) => {
   try {
-    const user = await requireApiUser(request as NextRequest & GuardRequirement);
+    const user = await requireApiUser(
+      {} as GuardRequirement,
+      { headers: request.headers }
+    );
     const db = await getDbClient();
     
     let body: unknown;

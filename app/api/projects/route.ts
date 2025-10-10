@@ -2,12 +2,26 @@ import { NextRequest, NextResponse } from 'next/server';
 import { UserRole } from '@/types/shared';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
-import { createProject, ProjectValidationError } from '@/lib/server/projects';
+import { createProject, ProjectValidationError, getProjectSummaries } from '@/lib/server/projects';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    // 간단한 기본 응답으로 시작
-    return NextResponse.json([]);
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get('status');
+    const category = searchParams.get('category');
+    const limit = parseInt(searchParams.get('limit') || '20', 10);
+
+    // 필터 옵션 구성
+    const options: any = {
+      take: Math.min(limit, 100)
+    };
+
+    if (status) {
+      options.statuses = [status];
+    }
+
+    const projects = await getProjectSummaries(options);
+    return NextResponse.json(projects);
   } catch (error) {
     console.error('프로젝트 로드 실패', error);
 
@@ -28,7 +42,10 @@ export async function POST(request: NextRequest) {
   const authContext = { headers: request.headers };
 
   try {
-    user = await requireApiUser(authContext as any);
+    user = await requireApiUser(
+      {} as GuardRequirement,
+      authContext
+    );
   } catch (error) {
     return handleAuthorizationError(error);
   }

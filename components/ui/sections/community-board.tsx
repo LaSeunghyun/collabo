@@ -435,14 +435,18 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
         </div>
       ) : (
         <div className="space-y-4">
-          {posts.map((post) => (
+          {posts && posts.length > 0 ? posts.map((post) => (
             <CommunityPostCard
               key={post.id}
               post={post}
               onToggleLike={() => toggleLikeMutation.mutate(post.id)}
               isLiking={toggleLikeMutation.isPending}
             />
-          ))}
+          )) : (
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
+              <p className="text-white/60">{t('community.noPosts')}</p>
+            </div>
+          )}
 
           {hasNextPage && (
             <div ref={loadMoreRef} className="flex justify-center py-8">
@@ -481,72 +485,77 @@ function CommunityPostCard({ post, onToggleLike, isLiking }: CommunityPostCardPr
   const likeLabel = t('community.labels.likes', { count: post.likes });
 
   return (
-    <article className="rounded-2xl border border-white/10 bg-white/5 p-6 transition hover:border-white/20">
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 text-xs text-white/60">
-            {post.isPinned ? (
-              <>
-                <span>{t(`community.categories.${post.category}`)}</span>
-                <span>/</span>
-                <span>{t('community.badges.pinned')}</span>
-              </>
-            ) : (
-              <span>{displayCategory}</span>
-            )}
-            <span>/</span>
-            <time dateTime={createdAt?.toISOString()}>
-              {createdAt?.toLocaleDateString('ko-KR')}
-            </time>
-          </div>
+    <Link href={`/community/${post.id}`} className="block">
+      <article className="rounded-2xl border border-white/10 bg-white/5 p-6 transition hover:border-white/20 cursor-pointer">
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 text-xs text-white/60">
+              {post.isPinned ? (
+                <>
+                  <span>{t(`community.categories.${post.category}`)}</span>
+                  <span>/</span>
+                  <span>{t('community.badges.pinned')}</span>
+                </>
+              ) : (
+                <span>{displayCategory}</span>
+              )}
+              <span>/</span>
+              <time dateTime={createdAt?.toISOString()}>
+                {createdAt?.toLocaleDateString('ko-KR')}
+              </time>
+            </div>
 
-          <h3 className="mt-2 text-lg font-semibold text-white">
-            <Link
-              href={`/community/${post.id}`}
-              className="transition hover:text-primary"
-            >
+            <h3 className="mt-2 text-lg font-semibold text-white transition hover:text-primary">
               {post.title}
-            </Link>
-          </h3>
+            </h3>
 
-          <p className="mt-2 line-clamp-3 text-sm text-white/70">
-            {post.content}
-          </p>
+            <p className="mt-2 line-clamp-3 text-sm text-white/70">
+              {post.content}
+            </p>
 
-          <div className="mt-4 flex items-center gap-4 text-xs text-white/60">
-            <span className="font-semibold text-white">{authorName}</span>
-            <span>/</span>
-            <span>{commentLabel}</span>
-            <span>/</span>
-            <span>{likeLabel}</span>
+            <div className="mt-4 flex items-center gap-4 text-xs text-white/60">
+              <span className="font-semibold text-white">{authorName}</span>
+              <span>/</span>
+              <span>{commentLabel}</span>
+              <span>/</span>
+              <span>{likeLabel}</span>
+            </div>
+          </div>
+
+          <div className="ml-4 flex flex-col items-center gap-2">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onToggleLike();
+              }}
+              disabled={isLiking}
+              className={clsx(
+                'flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition',
+                post.liked
+                  ? 'bg-red-500/10 text-red-300 hover:bg-red-500/20'
+                  : 'bg-white/5 text-white/60 hover:bg-white/10'
+              )}
+            >
+              <Heart className={clsx('h-3 w-3', post.liked && 'fill-current')} />
+              {post.likes}
+            </button>
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              className="flex items-center gap-1 rounded-full bg-white/5 px-3 py-1.5 text-xs font-medium text-white/60 transition hover:bg-white/10"
+            >
+              <MessageCircle className="h-3 w-3" />
+              {post.comments}
+            </button>
           </div>
         </div>
-
-        <div className="ml-4 flex flex-col items-center gap-2">
-          <button
-            type="button"
-            onClick={onToggleLike}
-            disabled={isLiking}
-            className={clsx(
-              'flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition',
-              post.liked
-                ? 'bg-red-500/10 text-red-300 hover:bg-red-500/20'
-                : 'bg-white/5 text-white/60 hover:bg-white/10'
-            )}
-          >
-            <Heart className={clsx('h-3 w-3', post.liked && 'fill-current')} />
-            {post.likes}
-          </button>
-
-          <Link
-            href={`/community/${post.id}`}
-            className="flex items-center gap-1 rounded-full bg-white/5 px-3 py-1.5 text-xs font-medium text-white/60 transition hover:bg-white/10"
-          >
-            <MessageCircle className="h-3 w-3" />
-            {post.comments}
-          </Link>
-        </div>
-      </div>
-    </article>
+      </article>
+    </Link>
   );
 }

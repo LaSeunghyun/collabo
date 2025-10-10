@@ -12,7 +12,10 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await requireApiUser(request as NextRequest & GuardRequirement);
+    const user = await requireApiUser(
+      {} as GuardRequirement,
+      { headers: request.headers }
+    );
     const db = await getDbClient();
 
     // 본인 또는 관리자만 조회 가능
@@ -61,7 +64,10 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await requireApiUser(request as NextRequest & GuardRequirement);
+    const user = await requireApiUser(
+      {} as GuardRequirement,
+      { headers: request.headers }
+    );
     const db = await getDbClient();
 
     // 관리자만 권한 부여 가능
@@ -189,7 +195,10 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await requireApiUser(request as NextRequest & GuardRequirement);
+    const user = await requireApiUser(
+      {} as GuardRequirement,
+      { headers: request.headers }
+    );
     const { searchParams } = new URL(request.url);
     const permissionId = searchParams.get('permissionId');
 

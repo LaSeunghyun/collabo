@@ -464,7 +464,7 @@ export const comments = pgTable(
     id: text('id').notNull().primaryKey(),
     postId: text('postId')
       .notNull()
-      .references(() => posts.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
+      .references(() => communityPosts.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
     authorId: text('authorId')
       .notNull()
       .references(() => users.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
@@ -498,6 +498,26 @@ export const postLikes = pgTable(
   }),
 );
 
+export const communityPostLikes = pgTable(
+  'CommunityPostLike',
+  {
+    id: text('id').notNull().primaryKey(),
+    postId: text('postId')
+      .notNull()
+      .references(() => communityPosts.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+    userId: text('userId')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
+  },
+  (table) => ({
+    postUserUnique: uniqueIndex('CommunityPostLike_postId_userId_key').on(
+      table.postId,
+      table.userId,
+    ),
+  }),
+);
+
 export const postDislikes = pgTable(
   'PostDislike',
   {
@@ -512,6 +532,26 @@ export const postDislikes = pgTable(
   },
   (table) => ({
     postUserUnique: uniqueIndex('PostDislike_postId_userId_key').on(
+      table.postId,
+      table.userId,
+    ),
+  }),
+);
+
+export const communityPostDislikes = pgTable(
+  'CommunityPostDislike',
+  {
+    id: text('id').notNull().primaryKey(),
+    postId: text('postId')
+      .notNull()
+      .references(() => communityPosts.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+    userId: text('userId')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
+  },
+  (table) => ({
+    postUserUnique: uniqueIndex('CommunityPostDislike_postId_userId_key').on(
       table.postId,
       table.userId,
     ),
@@ -950,9 +990,9 @@ export const postsRelations = relations(posts, ({ one, many }) => ({
 }));
 
 export const commentsRelations = relations(comments, ({ one, many }) => ({
-  post: one(posts, {
+  post: one(communityPosts, {
     fields: [comments.postId],
-    references: [posts.id],
+    references: [communityPosts.id],
   }),
   author: one(users, {
     fields: [comments.authorId],
@@ -987,6 +1027,28 @@ export const postDislikesRelations = relations(postDislikes, ({ one }) => ({
   }),
   user: one(users, {
     fields: [postDislikes.userId],
+    references: [users.id],
+  }),
+}));
+
+export const communityPostLikesRelations = relations(communityPostLikes, ({ one }) => ({
+  post: one(communityPosts, {
+    fields: [communityPostLikes.postId],
+    references: [communityPosts.id],
+  }),
+  user: one(users, {
+    fields: [communityPostLikes.userId],
+    references: [users.id],
+  }),
+}));
+
+export const communityPostDislikesRelations = relations(communityPostDislikes, ({ one }) => ({
+  post: one(communityPosts, {
+    fields: [communityPostDislikes.postId],
+    references: [communityPosts.id],
+  }),
+  user: one(users, {
+    fields: [communityPostDislikes.userId],
     references: [users.id],
   }),
 }));
@@ -1118,6 +1180,20 @@ export const communityPosts = pgTable('CommunityPost', {
     name: 'CommunityPost_projectId_Project_id_fk'
   }).onUpdate('cascade').onDelete('set null'),
 ]);
+
+export const communityPostsRelations = relations(communityPosts, ({ one, many }) => ({
+  author: one(users, {
+    fields: [communityPosts.authorId],
+    references: [users.id],
+  }),
+  project: one(projects, {
+    fields: [communityPosts.projectId],
+    references: [projects.id],
+  }),
+  comments: many(comments),
+  likes: many(communityPostLikes),
+  dislikes: many(communityPostDislikes),
+}));
 
 export const communityReports = pgTable('CommunityReport', {
   id: text().primaryKey().notNull(),

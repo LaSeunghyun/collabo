@@ -6,7 +6,10 @@ import { moderationStatusEnum } from '@/lib/db/schema';
 
 export async function GET(request: NextRequest) {
   try {
-    await requireApiUser({ roles: [UserRole.ADMIN] });
+    await requireApiUser(
+      { roles: [UserRole.ADMIN] },
+      { headers: request.headers }
+    );
     const { searchParams } = new URL(request.url);
     const postId = searchParams.get('postId');
 
@@ -27,7 +30,10 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const user = await requireApiUser({ roles: [UserRole.ADMIN] });
+    const user = await requireApiUser(
+      { roles: [UserRole.ADMIN] },
+      { headers: request.headers }
+    );
     const body = await request.json();
     const { reportId, status, actionNote } = body;
 
