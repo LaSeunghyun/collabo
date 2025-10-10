@@ -1,9 +1,9 @@
 import Link from 'next/link';
 
 const navigationAnchors = [
-  { href: '#overview', label: '?�황 ?�약' },
-  { href: '#profile', label: '?�로??관�? },
-  { href: '#insights', label: '추천 ?�티?�트' }
+  { href: '#overview', label: '현황 요약' },
+  { href: '#profile', label: '프로필 관리' },
+  { href: '#insights', label: '추천 아티스트' }
 ];
 
 export default async function PartnerDashboardLayout({

@@ -2,14 +2,15 @@
 
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
+import {
+  PARTNER_TYPE_VALUES,
+  PARTNER_TYPE_LABELS,
+} from '@/lib/constants/enums';
 
-const PARTNER_TYPES = [
-  { value: 'STUDIO', label: '?�튜?�오' },
-  { value: 'VENUE', label: '공연?? },
-  { value: 'PRODUCTION', label: '?�작 ?�튜?�오' },
-  { value: 'MERCHANDISE', label: '머천?�이�? },
-  { value: 'OTHER', label: '기�?' }
-] as const;
+const PARTNER_TYPES = PARTNER_TYPE_VALUES.map((value) => ({
+  value,
+  label: PARTNER_TYPE_LABELS[value],
+}));
 
 interface PartnerFormData {
   name: string;
@@ -55,7 +56,7 @@ function PartnerForm({ onSubmit, onSuccess }: PartnerFormProps) {
       await onSubmit(formData);
       onSuccess();
     } catch {
-      setError('?�트???�록???�패?�습?�다.');
+      setError('파트너 등록에 실패했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -66,7 +67,7 @@ function PartnerForm({ onSubmit, onSuccess }: PartnerFormProps) {
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-white">
-            ?�트?�명 *
+            파트너명 *
           </label>
           <input
             type="text"
@@ -76,13 +77,13 @@ function PartnerForm({ onSubmit, onSuccess }: PartnerFormProps) {
             value={formData.name}
             onChange={handleChange}
             className="mt-1 block w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/50 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            placeholder="?�트?�명???�력?�세??
+            placeholder="파트너명을 입력하세요"
           />
         </div>
 
         <div>
           <label htmlFor="type" className="block text-sm font-medium text-white">
-            ?�트???�??*
+            파트너 유형 *
           </label>
           <select
             id="type"
@@ -103,7 +104,7 @@ function PartnerForm({ onSubmit, onSuccess }: PartnerFormProps) {
 
       <div>
         <label htmlFor="description" className="block text-sm font-medium text-white">
-          ?�명 *
+          설명 *
         </label>
         <textarea
           id="description"
@@ -113,14 +114,14 @@ function PartnerForm({ onSubmit, onSuccess }: PartnerFormProps) {
           value={formData.description}
           onChange={handleChange}
           className="mt-1 block w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/50 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-          placeholder="?�트?�에 ?�???�명???�력?�세??
+          placeholder="파트너에 대한 설명을 입력하세요"
         />
       </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div>
           <label htmlFor="location" className="block text-sm font-medium text-white">
-            ?�치 *
+            위치 *
           </label>
           <input
             type="text"
@@ -130,13 +131,13 @@ function PartnerForm({ onSubmit, onSuccess }: PartnerFormProps) {
             value={formData.location}
             onChange={handleChange}
             className="mt-1 block w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/50 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            placeholder="?�치�??�력?�세??
+            placeholder="위치를 입력하세요"
           />
         </div>
 
         <div>
           <label htmlFor="website" className="block text-sm font-medium text-white">
-            ?�사?�트
+            웹사이트
           </label>
           <input
             type="url"
@@ -153,7 +154,7 @@ function PartnerForm({ onSubmit, onSuccess }: PartnerFormProps) {
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div>
           <label htmlFor="contactEmail" className="block text-sm font-medium text-white">
-            ?�락�??�메??*
+            연락처 이메일 *
           </label>
           <input
             type="email"
@@ -163,13 +164,13 @@ function PartnerForm({ onSubmit, onSuccess }: PartnerFormProps) {
             value={formData.contactEmail}
             onChange={handleChange}
             className="mt-1 block w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/50 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            placeholder="?�락�??�메?�을 ?�력?�세??
+            placeholder="연락처 이메일을 입력하세요"
           />
         </div>
 
         <div>
           <label htmlFor="contactPhone" className="block text-sm font-medium text-white">
-            ?�락�??�화번호
+            연락처 전화번호
           </label>
           <input
             type="tel"
@@ -178,7 +179,7 @@ function PartnerForm({ onSubmit, onSuccess }: PartnerFormProps) {
             value={formData.contactPhone}
             onChange={handleChange}
             className="mt-1 block w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/50 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            placeholder="?�락�??�화번호�??�력?�세??
+            placeholder="연락처 전화번호를 입력하세요"
           />
         </div>
       </div>
@@ -201,7 +202,7 @@ function PartnerForm({ onSubmit, onSuccess }: PartnerFormProps) {
           disabled={isLoading}
           className="flex-1 rounded-lg bg-blue-600 px-4 py-3 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
         >
-          {isLoading ? '?�록 �?..' : '?�트???�록'}
+          {isLoading ? '등록 중...' : '파트너 등록'}
         </button>
       </div>
     </form>
@@ -222,20 +223,20 @@ export function PartnerRegistrationPanel() {
     });
 
     if (!response.ok) {
-      throw new Error('?�트???�록???�패?�습?�다.');
+      throw new Error('파트너 등록에 실패했습니다.');
     }
 
     return response.json();
   };
 
   const handleSuccess = () => {
-    setStatus({ state: 'success', message: '?�트???�록???�료?�었?�니?? 검?????�인?�니??' });
+    setStatus({ state: 'success', message: '파트너 등록이 완료되었습니다. 검토 후 연락드리겠습니다.' });
   };
 
   if (!session) {
     return (
       <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
-        <p className="text-white/60">?�트???�록???�해?�는 로그?�이 ?�요?�니??</p>
+        <p className="text-white/60">파트너 등록을 위해서는 로그인이 필요합니다</p>
       </div>
     );
   }

@@ -210,7 +210,7 @@ export async function POST(request: NextRequest) {
 
   const project = projectResult[0];
   if (!project || !['LIVE', 'EXECUTING'].includes(project.status)) {
-    return buildApiError('?�재 ?�태?�서??결제�?진행?????�습?�다.', 409);
+    return buildApiError('?�재 ?�태?�서??결제�?진행중????�습?�다.', 409);
   }
 
   let stripe: Stripe;

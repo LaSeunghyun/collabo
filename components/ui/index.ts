@@ -1,5 +1,5 @@
 // UI Components Index
-// 모든 UI 컴포?�트�?중앙?�서 관리하??export
+// 모든 UI 컴포넌트를 중앙에서 관리하는 export
 
 // Cards
 export { ProjectCard } from './cards/project-card';
@@ -21,7 +21,7 @@ export { CategoryFilter } from './sections/category-filter';
 export { CommunityBoard } from './sections/community-board';
 export { HeroCarousel } from './sections/hero-carousel';
 export { ProjectDetailTabs } from './sections/project-detail-tabs';
-export { ProjectFilterPanel } from './sections/project-filter-panel';
+// export { ProjectFilterPanel } from './sections/project-filter-panel';
 
 // Dialogs
 export { FundingDialog } from './dialogs/funding-dialog';

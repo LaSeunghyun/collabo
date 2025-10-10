@@ -4,22 +4,23 @@ import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 
 import { canAccessRoute } from '@/lib/auth/role-guards';
-import { useAnnouncementUnreadCount } from '@/hooks/use-announcement-read';
+// import { useAnnouncementUnreadCount } from '@/hooks/use-announcement-read';
 
 export function Header() {
   const { data: session } = useSession();
-  const { data: unreadCount = 0 } = useAnnouncementUnreadCount(Boolean(session?.user));
+  // const { data: unreadCount = 0 } = useAnnouncementUnreadCount(Boolean(session?.user));
+  const unreadCount = 0;
 
   const navigationItems = [
-    { href: '/announcements', label: '공�??�항', unreadCount },
-    { href: '/community', label: '커�??�티' },
-    { href: '/projects', label: '?�로?�트' },
-    { href: '/artists', label: '?�티?�트' },
-    { href: '/partners', label: '?�트?? },
+    { href: '/announcements', label: '공지사항', unreadCount },
+    { href: '/community', label: '커뮤니티' },
+    { href: '/projects', label: '프로젝트' },
+    { href: '/artists', label: '아티스트' },
+    { href: '/partners', label: '파트너' },
   ];
 
   if (session?.user && canAccessRoute(session.user, '/partners/dashboard')) {
-    navigationItems.push({ href: '/partners/dashboard', label: '?�트???�?�보?? });
+    navigationItems.push({ href: '/partners/dashboard', label: '파트너 대시보드' });
   }
 
   if (session?.user && canAccessRoute(session.user, '/admin')) {
@@ -61,7 +62,7 @@ export function Header() {
                 href="/profile"
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors"
               >
-                ?�로??
+                프로필
               </Link>
             ) : (
               <>
@@ -69,13 +70,13 @@ export function Header() {
                   href="/auth/signin"
                   className="text-neutral-300 hover:text-white transition-colors"
                 >
-                  로그??
+                  로그인
                 </Link>
                 <Link
                   href="/auth/signup"
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors"
                 >
-                  ?�원가??
+                  회원가입
                 </Link>
               </>
             )}

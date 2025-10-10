@@ -18,7 +18,7 @@ export async function GET(
     // 본인 또는 관리자만 조회 가능
     if (params.id !== user.id && user.role !== 'ADMIN') {
       return NextResponse.json(
-        { message: 'Unauthorized' },
+        { error: '권한이 없습니다.' },
         { status: 403 }
       );
     }
@@ -48,9 +48,9 @@ export async function GET(
 
     return NextResponse.json(userPermissionsList);
   } catch (error) {
-    console.error('Failed to fetch user permissions:', error);
+    console.error('사용자 권한 조회 실패:', error);
     return NextResponse.json(
-      { message: 'Failed to fetch user permissions' },
+      { error: '사용자 권한을 불러오는데 실패했습니다.' },
       { status: 500 }
     );
   }
@@ -67,7 +67,7 @@ export async function POST(
     // 관리자만 권한 부여 가능
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
-        { message: 'Unauthorized' },
+        { error: '권한이 없습니다.' },
         { status: 403 }
       );
     }
@@ -77,7 +77,7 @@ export async function POST(
 
     if (!permissionId) {
       return NextResponse.json(
-        { message: 'Permission ID is required' },
+        { error: '권한 ID가 필요합니다.' },
         { status: 400 }
       );
     }
@@ -91,7 +91,7 @@ export async function POST(
 
     if (!targetUser) {
       return NextResponse.json(
-        { message: 'User not found' },
+        { error: '사용자를 찾을 수 없습니다.' },
         { status: 404 }
       );
     }
@@ -110,7 +110,7 @@ export async function POST(
 
     if (!permission) {
       return NextResponse.json(
-        { message: 'Permission not found' },
+        { error: '권한을 찾을 수 없습니다.' },
         { status: 404 }
       );
     }
@@ -129,7 +129,7 @@ export async function POST(
 
     if (existingUserPermission) {
       return NextResponse.json(
-        { message: 'User already has this permission' },
+        { error: '사용자가 이미 이 권한을 가지고 있습니다.' },
         { status: 400 }
       );
     }
@@ -171,14 +171,14 @@ export async function POST(
       .limit(1);
 
     if (!userPermission) {
-      throw new Error('Failed to load created user permission');
+      throw new Error('생성된 사용자 권한을 불러올 수 없습니다.');
     }
 
     return NextResponse.json(userPermission, { status: 201 });
   } catch (error) {
-    console.error('Failed to grant user permission:', error);
+    console.error('사용자 권한 부여 실패:', error);
     return NextResponse.json(
-      { message: 'Failed to grant user permission' },
+      { error: '사용자 권한 부여에 실패했습니다.' },
       { status: 500 }
     );
   }
@@ -195,7 +195,7 @@ export async function DELETE(
 
     if (!permissionId) {
       return NextResponse.json(
-        { message: 'Permission ID is required' },
+        { error: '권한 ID가 필요합니다.' },
         { status: 400 }
       );
     }
@@ -203,7 +203,7 @@ export async function DELETE(
     // 관리자만 권한 제거 가능
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
-        { message: 'Unauthorized' },
+        { error: '권한이 없습니다.' },
         { status: 403 }
       );
     }
@@ -220,11 +220,11 @@ export async function DELETE(
         )
       );
 
-    return NextResponse.json({ message: 'Permission removed successfully' });
+    return NextResponse.json({ message: '권한이 성공적으로 제거되었습니다.' });
   } catch (error) {
-    console.error('Failed to remove user permission:', error);
+    console.error('사용자 권한 제거 실패:', error);
     return NextResponse.json(
-      { message: 'Failed to remove user permission' },
+      { error: '사용자 권한 제거에 실패했습니다.' },
       { status: 500 }
     );
   }

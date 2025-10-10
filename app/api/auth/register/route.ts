@@ -4,7 +4,7 @@ import { hash } from 'bcryptjs';
 
 import { eq } from 'drizzle-orm';
 import { getDb } from '@/lib/db/client';
-import { user } from '@/lib/db/schema';
+import { users } from '@/lib/db/schema';
 
 const registerSchema = z.object({
   name: z.string().min(2, '이름은 최소 2자 이상이어야 합니다.'),
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     const db = await getDb();
 
     // 이메일 중복 확인
-    const existingUser = await db.select().from(user).where(eq(user.email, email)).limit(1);
+    const existingUser = await db.select().from(users).where(eq(users.email, email)).limit(1);
     
     if (existingUser.length > 0) {
       return NextResponse.json(
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await hash(password, 12);
 
     // 사용자 생성
-    const [newUser] = await db.insert(user).values({
+    const [newUser] = await db.insert(users).values({
       name,
       email,
       passwordHash: hashedPassword,

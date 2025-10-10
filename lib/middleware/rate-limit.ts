@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 interface RateLimitConfig {
-  windowMs: number; // ?œê°„ ?ˆë„??(ë°€ë¦¬ì´ˆ)
-  maxRequests: number; // ìµœë? ?”ì²­ ??
-  message?: string; // ?œí•œ ì´ˆê³¼ ??ë©”ì‹œì§€
-  skipSuccessfulRequests?: boolean; // ?±ê³µ???”ì²­??ì¹´ìš´?¸í• ì§€ ?¬ë?
+  windowMs: number; // Time window in milliseconds
+  maxRequests: number; // Maximum number of requests
+  message?: string; // Rate limit exceeded message
+  skipSuccessfulRequests?: boolean; // Whether to count successful requests
 }
 
 interface RateLimitStore {
@@ -14,18 +14,18 @@ interface RateLimitStore {
   };
 }
 
-// ë©”ëª¨ë¦?ê¸°ë°˜ ?€?¥ì†Œ (?„ë¡œ?•ì…˜?ì„œ??Redis ?¬ìš© ê¶Œì¥)
+// Memory-based store (Redis recommended for production)
 const store: RateLimitStore = {};
 
-// ê¸°ë³¸ ?¤ì •
+// Default configuration
 const defaultConfig: RateLimitConfig = {
-  windowMs: 60 * 1000, // 1ë¶?
-  maxRequests: 100, // ìµœë? 100 ?”ì²­
+  windowMs: 60 * 1000, // 1 minute
+  maxRequests: 100, // Maximum 100 requests
   message: 'Too many requests, please try again later.',
   skipSuccessfulRequests: false
 };
 
-// IP ì£¼ì†Œ ì¶”ì¶œ ?¨ìˆ˜
+// IP address extraction function
 function getClientIP(request: NextRequest): string {
   const forwarded = request.headers.get('x-forwarded-for');
   const realIP = request.headers.get('x-real-ip');
@@ -41,7 +41,7 @@ function getClientIP(request: NextRequest): string {
   return 'unknown';
 }
 
-// ?ˆì´??ë¦¬ë????´ë˜??
+// Rate limiter class
 export class RateLimiter {
   private config: RateLimitConfig;
   private store: RateLimitStore;
@@ -51,13 +51,13 @@ export class RateLimiter {
     this.store = store;
   }
 
-  // ?”ì²­ ?œí•œ ?•ì¸
+  // Check request rate limit
   isAllowed(identifier: string): { allowed: boolean; remaining: number; resetTime: number } {
     const now = Date.now();
     const windowMs = this.config.windowMs;
     const maxRequests = this.config.maxRequests;
 
-    // ê¸°ì¡´ ê¸°ë¡???†ê±°???ˆë„?°ê? ë§Œë£Œ??ê²½ìš°
+    // If no existing record or window has expired
     if (!this.store[identifier] || now > this.store[identifier].resetTime) {
       this.store[identifier] = {
         count: 1,
@@ -71,7 +71,7 @@ export class RateLimiter {
       };
     }
 
-    // ?„ì¬ ?ˆë„???´ì—???”ì²­ ???•ì¸
+    // Check if current window has exceeded request limit
     if (this.store[identifier].count >= maxRequests) {
       return {
         allowed: false,
@@ -80,7 +80,7 @@ export class RateLimiter {
       };
     }
 
-    // ?”ì²­ ??ì¦ê?
+    // Increment request count
     this.store[identifier].count++;
     
     return {
@@ -90,7 +90,7 @@ export class RateLimiter {
     };
   }
 
-  // ë¯¸ë“¤?¨ì–´ ?¨ìˆ˜ ?ì„±
+  // Create middleware function
   middleware() {
     return (request: NextRequest): NextResponse | null => {
       const identifier = getClientIP(request);
@@ -115,57 +115,57 @@ export class RateLimiter {
         );
       }
 
-      // ?±ê³µ??ê²½ìš° ?¤ë” ì¶”ê?
+      // Add headers for successful requests
       const response = NextResponse.next();
       response.headers.set('X-RateLimit-Limit', this.config.maxRequests.toString());
       response.headers.set('X-RateLimit-Remaining', result.remaining.toString());
       response.headers.set('X-RateLimit-Reset', result.resetTime.toString());
 
-      return null; // ê³„ì† ì§„í–‰
+      return null; // Continue processing
     };
   }
 }
 
-// ?¬ì „ ?•ì˜???ˆì´??ë¦¬ë??°ë“¤
+// Pre-configured rate limiters
 export const rateLimiters = {
-  // ?¼ë°˜ API ?”ì²­
+  // General API requests
   general: new RateLimiter({
-    windowMs: 60 * 1000, // 1ë¶?
+    windowMs: 60 * 1000, // 1 minute
     maxRequests: 100
   }),
 
-  // ê²Œì‹œê¸€ ?‘ì„±
+  // Post creation
   postCreation: new RateLimiter({
-    windowMs: 60 * 1000, // 1ë¶?
+    windowMs: 60 * 1000, // 1 minute
     maxRequests: 10,
     message: 'Too many post creation attempts, please try again later.'
   }),
 
-  // ë¡œê·¸???œë„
+  // Login attempts
   auth: new RateLimiter({
-    windowMs: 15 * 60 * 1000, // 15ë¶?
+    windowMs: 15 * 60 * 1000, // 15 minutes
     maxRequests: 5,
     message: 'Too many login attempts, please try again later.'
   }),
 
-  // ?Œì›ê°€??
+  // Registration
   registration: new RateLimiter({
-    windowMs: 60 * 60 * 1000, // 1?œê°„
+    windowMs: 60 * 60 * 1000, // 1 hour
     maxRequests: 3,
     message: 'Too many registration attempts, please try again later.'
   }),
 
-  // ?“ê? ?‘ì„±
+  // Comment creation
   comment: new RateLimiter({
-    windowMs: 60 * 1000, // 1ë¶?
+    windowMs: 60 * 1000, // 1 minute
     maxRequests: 20,
     message: 'Too many comment attempts, please try again later.'
   })
 };
 
-// ?¹ì • ê²½ë¡œ???€???ˆì´??ë¦¬ë???ë§¤í•‘
+// Map specific paths to rate limiters
 export function getRateLimiterForPath(pathname: string): RateLimiter | null {
-  // API ê²½ë¡œë³??ˆì´??ë¦¬ë???ë§¤í•‘
+  // Map API paths to rate limiters
   if (pathname.startsWith('/api/auth/login') || pathname.startsWith('/api/auth/register')) {
     return rateLimiters.auth;
   }
@@ -182,11 +182,11 @@ export function getRateLimiterForPath(pathname: string): RateLimiter | null {
     return rateLimiters.comment;
   }
   
-  // ê¸°ë³¸?ìœ¼ë¡??¼ë°˜ ?ˆì´??ë¦¬ë????ìš©
+  // Use general rate limiter by default
   return rateLimiters.general;
 }
 
-// ?•ë¦¬ ?¨ìˆ˜ (ë©”ëª¨ë¦??„ìˆ˜ ë°©ì?)
+// Cleanup function (memory leak prevention)
 export function cleanupExpiredEntries(): void {
   const now = Date.now();
   
@@ -197,7 +197,7 @@ export function cleanupExpiredEntries(): void {
   });
 }
 
-// ì£¼ê¸°?ìœ¼ë¡?ë§Œë£Œ????ª© ?•ë¦¬ (5ë¶„ë§ˆ??
+// Periodically clean up expired entries (every 5 minutes)
 if (typeof window === 'undefined') {
   setInterval(cleanupExpiredEntries, 5 * 60 * 1000);
 }

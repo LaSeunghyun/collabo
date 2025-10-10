@@ -1,9 +1,9 @@
 import { getSettlementsPendingPayout } from '@/lib/server/settlement-queries';
 import { getDbClient } from '@/lib/db/client';
-import { settlement, project } from '@/lib/db/schema';
+import { settlements, projects } from '@/lib/db/schema';
 import { eq, inArray, desc } from 'drizzle-orm';
 
-// Drizzle 클라이언트 모킹
+// Drizzle 클潔트 킹
 jest.mock('@/lib/db/client', () => ({
   getDbClient: jest.fn()
 }));
@@ -47,10 +47,10 @@ describe('settlement queries', () => {
     const result = await getSettlementsPendingPayout(10);
 
     expect(mockDb.select).toHaveBeenCalled();
-    expect(mockDb.from).toHaveBeenCalledWith(settlement);
-    expect(mockDb.innerJoin).toHaveBeenCalledWith(project, eq(settlement.projectId, project.id));
-    expect(mockDb.where).toHaveBeenCalledWith(inArray(settlement.payoutStatus, ['PENDING', 'IN_PROGRESS']));
-    expect(mockDb.orderBy).toHaveBeenCalledWith(desc(settlement.updatedAt));
+    expect(mockDb.from).toHaveBeenCalledWith(settlements);
+    expect(mockDb.innerJoin).toHaveBeenCalledWith(projects, eq(settlements.projectId, projects.id));
+    expect(mockDb.where).toHaveBeenCalledWith(inArray(settlements.payoutStatus, ['PENDING', 'IN_PROGRESS']));
+    expect(mockDb.orderBy).toHaveBeenCalledWith(desc(settlements.updatedAt));
     expect(mockDb.limit).toHaveBeenCalledWith(10);
     
     expect(result).toEqual([

@@ -1,15 +1,16 @@
 import { cache } from 'react';
-import { eq, and, count } from 'drizzle-orm';
+import { eq, and, count, desc, sql } from 'drizzle-orm';
 
 import type { SessionUser } from '@/lib/auth/session';
 import { getDb, getDbClient } from '@/lib/db/client';
 import { 
-  users, 
-  posts, 
-  projects, 
-  userFollows, 
+  users,
+  posts,
+  projects,
+  userFollows,
   fundings,
-  projectMilestones
+  projectMilestones,
+  userRoleEnum
 } from '@/lib/db/schema';
 import { getProjectSummaries } from '@/lib/server/projects';
 
@@ -35,6 +36,8 @@ export interface ArtistEventSummary {
   location?: string | null;
   url?: string | null;
 }
+
+type UserRoleType = typeof userRoleEnum.enum[number];
 
 export interface ArtistProfile {
   id: string;
@@ -102,7 +105,6 @@ const parseSocialLinks = (links: unknown | null): ArtistSocialLink[] => {
 
 const fetchArtistEvents = async (artistId: string): Promise<ArtistEventSummary[]> => {
   try {
-    // ������Ʈ ���Ͻ����� �̺�Ʈ�� Ȱ��
     const db = await getDb();
     const milestones = await db
       .select({
@@ -286,36 +288,28 @@ export const listFeaturedArtists = cache(async (): Promise<ArtistDirectoryEntry[
         name: users.name,
         avatarUrl: users.avatarUrl,
         bio: users.bio,
-        createdAt: users.createdAt
+        createdAt: users.createdAt,
+        followerCount: sql<number>`count(DISTINCT ${userFollows.followerId})`,
+        projectCount: sql<number>`count(DISTINCT ${projects.id})`,
       })
       .from(users)
+      .leftJoin(userFollows, eq(users.id, userFollows.followingId))
+      .leftJoin(projects, eq(users.id, projects.ownerId))
       .where(eq(users.role, 'CREATOR'))
-      .orderBy(users.createdAt)
+      .groupBy(users.id)
+      .orderBy(desc(users.createdAt))
       .limit(12);
 
-    // Get follower and project counts for each artist
-    const artistsWithCounts = await Promise.all(
-      artists.map(async (artist) => {
-        const [followerCountResult, projectCountResult] = await Promise.all([
-          db.select({ count: count() }).from(userFollows).where(eq(userFollows.followingId, artist.id)),
-          db.select({ count: count() }).from(projects).where(eq(projects.ownerId, artist.id))
-        ]);
-
-        return {
-          id: artist.id,
-          name: artist.name,
-          avatarUrl: artist.avatarUrl,
-          bio: artist.bio,
-          followerCount: followerCountResult[0]?.count || 0,
-          projectCount: projectCountResult[0]?.count || 0
-        } satisfies ArtistDirectoryEntry;
-      })
-    );
-
-    return artistsWithCounts;
+    return artists.map(artist => ({
+      id: artist.id,
+      name: artist.name,
+      avatarUrl: artist.avatarUrl,
+      bio: artist.bio,
+      followerCount: artist.followerCount || 0,
+      projectCount: artist.projectCount || 0,
+    }));
   } catch (error) {
     console.error('Failed to fetch artist directory.', error);
     return [];
   }
 });
-

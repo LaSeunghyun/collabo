@@ -203,7 +203,7 @@ export const updateModerationStatus = async (
 
 export const getHandledModerationReportsByPost = async (limit = 8) => {
   try {
-    // 간단??구현?�로 변�?- 복잡??groupBy ?�??기본 쿼리 ?�용
+    // 간단한 구현으로 변경 - 복잡한 groupBy 대신 기본 쿼리 사용
     const db = await getDb();
     const reports = await db
       .select({
@@ -233,7 +233,7 @@ export const getHandledModerationReportsByPost = async (limit = 8) => {
         id: report.authorId,
         name: report.authorName ?? null
       } : null,
-      totalReports: 1, // ?�순??
+      totalReports: 1, // ?�순??
       lastResolvedAt: report.resolvedAt ?? report.createdAt ?? null,
       latestStatus: report.status ?? 'ACTION_TAKEN'
     } satisfies ModerationHandledPostSummary));

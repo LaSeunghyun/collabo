@@ -22,13 +22,13 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const offset = (page - 1) * limit;
 
-    // 조건부 ?�터�?
+    // 조건부 필터
     const conditions = [eq(fundings.userId, user.id)];
-    if (provider && Object.values(paymentProviderEnum.enumValues).includes(provider as any)) {
+    if (provider && Object.values(paymentProviderEnum.enum).includes(provider as any)) {
       conditions.push(eq(paymentTransactions.provider, provider as any));
     }
 
-    // 결제 ?�역 조회
+    // 결제 내역 조회
     const paymentsList = await db
       .select({
         id: paymentTransactions.id,
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .offset(offset);
 
-    // ?�체 개수 조회
+    // 전체 개수 조회
     const totalResult = await db
       .select({ count: count() })
       .from(paymentTransactions)
@@ -76,9 +76,9 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('Failed to fetch payments:', error);
+    console.error('결제 내역 조회 실패:', error);
     return NextResponse.json(
-      { message: 'Failed to fetch payments' },
+      { error: '결제 내역을 불러오는데 실패했습니다.' },
       { status: 500 }
     );
   }
@@ -93,15 +93,15 @@ export async function POST(request: NextRequest) {
 
     if (!fundingId || !provider || !externalId || !amount) {
       return NextResponse.json(
-        { message: 'Missing required fields' },
+        { error: '필수 필드가 누락되었습니다.' },
         { status: 400 }
       );
     }
 
     const providerValue = provider.toUpperCase();
-    if (!paymentProviderEnum.enumValues.includes(providerValue as typeof paymentProviderEnum.enumValues[number])) {
+    if (!paymentProviderEnum.enum.includes(providerValue as typeof paymentProviderEnum.enum[number])) {
       return NextResponse.json(
-        { message: 'Invalid payment provider' },
+        { error: '유효하지 않은 결제 제공업체입니다.' },
         { status: 400 }
       );
     }
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
     const normalizedAmount = typeof amount === 'string' ? Number.parseInt(amount, 10) : Number(amount);
     if (!Number.isFinite(normalizedAmount) || normalizedAmount <= 0) {
       return NextResponse.json(
-        { message: 'Invalid payment amount' },
+        { error: '유효하지 않은 결제 금액입니다.' },
         { status: 400 }
       );
     }
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
 
     if (!funding || funding.userId !== user.id) {
       return NextResponse.json(
-        { message: 'Funding not found or unauthorized' },
+        { error: '펀딩을 찾을 수 없거나 권한이 없습니다.' },
         { status: 404 }
       );
     }
@@ -142,19 +142,19 @@ export async function POST(request: NextRequest) {
 
     if (existingPayment) {
       return NextResponse.json(
-        { message: 'Payment already exists for this funding' },
+        { error: '이 펀딩에 대한 결제가 이미 존재합니다.' },
         { status: 400 }
       );
     }
 
     const now = new Date().toISOString();
-    const pendingStatus = 'PENDING' as (typeof fundingStatusEnum.enumValues)[number];
+    const pendingStatus = 'PENDING' as (typeof fundingStatusEnum.enum)[number];
     const [createdPayment] = await db
       .insert(paymentTransactions)
       .values({
         id: randomUUID(),
         fundingId,
-        provider: providerValue as typeof paymentProviderEnum.enumValues[number],
+        provider: providerValue as typeof paymentProviderEnum.enum[number],
         externalId,
         amount: normalizedAmount,
         status: pendingStatus,
@@ -196,14 +196,14 @@ export async function POST(request: NextRequest) {
       .limit(1);
 
     if (!payment) {
-      throw new Error('Failed to create payment transaction');
+      throw new Error('결제 거래 생성에 실패했습니다.');
     }
 
     return NextResponse.json(payment, { status: 201 });
   } catch (error) {
-    console.error('Failed to create payment:', error);
+    console.error('결제 생성 실패:', error);
     return NextResponse.json(
-      { message: 'Failed to create payment' },
+      { error: '결제 생성에 실패했습니다.' },
       { status: 500 }
     );
   }

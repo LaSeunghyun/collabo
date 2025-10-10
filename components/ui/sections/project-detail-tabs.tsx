@@ -25,9 +25,9 @@ export function ProjectDetailTabs({ project, settlements = [], updates = [], com
 
   const tabItems = [
     { id: 'overview', label: '개요' },
-    { id: 'updates', label: '?�데?�트' },
-    { id: 'comments', label: '?��?' },
-    { id: 'settlements', label: '?�산 ?�역' }
+    { id: 'updates', label: '업데이트' },
+    { id: 'comments', label: '댓글' },
+    { id: 'settlements', label: '정산 내역' }
   ];
 
   const progressPercentage = (project.currentAmount / project.targetAmount) * 100;
@@ -71,14 +71,14 @@ export function ProjectDetailTabs({ project, settlements = [], updates = [], com
         {current === 'overview' && (
           <div className="space-y-6">
             <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">?�로?�트 개요</h3>
+              <h3 className="text-lg font-semibold text-white mb-4">프로젝트 개요</h3>
               <div className="space-y-4">
                 <div>
-                  <h4 className="text-sm font-medium text-white/60 mb-2">?�명</h4>
+                  <h4 className="text-sm font-medium text-white/60 mb-2">설명</h4>
                   <p className="text-white/80 leading-relaxed">{project.description}</p>
                 </div>
                 <div>
-                  <h4 className="text-sm font-medium text-white/60 mb-2">?�세 ?�용</h4>
+                  <h4 className="text-sm font-medium text-white/60 mb-2">세부 내용</h4>
                   <div className="text-white/80 leading-relaxed whitespace-pre-wrap">
                     {project.content}
                   </div>
@@ -87,18 +87,18 @@ export function ProjectDetailTabs({ project, settlements = [], updates = [], com
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">?�???�황</h3>
+              <h3 className="text-lg font-semibold text-white mb-4">펀딩 현황</h3>
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-white/60">목표 금액</span>
                   <span className="text-white font-medium">{formatCurrency(project.targetAmount)}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-white/60">?�재 모집 금액</span>
+                  <span className="text-sm text-white/60">현재 모집 금액</span>
                   <span className="text-white font-medium">{formatCurrency(project.currentAmount)}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-white/60">?��? 금액</span>
+                  <span className="text-sm text-white/60">남은 금액</span>
                   <span className="text-white font-medium">{formatCurrency(remainingAmount)}</span>
                 </div>
                 <div className="w-full bg-white/10 rounded-full h-2">
@@ -108,7 +108,7 @@ export function ProjectDetailTabs({ project, settlements = [], updates = [], com
                   />
                 </div>
                 <div className="text-center text-sm text-white/60">
-                  {progressPercentage.toFixed(1)}% ?�성
+                  {progressPercentage.toFixed(1)}% 완성
                 </div>
               </div>
             </div>
@@ -117,7 +117,7 @@ export function ProjectDetailTabs({ project, settlements = [], updates = [], com
 
         {current === 'updates' && (
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-white">?�로?�트 ?�데?�트</h3>
+            <h3 className="text-lg font-semibold text-white">프로젝트 업데이트</h3>
             {updates.length > 0 ? (
               updates.map((update) => (
                 <div key={update.id} className="rounded-2xl border border-white/10 bg-white/5 p-6">
@@ -132,7 +132,7 @@ export function ProjectDetailTabs({ project, settlements = [], updates = [], com
               ))
             ) : (
               <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 p-12 text-center">
-                <p className="text-white/60">?�직 ?�데?�트가 ?�습?�다.</p>
+                <p className="text-white/60">아직 업데이트가 없습니다.</p>
               </div>
             )}
           </div>
@@ -140,13 +140,13 @@ export function ProjectDetailTabs({ project, settlements = [], updates = [], com
 
         {current === 'comments' && (
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-white">?��?</h3>
+            <h3 className="text-lg font-semibold text-white">댓글</h3>
             {comments.length > 0 ? (
               comments.map((comment) => (
                 <div key={comment.id} className="rounded-2xl border border-white/10 bg-white/5 p-6">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-white font-medium">{comment.author?.name || '?�명'}</span>
+                      <span className="text-white font-medium">{comment.author?.name || '익명'}</span>
                       <span className="text-sm text-white/60">{formatDate(comment.createdAt)}</span>
                     </div>
                     <p className="text-white/80 leading-relaxed">{comment.content}</p>
@@ -155,7 +155,7 @@ export function ProjectDetailTabs({ project, settlements = [], updates = [], com
               ))
             ) : (
               <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 p-12 text-center">
-                <p className="text-white/60">?�직 ?��????�습?�다.</p>
+                <p className="text-white/60">아직 댓글이 없습니다.</p>
               </div>
             )}
           </div>
@@ -163,22 +163,22 @@ export function ProjectDetailTabs({ project, settlements = [], updates = [], com
 
         {current === 'settlements' && (
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-white">?�산 ?�역</h3>
+            <h3 className="text-lg font-semibold text-white">정산 내역</h3>
             {settlements.length > 0 ? (
               settlements.map((settlement) => (
                 <div key={settlement.id} className="rounded-2xl border border-white/10 bg-white/5 p-6">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-white font-medium">?�산 #{settlement.id.slice(0, 8)}</span>
+                      <span className="text-white font-medium">정산 #{settlement.id.slice(0, 8)}</span>
                       <span className="text-sm text-white/60">{formatDate(settlement.createdAt)}</span>
                     </div>
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className="text-white/60">�?모집금액:</span>
+                        <span className="text-white/60">총 모집금액:</span>
                         <span className="text-white ml-2">{formatCurrency(settlement.totalRaised)}</span>
                       </div>
                       <div>
-                        <span className="text-white/60">?�산금액:</span>
+                        <span className="text-white/60">정산금액:</span>
                         <span className="text-white ml-2">{formatCurrency(settlement.netAmount)}</span>
                       </div>
                     </div>
@@ -187,7 +187,7 @@ export function ProjectDetailTabs({ project, settlements = [], updates = [], com
               ))
             ) : (
               <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 p-12 text-center">
-                <p className="text-white/60">?�직 ?�산 ?�역???�습?�다.</p>
+                <p className="text-white/60">아직 정산 내역이 없습니다.</p>
               </div>
             )}
           </div>

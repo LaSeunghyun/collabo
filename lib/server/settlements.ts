@@ -53,7 +53,7 @@ function allocatePool(pool: number, shares: StakeholderShareInput[]): Allocation
 
   const totalShare = shares.reduce((acc, share) => acc + share.share, 0);
   if (totalShare > 1 + Number.EPSILON) {
-    throw new Error('배분 비율??총합??100%�?초과?�니??');
+    throw new Error('배분 비율 총합이 100%를 초과합니다.');
   }
 
   const provisional = shares.map((share) => {
@@ -99,15 +99,15 @@ export function calculateSettlementBreakdown({
   collaboratorShares
 }: CalculateSettlementParams): SettlementBreakdown {
   if (!Number.isFinite(totalRaised) || totalRaised <= 0) {
-    throw new Error('?�산??계산?�려�??�효??모집 금액???�요?�니??');
+    throw new Error('정산 계산을 위해 모집 금액이 필요합니다.');
   }
 
   if (platformFeeRate < 0 || platformFeeRate > 1) {
-    throw new Error('?�랫???�수�?비율?� 0�?1 ?�이?�야 ?�니??');
+    throw new Error('플랫폼 수수료 비율은 0~1 사이여야 합니다.');
   }
 
   if (gatewayFees < 0) {
-    throw new Error('결제 ?�수료는 ?�수가 ?????�습?�다.');
+    throw new Error('결제 수수료는 양수여야 합니다.');
   }
 
   const platformFee = Math.round(totalRaised * platformFeeRate);
@@ -121,7 +121,7 @@ export function calculateSettlementBreakdown({
     collaboratorShareInputs.reduce((acc, share) => acc + share.share, 0);
 
   if (combinedShare > 1 + Number.EPSILON) {
-    throw new Error('?�트?��? ?�력?�의 배분 비율???�이 100%�?초과?�니??');
+    throw new Error('통합 공제 비율이 100%를 초과합니다.');
   }
 
   const partnerAllocations = allocatePool(netAmount, partnerShareInputs);

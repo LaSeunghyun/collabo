@@ -54,10 +54,10 @@ export const requireApiUser = async (
   }
 
   if (status === AuthorizationStatus.UNAUTHENTICATED) {
-    throw new AuthorizationError('?�증???�요?�니??', 401);
+    throw new AuthorizationError('인증이 필요합니다', 401);
   }
 
-  throw new AuthorizationError('?�청???�??권한???�습?�다.', 403);
+  throw new AuthorizationError('요청에 대한 권한이 없습니다.', 403);
 };
 
 export const handleAuthorizationError = (error: unknown) => {

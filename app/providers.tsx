@@ -30,7 +30,7 @@ function SessionPersistenceManager() {
     const flag = window.sessionStorage.getItem(SESSION_PERSISTENCE_KEY);
 
     if (status === 'authenticated') {
-      // ���� ���Ӽ� �÷��װ� ������ Ȱ������ ���� (�α׾ƿ����� ����)
+      // 현재 세션의 플래그가 없으면 활성으로 설정 (로그아웃에서 제거)
       if (!flag) {
         window.sessionStorage.setItem(SESSION_PERSISTENCE_KEY, SESSION_PERSISTENCE_ACTIVE);
         return;

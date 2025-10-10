@@ -1,9 +1,9 @@
 import { getOpenModerationReports } from '@/lib/server/moderation';
 import { getDbClient } from '@/lib/db/client';
-import { moderationReport, user } from '@/lib/db/schema';
+import { moderationReports, users } from '@/lib/db/schema';
 import { eq, and, inArray, desc, count, notInArray } from 'drizzle-orm';
 
-// Drizzle 클라이언트 모킹
+// Drizzle 클潔트 킹
 jest.mock('@/lib/db/client', () => ({
   getDbClient: jest.fn()
 }));
@@ -49,10 +49,10 @@ describe('moderation domain service', () => {
     const result = await getOpenModerationReports(3);
 
     expect(mockDb.select).toHaveBeenCalled();
-    expect(mockDb.from).toHaveBeenCalledWith(moderationReport);
-    expect(mockDb.leftJoin).toHaveBeenCalledWith(user, eq(moderationReport.reporterId, user.id));
-    expect(mockDb.where).toHaveBeenCalledWith(inArray(moderationReport.status, ['PENDING', 'REVIEWING']));
-    expect(mockDb.orderBy).toHaveBeenCalledWith(desc(moderationReport.createdAt));
+    expect(mockDb.from).toHaveBeenCalledWith(moderationReports);
+    expect(mockDb.leftJoin).toHaveBeenCalledWith(users, eq(moderationReports.reporterId, users.id));
+    expect(mockDb.where).toHaveBeenCalledWith(inArray(moderationReports.status, ['PENDING', 'REVIEWING']));
+    expect(mockDb.orderBy).toHaveBeenCalledWith(desc(moderationReports.createdAt));
     expect(mockDb.limit).toHaveBeenCalledWith(3);
     
     expect(result).toEqual([

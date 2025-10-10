@@ -1,8 +1,8 @@
-import { userRole } from '@/lib/db/schema';
+import { userRoleEnum } from '@/lib/db/schema';
 
 export type ClientKind = 'web' | 'mobile';
 
-type UserRoleType = typeof userRole.enumValues[number];
+type UserRoleType = typeof userRoleEnum.enum[number];
 
 export interface SessionPolicy {
   accessTokenTtl: number;

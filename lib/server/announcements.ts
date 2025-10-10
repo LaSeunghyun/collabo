@@ -189,7 +189,7 @@ const resolvePublishedAt = (publishedAt?: string | Date | null): Date => {
     return publishedAt;
   }
 
-  // 문자?�인 경우 Date.parse�??�싱
+  // 문자열인 경우 Date.parse로 파싱
   if (typeof publishedAt === 'string') {
     const parsed = Date.parse(publishedAt);
     if (Number.isNaN(parsed)) {
@@ -198,7 +198,7 @@ const resolvePublishedAt = (publishedAt?: string | Date | null): Date => {
     return new Date(parsed);
   }
 
-  // 기�? 경우 ?�재 ?�간 반환
+  // 기본 경우 현재 시간 반환
   return new Date();
 };
 

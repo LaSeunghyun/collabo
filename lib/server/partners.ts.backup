@@ -1,5 +1,5 @@
 import { revalidatePath } from 'next/cache';
-import { eq, and, or, like, desc, count, not, SQL, sql } from 'drizzle-orm';
+import { eq, and, or, like, desc, count, inArray, not, SQL, sql } from 'drizzle-orm';
 import { ZodError } from 'zod';
 import * as crypto from 'node:crypto';
 
@@ -11,6 +11,8 @@ import { PartnerType } from '@/lib/constants/enums';
 import {
   createPartnerSchema,
   updatePartnerSchema,
+  type CreatePartnerInput,
+  type UpdatePartnerInput
 } from '@/lib/validators/partners';
 
 // --- Types ---
@@ -82,45 +84,35 @@ const revalidatePartners = () => {
   revalidatePath(PARTNERS_PATH);
 };
 
-// --- Database Query Functions ---
-
-const fetchPartnersFromDb = async (conditions: SQL[] = [], limit = DEFAULT_PAGE_SIZE) => {
-  const db = await getDb();
-  
-  const query = db
-    .select({
-      id: partners.id,
-      name: partners.name,
-      type: partners.type,
-      verified: partners.verified,
-      description: partners.description,
-      location: partners.location,
-      portfolioUrl: partners.portfolioUrl,
-      contactInfo: partners.contactInfo,
-      createdAt: partners.createdAt,
-      updatedAt: partners.updatedAt,
-      user: {
-        id: users.id,
-        name: users.name,
-        avatarUrl: users.avatarUrl,
-      },
-      matchCount: sql<number>`count(${partnerMatches.id})`.mapWith(Number),
-    })
-    .from(partners)
-    .innerJoin(users, eq(partners.userId, users.id))
-    .leftJoin(partnerMatches, eq(partners.id, partnerMatches.partnerId))
-    .groupBy(partners.id, users.id);
-
-  const finalQuery = conditions.length > 0 
-    ? query.where(and(...conditions))
-    : query;
-
-  return finalQuery
-    .orderBy(desc(partners.createdAt))
-    .limit(limit);
+// --- Database Query Helpers ---
+const partnerQuerySelection = {
+  id: partners.id,
+  name: partners.name,
+  type: partners.type,
+  verified: partners.verified,
+  description: partners.description,
+  location: partners.location,
+  portfolioUrl: partners.portfolioUrl,
+  contactInfo: partners.contactInfo,
+  createdAt: partners.createdAt,
+  updatedAt: partners.updatedAt,
+  user: {
+    id: users.id,
+    name: users.name,
+    avatarUrl: users.avatarUrl,
+  },
+  matchCount: sql<number>`count(${partnerMatches.id})`.mapWith(Number),
 };
 
-type PartnerQueryResult = Awaited<ReturnType<typeof fetchPartnersFromDb>>[number];
+type PartnerQueryResult = typeof partnerQuerySelection;
+
+const getPartnerQuery = (db: ReturnType<typeof getDb>) => {
+  return db.select(partnerQuerySelection)
+  .from(partners)
+  .innerJoin(users, eq(partners.userId, users.id))
+  .leftJoin(partnerMatches, eq(partners.id, partnerMatches.partnerId))
+  .groupBy(partners.id, users.id);
+};
 
 // --- Data Transformation ---
 const toPartnerSummary = (partner: PartnerQueryResult): PartnerSummary => ({
@@ -178,21 +170,24 @@ export const listPartners = async (params: ListPartnersParams = {}): Promise<Lis
 
   if (search) {
     const term = `%${search.trim()}%`;
-    const searchCondition = or(
+    conditions.push(or(
       like(partners.name, term),
       like(partners.description, term),
       like(partners.contactInfo, term),
       like(partners.location, term)
-    );
-    
-    if (searchCondition) {
-      conditions.push(searchCondition);
-    }
+    ));
   }
 
   if (cursor) conditions.push(eq(partners.id, cursor));
 
-  const partnersData = await fetchPartnersFromDb(conditions, take + 1);
+  const db = await getDb();
+  const query = getPartnerQuery(db);
+  
+  const partnersData = await (conditions.length > 0
+    ? query.where(and(...conditions))
+    : query)
+    .orderBy(desc(partners.createdAt))
+    .limit(take + 1);
 
   const hasNext = partnersData.length > take;
   const pageItems = hasNext ? partnersData.slice(0, -1) : partnersData;
@@ -204,8 +199,9 @@ export const listPartners = async (params: ListPartnersParams = {}): Promise<Lis
 };
 
 export const getPartnerById = async (id: string): Promise<PartnerSummary> => {
-  const conditions: SQL[] = [eq(partners.id, id)];
-  const results = await fetchPartnersFromDb(conditions, 1);
+  const db = await getDb();
+  const results = await getPartnerQuery(db)
+    .where(eq(partners.id, id));
 
   if (results.length === 0) {
     throw new PartnerNotFoundError();
@@ -215,8 +211,9 @@ export const getPartnerById = async (id: string): Promise<PartnerSummary> => {
 };
 
 export const getPartnerProfileForUser = async (userId: string): Promise<PartnerSummary> => {
-  const conditions: SQL[] = [eq(partners.userId, userId)];
-  const results = await fetchPartnersFromDb(conditions, 1);
+  const db = await getDb();
+  const results = await getPartnerQuery(db)
+    .where(eq(partners.userId, userId));
 
   if (results.length === 0) {
     throw new PartnerNotFoundError();
@@ -323,7 +320,7 @@ export const updatePartnerProfile = async (
 
 export const getPartnerStats = async () => {
   const db = await getDb();
-  const stats = await db.select({
+  const stats = await db.select({ // Explicitly select columns to avoid issues with `stats[0]`
       total: count(partners.id),
       verified: sql<number>`count(*) filter (where ${partners.verified} = true)`.mapWith(Number),
       pending: sql<number>`count(*) filter (where ${partners.verified} = false)`.mapWith(Number),

@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     const where: any = { stakeholderId: user.id };
     if (stakeholderType) where.stakeholderType = stakeholderType;
 
-    // ?�산 지�??�역 조회 기능?� 추후 구현 ?�정
+    // 정산 지급 내역 조회 기능은 추후 구현 예정
     const [payouts, total] = [[], 0];
 
     return NextResponse.json({
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ?�산 ?�보 ?�인 (추후 구현 ?�정)
+    // 정산 정보 확인 (추후 구현 예정)
     const settlement = { 
       id: settlementId,
       project: {
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 권한 ?�인 (?�로?�트 ?�유???�는 관리자�?
+    // 권한 확인 (프로젝트 소유자이거나 관리자)
     if (settlement.project.owner.id !== user.id && user.role !== 'ADMIN') {
       return NextResponse.json(
         { message: 'Unauthorized' },
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ?�산 지�??�성 (추후 구현 ?�정)
+    // 정산 지급 생성 (추후 구현 예정)
     const payout = {
       id: 'temp-payout-id',
       settlementId,

@@ -1,17 +1,11 @@
 import { userRoleEnum } from '@/lib/db/schema';
+import {
+  USER_ROLE_VALUES,
+  USER_ROLE_LABELS,
+  type UserRoleValue,
+} from '@/lib/constants/enums';
 
-export const UserRole = userRoleEnum.enumValues;
-export const USER_ROLE_VALUES = userRoleEnum.enumValues;
-export const USER_ROLE_LABELS: Record<typeof userRoleEnum.enumValues[number], string> = {
-  CREATOR: '크리에이터',
-  PARTICIPANT: '참여자',
-  PARTNER: '파트너',
-  ADMIN: '관리자'
-};
-
-export const ROLE_LABELS = USER_ROLE_LABELS;
-
-export type AppUserRole = typeof userRoleEnum.enumValues[number];
+export type AppUserRole = UserRoleValue;
 
 const DEFAULT_SESSION_PERMISSION = 'session:read';
 
@@ -118,7 +112,7 @@ export function deriveEffectivePermissions(role: AppUserRole, additionalPermissi
 }
 
 export function normalizeRole(role: string | undefined): AppUserRole {
-  if (!role || !userRoleEnum.enumValues.includes(role as any)) {
+  if (!role || !userRoleEnum.enum.includes(role as any)) {
     return 'PARTICIPANT';
   }
   return role as AppUserRole;

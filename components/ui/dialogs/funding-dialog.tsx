@@ -30,14 +30,14 @@ export function FundingDialog({
     setError('');
 
     if (!session) {
-      setError('로그?�이 ?�요?�니??');
+      setError('로그인이 필요합니다');
       setIsLoading(false);
       return;
     }
 
     const fundingAmount = parseFloat(amount);
     if (isNaN(fundingAmount) || fundingAmount <= 0) {
-      setError('?�바�?금액???�력?�주?�요.');
+      setError('올바른 금액을 입력해주세요.');
       setIsLoading(false);
       return;
     }
@@ -58,14 +58,14 @@ export function FundingDialog({
       if (response.ok) {
         setOpen(false);
         setAmount('');
-        // ?�공 메시지 ?�시 ?�는 ?�이지 ?�로고침
+        // 성공 메시지 표시 또는 페이지 새로고침
         window.location.reload();
       } else {
         const data = await response.json();
-        setError(data.error || '?�?�에 ?�패?�습?�다.');
+        setError(data.error || '펀딩에 실패했습니다.');
       }
     } catch (error: any) {
-      setError(error.message || '?�??�??�류가 발생?�습?�다.');
+      setError(error.message || '네트워크 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -89,24 +89,24 @@ export function FundingDialog({
           <div className="relative bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <div className="space-y-4">
               <div>
-                <h2 className="text-lg font-semibold">?�로?�트 ?�??/h2>
+                <h2 className="text-lg font-semibold">프로젝트 펀딩</h2>
                 <p className="text-sm text-gray-600">
-                  {projectTitle} ?�로?�트???�?�하?�요
+                  {projectTitle} 프로젝트를 후원하세요
                 </p>
               </div>
 
               <div className="rounded-lg bg-gray-50 p-4">
                 <div className="flex justify-between text-sm text-gray-600 mb-2">
-                  <span>?�재 모집금액</span>
-                  <span>{currentAmount.toLocaleString()}??/span>
+                  <span>현재 모집금액</span>
+                  <span>{currentAmount.toLocaleString()}원</span>
                 </div>
                 <div className="flex justify-between text-sm text-gray-600 mb-2">
                   <span>목표금액</span>
-                  <span>{targetAmount.toLocaleString()}??/span>
+                  <span>{targetAmount.toLocaleString()}원</span>
                 </div>
                 <div className="flex justify-between text-sm text-gray-600 mb-2">
-                  <span>?��? 금액</span>
-                  <span>{remainingAmount.toLocaleString()}??/span>
+                  <span>남은 금액</span>
+                  <span>{remainingAmount.toLocaleString()}원</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div 
@@ -119,14 +119,14 @@ export function FundingDialog({
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-2">
-                    ?�??금액 (??
+                    후원금액 (원)
                   </label>
                   <input
                     type="number"
                     id="amount"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    placeholder="?�?�할 금액???�력?�세??
+                    placeholder="후원할 금액을 입력하세요"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     min="1000"
                     step="1000"
@@ -153,7 +153,7 @@ export function FundingDialog({
                     disabled={isLoading}
                     className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
                   >
-                    {isLoading ? '?�??�?..' : '?�?�하�?}
+                    {isLoading ? '후원 중...' : '후원하기'}
                   </button>
                 </div>
               </form>

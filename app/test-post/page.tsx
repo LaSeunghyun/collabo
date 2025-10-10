@@ -35,7 +35,7 @@ export default function TestPostPage() {
       const data = await response.json();
       setResult(data);
     } catch {
-      setResult({ error: '게시글 ?�성???�패?�습?�다.' });
+      setResult({ error: '게시글 생성에 실패했습니다.' });
     } finally {
       setIsLoading(false);
     }
@@ -43,12 +43,12 @@ export default function TestPostPage() {
 
   return (
     <div className="max-w-2xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">게시글 ?�성 ?�스??/h1>
+      <h1 className="text-2xl font-bold mb-6">게시글 생성 테스트</h1>
       
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="title" className="block text-sm font-medium text-white mb-2">
-            ?�목
+            제목
           </label>
           <input
             type="text"
@@ -58,7 +58,7 @@ export default function TestPostPage() {
             value={formData.title}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="게시글 ?�목???�력?�세??
+            placeholder="게시글 제목을 입력하세요"
           />
         </div>
 
@@ -73,17 +73,17 @@ export default function TestPostPage() {
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="general">?�반</option>
-            <option value="notice">공�??�항</option>
-            <option value="collab">?�업</option>
-            <option value="support">지??/option>
-            <option value="showcase">?��??�스</option>
+            <option value="general">일반</option>
+            <option value="notice">공지사항</option>
+            <option value="collab">협업</option>
+            <option value="support">지원</option>
+            <option value="showcase">쇼케이스</option>
           </select>
         </div>
 
         <div>
           <label htmlFor="content" className="block text-sm font-medium text-white mb-2">
-            ?�용
+            내용
           </label>
           <textarea
             id="content"
@@ -93,7 +93,7 @@ export default function TestPostPage() {
             value={formData.content}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="게시글 ?�용???�력?�세??
+            placeholder="게시글 내용을 입력하세요"
           />
         </div>
 
@@ -102,7 +102,7 @@ export default function TestPostPage() {
           disabled={isLoading}
           className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50"
         >
-          {isLoading ? '?�성 �?..' : '게시글 ?�성'}
+          {isLoading ? '생성 중...' : '게시글 생성'}
         </button>
       </form>
 

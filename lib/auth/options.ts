@@ -8,7 +8,7 @@ import { compare } from 'bcryptjs';
 import { eq } from 'drizzle-orm';
 
 import { getDbClient } from '@/lib/db/client';
-import { user } from '@/lib/db/schema';
+import { users } from '@/lib/db/schema';
 
 import { AUTH_V3_ENABLED } from './flags';
 import { deriveEffectivePermissions } from './permissions';
@@ -58,8 +58,8 @@ export const authOptions: NextAuthOptions = {
         }
 
         const db = await getDbClient();
-        const userRecord = await (db as any).query.user.findFirst({
-          where: eq(user.email, credentials.email)
+        const userRecord = await (db as any).query.users.findFirst({
+          where: eq(users.email, credentials.email)
         });
 
         if (!userRecord || !userRecord.passwordHash) {

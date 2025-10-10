@@ -1,28 +1,42 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 
-import { getServerAuthSession } from '@/lib/auth/session';
-import { revokeSession } from '@/lib/auth/session-store';
+import { verifyAccessToken } from '@/lib/auth/access-token';
+import { buildRefreshCookieRemoval, REFRESH_COOKIE } from '@/lib/auth/cookies';
+import { blacklistToken } from '@/lib/auth/token-blacklist';
+import { revokeSessionByRefreshToken } from '@/lib/auth/session-store';
 
 export async function POST(req: NextRequest) {
-  try {
-    const session = await getServerAuthSession();
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: '인증이 필요합니다.' }, { status: 401 });
-    }
+  const refreshToken = req.cookies.get(REFRESH_COOKIE)?.value;
 
-    // 현재 세션 종료
-    if (session.sessionToken) {
-      await revokeSession(session.sessionToken);
+  if (refreshToken) {
+    try {
+      await revokeSessionByRefreshToken(refreshToken);
+    } catch (error) {
+      console.warn('세션 해제 오류', error);
     }
-
-    return NextResponse.json({ 
-      message: '로그아웃이 성공적으로 완료되었습니다.' 
-    });
-  } catch (error) {
-    console.error('로그아웃 처리 중 오류:', error);
-    return NextResponse.json({ 
-      error: '로그아웃 처리에 실패했습니다.' 
-    }, { status: 500 });
   }
+
+  const authorization = req.headers.get('authorization');
+
+  if (authorization?.startsWith('Bearer ')) {
+    const token = authorization.slice(7).trim();
+
+    if (token) {
+      try {
+        const verified = await verifyAccessToken(token);
+        await blacklistToken(verified.jti, verified.expiresAt);
+      } catch (error) {
+        console.warn('액세스 토큰 블랙리스트 처리 실패', error);
+      }
+    }
+  }
+
+  return NextResponse.json(
+    { success: true },
+    {
+      headers: {
+        'Set-Cookie': buildRefreshCookieRemoval()
+      }
+    }
+  );
 }

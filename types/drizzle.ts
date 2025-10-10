@@ -1,5 +1,12 @@
-// Drizzle enum ?�?�들???�스?�에???�용?????�도�?export
-export { 
+/**
+ * @deprecated 이 파일은 deprecated되었습니다. 대신 @/lib/constants/enums를 사용하세요.
+ * 
+ * 마이그레이션 가이드:
+ * - 모든 enum과 라벨은 이제 @/lib/constants/enums에서 import하세요
+ */
+
+// Database enum re-exports
+export {
   userRoleEnum,
   projectStatusEnum,
   fundingStatusEnum,
@@ -15,79 +22,25 @@ export {
   notificationTypeEnum,
   milestoneStatusEnum,
   moderationTargetTypeEnum,
-  moderationStatusEnum
+  moderationStatusEnum,
 } from '@/lib/db/schema/enums';
 
-// ?�스?�에???�용?????�는 enum 값들
-export const UserRole = {
-  CREATOR: 'CREATOR',
-  PARTICIPANT: 'PARTICIPANT',
-  PARTNER: 'PARTNER',
-  ADMIN: 'ADMIN'
-} as const;
-
-export const ProjectStatus = {
-  DRAFT: 'DRAFT',
-  REVIEWING: 'REVIEWING',
-  LIVE: 'LIVE',
-  SUCCESSFUL: 'SUCCESSFUL',
-  FAILED: 'FAILED',
-  EXECUTING: 'EXECUTING',
-  COMPLETED: 'COMPLETED'
-} as const;
-
-export const PostType = {
-  UPDATE: 'UPDATE',
-  DISCUSSION: 'DISCUSSION',
-  AMA: 'AMA'
-} as const;
-
-export const PartnerType = {
-  STUDIO: 'STUDIO',
-  VENUE: 'VENUE',
-  PRODUCTION: 'PRODUCTION',
-  MERCHANDISE: 'MERCHANDISE',
-  OTHER: 'OTHER'
-} as const;
-
-export const FundingStatus = {
-  PENDING: 'PENDING',
-  SUCCEEDED: 'SUCCEEDED',
-  FAILED: 'FAILED',
-  REFUNDED: 'REFUNDED',
-  CANCELLED: 'CANCELLED'
-} as const;
-
-export const OrderStatus = {
-  PENDING: 'PENDING',
-  PAID: 'PAID',
-  SHIPPED: 'SHIPPED',
-  DELIVERED: 'DELIVERED',
-  REFUNDED: 'REFUNDED',
-  CANCELLED: 'CANCELLED'
-} as const;
-
-export const ProductType = {
-  PHYSICAL: 'PHYSICAL',
-  DIGITAL: 'DIGITAL'
-} as const;
-
-export const CommunityCategory = {
-  GENERAL: 'GENERAL',
-  NOTICE: 'NOTICE',
-  COLLAB: 'COLLAB',
-  SUPPORT: 'SUPPORT',
-  SHOWCASE: 'SHOWCASE'
-} as const;
-
-export const ModerationTargetType = {
-  POST: 'POST',
-  COMMENT: 'COMMENT'
-} as const;
-
-export const ModerationStatus = {
-  PENDING: 'PENDING',
-  REVIEWING: 'REVIEWING',
-  ACTION_TAKEN: 'ACTION_TAKEN',
-  DISMISSED: 'DISMISSED'
-} as const;
+// TypeScript const 객체들
+export {
+  UserRole,
+  ProjectStatus,
+  FundingStatus,
+  PaymentProvider,
+  SettlementPayoutStatus,
+  SettlementStakeholderType,
+  PartnerType,
+  PartnerMatchStatus,
+  ProductType,
+  OrderStatus,
+  PostType,
+  CommunityCategory,
+  NotificationType,
+  MilestoneStatus,
+  ModerationTargetType,
+  ModerationStatus,
+} from '@/lib/constants/enums';

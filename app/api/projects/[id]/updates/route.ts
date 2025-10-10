@@ -40,8 +40,8 @@ export async function GET(
       return NextResponse.json({ message: error.message }, { status: 404 });
     }
 
-    console.error('Failed to fetch project updates', error);
-    return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+    console.error('프로젝트 업데이트 조회 실패', error);
+    return NextResponse.json({ error: '서버 내부 오류가 발생했습니다.' }, { status: 500 });
   }
 }
 
@@ -94,7 +94,7 @@ export async function POST(
       return NextResponse.json({ message: error.message }, { status: 404 });
     }
 
-    console.error('Failed to create project update', error);
-    return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+    console.error('프로젝트 업데이트 생성 실패', error);
+    return NextResponse.json({ error: '서버 내부 오류가 발생했습니다.' }, { status: 500 });
   }
 }

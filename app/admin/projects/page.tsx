@@ -1,18 +1,13 @@
 import { getProjectStats, getRecentProjects } from '@/lib/server/projects';
+import { PROJECT_STATUS_LABELS } from '@/lib/constants/enums';
 
 export const dynamic = 'force-dynamic';
 
-const statusLabels: Record<string, string> = {
-  'DRAFT': '초안',
-  'PENDING': '검토중',
-  'APPROVED': '승인됨',
-  'REJECTED': '거부됨',
-  'ACTIVE': '진행중',
-  'COMPLETED': '완료',
-  'CANCELLED': '취소됨'
-};
+// 프로젝트 상태 레이블은 중앙 enum에서 가져옴
+const projectStatusLabels = PROJECT_STATUS_LABELS;
 
-const categoryLabels: Record<string, string> = {
+// 프로젝트 카테고리 레이블 매핑 (enum이 없으므로 별도 정의)
+const projectCategoryLabels: Record<string, string> = {
   'MUSIC': '음악',
   'ART': '미술',
   'FILM': '영화',
@@ -63,7 +58,7 @@ export default async function AdminProjectsPage() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">진행중</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.active}</p>
+              <p className="text-2xl font-semibold text-gray-900">{stats.live || 0}</p>
             </div>
           </div>
         </div>
@@ -91,7 +86,7 @@ export default async function AdminProjectsPage() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">완료됨</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.completed}</p>
+              <p className="text-2xl font-semibold text-gray-900">{(stats as any).completed || 0}</p>
             </div>
           </div>
         </div>
@@ -128,11 +123,11 @@ export default async function AdminProjectsPage() {
                 <tr key={project.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{project.title}</div>
-                    <div className="text-sm text-gray-500">{project.creatorName}</div>
+                    <div className="text-sm text-gray-500">{project.owner?.name || 'Unknown'}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                      {categoryLabels[project.category] || project.category}
+                      {projectCategoryLabels[project.category] || project.category}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -142,7 +137,7 @@ export default async function AdminProjectsPage() {
                       project.status === 'COMPLETED' ? 'bg-blue-100 text-blue-800' :
                       'bg-gray-100 text-gray-800'
                     }`}>
-                      {statusLabels[project.status] || project.status}
+                      {(projectStatusLabels as any)[project.status] || project.status}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

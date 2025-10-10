@@ -4,6 +4,15 @@ import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { userRoleEnum } from '@/lib/db/schema/enums';
+
+// 사용자 역할 레이블 매핑
+const userRoleLabels: Record<typeof userRoleEnum.enumValues[number], string> = {
+  'CREATOR': '창작자',
+  'PARTICIPANT': '참여자',
+  'PARTNER': '파트너',
+  'ADMIN': '관리자'
+};
 
 export default function SignUpPage() {
   const [formData, setFormData] = useState({
@@ -30,7 +39,7 @@ export default function SignUpPage() {
     setError('');
 
     if (formData.password !== formData.confirmPassword) {
-      setError('비�?번호가 ?�치?��? ?�습?�다.');
+      setError('비밀번호가 일치하지 않습니다.');
       setIsLoading(false);
       return;
     }
@@ -50,7 +59,7 @@ export default function SignUpPage() {
       });
 
       if (response.ok) {
-        // ?�원가???�공 ???�동 로그??
+        // 회원가입 성공 시 자동 로그인
         const result = await signIn('credentials', {
           email: formData.email,
           password: formData.password,
@@ -64,10 +73,10 @@ export default function SignUpPage() {
         }
       } else {
         const data = await response.json();
-        setError(data.error || '?�원가?�에 ?�패?�습?�다.');
+        setError(data.error || '회원가입에 실패했습니다.');
       }
     } catch {
-      setError('?�원가??�??�류가 발생?�습?�다.');
+      setError('회원가입 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -78,10 +87,10 @@ export default function SignUpPage() {
       <div className="max-w-md w-full space-y-8 p-8">
         <div className="text-center">
           <h2 className="mt-6 text-3xl font-bold text-white">
-            ?�원가??
+            회원가입
           </h2>
           <p className="mt-2 text-sm text-gray-300">
-            ?�티?�트 ?�???�랫?�에 참여?�세??
+            아티스트 플랫폼에 참여하세요
           </p>
         </div>
 
@@ -89,7 +98,7 @@ export default function SignUpPage() {
           <div className="space-y-4">
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-300">
-                ?�름
+                이름
               </label>
               <input
                 id="name"
@@ -99,13 +108,13 @@ export default function SignUpPage() {
                 value={formData.name}
                 onChange={handleChange}
                 className="mt-1 block w-full rounded-md border border-gray-300 bg-white/10 px-3 py-2 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                placeholder="?�름???�력?�세??
+                placeholder="이름을 입력하세요"
               />
             </div>
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-300">
-                ?�메??
+                이메일
               </label>
               <input
                 id="email"
@@ -115,13 +124,13 @@ export default function SignUpPage() {
                 value={formData.email}
                 onChange={handleChange}
                 className="mt-1 block w-full rounded-md border border-gray-300 bg-white/10 px-3 py-2 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                placeholder="?�메?�을 ?�력?�세??
+                placeholder="이메일을 입력하세요"
               />
             </div>
 
             <div>
               <label htmlFor="role" className="block text-sm font-medium text-gray-300">
-                ??��
+                역할
               </label>
               <select
                 id="role"
@@ -130,15 +139,19 @@ export default function SignUpPage() {
                 onChange={handleChange}
                 className="mt-1 block w-full rounded-md border border-gray-300 bg-white/10 px-3 py-2 text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
-                <option value="PARTICIPANT">참여??/option>
-                <option value="CREATOR">창작??/option>
-                <option value="PARTNER">?�트??/option>
+                {userRoleEnum.enumValues
+                  .filter(role => role !== 'ADMIN') // 관리자는 회원가입에서 제외
+                  .map(role => (
+                    <option key={role} value={role}>
+                      {userRoleLabels[role]}
+                    </option>
+                  ))}
               </select>
             </div>
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-300">
-                비�?번호
+                비밀번호
               </label>
               <input
                 id="password"
@@ -148,13 +161,13 @@ export default function SignUpPage() {
                 value={formData.password}
                 onChange={handleChange}
                 className="mt-1 block w-full rounded-md border border-gray-300 bg-white/10 px-3 py-2 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                placeholder="비�?번호�??�력?�세??
+                placeholder="비밀번호를 입력하세요"
               />
             </div>
 
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300">
-                비�?번호 ?�인
+                비밀번호 확인
               </label>
               <input
                 id="confirmPassword"
@@ -164,7 +177,7 @@ export default function SignUpPage() {
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 className="mt-1 block w-full rounded-md border border-gray-300 bg-white/10 px-3 py-2 text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                placeholder="비�?번호�??�시 ?�력?�세??
+                placeholder="비밀번호를 다시 입력하세요"
               />
             </div>
           </div>
@@ -181,15 +194,15 @@ export default function SignUpPage() {
               disabled={isLoading}
               className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
-              {isLoading ? '?�원가??�?..' : '?�원가??}
+              {isLoading ? '회원가입 중...' : '회원가입'}
             </button>
           </div>
 
           <div className="text-center">
             <p className="text-sm text-gray-300">
-              ?��? 계정???�으?��???{' '}
+              이미 계정이 있으신가요?{' '}
               <Link href="/auth/signin" className="font-medium text-blue-400 hover:text-blue-300">
-                로그??
+                로그인
               </Link>
             </p>
           </div>

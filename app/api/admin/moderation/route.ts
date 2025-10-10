@@ -38,7 +38,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    // ?�효???�태?��? ?�인
+    // 유효한 상태인지 확인
     if (!Object.values(moderationStatusEnum.enumValues).includes(status)) {
       return NextResponse.json(
         { message: 'Invalid status' },

@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 
 import { getDb } from '@/lib/db/client';
-import { user } from '@/lib/db/schema';
+import { users } from '@/lib/db/schema';
 import { buildRefreshCookie } from '@/lib/auth/cookies';
 import type { ClientKind } from '@/lib/auth/policy';
 import { issueSessionWithTokens } from '@/lib/auth/session-store';
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
   const { email, password, rememberMe, client = 'web', deviceFingerprint, deviceLabel } = parsed.data;
 
   const db = await getDb();
-  const [userRecord] = await db.select().from(user).where(eq(user.email, email)).limit(1);
+  const [userRecord] = await db.select().from(users).where(eq(users.email, email)).limit(1);
 
   if (!userRecord || !userRecord.passwordHash) {
     return NextResponse.json({ error: '이메일 또는 비밀번호가 올바르지 않습니다.' }, { status: 401 });

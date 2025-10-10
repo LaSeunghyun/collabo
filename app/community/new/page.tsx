@@ -4,14 +4,16 @@ import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import {
+  COMMUNITY_CATEGORY_LABELS,
+  COMMUNITY_CATEGORY_VALUES,
+} from '@/lib/constants/enums';
 
-const CATEGORIES = [
-  { value: 'notice', label: '공�??�항' },
-  { value: 'general', label: '?�반' },
-  { value: 'collab', label: '?�업' },
-  { value: 'support', label: '지?? },
-  { value: 'showcase', label: '?��??�스' }
-] as const;
+// 커뮤니티 카테고리 옵션 생성
+const CATEGORIES: Array<{ value: string; label: string }> = COMMUNITY_CATEGORY_VALUES.map(value => ({
+  value: value.toLowerCase(),
+  label: COMMUNITY_CATEGORY_LABELS[value]
+}));
 
 export default function NewCommunityPostPage() {
   const { status } = useSession();
@@ -50,16 +52,16 @@ export default function NewCommunityPostPage() {
         router.push(`/community/${data.id}`);
       } else {
         const data = await response.json();
-        setError(data.error || '게시글 ?�성???�패?�습?�다.');
+        setError(data.error || '게시글 생성에 실패했습니다.');
       }
     } catch (error: any) {
-      setError(error.message || '게시글 ?�성 �??�류가 발생?�습?�다.');
+      setError(error.message || '게시글 생성 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 로그?�되지 ?��? 경우 (?�론?�으로는 미들?�어?�서 리다?�렉?�되지 ?�을 ???�음)
+  // 로그인되지 않은 경우 (이론적으로는 미들웨어에서 리다이렉트되지 않을 것임)
   if (status === 'unauthenticated') {
     return (
       <div className="mx-auto max-w-4xl px-4 pb-20">
@@ -68,33 +70,33 @@ export default function NewCommunityPostPage() {
             href="/community"
             className="text-sm text-blue-300 hover:text-blue-200"
           >
-            ??커�??�티�??�아가�?
+            ← 커뮤니티로 돌아가기
           </Link>
         </div>
         <div className="mt-8 text-center">
-          <h1 className="text-2xl font-bold text-white">로그?�이 ?�요?�니??/h1>
+          <h1 className="text-2xl font-bold text-white">로그인이 필요합니다</h1>
           <p className="mt-2 text-white/60">
-            게시글???�성?�려�?로그?�해주세??
+            게시글을 작성하려면 로그인해주세요
           </p>
           <Link
             href="/auth/signin"
             className="mt-4 inline-block rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
           >
-            로그?�하�?
+            로그인하기
           </Link>
         </div>
       </div>
     );
   }
 
-  // 로딩 �?
+  // 로딩 중
   if (status === 'loading') {
     return (
       <div className="mx-auto max-w-4xl px-4 pb-20">
         <div className="pt-10">
           <div className="text-center">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-primary mx-auto" />
-            <p className="mt-2 text-white/60">로딩 �?..</p>
+            <p className="mt-2 text-white/60">로딩 중...</p>
           </div>
         </div>
       </div>
@@ -108,21 +110,21 @@ export default function NewCommunityPostPage() {
           href="/community"
           className="text-sm text-blue-300 hover:text-blue-200"
         >
-          ??커�??�티�??�아가�?
+          ← 커뮤니티로 돌아가기
         </Link>
       </div>
 
       <div className="mt-8">
-        <h1 className="text-3xl font-bold text-white">??게시글 ?�성</h1>
+        <h1 className="text-3xl font-bold text-white">새 게시글 작성</h1>
         <p className="mt-2 text-white/60">
-          커�??�티???�로???�야기�? 공유?�보?�요.
+          커뮤니티에 여러분의 이야기를 공유해보세요.
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-6">
         <div>
           <label htmlFor="title" className="block text-sm font-medium text-white">
-            ?�목
+            제목
           </label>
           <input
             type="text"
@@ -132,7 +134,7 @@ export default function NewCommunityPostPage() {
             value={formData.title}
             onChange={handleChange}
             className="mt-1 block w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/50 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            placeholder="게시글 ?�목???�력?�세??
+            placeholder="게시글 제목을 입력하세요"
           />
         </div>
 
@@ -157,7 +159,7 @@ export default function NewCommunityPostPage() {
 
         <div>
           <label htmlFor="content" className="block text-sm font-medium text-white">
-            ?�용
+            내용
           </label>
           <textarea
             id="content"
@@ -167,7 +169,7 @@ export default function NewCommunityPostPage() {
             value={formData.content}
             onChange={handleChange}
             className="mt-1 block w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/50 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            placeholder="게시글 ?�용???�력?�세??
+            placeholder="게시글 내용을 입력하세요"
           />
         </div>
 
@@ -190,7 +192,7 @@ export default function NewCommunityPostPage() {
             disabled={isLoading}
             className="flex-1 rounded-lg bg-blue-600 px-4 py-3 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
           >
-            {isLoading ? '?�성 �?..' : '게시글 ?�성'}
+            {isLoading ? '생성 중...' : '게시글 생성'}
           </button>
         </div>
       </form>

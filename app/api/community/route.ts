@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const categories = searchParams.getAll('category');
 
-    // 조건부 ?�터�?
+    // 조건부 필터
     const conditions = [];
     
     if (projectId) {
@@ -46,16 +46,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // ?�렬 조건
+    // 정렬 조건
     let orderBy = desc(communityPosts.createdAt);
     if (sort === 'popular') {
       orderBy = desc(communityPosts.likesCount);
     } else if (sort === 'trending') {
-      // 최근 7?�간??좋아????기�?
+      // 최근 7일간 좋아요 기준
       orderBy = desc(communityPosts.likesCount);
     }
 
-    // 커�??�티 게시글 조회
+    // 커뮤니티 게시글 조회
     const postsQuery = db
       .select({
         id: communityPosts.id,
@@ -125,7 +125,7 @@ export async function GET(request: NextRequest) {
       .orderBy(desc(communityPosts.createdAt))
       .limit(5);
 
-    // ?�기 게시글 조회 (최근 7?�간)
+    // 인기 게시글 조회 (최근 7일간)
     const popularPosts = await db
       .select({
         id: communityPosts.id,
@@ -164,7 +164,7 @@ export async function GET(request: NextRequest) {
       .orderBy(desc(communityPosts.likesCount))
       .limit(5);
 
-    // ?�체 개수 조회
+    // 전체 개수 조회
     const countQuery = db
       .select({ count: count() })
       .from(communityPosts);
@@ -187,13 +187,13 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error('커�??�티 ?�드 조회 �??�류 발생:', {
+    console.error('커뮤니티 포스트 조회 오류 발생:', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
       sort: request.nextUrl.searchParams.get('sort') || 'recent'
     });
 
-    // ?�류 발생 ??�??�답 반환
+    // 오류 발생 시 기본 응답 반환
     const fallbackResponse = {
       posts: [],
       pinned: [],
@@ -225,7 +225,7 @@ export const POST = withCSRFProtection(async (request: NextRequest) => {
       body = await request.json();
     } catch {
       return NextResponse.json(
-        { error: '?�못???�청 본문?�니??' },
+        { error: '잘못된 요청 본문입니다.' },
         { status: 400 }
       );
     }
@@ -237,40 +237,40 @@ export const POST = withCSRFProtection(async (request: NextRequest) => {
       projectId?: string;
     };
 
-    // ?�력 검�?
+    // 입력 검증
     if (!title || !content) {
       return NextResponse.json(
-        { error: '?�목�??�용?� ?�수?�니??' },
+        { error: '제목과 내용은 필수입니다.' },
         { status: 400 }
       );
     }
 
     if (title.length < 1 || title.length > 200) {
       return NextResponse.json(
-        { error: '?�목?� 1???�상 200???�하?�야 ?�니??' },
+        { error: '제목은 1자 이상 200자 이하여야 합니다.' },
         { status: 400 }
       );
     }
 
     if (content.length < 1 || content.length > 10000) {
       return NextResponse.json(
-        { error: '?�용?� 1???�상 10000???�하?�야 ?�니??' },
+        { error: '내용은 1자 이상 10000자 이하여야 합니다.' },
         { status: 400 }
       );
     }
 
-    // 카테고리 검�?�?변??
+    // 카테고리 검증 및 변환
     const validCategories = ['GENERAL', 'NOTICE', 'COLLAB', 'SUPPORT', 'SHOWCASE'];
     const normalizedCategory = category?.toUpperCase() || 'GENERAL';
     
     if (!validCategories.includes(normalizedCategory)) {
       return NextResponse.json(
-        { error: '?�효?��? ?��? 카테고리?�니??' },
+        { error: '유효하지 않은 카테고리입니다.' },
         { status: 400 }
       );
     }
 
-    // ?�로?�트 ID 검�?(?�택?�항)
+    // 프로젝트 ID 검증 (선택사항)
     if (projectId) {
       const project = await db
         .select({ id: projects.id })
@@ -281,13 +281,13 @@ export const POST = withCSRFProtection(async (request: NextRequest) => {
 
       if (!project) {
         return NextResponse.json(
-          { error: '존재?��? ?�는 ?�로?�트?�니??' },
+          { error: '존재하지 않는 프로젝트입니다.' },
           { status: 404 }
         );
       }
     }
 
-    // 게시글 ?�성
+    // 게시글 생성
     const now = new Date().toISOString();
     const [newPost] = await db
       .insert(communityPosts)
@@ -308,7 +308,7 @@ export const POST = withCSRFProtection(async (request: NextRequest) => {
       .returning();
 
     if (!newPost) {
-      throw new Error('게시글 ?�성???�패?�습?�다.');
+      throw new Error('게시글 생성에 실패했습니다.');
     }
 
     return NextResponse.json(
@@ -325,7 +325,7 @@ export const POST = withCSRFProtection(async (request: NextRequest) => {
       { status: 201 }
     );
   } catch (error) {
-    console.error('게시글 ?�성 �??�류 발생:', {
+    console.error('게시글 생성 오류 발생:', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
       userId: request.headers.get('user-id') || 'unknown'
@@ -333,7 +333,7 @@ export const POST = withCSRFProtection(async (request: NextRequest) => {
     
     return NextResponse.json(
       { 
-        error: '게시글 ?�성???�패?�습?�다.',
+        error: '게시글 생성에 실패했습니다.',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }

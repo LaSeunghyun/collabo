@@ -3,30 +3,30 @@
 import { PartnerRegistrationPanel } from './partner-registration-panel';
 
 const statusBadge = (verified: boolean) =>
-  verified ? '?�증' : '검?�중';
+  verified ? '인증' : '검토중';
 
 export default async function PartnersPage() {
   // const session = await getServerSession(authOptions);
   // const user = session?.user;
 
   try {
-    // ?�시�?�??�트???�이???�용
+    // 임시로 더미 데이터 사용
     const partners = [];
 
     return (
       <div className="mx-auto flex max-w-6xl flex-col gap-12 px-4 pb-20">
         <header className="pt-6">
-          <h1 className="text-3xl font-semibold text-white">?�트??매칭</h1>
+          <h1 className="text-3xl font-semibold text-white">파트너 매칭</h1>
           <p className="mt-2 text-sm text-white/60">
-            ?�티?�트?� ?�트?��? ?�결?�는 ?�랫?�입?�다. ?�양???�트?��? ?�업?�여 ???��? ?�로?�트�?만들?�보?�요.
+            아티스트와 파트너를 연결하는 플랫폼입니다. 다양한 파트너와 협업하여 멋진 프로젝트를 만들어보세요.
           </p>
         </header>
 
         <section className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-white">?�트??목록</h2>
+            <h2 className="text-xl font-semibold text-white">파트너 목록</h2>
             <div className="text-sm text-white/60">
-              �?{partners.length}개의 ?�트??
+              총 {partners.length}개의 파트너
             </div>
           </div>
 
@@ -57,18 +57,18 @@ export default async function PartnersPage() {
 
                     <div className="space-y-2 text-xs text-white/60">
                       <div className="flex items-center gap-2">
-                        <span>?�치:</span>
+                        <span>위치:</span>
                         <span>{partner.location}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span>?�??</span>
+                        <span>유형</span>
                         <span>{partner.type}</span>
                       </div>
                     </div>
 
                     <div className="pt-2">
                       <button className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
-                        ?�락?�기
+                        연락하기
                       </button>
                     </div>
                   </div>
@@ -77,13 +77,13 @@ export default async function PartnersPage() {
             </div>
           ) : (
             <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 p-12 text-center">
-              <p className="text-white/60">?�록???�트?��? ?�습?�다.</p>
+              <p className="text-white/60">등록된 파트너가 없습니다.</p>
             </div>
           )}
         </section>
 
         <section className="space-y-6">
-          <h2 className="text-xl font-semibold text-white">?�트???�록</h2>
+          <h2 className="text-xl font-semibold text-white">파트너 등록</h2>
           <PartnerRegistrationPanel />
         </section>
       </div>
@@ -93,13 +93,13 @@ export default async function PartnersPage() {
     return (
       <div className="mx-auto flex max-w-6xl flex-col gap-12 px-4 pb-20">
         <header className="pt-6">
-          <h1 className="text-3xl font-semibold text-white">?�트??매칭</h1>
+          <h1 className="text-3xl font-semibold text-white">파트너 매칭</h1>
           <p className="mt-2 text-sm text-white/60">
-            ?�티?�트?� ?�트?��? ?�결?�는 ?�랫?�입?�다.
+            아티스트와 파트너를 연결하는 플랫폼입니다.
           </p>
         </header>
         <div className="text-center py-12">
-          <p className="text-white/60">?�이?��? 불러?????�습?�다.</p>
+          <p className="text-white/60">데이터를 불러올 수 없습니다.</p>
         </div>
       </div>
     );

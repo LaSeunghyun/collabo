@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth';
 import type { Session } from 'next-auth';
 
-import { userRole } from '@/lib/db/schema';
+import { userRoleEnum } from '@/lib/db/schema';
 
 import { verifyAccessToken } from './access-token';
 import { authOptions } from './options';
@@ -12,12 +12,12 @@ export interface SessionUser {
   id: string;
   name?: string | null;
   email?: string | null;
-  role: typeof userRole.enumValues[number];
+  role: typeof userRoleEnum.enum[number];
   permissions: string[];
 }
 
 export type GuardRequirement = {
-  roles?: typeof userRole.enumValues[number][];
+  roles?: typeof userRoleEnum.enum[number][];
   permissions?: string[];
 };
 
@@ -45,8 +45,8 @@ export const evaluateBearerToken = async (
   try {
     const verified = await verifyAccessToken(token);
 
-    // JWT ?�큰?�서 직접 ?�용???�보 ?�용
-    const role = normalizeRole(verified.role) as typeof userRole.enumValues[number];
+    // JWT 토큰에서 직접 사용자 정보 사용
+    const role = normalizeRole(verified.role) as typeof userRoleEnum.enum[number];
     const permissions = deriveEffectivePermissions(role, verified.permissions);
 
     if (requirements.roles && !requirements.roles.includes(role)) {
@@ -98,7 +98,7 @@ export const evaluateAuthorization = async (
     };
   }
 
-  // Bearer ?�큰???�는 경우 JWT 검�?
+  // Bearer 토큰이 있는 경우 JWT 검증
   const authHeader = extractBearerToken(context);
   if (authHeader?.startsWith('Bearer ')) {
     const token = authHeader.slice(7).trim();
@@ -107,7 +107,7 @@ export const evaluateAuthorization = async (
     }
   }
 
-  // ?�션 기반 ?�증
+  // 세션 기반 인증
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return {
@@ -117,7 +117,7 @@ export const evaluateAuthorization = async (
     };
   }
 
-  const role = normalizeRole(session.user.role) as typeof userRole.enumValues[number];
+  const role = normalizeRole(session.user.role) as typeof userRoleEnum.enum[number];
   const permissions = deriveEffectivePermissions(role, session.user.permissions || []);
 
   if (requirements.roles && !requirements.roles.includes(role)) {

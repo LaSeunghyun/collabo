@@ -1,11 +1,11 @@
-import { userRole } from '@/lib/db/schema';
+import { userRoleEnum } from '@/lib/db/schema';
 
 import { hasAllPermissions, normalizeRole } from './permissions';
 
 export interface RoleGuard {
   matcher: string;
   pattern: RegExp;
-  roles?: typeof userRole.enumValues[number][];
+  roles?: typeof userRoleEnum.enum[number][];
   permissions?: string[];
 }
 
@@ -58,7 +58,7 @@ export const isAuthorizedForGuard = (subject: GuardSubject, guard: RoleGuard | u
     return false;
   }
 
-  const role = normalizeRole(subject.role ?? null);
+  const role = normalizeRole(subject.role ?? undefined);
   const permissions = Array.isArray(subject.permissions) ? subject.permissions : [];
 
   const hasRequiredRole = guard.roles ? guard.roles.includes(role) : true;

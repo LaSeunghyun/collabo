@@ -42,20 +42,20 @@ export class ProjectValidationError extends Error {
   issues: string[];
 
   constructor(error: ZodError) {
-    super('?�로?�트 ?�력 값이 ?�바르�? ?�습?�다.');
+    super('프로젝트 입력 값이 올바르지 않습니다.');
     this.issues = error.issues.map((issue) => issue.message);
   }
 }
 
 export class ProjectNotFoundError extends Error {
   constructor() {
-    super('?�로?�트�?찾을 ???�습?�다.');
+    super('프로젝트를 찾을 수 없습니다.');
   }
 }
 
 export class ProjectAccessDeniedError extends Error {
   constructor() {
-    super('?�로?�트???�근??권한???�습?�다.');
+    super('?프로젝트 접근 권한이 없습니다.');
   }
 }
 

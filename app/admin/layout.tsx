@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 
 import { requireUser } from '@/lib/auth/guards';
-import { ROLE_LABELS, UserRole } from '@/types/shared';
+import { USER_ROLE_LABELS, UserRole, type UserRoleValue } from '@/lib/constants/enums';
 
 const navigationAnchors = [
   { href: '/admin', label: '대시보드' },
@@ -38,7 +38,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             </div>
             <div className="flex items-center">
               <span className="text-sm text-gray-700">
-                {user.name} ({ROLE_LABELS[user.role]})
+                {user.user.name} ({USER_ROLE_LABELS[user.user.role as UserRoleValue]})
               </span>
             </div>
           </div>

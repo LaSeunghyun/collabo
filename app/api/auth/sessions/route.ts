@@ -10,16 +10,16 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    // NextAuth ?�션 ?�인
+    // NextAuth 세션 확인
     const session = await getServerAuthSession();
     
     if (!session?.user?.id) {
-      return NextResponse.json({ error: '?�증???�요?�니??' }, { status: 401 });
+      return NextResponse.json({ error: '인증이 필요합니다.' }, { status: 401 });
     }
 
     const db = await getDbClient();
     
-    // ?�용?�의 ?�성 ?�션 목록 조회
+    // 사용자의 활성 세션 목록 조회
     const sessions = await db
       .select({
         id: authSessions.id,
@@ -44,7 +44,7 @@ export async function GET() {
       }))
     });
   } catch (error) {
-    console.error('?�션 조회 ?�패', error);
-    return NextResponse.json({ error: '?�션 조회???�패?�습?�다.' }, { status: 500 });
+    console.error('세션 조회 실패', error);
+    return NextResponse.json({ error: '세션 조회에 실패했습니다.' }, { status: 500 });
   }
 }

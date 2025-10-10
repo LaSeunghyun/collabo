@@ -3,7 +3,6 @@ import { withAuth } from 'next-auth/middleware';
 import type { NextRequestWithAuth } from 'next-auth/middleware';
 
 import {
-  ROLE_GUARDS,
   findMatchingGuard,
   isAuthorizedForGuard
 } from '@/lib/auth/role-guards';
@@ -11,7 +10,7 @@ import { getRateLimiterForPath } from '@/lib/middleware/rate-limit';
 
 export default withAuth(
   function middleware(req: NextRequestWithAuth) {
-    // ?ˆì´??ë¦¬ë????ìš©
+    // Rate limiting middleware
     const rateLimiter = getRateLimiterForPath(req.nextUrl.pathname);
     if (rateLimiter) {
       const rateLimitResponse = rateLimiter.middleware()(req);
@@ -71,7 +70,7 @@ export default withAuth(
       authorized: ({ token, req }) => {
         const pathname = req.nextUrl.pathname;
 
-        // ?¸ì¦ ?¬ë??€ ?ê??†ì´ ?‘ê·¼ ê°€?¥í•œ ê³µìš© ê²½ë¡œ ëª©ë¡
+        // Public paths that don't require authentication
         const publicPaths = [
           '/',
           '/projects',
@@ -86,21 +85,21 @@ export default withAuth(
           '/api/test-accounts'
         ];
 
-        // ?•í™•???¼ì¹˜?˜ëŠ” ê²½ë¡œ?¸ì? ?•ì¸
+        // Check for exact path matches
         const isExactMatch = publicPaths.includes(pathname);
 
-        // ?™ì  ê²½ë¡œ(?? /projects/[id], /api/projects/[id])?¸ì? ?•ì¸
+        // Check for dynamic paths (e.g., /projects/[id], /api/projects/[id])
         const isDynamicMatch =
           pathname.match(/^\/projects\/[^/]+$/) || // /projects/[id]
           pathname.match(/^\/api\/projects\/[^/]+$/) || // /api/projects/[id]
-          pathname.startsWith('/api/projects/'); // /api/projects/ ?˜ìœ„ ê²½ë¡œ
+          pathname.startsWith('/api/projects/'); // /api/projects/ sub-paths
 
-        // ?•í™•??ë§¤ì¹­?´ê±°???™ì  ë§¤ì¹­?´ë©´ ?¸ì¦ ?†ì´ ?‘ê·¼ ?ˆìš©
+        // If exact match or dynamic match, allow access without authentication
         if (isExactMatch || isDynamicMatch) {
           return true;
         }
 
-        // ê·???ê²½ë¡œ??? í°(ë¡œê·¸?? ì¡´ì¬ ?¬ë?ë¡??‘ê·¼ ?ˆìš© ê²°ì •
+        // For other paths, require authentication (token must exist)
         return Boolean(token);
       }
     }
@@ -109,7 +108,7 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    // ë³´í˜¸ê°€ ?„ìš”??ê²½ë¡œë§?ë§¤ì¹­?©ë‹ˆ??
+    // Paths that require protection
     '/admin/:path*',
     '/partners/:path*',
     '/projects/new',
@@ -117,4 +116,3 @@ export const config = {
     '/api/settlement/:path*'
   ]
 };
-

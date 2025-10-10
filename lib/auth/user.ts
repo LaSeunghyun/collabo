@@ -3,11 +3,11 @@ import { randomUUID } from 'crypto';
 import { eq } from 'drizzle-orm';
 
 import { getDbClient } from '@/lib/db/client';
-import { permission, userPermission, users as userSchema } from '@/lib/db/schema';
+import { permissions, userPermissions, users as userSchema } from '@/lib/db/schema';
 
 type UserRecord = typeof userSchema.$inferSelect;
-type UserPermissionRecord = typeof userPermission.$inferSelect;
-type PermissionRecord = typeof permission.$inferSelect;
+type UserPermissionRecord = typeof userPermissions.$inferSelect;
+type PermissionRecord = typeof permissions.$inferSelect;
 type UserInsert = typeof userSchema.$inferInsert;
 
 export type UserWithPermissions = UserRecord & {

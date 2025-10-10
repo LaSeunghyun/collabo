@@ -41,9 +41,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('공�??�항 조회 ?�패:', error);
+    console.error('공지사항 조회 실패:', error);
     return NextResponse.json(
-      { error: '공�??�항??불러?�는???�패?�습?�다.' },
+      { error: '공지사항을 불러오는데 실패했습니다.' },
       { status: 500 }
     );
   }
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
 
   if (user.role !== UserRole.ADMIN) {
     return NextResponse.json(
-      { error: '관리자�?공�??�항???�성?????�습?�다.' },
+      { error: '관리자만 공지사항을 생성할 수 있습니다.' },
       { status: 403 }
     );
   }
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
 
     if (!title || !content) {
       return NextResponse.json(
-        { error: '?�목�??�용?� ?�수?�니??' },
+        { error: '제목과 내용은 필수입니다.' },
         { status: 400 }
       );
     }
@@ -87,9 +87,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(announcement, { status: 201 });
   } catch (error) {
-    console.error('공�??�항 ?�성 ?�패:', error);
+    console.error('공지사항 생성 실패:', error);
     return NextResponse.json(
-      { error: '공�??�항 ?�성???�패?�습?�다.' },
+      { error: '공지사항 생성에 실패했습니다.' },
       { status: 500 }
     );
   }
