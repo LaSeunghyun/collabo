@@ -7,6 +7,8 @@ import { userBlocks, communityPosts, users } from '@/lib/db/schema';
 import { getServerAuthSession } from '@/lib/auth/session';
 import { withCSRFProtection } from '@/lib/auth/csrf';
 
+// Force dynamic rendering since we use headers() in getServerAuthSession
+export const dynamic = 'force-dynamic';
 
 export const POST = withCSRFProtection(async (
   request: NextRequest,

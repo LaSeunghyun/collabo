@@ -5,18 +5,21 @@ import { getDbClient } from '@/lib/db/client';
 import { authSessions } from '@/lib/db/schema';
 import { getServerAuthSession } from '@/lib/auth/session';
 
+// Force dynamic rendering since we use headers() in getServerAuthSession
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
-    // NextAuth ?�션 ?�인
+    // NextAuth ?�션 ?�인
     const session = await getServerAuthSession();
     
     if (!session?.user?.id) {
-      return NextResponse.json({ error: '?�증???�요?�니??' }, { status: 401 });
+      return NextResponse.json({ error: '?�증???�요?�니??' }, { status: 401 });
     }
 
     const db = await getDbClient();
     
-    // ?�용?�의 ?�성 ?�션 목록 조회
+    // ?�용?�의 ?�성 ?�션 목록 조회
     const sessions = await db
       .select({
         id: authSessions.id,
@@ -41,7 +44,7 @@ export async function GET() {
       }))
     });
   } catch (error) {
-    console.error('?�션 조회 ?�패', error);
-    return NextResponse.json({ error: '?�션 조회???�패?�습?�다.' }, { status: 500 });
+    console.error('?�션 조회 ?�패', error);
+    return NextResponse.json({ error: '?�션 조회???�패?�습?�다.' }, { status: 500 });
   }
 }

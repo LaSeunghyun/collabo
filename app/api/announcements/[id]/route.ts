@@ -10,6 +10,9 @@ import {
   updateAnnouncement
 } from '@/lib/server/announcements';
 
+// Force dynamic rendering since we use headers() in getServerSession
+export const dynamic = 'force-dynamic';
+
 export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);

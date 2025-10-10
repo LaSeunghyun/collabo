@@ -5,6 +5,9 @@ import { getServerAuthSession } from '@/lib/auth/session';
 import { getAnnouncements, createAnnouncement } from '@/lib/server/announcements';
 import { UserRole } from '@/types/shared';
 
+// Force dynamic rendering since we use headers() in getServerAuthSession
+export const dynamic = 'force-dynamic';
+
 const parseCategory = (value: string | null): string | null => {
   if (!value) {
     return null;
@@ -38,9 +41,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('공�??�항 조회 ?�패:', error);
+    console.error('공�??�항 조회 ?�패:', error);
     return NextResponse.json(
-      { error: '공�??�항??불러?�는???�패?�습?�다.' },
+      { error: '공�??�항??불러?�는???�패?�습?�다.' },
       { status: 500 }
     );
   }
@@ -58,7 +61,7 @@ export async function POST(request: NextRequest) {
 
   if (user.role !== UserRole.ADMIN) {
     return NextResponse.json(
-      { error: '관리자�?공�??�항???�성?????�습?�다.' },
+      { error: '관리자�?공�??�항???�성?????�습?�다.' },
       { status: 403 }
     );
   }
@@ -69,7 +72,7 @@ export async function POST(request: NextRequest) {
 
     if (!title || !content) {
       return NextResponse.json(
-        { error: '?�목�??�용?� ?�수?�니??' },
+        { error: '?�목�??�용?� ?�수?�니??' },
         { status: 400 }
       );
     }
@@ -78,16 +81,15 @@ export async function POST(request: NextRequest) {
       title,
       content,
       category: category || 'GENERAL',
-      isScheduled: isScheduled || false,
-      scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
-      authorId: user.id
-    });
+      isPinned: false,
+      publishedAt: scheduledAt ? new Date(scheduledAt) : null
+    }, user.id);
 
     return NextResponse.json(announcement, { status: 201 });
   } catch (error) {
-    console.error('공�??�항 ?�성 ?�패:', error);
+    console.error('공�??�항 ?�성 ?�패:', error);
     return NextResponse.json(
-      { error: '공�??�항 ?�성???�패?�습?�다.' },
+      { error: '공�??�항 ?�성???�패?�습?�다.' },
       { status: 500 }
     );
   }

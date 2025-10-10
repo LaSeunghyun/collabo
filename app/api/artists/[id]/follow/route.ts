@@ -6,6 +6,9 @@ import { getDbClient } from '@/lib/db/client';
 import { userFollows, users } from '@/lib/db/schema';
 import { getServerAuthSession } from '@/lib/auth/session';
 
+// Force dynamic rendering since we use headers() in getServerAuthSession
+export const dynamic = 'force-dynamic';
+
 const unauthorized = () =>
   NextResponse.json({ message: 'Authentication required to follow artists.' }, { status: 401 });
 
