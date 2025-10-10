@@ -6,7 +6,6 @@ import { ProjectDetailTabs } from '@/components/ui/sections/project-detail-tabs'
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/options';
 import { getProjectSummaryById } from '@/lib/server/projects';
-// import { userRole } from '@/drizzle/schema';
 
 interface ProjectPageProps {
   params: { id: string };

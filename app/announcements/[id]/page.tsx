@@ -7,7 +7,6 @@ import {
 } from '@/lib/constants/announcements';
 import { getServerAuthSession } from '@/lib/auth/session';
 import { getAnnouncementDetail } from '@/lib/server/announcements';
-// import { userRole } from '@/drizzle/schema';
 
 import { AnnouncementReadTracker } from './read-tracker';
 

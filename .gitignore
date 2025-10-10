@@ -97,6 +97,10 @@ public
 tmp/
 temp/
 
+# Drizzle auto-generated files
+drizzle/schema.ts
+drizzle/relations.ts
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
