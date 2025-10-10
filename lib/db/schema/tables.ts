@@ -1193,20 +1193,3 @@ export const permission = pgTable('Permission', {
   updatedAt: timestamp('updatedAt', { mode: 'string' }).notNull(),
 });
 
-export const userPermission = pgTable('UserPermission', {
-  id: text('id').notNull().primaryKey(),
-  userId: text('userId')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-  permissionId: text('permissionId')
-    .notNull()
-    .references(() => permission.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-  grantedAt: timestamp('grantedAt', { mode: 'string' }).defaultNow().notNull(),
-  grantedBy: text('grantedBy')
-    .references(() => users.id, { onDelete: 'set null', onUpdate: 'cascade' }),
-}, (table) => ({
-  userPermissionUnique: uniqueIndex('UserPermission_userId_permissionId_key').on(
-    table.userId,
-    table.permissionId,
-  ),
-}));
