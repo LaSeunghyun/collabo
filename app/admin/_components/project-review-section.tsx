@@ -18,7 +18,7 @@ export async function ProjectReviewSection() {
       >
         <header>
           <p className="text-xs uppercase tracking-wider text-primary/60">������Ʈ �˼�</p>
-          <h2 className="mt-1 text-lg font-semibold text-white">���� ��� ���� ������Ʈ</h2>
+          <h2 className="mt-1 text-lg font-semibold text-white">���� ���?���� ������Ʈ</h2>
           <p className="mt-2 text-sm text-white/60">
             ���� ������ ���⹰�� �����ϰ� â���ڵ��� ������ ������ �� �ֵ��� �����ּ���.
           </p>
@@ -45,7 +45,7 @@ export async function ProjectReviewSection() {
           </ul>
         ) : (
           <p className="mt-6 rounded-2xl border border-dashed border-white/10 bg-white/5 px-4 py-6 text-center text-sm text-white/60">
-            ���� ��� ���� ������Ʈ�� �����ϴ�.
+            ���� ���?���� ������Ʈ�� �����ϴ�.
           </p>
         )}
       </section>
@@ -58,7 +58,7 @@ export async function ProjectReviewSection() {
         className="rounded-3xl border border-red-500/30 bg-red-500/10 p-6 text-sm text-red-100"
       >
         <h2 className="text-lg font-semibold text-red-100">������Ʈ �˼�</h2>
-        <p className="mt-2">���� ��⿭�� �ҷ��� �� �����ϴ�. ��� �� �ٽ� �õ����ּ���.</p>
+        <p className="mt-2">���� ���?���?�ҷ��� �� �����ϴ�. ���?�� �ٽ� �õ����ּ���.</p>
       </section>
     );
   }

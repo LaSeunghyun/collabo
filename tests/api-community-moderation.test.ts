@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 import { POST as reportPost } from '@/app/api/community/[id]/report/route';
 import { POST as blockPost } from '@/app/api/community/[id]/block/route';
 
-jest.mock('@/lib/prisma', () => {
+jest.mock('@/lib/db/client', () => {
   const prismaMocks = {
     moderationReportCreate: jest.fn(),
     moderationReportFindFirst: jest.fn(),
@@ -15,7 +15,7 @@ jest.mock('@/lib/prisma', () => {
   (globalThis as unknown as { __prismaMocks?: typeof prismaMocks }).__prismaMocks = prismaMocks;
 
   return {
-    prisma: {
+    getDb: () => ({
       moderationReport: {
         create: (...args: unknown[]) => prismaMocks.moderationReportCreate(...args),
         findFirst: (...args: unknown[]) => prismaMocks.moderationReportFindFirst(...args)
@@ -29,7 +29,24 @@ jest.mock('@/lib/prisma', () => {
       userBlock: {
         upsert: (...args: unknown[]) => prismaMocks.userBlockUpsert(...args)
       }
-    }
+    }),
+    getDbClient: () => ({
+      moderationReport: {
+        create: (...args: unknown[]) => prismaMocks.moderationReportCreate(...args),
+        findFirst: (...args: unknown[]) => prismaMocks.moderationReportFindFirst(...args)
+      },
+      post: {
+        findUnique: (...args: unknown[]) => prismaMocks.postFindUnique(...args)
+      },
+      user: {
+        findUnique: (...args: unknown[]) => prismaMocks.userFindUnique(...args)
+      },
+      userBlock: {
+        upsert: (...args: unknown[]) => prismaMocks.userBlockUpsert(...args)
+      }
+    }),
+    isDrizzleAvailable: () => true,
+    closeDb: jest.fn()
   };
 });
 

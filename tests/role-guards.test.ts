@@ -1,5 +1,5 @@
 import { canAccessRoute, findMatchingGuard } from '@/lib/auth/role-guards';
-import { UserRole } from '@/types/prisma';
+import { UserRole } from '@/types/shared';
 
 describe('ROLE_GUARDS', () => {
   it('exposes admin guard requiring ADMIN role', () => {

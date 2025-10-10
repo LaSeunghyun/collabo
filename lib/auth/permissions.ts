@@ -1,8 +1,8 @@
-import { userRole } from '@/drizzle/schema';
+import { userRoleEnum } from '@/lib/db/schema';
 
-export const UserRole = userRole.enumValues;
-export const USER_ROLE_VALUES = userRole.enumValues;
-export const USER_ROLE_LABELS: Record<typeof userRole.enumValues[number], string> = {
+export const UserRole = userRoleEnum.enumValues;
+export const USER_ROLE_VALUES = userRoleEnum.enumValues;
+export const USER_ROLE_LABELS: Record<typeof userRoleEnum.enumValues[number], string> = {
   CREATOR: '크리에이터',
   PARTICIPANT: '참여자',
   PARTNER: '파트너',
@@ -11,7 +11,7 @@ export const USER_ROLE_LABELS: Record<typeof userRole.enumValues[number], string
 
 export const ROLE_LABELS = USER_ROLE_LABELS;
 
-export type AppUserRole = typeof userRole.enumValues[number];
+export type AppUserRole = typeof userRoleEnum.enumValues[number];
 
 const DEFAULT_SESSION_PERMISSION = 'session:read';
 
@@ -118,7 +118,7 @@ export function deriveEffectivePermissions(role: AppUserRole, additionalPermissi
 }
 
 export function normalizeRole(role: string | undefined): AppUserRole {
-  if (!role || !userRole.enumValues.includes(role as any)) {
+  if (!role || !userRoleEnum.enumValues.includes(role as any)) {
     return 'PARTICIPANT';
   }
   return role as AppUserRole;

@@ -11,7 +11,7 @@ import { getRateLimiterForPath } from '@/lib/middleware/rate-limit';
 
 export default withAuth(
   function middleware(req: NextRequestWithAuth) {
-    // 레이트 리미팅 적용
+    // ?�이??리�????�용
     const rateLimiter = getRateLimiterForPath(req.nextUrl.pathname);
     if (rateLimiter) {
       const rateLimitResponse = rateLimiter.middleware()(req);
@@ -71,7 +71,7 @@ export default withAuth(
       authorized: ({ token, req }) => {
         const pathname = req.nextUrl.pathname;
 
-        // 인증 여부와 상관없이 접근 가능한 공용 경로 목록
+        // ?�증 ?��??� ?��??�이 ?�근 가?�한 공용 경로 목록
         const publicPaths = [
           '/',
           '/projects',
@@ -86,21 +86,21 @@ export default withAuth(
           '/api/test-accounts'
         ];
 
-        // 정확히 일치하는 경로인지 확인
+        // ?�확???�치?�는 경로?��? ?�인
         const isExactMatch = publicPaths.includes(pathname);
 
-        // 동적 경로(예: /projects/[id], /api/projects/[id])인지 확인
+        // ?�적 경로(?? /projects/[id], /api/projects/[id])?��? ?�인
         const isDynamicMatch =
           pathname.match(/^\/projects\/[^/]+$/) || // /projects/[id]
           pathname.match(/^\/api\/projects\/[^/]+$/) || // /api/projects/[id]
-          pathname.startsWith('/api/projects/'); // /api/projects/ 하위 경로
+          pathname.startsWith('/api/projects/'); // /api/projects/ ?�위 경로
 
-        // 정확한 매칭이거나 동적 매칭이면 인증 없이 접근 허용
+        // ?�확??매칭?�거???�적 매칭?�면 ?�증 ?�이 ?�근 ?�용
         if (isExactMatch || isDynamicMatch) {
           return true;
         }
 
-        // 그 외 경로는 토큰(로그인) 존재 여부로 접근 허용 결정
+        // �???경로???�큰(로그?? 존재 ?��?�??�근 ?�용 결정
         return Boolean(token);
       }
     }
@@ -109,7 +109,7 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    // 보호가 필요한 경로만 매칭합니다.
+    // 보호가 ?�요??경로�?매칭?�니??
     '/admin/:path*',
     '/partners/:path*',
     '/projects/new',

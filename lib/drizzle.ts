@@ -1,15 +1,15 @@
-// Drizzle 마이그레이션: Prisma 클라이언트를 Drizzle 클라이언트로 교체
+// Drizzle 마이그레?�션: Prisma ?�라?�언?��? Drizzle ?�라?�언?�로 교체
 import { getDb, getDbClient, isDrizzleAvailable, closeDb } from '@/lib/db/client';
 import * as schema from '@/lib/db/schema';
 
-// Drizzle 클라이언트 export
+// Drizzle ?�라?�언??export
 export const drizzle = getDb;
 
-// Drizzle 클라이언트의 기본 export 설정
+// Drizzle ?�라?�언?�의 기본 export ?�정
 export default drizzle;
 
-// Drizzle 관련 유틸리티 함수들 export
+// Drizzle 관???�틸리티 ?�수??export
 export { getDbClient, isDrizzleAvailable, closeDb, schema };
 
-// Prisma 호환성을 위한 임시 사용을 위한 타입
+// Prisma ?�환?�을 ?�한 ?�시 ?�용???�한 ?�??
 export type drizzle = any;

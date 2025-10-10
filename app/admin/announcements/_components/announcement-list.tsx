@@ -20,7 +20,7 @@ async function fetchAdminAnnouncements() {
   const response = await fetch('/api/announcements?includeScheduled=true');
 
   if (!response.ok) {
-    throw new Error('공지 목록을 불러오지 못했습니다.');
+    throw new Error('공�? 목록??불러?��? 못했?�니??');
   }
 
   const data = (await response.json()) as { announcements: AdminAnnouncement[] };
@@ -45,8 +45,8 @@ async function updateAnnouncementRequest(announcement: AdminAnnouncement & { pub
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: '공지 업데이트에 실패했습니다.' }));
-    throw new Error(error.message ?? '공지 업데이트에 실패했습니다.');
+    const error = await response.json().catch(() => ({ message: '공�? ?�데?�트???�패?�습?�다.' }));
+    throw new Error(error.message ?? '공�? ?�데?�트???�패?�습?�다.');
   }
 
   return response.json();
@@ -58,7 +58,7 @@ async function deleteAnnouncementRequest(id: string) {
   });
 
   if (!response.ok) {
-    throw new Error('공지를 삭제하지 못했습니다.');
+    throw new Error('공�?�???��?��? 못했?�니??');
   }
 }
 
@@ -86,7 +86,7 @@ export function AnnouncementList() {
       if (mutationError instanceof Error) {
         setError(mutationError.message);
       } else {
-        setError('공지 업데이트 중 오류가 발생했습니다.');
+        setError('공�? ?�데?�트 �??�류가 발생?�습?�다.');
       }
     }
   });
@@ -101,7 +101,7 @@ export function AnnouncementList() {
       if (mutationError instanceof Error) {
         setError(mutationError.message);
       } else {
-        setError('공지 삭제 중 오류가 발생했습니다.');
+        setError('공�? ??�� �??�류가 발생?�습?�다.');
       }
     }
   });
@@ -135,7 +135,7 @@ export function AnnouncementList() {
   };
 
   const handleDelete = (announcement: AdminAnnouncement) => {
-    if (!window.confirm('이 공지를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+    if (!window.confirm('??공�?�???��?�시겠습?�까? ???�업?� ?�돌�????�습?�다.')) {
       return;
     }
 
@@ -145,7 +145,7 @@ export function AnnouncementList() {
   if (isLoading) {
     return (
       <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-10 text-center text-sm text-white/60">
-        공지 목록을 불러오는 중입니다...
+        공�? 목록??불러?�는 중입?�다...
       </div>
     );
   }
@@ -153,7 +153,7 @@ export function AnnouncementList() {
   if (isError) {
     return (
       <div className="rounded-3xl border border-rose-500/20 bg-rose-500/5 p-10 text-center text-sm text-rose-200">
-        공지 목록을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.
+        공�? 목록??불러?��? 못했?�니?? ?�시 ???�시 ?�도?�주?�요.
       </div>
     );
   }
@@ -162,10 +162,10 @@ export function AnnouncementList() {
     <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-8">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-semibold text-white">발행된 공지 관리</h2>
-          <p className="text-sm text-white/60">상단 고정 여부와 발행 시점을 조정하고 필요시 공지를 삭제할 수 있습니다.</p>
+          <h2 className="text-xl font-semibold text-white">발행??공�? 관�?/h2>
+          <p className="text-sm text-white/60">?�단 고정 ?��??� 발행 ?�점??조정?�고 ?�요??공�?�???��?????�습?�다.</p>
         </div>
-        <span className="rounded-full bg-white/5 px-3 py-1 text-xs text-white/70">총 {sortedAnnouncements.length}개</span>
+        <span className="rounded-full bg-white/5 px-3 py-1 text-xs text-white/70">�?{sortedAnnouncements.length}�?/span>
       </div>
 
       {error ? <p className="mt-4 text-sm text-rose-300">{error}</p> : null}
@@ -187,7 +187,7 @@ export function AnnouncementList() {
                   <div className="flex flex-wrap items-center gap-2 text-xs text-white/50">
                     {announcement.isPinned ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-amber-300">
-                        📌 상단 고정
+                        ?�� ?�단 고정
                       </span>
                     ) : null}
                     <span className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2 py-0.5 text-white/70">
@@ -201,7 +201,7 @@ export function AnnouncementList() {
 
                 <div className="flex flex-col items-stretch gap-2 text-sm">
                   <label className="text-xs text-white/60" htmlFor={`schedule-${announcement.id}`}>
-                    발행 예정 시각
+                    발행 ?�정 ?�각
                   </label>
                   <input
                     id={`schedule-${announcement.id}`}
@@ -217,7 +217,7 @@ export function AnnouncementList() {
                       disabled={updateMutation.isPending}
                       className="rounded-lg bg-blue-500 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-400 disabled:cursor-not-allowed disabled:bg-blue-500/50"
                     >
-                      변경 저장
+                      변�??�??
                     </button>
                     <button
                       type="button"
@@ -225,7 +225,7 @@ export function AnnouncementList() {
                       disabled={updateMutation.isPending}
                       className="rounded-lg border border-white/20 px-3 py-2 text-sm font-medium text-white transition hover:border-blue-400 hover:text-blue-200 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      {announcement.isPinned ? '상단 고정 해제' : '상단에 고정'}
+                      {announcement.isPinned ? '?�단 고정 ?�제' : '?�단??고정'}
                     </button>
                     <button
                       type="button"
@@ -233,7 +233,7 @@ export function AnnouncementList() {
                       disabled={deleteMutation.isPending}
                       className="rounded-lg border border-rose-500/40 px-3 py-2 text-sm font-medium text-rose-200 transition hover:border-rose-400 hover:text-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      삭제
+                      ??��
                     </button>
                   </div>
                 </div>

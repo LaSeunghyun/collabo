@@ -6,12 +6,12 @@ import { createProject, ProjectValidationError } from '@/lib/server/projects';
 
 export async function GET() {
   try {
-    // 간단한 기본 응답으로 시작
+    // 간단??기본 ?�답?�로 ?�작
     return NextResponse.json([]);
   } catch (error) {
     console.error('Failed to load projects', error);
 
-    // 상세한 에러 정보 제공
+    // ?�세???�러 ?�보 ?�공
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const errorStack = error instanceof Error ? error.stack : undefined;
 
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
 
   if (user.role !== UserRole.CREATOR && user.role !== UserRole.ADMIN) {
     return NextResponse.json(
-      { error: '프로젝트 생성 권한이 없습니다.' },
+      { error: '?�로?�트 ?�성 권한???�습?�다.' },
       { status: 403 }
     );
   }
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(project, { status: 201 });
   } catch (error) {
-    console.error('프로젝트 생성 실패:', error);
+    console.error('?�로?�트 ?�성 ?�패:', error);
 
     if (error instanceof ProjectValidationError) {
       return NextResponse.json(
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: '프로젝트 생성에 실패했습니다.' },
+      { error: '?�로?�트 ?�성???�패?�습?�다.' },
       { status: 500 }
     );
   }

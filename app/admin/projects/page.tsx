@@ -4,22 +4,22 @@ export const dynamic = 'force-dynamic';
 
 const statusLabels: Record<string, string> = {
   'DRAFT': '초안',
-  'PENDING': '검토중',
-  'APPROVED': '승인됨',
-  'REJECTED': '거부됨',
-  'ACTIVE': '진행중',
-  'COMPLETED': '완료',
-  'CANCELLED': '취소됨'
+  'PENDING': '검?�중',
+  'APPROVED': '?�인??,
+  'REJECTED': '거�???,
+  'ACTIVE': '진행�?,
+  'COMPLETED': '?�료',
+  'CANCELLED': '취소??
 };
 
 const categoryLabels: Record<string, string> = {
-  'MUSIC': '음악',
+  'MUSIC': '?�악',
   'ART': '미술',
-  'FILM': '영화',
-  'DANCE': '댄스',
-  'THEATER': '연극',
+  'FILM': '?�화',
+  'DANCE': '?�스',
+  'THEATER': '?�극',
   'LITERATURE': '문학',
-  'OTHER': '기타'
+  'OTHER': '기�?'
 };
 
 const currencyFormatter = new Intl.NumberFormat('ko-KR', {
@@ -42,36 +42,36 @@ export default async function AdminProjectsPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold text-white">프로젝트 관리</h1>
+          <h1 className="text-2xl font-semibold text-white">?�로?�트 관�?/h1>
           <p className="mt-2 text-sm text-white/60">
-            프로젝트 현황을 확인하고 승인/거부를 관리하세요
+            ?�로?�트 ?�황???�인?�고 ?�인/거�?�?관리하?�요
           </p>
         </div>
 
-        {/* 통계 카드 */}
+        {/* ?�계 카드 */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
             <div className="text-2xl font-bold text-white">{stats.total}</div>
-            <div className="text-sm text-white/60">전체 프로젝트</div>
+            <div className="text-sm text-white/60">?�체 ?�로?�트</div>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
             <div className="text-2xl font-bold text-amber-400">{stats.pending}</div>
-            <div className="text-sm text-white/60">검토중</div>
+            <div className="text-sm text-white/60">검?�중</div>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
             <div className="text-2xl font-bold text-green-400">{stats.active}</div>
-            <div className="text-sm text-white/60">진행중</div>
+            <div className="text-sm text-white/60">진행�?/div>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
             <div className="text-2xl font-bold text-blue-400">{stats.completed}</div>
-            <div className="text-sm text-white/60">완료</div>
+            <div className="text-sm text-white/60">?�료</div>
           </div>
         </div>
 
-        {/* 프로젝트 목록 */}
+        {/* ?�로?�트 목록 */}
         <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-          <h2 className="text-lg font-semibold text-white">최근 프로젝트</h2>
-          <p className="mt-1 text-sm text-white/60">처리 대기 중인 프로젝트</p>
+          <h2 className="text-lg font-semibold text-white">최근 ?�로?�트</h2>
+          <p className="mt-1 text-sm text-white/60">처리 ?��?중인 ?�로?�트</p>
 
           {projects.length > 0 ? (
             <div className="mt-6 space-y-4">
@@ -84,10 +84,10 @@ export default async function AdminProjectsPage() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 text-xs text-white/60">
                         <span>{categoryLabels[project.category]}</span>
-                        <span>•</span>
+                        <span>??/span>
                         <span>{dateFormatter.format(new Date(project.createdAt))}</span>
-                        <span>•</span>
-                        <span>작성자: {project.authorId}</span>
+                        <span>??/span>
+                        <span>?�성?? {project.authorId}</span>
                       </div>
                       <h3 className="mt-2 text-sm font-medium text-white">
                         {project.title}
@@ -97,8 +97,8 @@ export default async function AdminProjectsPage() {
                       </p>
                       <div className="mt-2 flex items-center gap-4 text-xs text-white/60">
                         <span>목표금액: {currencyFormatter.format(project.targetAmount)}</span>
-                        <span>현재모집: {currencyFormatter.format(project.currentAmount || 0)}</span>
-                        <span>진행률: {Math.round(((project.currentAmount || 0) / project.targetAmount) * 100)}%</span>
+                        <span>?�재모집: {currencyFormatter.format(project.currentAmount || 0)}</span>
+                        <span>진행�? {Math.round(((project.currentAmount || 0) / project.targetAmount) * 100)}%</span>
                       </div>
                     </div>
                     <div className="ml-4 flex flex-col items-end gap-2">
@@ -107,10 +107,10 @@ export default async function AdminProjectsPage() {
                       </span>
                       <div className="flex gap-2">
                         <button className="rounded-lg bg-green-500/10 px-3 py-1 text-xs text-green-300 transition hover:bg-green-500/20">
-                          승인
+                          ?�인
                         </button>
                         <button className="rounded-lg bg-red-500/10 px-3 py-1 text-xs text-red-300 transition hover:bg-red-500/20">
-                          거부
+                          거�?
                         </button>
                       </div>
                     </div>
@@ -120,7 +120,7 @@ export default async function AdminProjectsPage() {
             </div>
           ) : (
             <div className="mt-6 text-center text-white/60">
-              처리 대기 중인 프로젝트가 없습니다.
+              처리 ?��?중인 ?�로?�트가 ?�습?�다.
             </div>
           )}
         </div>
@@ -131,14 +131,14 @@ export default async function AdminProjectsPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold text-white">프로젝트 관리</h1>
+          <h1 className="text-2xl font-semibold text-white">?�로?�트 관�?/h1>
           <p className="mt-2 text-sm text-white/60">
-            프로젝트 현황을 확인하고 승인/거부를 관리하세요
+            ?�로?�트 ?�황???�인?�고 ?�인/거�?�?관리하?�요
           </p>
         </div>
         <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
           <div className="text-center text-white/60">
-            프로젝트 데이터를 불러올 수 없습니다.
+            ?�로?�트 ?�이?��? 불러?????�습?�다.
           </div>
         </div>
       </div>

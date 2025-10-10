@@ -1,8 +1,8 @@
-﻿import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { NextRequest } from 'next/server';
 import { POST } from '@/app/api/auth/register/route';
 import { createParticipantUser, findUserByEmail } from '@/lib/auth/user';
-import { UserRole } from '@/types/prisma';
+import { UserRole } from '@/types/shared';
 import { hash } from 'bcryptjs';
 
 jest.mock('@/lib/auth/user', () => ({

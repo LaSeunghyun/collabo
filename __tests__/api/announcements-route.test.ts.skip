@@ -38,11 +38,11 @@ describe('Announcements API authorization', () => {
   });
 
   it('denies announcement creation for non-admin users', async () => {
-    requireApiUserMock.mockRejectedValueOnce(new AuthorizationError('권한이 없습니다.', 403));
+    requireApiUserMock.mockRejectedValueOnce(new AuthorizationError('권한???�습?�다.', 403));
 
     const request = new NextRequest('http://localhost/api/announcements', {
       method: 'POST',
-      body: JSON.stringify({ title: '테스트 공지', content: '본문' })
+      body: JSON.stringify({ title: '?�스??공�?', content: '본문' })
     });
 
     const response = await POST(request);
@@ -61,7 +61,7 @@ describe('Announcements API authorization', () => {
 
     const mockAnnouncement = {
       id: 'announcement-1',
-      title: '테스트 공지',
+      title: '?�스??공�?',
       content: '본문',
       category: 'platform',
       isPinned: false,
@@ -76,7 +76,7 @@ describe('Announcements API authorization', () => {
 
     const request = new NextRequest('http://localhost/api/announcements', {
       method: 'POST',
-      body: JSON.stringify({ title: '테스트 공지', content: '본문' })
+      body: JSON.stringify({ title: '?�스??공�?', content: '본문' })
     });
 
     const response = await POST(request);
@@ -90,7 +90,7 @@ describe('Announcements API authorization', () => {
   it('marks announcements as read for authenticated users', async () => {
     requireApiUserMock.mockResolvedValueOnce({
       id: 'user-1',
-      name: '홍길동',
+      name: '?�길??,
       email: 'user@example.com',
       role: 'PARTICIPANT',
       permissions: []
@@ -109,11 +109,11 @@ describe('Announcements API authorization', () => {
   });
 
   it('denies announcement updates for non-admin users', async () => {
-    requireApiUserMock.mockRejectedValueOnce(new AuthorizationError('권한이 없습니다.', 403));
+    requireApiUserMock.mockRejectedValueOnce(new AuthorizationError('권한???�습?�다.', 403));
 
     const request = new NextRequest('http://localhost/api/announcements/announcement-1', {
       method: 'PATCH',
-      body: JSON.stringify({ title: '수정', content: '내용' })
+      body: JSON.stringify({ title: '?�정', content: '?�용' })
     });
 
     const response = await PATCH(request, { params: { id: 'announcement-1' } });
@@ -131,19 +131,19 @@ describe('Announcements API authorization', () => {
       permissions: []
     });
 
-    announcements.updateAnnouncement.mockResolvedValueOnce({ id: 'announcement-1', title: '수정', content: '내용' });
+    announcements.updateAnnouncement.mockResolvedValueOnce({ id: 'announcement-1', title: '?�정', content: '?�용' });
 
     const request = new NextRequest('http://localhost/api/announcements/announcement-1', {
       method: 'PATCH',
-      body: JSON.stringify({ title: '수정', content: '내용' })
+      body: JSON.stringify({ title: '?�정', content: '?�용' })
     });
 
     const response = await PATCH(request, { params: { id: 'announcement-1' } });
 
     expect(response.status).toBe(200);
     expect(announcements.updateAnnouncement).toHaveBeenCalledWith('announcement-1', {
-      title: '수정',
-      content: '내용',
+      title: '?�정',
+      content: '?�용',
       category: undefined,
       isPinned: false,
       publishedAt: undefined
@@ -151,7 +151,7 @@ describe('Announcements API authorization', () => {
   });
 
   it('requires admin permissions to delete announcements', async () => {
-    requireApiUserMock.mockRejectedValueOnce(new AuthorizationError('권한이 없습니다.', 403));
+    requireApiUserMock.mockRejectedValueOnce(new AuthorizationError('권한???�습?�다.', 403));
 
     const request = new NextRequest('http://localhost/api/announcements/announcement-1', {
       method: 'DELETE'

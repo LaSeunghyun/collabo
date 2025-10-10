@@ -1,73 +1,71 @@
 # Page snapshot
 
 ```yaml
-- generic [active]:
-  - alert [ref=e1]
-  - dialog [ref=e4]:
-    - generic [ref=e5]:
-      - generic [ref=e6]:
-        - heading "Build Error" [level=1] [ref=e7]
-        - paragraph [ref=e8]: Failed to compile
-        - generic [ref=e9]:
-          - generic "An outdated version detected (latest is 15.5.4), upgrade is highly recommended!" [ref=e11]: Next.js (14.2.33) is outdated
-          - link "(learn more)" [ref=e12] [cursor=pointer]:
-            - /url: https://nextjs.org/docs/messages/version-staleness
-      - generic [ref=e13]:
-        - generic [ref=e14]:
-          - link "./app/api/community/route.ts:3:1" [ref=e15] [cursor=pointer]:
-            - text: ./app/api/community/route.ts:3:1
-            - img [ref=e16] [cursor=pointer]
-          - generic [ref=e20]:
-            - generic [ref=e21]: Module not found
-            - generic [ref=e22]: ": Can't resolve '"
-            - generic [ref=e23]: "@prisma/client"
-            - generic [ref=e24]: "'"
-            - generic [ref=e26]: 1 |
-            - generic [ref=e28]: import
-            - generic [ref=e29]: "{"
-            - generic [ref=e30]: NextRequest
-            - generic [ref=e31]: ","
-            - generic [ref=e33]: NextResponse
-            - generic [ref=e34]: "}"
-            - generic [ref=e35]: from
-            - generic [ref=e37]: "'next/server'"
-            - generic [ref=e38]: ;
-            - generic [ref=e40]: 2 |
-            - generic [ref=e41]: ">"
-            - generic [ref=e42]: 3 |
-            - generic [ref=e44]: import
-            - generic [ref=e45]: "{"
-            - generic [ref=e46]: CommunityCategory
-            - generic [ref=e47]: ","
-            - generic [ref=e49]: ModerationTargetType
-            - generic [ref=e50]: ","
-            - generic [ref=e52]: PostType
-            - generic [ref=e53]: "}"
-            - generic [ref=e54]: from
-            - generic [ref=e56]: "'@prisma/client'"
-            - generic [ref=e57]: ;
-            - generic [ref=e59]: "|"
-            - generic [ref=e61]: ^
-            - generic [ref=e63]: 4 |
-            - generic [ref=e65]: import
-            - generic [ref=e66]: "type {"
-            - generic [ref=e67]: Prisma
-            - generic [ref=e68]: "}"
-            - generic [ref=e69]: from
-            - generic [ref=e71]: "'@prisma/client'"
-            - generic [ref=e72]: ;
-            - generic [ref=e74]: 5 |
-            - generic [ref=e76]: 6 |
-            - generic [ref=e78]: import
-            - generic [ref=e79]: "{ handleAuthorizationError"
-            - generic [ref=e80]: ","
-            - generic [ref=e81]: "requireApiUser }"
-            - generic [ref=e82]: from
-            - generic [ref=e84]: "'@/lib/auth/guards'"
-            - generic [ref=e85]: ;
-            - link "https://nextjs.org/docs/messages/module-not-found" [ref=e87] [cursor=pointer]:
-              - /url: https://nextjs.org/docs/messages/module-not-found
-        - contentinfo [ref=e88]:
-          - paragraph [ref=e89]:
-            - generic [ref=e90]: This error occurred during the build process and can only be dismissed by fixing the error.
+- generic [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e4]:
+      - link "Collaborium" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - navigation [ref=e6]:
+        - link "공지사항" [ref=e7] [cursor=pointer]:
+          - /url: /announcements
+        - link "커뮤니티" [ref=e8] [cursor=pointer]:
+          - /url: /community
+        - link "프로젝트" [ref=e9] [cursor=pointer]:
+          - /url: /projects
+        - link "아티스트" [ref=e10] [cursor=pointer]:
+          - /url: /artists
+        - link "파트너" [ref=e11] [cursor=pointer]:
+          - /url: /partners
+      - generic [ref=e12]:
+        - link "로그인" [ref=e13] [cursor=pointer]:
+          - /url: /auth/signin
+        - link "회원가입" [ref=e14] [cursor=pointer]:
+          - /url: /auth/signup
+  - generic [ref=e15]:
+    - banner [ref=e16]:
+      - generic [ref=e18]:
+        - generic [ref=e19]:
+          - paragraph [ref=e20]: Collaboration Hub
+          - heading "아티스트와 팬이 함께 만드는 커뮤니티" [level=1] [ref=e21]
+          - paragraph [ref=e22]: 협업 아이디어를 공유하고 피드백을 주고받으며 프로젝트를 성장시키세요.
+        - generic [ref=e23]:
+          - generic [ref=e24]:
+            - generic [ref=e25]: 누적 게시글
+            - generic [ref=e26]: "0"
+          - generic [ref=e27]:
+            - generic [ref=e28]: 고정 글
+            - generic [ref=e29]: "0"
+          - generic [ref=e30]:
+            - generic [ref=e31]: 인기 글
+            - generic [ref=e32]: "0"
+    - generic [ref=e35]:
+      - generic [ref=e36]:
+        - generic [ref=e37]:
+          - paragraph [ref=e38]: 커뮤니티 허브
+          - heading "아티스트 협업 아이디어를 나누고 실시간 피드백을 주고받는 공간입니다." [level=2] [ref=e39]
+        - button "글 작성" [active] [ref=e40] [cursor=pointer]:
+          - img [ref=e41] [cursor=pointer]
+          - text: 글 작성
+      - generic [ref=e43]:
+        - generic [ref=e44]:
+          - button "전체" [ref=e45] [cursor=pointer]
+          - button "공지" [ref=e46] [cursor=pointer]
+          - button "자유" [ref=e47] [cursor=pointer]
+          - button "협업" [ref=e48] [cursor=pointer]
+          - button "도움요청" [ref=e49] [cursor=pointer]
+          - button "쇼케이스" [ref=e50] [cursor=pointer]
+        - generic [ref=e51]:
+          - generic [ref=e52]: 선택한 카테고리 1개
+          - generic [ref=e53]: •
+          - generic [ref=e54]: 선택한 카테고리 1개
+      - generic [ref=e55]:
+        - generic [ref=e56]:
+          - img [ref=e57]
+          - textbox "게시글 검색 또는 @멘션하기" [ref=e60]
+        - generic [ref=e61]:
+          - button "최신순" [ref=e62] [cursor=pointer]
+          - button "인기순" [ref=e63] [cursor=pointer]
+          - button "트렌딩" [ref=e64] [cursor=pointer]
+  - alert [ref=e81]
 ```

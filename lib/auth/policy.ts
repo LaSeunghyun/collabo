@@ -1,4 +1,4 @@
-import { userRole } from '@/drizzle/schema';
+import { userRole } from '@/lib/db/schema';
 
 export type ClientKind = 'web' | 'mobile';
 

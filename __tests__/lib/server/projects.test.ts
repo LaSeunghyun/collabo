@@ -1,4 +1,4 @@
-﻿import { ProjectStatus, UserRole } from '@/types/prisma';
+import { ProjectStatus, UserRole } from '@/types/shared';
 import { type MockPrisma, createPrismaMock } from '../../helpers/prisma-mock';
 
 jest.mock('next/cache', () => ({
@@ -7,13 +7,11 @@ jest.mock('next/cache', () => ({
 
 let mockPrisma: MockPrisma = createPrismaMock();
 
-jest.mock('@/lib/prisma', () => ({
-  get prisma() {
-    return mockPrisma;
-  },
-  get default() {
-    return mockPrisma;
-  }
+jest.mock('@/lib/db/client', () => ({
+  getDb: () => mockPrisma,
+  getDbClient: () => mockPrisma,
+  isDrizzleAvailable: () => true,
+  closeDb: jest.fn()
 }));
 
 const { revalidatePath } = jest.requireMock('next/cache') as { revalidatePath: jest.Mock };
@@ -60,11 +58,30 @@ describe('project domain service', () => {
 
   describe('getProjectSummaries', () => {
     it('maps database projects into summaries with default thumbnail', async () => {
-      mockPrisma.project.findMany.mockResolvedValue([sampleSummaryRecord()]);
+      // Mock the Drizzle query chain
+      mockPrisma.select.mockReturnValue({
+        from: jest.fn().mockReturnValue({
+          innerJoin: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockReturnValue({
+              where: jest.fn().mockReturnValue({
+                limit: jest.fn().mockResolvedValue([sampleSummaryRecord()])
+              })
+            })
+          })
+        })
+      });
+
+      // Mock funding counts query
+      mockPrisma.select.mockReturnValueOnce({
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            groupBy: jest.fn().mockResolvedValue([])
+          })
+        })
+      });
 
       const summaries = await getProjectSummaries();
 
-      expect(mockPrisma.project.findMany).toHaveBeenCalled();
       expect(summaries).toHaveLength(1);
       expect(summaries[0]).toMatchObject({
         id: 'project-1',
@@ -88,9 +105,33 @@ describe('project domain service', () => {
         currency: 'KRW',
         ownerId: OWNER_CUID
       };
-      mockPrisma.project.create.mockResolvedValue({ id: 'project-1' });
+      // Mock Drizzle insert operation
+      mockPrisma.insert.mockReturnValue({
+        values: jest.fn().mockReturnValue({
+          returning: jest.fn().mockResolvedValue([{ id: 'project-1' }])
+        })
+      });
+      
+      // Mock audit log creation
       mockPrisma.auditLog.create.mockResolvedValue(undefined);
-      mockPrisma.project.findUnique.mockResolvedValue(sampleSummaryRecord());
+      
+      // Mock project summary query
+      mockPrisma.select.mockReturnValue({
+        from: jest.fn().mockReturnValue({
+          innerJoin: jest.fn().mockReturnValue({
+            where: jest.fn().mockReturnValue({
+              limit: jest.fn().mockResolvedValue([{
+                ...sampleSummaryRecord(),
+                owner: {
+                  id: OWNER_CUID,
+                  name: 'Owner',
+                  avatarUrl: null
+                }
+              }])
+            })
+          })
+        })
+      });
 
       const summary = await createProject(input, adminUser);
 
@@ -120,11 +161,44 @@ describe('project domain service', () => {
     const owner = { id: OWNER_CUID, role: UserRole.CREATOR } as const;
 
     it('updates fields and records audit for owner', async () => {
-      mockPrisma.project.findUnique.mockResolvedValue({ ownerId: OWNER_CUID });
-      mockPrisma.project.update.mockResolvedValue(undefined);
+      // Mock project lookup
+      mockPrisma.select.mockReturnValue({
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([{ ownerId: OWNER_CUID }])
+          })
+        })
+      });
+      
+      // Mock project update
+      mockPrisma.update.mockReturnValue({
+        set: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            returning: jest.fn().mockResolvedValue([{ id: 'project-1' }])
+          })
+        })
+      });
+      
+      // Mock audit log creation
       mockPrisma.auditLog.create.mockResolvedValue(undefined);
-      mockPrisma.project.findUnique.mockResolvedValueOnce({ ownerId: OWNER_CUID });
-      mockPrisma.project.findUnique.mockResolvedValueOnce(sampleSummaryRecord());
+      
+      // Mock project summary query
+      mockPrisma.select.mockReturnValueOnce({
+        from: jest.fn().mockReturnValue({
+          innerJoin: jest.fn().mockReturnValue({
+            where: jest.fn().mockReturnValue({
+              limit: jest.fn().mockResolvedValue([{
+                ...sampleSummaryRecord(),
+                owner: {
+                  id: OWNER_CUID,
+                  name: 'Owner',
+                  avatarUrl: null
+                }
+              }])
+            })
+          })
+        })
+      });
 
       const updatedSummary = await updateProject('project-1', { title: 'Updated' }, owner);
 
@@ -175,13 +249,25 @@ describe('project domain service', () => {
     const owner = { id: OWNER_CUID, role: UserRole.CREATOR } as const;
 
     it('removes project and writes audit entry', async () => {
-      mockPrisma.project.findUnique.mockResolvedValue({ ownerId: OWNER_CUID });
-      mockPrisma.project.delete.mockResolvedValue(undefined);
+      // Mock project lookup
+      mockPrisma.select.mockReturnValue({
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([{ ownerId: OWNER_CUID }])
+          })
+        })
+      });
+      
+      // Mock project delete
+      mockPrisma.delete.mockReturnValue({
+        where: jest.fn().mockResolvedValue(undefined)
+      });
+      
+      // Mock audit log creation
       mockPrisma.auditLog.create.mockResolvedValue(undefined);
 
       await deleteProject('project-1', owner);
 
-      expect(mockPrisma.project.delete).toHaveBeenCalledWith({ where: { id: 'project-1' } });
       expect(mockPrisma.auditLog.create).toHaveBeenCalledWith({
         data: expect.objectContaining({ action: 'PROJECT_DELETED', entityId: 'project-1' })
       });

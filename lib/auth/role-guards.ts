@@ -1,4 +1,4 @@
-import { userRole } from '@/drizzle/schema';
+import { userRole } from '@/lib/db/schema';
 
 import { hasAllPermissions, normalizeRole } from './permissions';
 

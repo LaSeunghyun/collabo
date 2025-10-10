@@ -10,7 +10,7 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Collaborium - Artist Collaboration Platform',
-  description: '음악과 아티스트가 함께 만들어가는 크리에이티브 커뮤니티 플랫폼',
+  description: '?�악�??�티?�트가 ?�께 만들?��????�리?�이?�브 커�??�티 ?�랫??,
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

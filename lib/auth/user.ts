@@ -2,8 +2,8 @@ import { randomUUID } from 'crypto';
 
 import { eq } from 'drizzle-orm';
 
-import { getDb } from '@/lib/db/client';
-import { permission, userPermission, user as userSchema } from '@/drizzle/schema';
+import { getDbClient } from '@/lib/db/client';
+import { permission, userPermission, users as userSchema } from '@/lib/db/schema';
 
 type UserRecord = typeof userSchema.$inferSelect;
 type UserPermissionRecord = typeof userPermission.$inferSelect;
@@ -31,7 +31,7 @@ export const fetchUserWithPermissions = async (
     return null;
   }
 
-  const db = await getDb();
+  const db = await getDbClient();
 
   const userRecord = await db.select().from(userSchema).where(where).limit(1).then(rows => rows[0] || null);
 
@@ -46,7 +46,7 @@ export const fetchUserWithPermissions = async (
 };
 
 export const findUserByEmail = async (email: string) => {
-  const db = await getDb();
+  const db = await getDbClient();
   return db.select().from(userSchema).where(eq(userSchema.email, email)).limit(1).then(rows => rows[0] || null);
 };
 
@@ -62,7 +62,7 @@ export const createParticipantUser = async (
   input: CreateParticipantUserInput
 ): Promise<BasicUserSummary> => {
   const now = touchTimestamp();
-  const db = await getDb();
+  const db = await getDbClient();
 
   const [record] = await db
     .insert(userSchema)
@@ -94,7 +94,7 @@ export const createAdminUser = async (
   input: CreateParticipantUserInput
 ): Promise<BasicUserSummary> => {
   const now = touchTimestamp();
-  const db = await getDb();
+  const db = await getDbClient();
 
   const [record] = await db
     .insert(userSchema)

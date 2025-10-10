@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     const user = await requireApiUser(request as NextRequest & GuardRequirement);
     const db = await getDbClient();
 
-    // 관리자만 권한 목록 조회 가능
+    // 관리자�?권한 목록 조회 가??
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
         { message: 'Unauthorized' },
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .offset(offset);
 
-    // 전체 개수 조회
+    // ?�체 개수 조회
     const totalResult = await db
       .select({ count: count() })
       .from(permissions);
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('권한 목록 조회 중 오류 발생:', {
+    console.error('권한 목록 조회 �??�류 발생:', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
       userId: request.headers.get('user-id') || 'unknown'
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json(
       { 
-        error: '권한 목록을 불러오는데 실패했습니다.',
+        error: '권한 목록??불러?�는???�패?�습?�다.',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
     const user = await requireApiUser(request as NextRequest & GuardRequirement);
     const db = await getDbClient();
 
-    // 관리자만 권한 생성 가능
+    // 관리자�?권한 ?�성 가??
     if (user.role !== 'ADMIN') {
       return NextResponse.json(
         { message: 'Unauthorized' },
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
       body = await request.json();
     } catch {
       return NextResponse.json(
-        { error: '잘못된 요청 본문입니다.' },
+        { error: '?�못???�청 본문?�니??' },
         { status: 400 }
       );
     }
@@ -101,12 +101,12 @@ export async function POST(request: NextRequest) {
 
     if (!key || !description) {
       return NextResponse.json(
-        { error: '권한 키와 설명은 필수입니다.' },
+        { error: '권한 ?��? ?�명?� ?�수?�니??' },
         { status: 400 }
       );
     }
 
-    // 권한 생성
+    // 권한 ?�성
     const newPermission = await db
       .insert(permissions)
       .values({
@@ -117,12 +117,12 @@ export async function POST(request: NextRequest) {
       .returning();
 
     if (!newPermission[0]) {
-      throw new Error('권한 생성에 실패했습니다.');
+      throw new Error('권한 ?�성???�패?�습?�다.');
     }
 
     return NextResponse.json(newPermission[0], { status: 201 });
   } catch (error) {
-    console.error('권한 생성 중 오류 발생:', {
+    console.error('권한 ?�성 �??�류 발생:', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
       userId: request.headers.get('user-id') || 'unknown'
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(
       { 
-        error: '권한 생성에 실패했습니다.',
+        error: '권한 ?�성???�패?�습?�다.',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }

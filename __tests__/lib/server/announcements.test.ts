@@ -1,9 +1,9 @@
-﻿import { DEFAULT_ANNOUNCEMENT_CATEGORY } from '@/lib/constants/announcements';
+import { DEFAULT_ANNOUNCEMENT_CATEGORY } from '@/lib/constants/announcements';
 import { createAnnouncement, getAnnouncements } from '@/lib/server/announcements';
 import { getDbClient } from '@/lib/db/client';
 import { eq, and, or, lte, isNull, desc } from 'drizzle-orm';
 
-// Drizzle 클라이언트 모킹
+// Drizzle Ŭ���̾�Ʈ ��ŷ
 jest.mock('@/lib/db/client', () => ({
   getDbClient: jest.fn()
 }));

@@ -11,6 +11,7 @@ const config: Config = {
         '^@/(.*)$': '<rootDir>/$1',
         '^@components/(.*)$': '<rootDir>/components/$1',
         '^@lib/(.*)$': '<rootDir>/lib/$1',
+        '^@types/(.*)$': '<rootDir>/types/$1',
         '^next/image$': '<rootDir>/__mocks__/next/image.tsx',
         '^.+\\.(css|less|scss|sass)$': 'identity-obj-proxy'
       },
@@ -28,6 +29,7 @@ const config: Config = {
         '^@/(.*)$': '<rootDir>/$1',
         '^@components/(.*)$': '<rootDir>/components/$1',
         '^@lib/(.*)$': '<rootDir>/lib/$1',
+        '^@types/(.*)$': '<rootDir>/types/$1',
         '^next/image$': '<rootDir>/__mocks__/next/image.tsx',
         '^.+\\.(css|less|scss|sass)$': 'identity-obj-proxy'
       },

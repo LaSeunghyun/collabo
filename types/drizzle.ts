@@ -1,4 +1,4 @@
-// Drizzle enum 타입들을 테스트에서 사용할 수 있도록 export
+// Drizzle enum ?�?�들???�스?�에???�용?????�도�?export
 export { 
   userRoleEnum,
   projectStatusEnum,
@@ -18,7 +18,7 @@ export {
   moderationStatusEnum
 } from '@/lib/db/schema/enums';
 
-// 테스트에서 사용할 수 있는 enum 값들
+// ?�스?�에???�용?????�는 enum 값들
 export const UserRole = {
   CREATOR: 'CREATOR',
   PARTICIPANT: 'PARTICIPANT',

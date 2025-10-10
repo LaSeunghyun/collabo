@@ -3,6 +3,7 @@ export type MockDrizzle = ReturnType<typeof createDrizzleMock>;
 
 export const createDrizzleMock = () => {
   const mock = {
+    // Drizzle query builder methods
     select: jest.fn().mockReturnThis(),
     from: jest.fn().mockReturnThis(),
     where: jest.fn().mockReturnThis(),
@@ -11,16 +12,28 @@ export const createDrizzleMock = () => {
     orderBy: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),
     offset: jest.fn().mockReturnThis(),
+    groupBy: jest.fn().mockReturnThis(),
+    having: jest.fn().mockReturnThis(),
+    
+    // Insert operations
     insert: jest.fn().mockReturnThis(),
     values: jest.fn().mockReturnThis(),
     returning: jest.fn().mockReturnThis(),
-    update: jest.fn().mockReturnThis(),
-    set: jest.fn().mockReturnThis(),
-    delete: jest.fn().mockReturnThis(),
     onConflictDoNothing: jest.fn().mockReturnThis(),
     onConflictDoUpdate: jest.fn().mockReturnThis(),
-    // Prisma 호환성을 위한 mock 메서드들
+    
+    // Update operations
+    update: jest.fn().mockReturnThis(),
+    set: jest.fn().mockReturnThis(),
+    
+    // Delete operations
+    delete: jest.fn().mockReturnThis(),
+    
+    // Transaction support
+    transaction: jest.fn(),
     $transaction: jest.fn(),
+    
+    // Prisma 호환성을 위한 mock 메서드들
     project: {
       findMany: jest.fn(),
       findUnique: jest.fn(),
@@ -127,6 +140,7 @@ export const createDrizzleMock = () => {
   } as const;
 
   (mock.$transaction as jest.Mock).mockImplementation(async (callback: any) => callback(mock));
+  (mock.transaction as jest.Mock).mockImplementation(async (callback: any) => callback(mock));
 
   return mock;
 };
@@ -156,4 +170,3 @@ export const resetDrizzleMock = (mock: MockDrizzle) => {
 export const resetPrismaMock = resetDrizzleMock;
 export const createPrismaMock = createDrizzleMock;
 export type MockPrisma = MockDrizzle;
-

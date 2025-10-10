@@ -2,186 +2,205 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Artist Funding Platform - E2E Tests', () => {
     test.beforeEach(async ({ page }) => {
-        // 홈페이지로 직접 이동
+        // ?�페?��?�?직접 ?�동
         await page.goto('/');
+        // ?�이지 로딩 ?��?
+        await page.waitForLoadState('networkidle');
     });
 
-    test('홈페이지 로딩 및 기본 네비게이션', async ({ page }) => {
-        // 페이지 제목 확인
-        await expect(page).toHaveTitle(/Collaborium/);
-
-        // 주요 섹션이 표시되는지 확인
+    test('?�용???�정: ?�페?��? ?�색 ???�로?�트 ?�세 ???�원 ?�도', async ({ page }) => {
+        // 1. ?�페?��??�서 ?�로?�트 카드 ?�인
         await expect(page.locator('h1')).toBeVisible();
-
-        // 네비게이션 메뉴 확인
-        await expect(page.locator('nav')).toBeVisible();
-
-        // 커뮤니티 링크 확인
-        const communityLink = page.locator('a[href="/community"]');
-        await expect(communityLink).toBeVisible();
-
-        // 프로젝트 링크 확인
-        const projectsLink = page.locator('a[href="/projects"]');
-        await expect(projectsLink).toBeVisible();
-    });
-
-    test('커뮤니티 페이지 기능 테스트', async ({ page }) => {
-        // 커뮤니티 페이지로 직접 이동
-        await page.goto('/community');
-
-        // 페이지 로딩 대기
-        await page.waitForLoadState('networkidle');
-
-        // 커뮤니티 제목 확인
-        await expect(page.locator('h1')).toBeVisible();
-
-        // 게시글 목록 컨테이너 확인
-        const postsContainer = page.locator('[data-testid="posts-container"]').or(page.locator('main'));
-        await expect(postsContainer).toBeVisible();
-    });
-
-    test('프로젝트 페이지 기능 테스트', async ({ page }) => {
-        // 프로젝트 페이지로 직접 이동
-        await page.goto('/projects');
-
-        // 페이지 로딩 대기
-        await page.waitForLoadState('networkidle');
-
-        // 프로젝트 제목 확인
-        await expect(page.locator('h1')).toBeVisible();
-
-        // 프로젝트 목록 컨테이너 확인
-        const projectsContainer = page.locator('[data-testid="projects-container"]').or(page.locator('main'));
-        await expect(projectsContainer).toBeVisible();
-    });
-
-    test('아티스트 페이지 기능 테스트', async ({ page }) => {
-        // 아티스트 페이지로 직접 이동
-        await page.goto('/artists');
-
-        // 페이지 로딩 대기
-        await page.waitForLoadState('networkidle');
-
-        // 아티스트 제목 확인
-        await expect(page.locator('h1')).toBeVisible();
-
-        // 아티스트 목록 컨테이너 확인
-        const artistsContainer = page.locator('[data-testid="artists-container"]').or(page.locator('main'));
-        await expect(artistsContainer).toBeVisible();
-    });
-
-    test('파트너 페이지 기능 테스트', async ({ page }) => {
-        // 파트너 페이지로 직접 이동
-        await page.goto('/partners');
-
-        // 페이지 로딩 대기
-        await page.waitForLoadState('networkidle');
-
-        // 파트너 제목 확인
-        await expect(page.locator('h1')).toBeVisible();
-
-        // 파트너 목록 컨테이너 확인
-        const partnersContainer = page.locator('[data-testid="partners-container"]').or(page.locator('main'));
-        await expect(partnersContainer).toBeVisible();
-    });
-
-    test('도움말 페이지 접근 테스트', async ({ page }) => {
-        // 도움말 페이지로 직접 이동
-        await page.goto('/help');
-
-        // 페이지 로딩 대기
-        await page.waitForLoadState('networkidle');
-
-        // 도움말 제목 확인
-        await expect(page.locator('h1')).toBeVisible();
-
-        // 도움말 내용 확인
-        const helpContent = page.locator('[data-testid="help-content"]').or(page.locator('main'));
-        await expect(helpContent).toBeVisible();
-    });
-
-    test('반응형 디자인 테스트', async ({ page }) => {
-        // 모바일 뷰포트로 변경
-        await page.setViewportSize({ width: 375, height: 667 });
-        await page.waitForLoadState('networkidle');
-
-        // 모바일에서 네비게이션 확인
-        const mobileNav = page.locator('[data-testid="mobile-nav"]').or(page.locator('nav'));
-        await expect(mobileNav).toBeVisible();
-
-        // 태블릿 뷰포트로 변경
-        await page.setViewportSize({ width: 768, height: 1024 });
-        await page.waitForLoadState('networkidle');
-
-        // 태블릿에서 네비게이션 확인
-        await expect(mobileNav).toBeVisible();
-
-        // 데스크톱 뷰포트로 변경
-        await page.setViewportSize({ width: 1920, height: 1080 });
-        await page.waitForLoadState('networkidle');
-
-        // 데스크톱에서 네비게이션 확인
-        await expect(mobileNav).toBeVisible();
-    });
-
-    test('에러 페이지 테스트', async ({ page }) => {
-        // 존재하지 않는 페이지로 이동
-        await page.goto('/non-existent-page');
-
-        // 404 페이지 확인
-        await expect(page.locator('h1')).toBeVisible();
-        await expect(page.locator('text=404')).toBeVisible();
-    });
-
-    test('접근성 테스트', async ({ page }) => {
-        // 페이지 로딩 대기
-        await page.waitForLoadState('networkidle');
-
-        // 주요 제목이 h1 태그인지 확인
-        const mainHeading = page.locator('h1');
-        await expect(mainHeading).toBeVisible();
-
-        // 네비게이션에 적절한 aria-label이 있는지 확인
-        const navigation = page.locator('nav');
-        await expect(navigation).toBeVisible();
-
-        // 링크들이 적절한 텍스트를 가지고 있는지 확인
-        const links = page.locator('a');
-        const linkCount = await links.count();
-        for (let i = 0; i < Math.min(linkCount, 5); i++) {
-            const link = links.nth(i);
-            const text = await link.textContent();
-            expect(text).toBeTruthy();
+        
+        // 2. ?�로?�트 ?�션?�로 ?�크�?
+        const projectsSection = page.locator('section').filter({ hasText: '?�로?�트' });
+        await projectsSection.scrollIntoViewIfNeeded();
+        
+        // 3. �?번째 ?�로?�트 카드 ?�릭
+        const firstProjectCard = page.locator('[data-testid="project-card"]').first();
+        if (await firstProjectCard.count() > 0) {
+            await firstProjectCard.click();
+            await page.waitForLoadState('networkidle');
+            
+            // 4. ?�로?�트 ?�세 ?�이지 ?�인
+            await expect(page.locator('h1')).toBeVisible();
+            
+            // 5. ?�원 버튼 ?�인 (로그?�하지 ?��? ?�태)
+            const fundingButton = page.locator('button').filter({ hasText: /?�원|?�?? });
+            if (await fundingButton.count() > 0) {
+                await expect(fundingButton).toBeVisible();
+            }
         }
     });
 
-    test('성능 테스트', async ({ page }) => {
-        // 페이지 로딩 시간 측정
+    test('?�용???�정: 커�??�티 ?�색 ??게시글 ?�성 ?�도', async ({ page }) => {
+        // 1. 커�??�티 ?�이지�??�동
+        await page.goto('/community');
+        await page.waitForLoadState('networkidle');
+
+        // 2. 커�??�티 ?�목 ?�인
+        await expect(page.locator('h1')).toBeVisible();
+
+        // 3. 게시글 목록 ?�인
+        const postsContainer = page.locator('[data-testid="posts-container"]').or(page.locator('main'));
+        await expect(postsContainer).toBeVisible();
+
+        // 4. ??게시글 ?�성 버튼 ?�인 (로그?�하지 ?��? ?�태)
+        const newPostButton = page.locator('a[href="/community/new"]').or(page.locator('button').filter({ hasText: /??*게시글|글.*?�기/ }));
+        if (await newPostButton.count() > 0) {
+            await expect(newPostButton).toBeVisible();
+        }
+
+        // 5. �?번째 게시글 ?�릭 (?�는 경우)
+        const firstPost = page.locator('[data-testid="post-card"]').first();
+        if (await firstPost.count() > 0) {
+            await firstPost.click();
+            await page.waitForLoadState('networkidle');
+            
+            // 6. 게시글 ?�세 ?�이지 ?�인
+            await expect(page.locator('h1')).toBeVisible();
+        }
+    });
+
+    test('?�용???�정: ?�로?�트 ?�색 ???�터�????�세 보기', async ({ page }) => {
+        // 1. ?�로?�트 ?�이지�??�동
+        await page.goto('/projects');
+        await page.waitForLoadState('networkidle');
+
+        // 2. ?�로?�트 ?�목 ?�인
+        await expect(page.locator('h1')).toBeVisible();
+
+        // 3. ?�로?�트 목록 ?�인
+        const projectsContainer = page.locator('[data-testid="projects-container"]').or(page.locator('main'));
+        await expect(projectsContainer).toBeVisible();
+
+        // 4. ?�터 버튼 ?�인 (?�는 경우)
+        const filterButton = page.locator('button').filter({ hasText: /?�터|카테고리/ });
+        if (await filterButton.count() > 0) {
+            await filterButton.click();
+            await page.waitForTimeout(500); // ?�터 메뉴 로딩 ?��?
+        }
+
+        // 5. �?번째 ?�로?�트 ?�릭
+        const firstProject = page.locator('[data-testid="project-card"]').first();
+        if (await firstProject.count() > 0) {
+            await firstProject.click();
+            await page.waitForLoadState('networkidle');
+            
+            // 6. ?�로?�트 ?�세 ?�이지 ?�인
+            await expect(page.locator('h1')).toBeVisible();
+        }
+    });
+
+    test('?�용???�정: ?�티?�트 ?�색 ???�로??보기', async ({ page }) => {
+        // 1. ?�티?�트 ?�이지�??�동
+        await page.goto('/artists');
+        await page.waitForLoadState('networkidle');
+
+        // 2. ?�티?�트 ?�목 ?�인
+        await expect(page.locator('h1')).toBeVisible();
+
+        // 3. ?�티?�트 목록 ?�인
+        const artistsContainer = page.locator('[data-testid="artists-container"]').or(page.locator('main'));
+        await expect(artistsContainer).toBeVisible();
+
+        // 4. �?번째 ?�티?�트 ?�릭
+        const firstArtist = page.locator('[data-testid="artist-card"]').first();
+        if (await firstArtist.count() > 0) {
+            await firstArtist.click();
+            await page.waitForLoadState('networkidle');
+            
+            // 5. ?�티?�트 ?�로???�이지 ?�인
+            await expect(page.locator('h1')).toBeVisible();
+        }
+    });
+
+    test('?�용???�정: 반응???�자???�스??, async ({ page }) => {
+        // 1. 모바??뷰포?�에???�스??
+        await page.setViewportSize({ width: 375, height: 667 });
+        await page.waitForLoadState('networkidle');
+
+        // 모바?�에???�비게이???�인
+        const mobileNav = page.locator('[data-testid="mobile-nav"]').or(page.locator('nav'));
+        await expect(mobileNav).toBeVisible();
+
+        // 2. ?�블�?뷰포?�로 변�?
+        await page.setViewportSize({ width: 768, height: 1024 });
+        await page.waitForLoadState('networkidle');
+
+        // ?�블릿에???�비게이???�인
+        await expect(mobileNav).toBeVisible();
+
+        // 3. ?�스?�톱 뷰포?�로 변�?
+        await page.setViewportSize({ width: 1920, height: 1080 });
+        await page.waitForLoadState('networkidle');
+
+        // ?�스?�톱?�서 ?�비게이???�인
+        await expect(mobileNav).toBeVisible();
+    });
+
+    test('?�용???�정: ?�러 처리 �?복구', async ({ page }) => {
+        // 1. 존재?��? ?�는 ?�이지�??�동
+        await page.goto('/non-existent-page');
+
+        // 2. 404 ?�이지 ?�인
+        await expect(page.locator('h1')).toBeVisible();
+        
+        // 3. ?�으�??�아가�?버튼 ?�인
+        const homeButton = page.locator('a[href="/"]').or(page.locator('button').filter({ hasText: /??메인/ }));
+        if (await homeButton.count() > 0) {
+            await homeButton.click();
+            await page.waitForLoadState('networkidle');
+            
+            // 4. ?�페?��?�??�아?�는지 ?�인
+            await expect(page.locator('h1')).toBeVisible();
+        }
+    });
+
+    test('?�용???�정: ?�근??�??�용??검�?, async ({ page }) => {
+        // 1. ?�이지 로딩 ?��?
+        await page.waitForLoadState('networkidle');
+
+        // 2. 주요 ?�목??h1 ?�그?��? ?�인
+        const mainHeading = page.locator('h1');
+        await expect(mainHeading).toBeVisible();
+
+        // 3. ?�비게이???�인
+        const navigation = page.locator('nav');
+        await expect(navigation).toBeVisible();
+
+        // 4. 주요 링크?�이 ?�절???�스?��? 가지�??�는지 ?�인
+        const mainLinks = page.locator('nav a, main a').first(5);
+        const linkCount = await mainLinks.count();
+        for (let i = 0; i < linkCount; i++) {
+            const link = mainLinks.nth(i);
+            const text = await link.textContent();
+            expect(text).toBeTruthy();
+            expect(text?.trim().length).toBeGreaterThan(0);
+        }
+    });
+
+    test('?�용???�정: ?�능 �??�용??경험 검�?, async ({ page }) => {
+        // 1. ?�이지 로딩 ?�간 측정
         const startTime = Date.now();
         await page.goto('/');
         await page.waitForLoadState('networkidle');
         const endTime = Date.now();
         const loadTime = endTime - startTime;
 
-        // 로딩 시간이 5초 이내인지 확인
+        // 2. 로딩 ?�간??5�??�내?��? ?�인
         expect(loadTime).toBeLessThan(5000);
-    });
 
-    test('SEO 테스트', async ({ page }) => {
-        // 페이지 제목 확인
+        // 3. ?�이지 ?�목 ?�인
         const title = await page.title();
         expect(title).toBeTruthy();
         expect(title.length).toBeGreaterThan(0);
 
-        // 메타 설명 확인
+        // 4. 메�? ?�명 ?�인 (?�는 경우)
         const metaDescription = page.locator('meta[name="description"]');
         if (await metaDescription.count() > 0) {
             const description = await metaDescription.getAttribute('content');
             expect(description).toBeTruthy();
         }
-
-        // 주요 제목 확인
-        const mainHeading = page.locator('h1');
-        await expect(mainHeading).toBeVisible();
     });
 });

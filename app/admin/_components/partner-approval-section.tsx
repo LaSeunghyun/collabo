@@ -2,11 +2,11 @@
 import { getPartnersAwaitingApproval } from '@/lib/server/partners';
 
 const partnerTypeLabels: Record<string, string> = {
-  'STUDIO': '스튜디오',
-  'VENUE': '공연장',
-  'PRODUCTION': '제작사',
+  'STUDIO': '?�튜?�오',
+  'VENUE': '공연??,
+  'PRODUCTION': '?�작??,
   'MERCHANDISE': '굿즈',
-  'OTHER': '기타'
+  'OTHER': '기�?'
 };
 
 const dateFormatter = new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium' });
@@ -22,11 +22,11 @@ export async function PartnerApprovalSection() {
       >
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-white">파트너 승인</h3>
-            <p className="text-sm text-white/60">새로운 파트너 등록을 검토하고 승인하세요</p>
+            <h3 className="text-lg font-semibold text-white">?�트???�인</h3>
+            <p className="text-sm text-white/60">?�로???�트???�록??검?�하�??�인?�세??/p>
           </div>
           <span className="rounded-full bg-white/5 px-3 py-1 text-xs text-white/70">
-            {partners.length}개 대기
+            {partners.length}�??��?
           </span>
         </div>
 
@@ -41,7 +41,7 @@ export async function PartnerApprovalSection() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 text-xs text-white/60">
                       <span>{partnerTypeLabels[partner.type] || partner.type}</span>
-                      <span>•</span>
+                      <span>??/span>
                       <span>{dateFormatter.format(new Date(partner.createdAt))}</span>
                     </div>
                     <h4 className="mt-1 text-sm font-medium text-white">
@@ -53,10 +53,10 @@ export async function PartnerApprovalSection() {
                   </div>
                   <div className="ml-4 flex gap-2">
                     <button className="rounded-lg bg-green-500/10 px-3 py-1 text-xs text-green-300 transition hover:bg-green-500/20">
-                      승인
+                      ?�인
                     </button>
                     <button className="rounded-lg bg-red-500/10 px-3 py-1 text-xs text-red-300 transition hover:bg-red-500/20">
-                      거부
+                      거�?
                     </button>
                   </div>
                 </div>
@@ -65,7 +65,7 @@ export async function PartnerApprovalSection() {
           </div>
         ) : (
           <div className="mt-6 text-center text-white/60">
-            승인 대기 중인 파트너가 없습니다.
+            ?�인 ?��?중인 ?�트?��? ?�습?�다.
           </div>
         )}
       </section>
@@ -75,7 +75,7 @@ export async function PartnerApprovalSection() {
     return (
       <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-6">
         <div className="text-center text-white/60">
-          파트너 데이터를 불러올 수 없습니다.
+          ?�트???�이?��? 불러?????�습?�다.
         </div>
       </section>
     );

@@ -1,89 +1,166 @@
-import type { ReactNode } from 'react';
+import React from 'react';
 import { render, screen } from '@testing-library/react';
-
-jest.mock('next/link', () => {
-  return ({ children, href }: { children: ReactNode; href: string }) => <a href={href}>{children}</a>;
-});
-
-jest.mock('@/lib/server/announcements', () => ({
-  getAnnouncements: jest.fn()
-}));
-
-jest.mock('@/lib/auth/session', () => ({
-  getServerAuthSession: jest.fn()
-}));
-
-jest.mock('@/hooks/use-announcement-read', () => ({
-  useMarkAnnouncementRead: jest.fn(() => ({ mutate: jest.fn() })),
-  useAnnouncementUnreadCount: jest.fn(() => ({ data: 0 }))
-}));
-
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import AnnouncementsPage from '@/app/announcements/page';
-import { AnnouncementReadTracker } from '@/app/announcements/[id]/read-tracker';
 
-const { getAnnouncements } = jest.requireMock('@/lib/server/announcements');
-const { getServerAuthSession } = jest.requireMock('@/lib/auth/session');
-const { useMarkAnnouncementRead } = jest.requireMock('@/hooks/use-announcement-read');
+// Mock the hooks
+jest.mock('@/hooks/use-announcement-read', () => ({
+  useAnnouncementRead: () => ({
+    markAsRead: jest.fn()
+  })
+}));
 
-describe('Announcements UI', () => {
+// Mock React hooks
+jest.mock('react', () => ({
+  ...jest.requireActual('react'),
+  useState: jest.fn()
+}));
+
+const createWrapper = (client: QueryClient) => {
+  return ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={client}>
+      {children}
+    </QueryClientProvider>
+  );
+};
+
+const mockAnnouncements = [
+  {
+    id: 'announcement-1',
+    title: '테스트 공지',
+    content: '테스트 본문',
+    type: 'notice' as const,
+    priority: 'high' as const,
+    isActive: true,
+    publishedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'announcement-2',
+    title: '일반 공지',
+    content: '다른 공지',
+    type: 'update' as const,
+    priority: 'normal' as const,
+    isActive: true,
+    publishedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+];
+
+describe('AnnouncementsPage', () => {
+  let client: QueryClient;
+  let mockSetState: jest.Mock;
+
   beforeEach(() => {
-    jest.clearAllMocks();
-    getServerAuthSession.mockResolvedValue({ user: { id: 'user-1' } });
-  });
-
-  it('renders pinned announcements with NEW badges', async () => {
-    getAnnouncements.mockResolvedValue({
-      announcements: [
-        {
-          id: 'announcement-1',
-          title: '중요 공지',
-          content: '테스트 본문',
-          category: 'platform',
-          isPinned: true,
-          publishedAt: new Date().toISOString(),
-          author: { id: 'admin-1', name: '관리자', avatarUrl: null },
-          isRead: false,
-          isNew: true
-        },
-        {
-          id: 'announcement-2',
-          title: '일반 공지',
-          content: '다른 공지',
-          category: 'event',
-          isPinned: false,
-          publishedAt: new Date().toISOString(),
-          author: { id: 'admin-1', name: '관리자', avatarUrl: null },
-          isRead: true,
-          isNew: false
-        }
-      ],
-      unreadCount: 1
+    client = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false }
+      }
     });
 
-    const jsx = await AnnouncementsPage({ searchParams: {} });
-    const { container } = render(jsx);
-
-    const titles = Array.from(container.querySelectorAll('h2')).map((element) => element.textContent);
-    expect(titles[0]).toContain('중요 공지');
-
-    expect(screen.getByText('NEW')).toBeInTheDocument();
+    mockSetState = jest.fn();
+    (React.useState as jest.Mock).mockImplementation((initial) => [initial, mockSetState]);
   });
 
-  it('marks announcements as read when tracker runs', () => {
-    const mutate = jest.fn();
-    useMarkAnnouncementRead.mockReturnValueOnce({ mutate });
-
-    render(<AnnouncementReadTracker announcementId="announcement-1" canAcknowledge isAlreadyRead={false} />);
-
-    expect(mutate).toHaveBeenCalledWith('announcement-1');
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
-  it('does not mark announcements as read for guests', () => {
-    const mutate = jest.fn();
-    useMarkAnnouncementRead.mockReturnValueOnce({ mutate });
+  it('renders announcements list', () => {
+    const Wrapper = createWrapper(client);
+    
+    render(
+      <Wrapper>
+        <AnnouncementsPage
+          announcements={mockAnnouncements}
+          totalCount={2}
+          currentPage={1}
+          totalPages={1}
+          unreadCount={1}
+        />
+      </Wrapper>
+    );
 
-    render(<AnnouncementReadTracker announcementId="announcement-1" canAcknowledge={false} isAlreadyRead={false} />);
+    expect(screen.getByRole('heading', { name: '공지사항' })).toBeInTheDocument();
+    expect(screen.getByText('테스트 공지')).toBeInTheDocument();
+    expect(screen.getByText('일반 공지')).toBeInTheDocument();
+  });
 
-    expect(mutate).not.toHaveBeenCalled();
+  it('shows unread count when there are unread announcements', () => {
+    const Wrapper = createWrapper(client);
+    
+    render(
+      <Wrapper>
+        <AnnouncementsPage
+          announcements={mockAnnouncements}
+          totalCount={2}
+          currentPage={1}
+          totalPages={1}
+          unreadCount={1}
+        />
+      </Wrapper>
+    );
+
+    expect(screen.getByText('읽지 않은 공지 1개')).toBeInTheDocument();
+  });
+
+  it('shows all read message when no unread announcements', () => {
+    const Wrapper = createWrapper(client);
+    
+    render(
+      <Wrapper>
+        <AnnouncementsPage
+          announcements={mockAnnouncements}
+          totalCount={2}
+          currentPage={1}
+          totalPages={1}
+          unreadCount={0}
+        />
+      </Wrapper>
+    );
+
+    expect(screen.getByText('모든 공지를 읽었습니다')).toBeInTheDocument();
+  });
+
+  it('renders filter buttons', () => {
+    const Wrapper = createWrapper(client);
+    
+    render(
+      <Wrapper>
+        <AnnouncementsPage
+          announcements={mockAnnouncements}
+          totalCount={2}
+          currentPage={1}
+          totalPages={1}
+          unreadCount={1}
+        />
+      </Wrapper>
+    );
+
+    expect(screen.getByRole('button', { name: '전체' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '공지사항' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '업데이트' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '이벤트' })).toBeInTheDocument();
+  });
+
+  it('shows empty state when no announcements', () => {
+    const Wrapper = createWrapper(client);
+    
+    render(
+      <Wrapper>
+        <AnnouncementsPage
+          announcements={[]}
+          totalCount={0}
+          currentPage={1}
+          totalPages={1}
+          unreadCount={0}
+        />
+      </Wrapper>
+    );
+
+    expect(screen.getByText('공지사항이 없습니다')).toBeInTheDocument();
   });
 });

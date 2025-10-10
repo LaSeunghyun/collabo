@@ -5,9 +5,9 @@ const prisma = new PrismaClient();
 
 async function createTestAccounts() {
     try {
-        console.log('🔐 테스트 계정 생성 시작...');
+        console.log('?�� ?�스??계정 ?�성 ?�작...');
 
-        // 기존 계정 확인
+        // 기존 계정 ?�인
         const existingAdmin = await prisma.user.findUnique({
             where: { email: 'admin@collabo.com' }
         });
@@ -16,15 +16,15 @@ async function createTestAccounts() {
         });
         
         if (existingAdmin) {
-            console.log('⚠️ 관리자 계정이 이미 존재합니다:', existingAdmin.email);
+            console.log('?�️ 관리자 계정???��? 존재?�니??', existingAdmin.email);
         }
         if (existingFan) {
-            console.log('⚠️ 팬 계정이 이미 존재합니다:', existingFan.email);
+            console.log('?�️ ??계정???��? 존재?�니??', existingFan.email);
         }
 
         const hashedPassword = await hash('1234', 10);
 
-        // 1. 관리자 계정 생성 (upsert)
+        // 1. 관리자 계정 ?�성 (upsert)
         const admin = await prisma.user.upsert({
             where: { email: 'admin@collabo.com' },
             update: {
@@ -39,86 +39,86 @@ async function createTestAccounts() {
                 role: UserRole.ADMIN
             }
         });
-        console.log('✅ 관리자 계정 생성/업데이트 완료:', admin.email);
+        console.log('??관리자 계정 ?�성/?�데?�트 ?�료:', admin.email);
 
-        // 2. 팬 계정 생성 (upsert)
+        // 2. ??계정 ?�성 (upsert)
         const fan = await prisma.user.upsert({
             where: { email: 'fan@collabo.com' },
             update: {
-                name: '팬',
+                name: '??,
                 passwordHash: hashedPassword,
                 role: UserRole.PARTICIPANT
             },
             create: {
-                name: '팬',
+                name: '??,
                 email: 'fan@collabo.com',
                 passwordHash: hashedPassword,
                 role: UserRole.PARTICIPANT
             }
         });
-        console.log('✅ 팬 계정 생성/업데이트 완료:', fan.email);
+        console.log('????계정 ?�성/?�데?�트 ?�료:', fan.email);
 
-        // 3. 파트너 계정 생성 (upsert)
+        // 3. ?�트??계정 ?�성 (upsert)
         const partner = await prisma.user.upsert({
             where: { email: 'partner@collabo.com' },
             update: {
-                name: '파트너',
+                name: '?�트??,
                 passwordHash: hashedPassword,
                 role: UserRole.PARTNER
             },
             create: {
-                name: '파트너',
+                name: '?�트??,
                 email: 'partner@collabo.com',
                 passwordHash: hashedPassword,
                 role: UserRole.PARTNER
             }
         });
-        console.log('✅ 파트너 계정 생성/업데이트 완료:', partner.email);
+        console.log('???�트??계정 ?�성/?�데?�트 ?�료:', partner.email);
 
-        // 4. 크리에이터 계정 생성 (upsert)
+        // 4. ?�리?�이??계정 ?�성 (upsert)
         const creator = await prisma.user.upsert({
             where: { email: 'creator@collabo.com' },
             update: {
-                name: '크리에이터',
+                name: '?�리?�이??,
                 passwordHash: hashedPassword,
                 role: UserRole.CREATOR
             },
             create: {
-                name: '크리에이터',
+                name: '?�리?�이??,
                 email: 'creator@collabo.com',
                 passwordHash: hashedPassword,
                 role: UserRole.CREATOR
             }
         });
-        console.log('✅ 크리에이터 계정 생성/업데이트 완료:', creator.email);
+        console.log('???�리?�이??계정 ?�성/?�데?�트 ?�료:', creator.email);
 
-        // 5. 일반 사용자 계정 생성 (upsert)
+        // 5. ?�반 ?�용??계정 ?�성 (upsert)
         const user = await prisma.user.upsert({
             where: { email: 'user@collabo.com' },
             update: {
-                name: '일반사용자',
+                name: '?�반?�용??,
                 passwordHash: hashedPassword,
                 role: UserRole.PARTICIPANT
             },
             create: {
-                name: '일반사용자',
+                name: '?�반?�용??,
                 email: 'user@collabo.com',
                 passwordHash: hashedPassword,
                 role: UserRole.PARTICIPANT
             }
         });
-        console.log('✅ 일반사용자 계정 생성/업데이트 완료:', user.email);
+        console.log('???�반?�용??계정 ?�성/?�데?�트 ?�료:', user.email);
 
-        console.log('\n🎉 모든 테스트 계정이 성공적으로 생성되었습니다!');
-        console.log('\n📋 계정 정보:');
-        console.log('👑 관리자: admin@collabo.com / 1234');
-        console.log('👤 팬: fan@collabo.com / 1234');
-        console.log('🤝 파트너: partner@collabo.com / 1234');
-        console.log('🎨 크리에이터: creator@collabo.com / 1234');
-        console.log('👥 일반사용자: user@collabo.com / 1234');
+        console.log('\n?�� 모든 ?�스??계정???�공?�으�??�성?�었?�니??');
+        console.log('\n?�� 계정 ?�보:');
+        console.log('?�� 관리자: admin@collabo.com / 1234');
+        console.log('?�� ?? fan@collabo.com / 1234');
+        console.log('?�� ?�트?? partner@collabo.com / 1234');
+        console.log('?�� ?�리?�이?? creator@collabo.com / 1234');
+        console.log('?�� ?�반?�용?? user@collabo.com / 1234');
 
     } catch (error) {
-        console.error('❌ 계정 생성 중 오류 발생:', error);
+        console.error('??계정 ?�성 �??�류 발생:', error);
     } finally {
         await prisma.$disconnect();
     }

@@ -6,7 +6,7 @@ import {
   authSession,
   refreshToken,
   userRole
-} from '@/drizzle/schema';
+} from '@/lib/db/schema';
 
 import { issueAccessToken } from './access-token';
 import { createOpaqueToken, fingerprintToken, hashClientHint, hashToken, verifyTokenHash } from './crypto';
@@ -108,7 +108,7 @@ function hydrateRefreshTokenRow(token: RefreshTokenRow): HydratedRefreshToken {
 
 const loadUserPermissions = async (userId: string, fallbackRole: UserRoleType) => {
     // const db = await getDb();
-  // ?�순?? 기본 권한�??�용
+  // ?�순?? 기본 권한�??�용
   const effectivePermissions = deriveEffectivePermissions(fallbackRole, []);
   return { role: fallbackRole, permissions: effectivePermissions };
 };

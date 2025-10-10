@@ -7,9 +7,14 @@ import { createPrismaMock, resetPrismaMock, type MockPrisma } from '../helpers/p
 
 type PrismaModule = { prisma: MockPrisma };
 
-jest.mock('@/lib/prisma', () => {
+jest.mock('@/lib/db/client', () => {
   const { createPrismaMock: factory } = require('../helpers/prisma-mock');
-  return { prisma: factory() } as PrismaModule;
+  return { 
+    getDb: () => factory(),
+    getDbClient: () => factory(),
+    isDrizzleAvailable: () => true,
+    closeDb: jest.fn()
+  };
 });
 
 jest.mock('@/lib/auth/guards', () => {
@@ -20,7 +25,7 @@ jest.mock('@/lib/auth/guards', () => {
   };
 });
 
-const prismaMock = (jest.requireMock('@/lib/prisma') as PrismaModule).prisma;
+const prismaMock = (jest.requireMock('@/lib/db/client') as any).getDb();
 const requireApiUserMock = require('@/lib/auth/guards').requireApiUser as jest.MockedFunction<
   typeof requireApiUser
 >;

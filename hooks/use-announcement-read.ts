@@ -17,7 +17,7 @@ async function markAnnouncementReadRequest(announcementId: string) {
   });
 
   if (!response.ok) {
-    throw new Error('공지 읽음 처리에 실패했습니다.');
+    throw new Error('공�? ?�음 처리???�패?�습?�다.');
   }
 
   return (await response.json()) as MarkReadResponse;
@@ -27,7 +27,7 @@ async function fetchUnreadCount() {
   const response = await fetch('/api/announcements?meta=unread-count');
 
   if (!response.ok) {
-    throw new Error('공지 읽음 상태를 불러오지 못했습니다.');
+    throw new Error('공�? ?�음 ?�태�?불러?��? 못했?�니??');
   }
 
   const data = (await response.json()) as { unreadCount: number };

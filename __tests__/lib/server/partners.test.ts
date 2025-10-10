@@ -1,4 +1,4 @@
-﻿import { createPartnerProfile, PartnerAccessDeniedError, updatePartnerProfile } from '@/lib/server/partners';
+import { createPartnerProfile, PartnerAccessDeniedError, updatePartnerProfile } from '@/lib/server/partners';
 import { getDbClient } from '@/lib/db/client';
 import { eq, and, or, like, desc, count, inArray, not } from 'drizzle-orm';
 
@@ -6,7 +6,7 @@ jest.mock('next/cache', () => ({
   revalidatePath: jest.fn()
 }));
 
-// Drizzle 클라이언트 모킹
+// Drizzle Ŭ���̾�Ʈ ��ŷ
 jest.mock('@/lib/db/client', () => ({
   getDbClient: jest.fn()
 }));
@@ -159,7 +159,27 @@ describe('partner domain service', () => {
         updatedAt: '2024-01-02T00:00:00Z'
       };
 
-      mockDb.select.mockResolvedValue([{ id: 'partner-1', userId: OWNER_CUID }]);
+      // Mock partner lookup
+      mockDb.select.mockReturnValue({
+        from: jest.fn().mockReturnValue({
+          innerJoin: jest.fn().mockReturnValue({
+            where: jest.fn().mockReturnValue({
+              limit: jest.fn().mockResolvedValue([{ 
+                id: 'partner-1', 
+                userId: OWNER_CUID,
+                user: {
+                  id: OWNER_CUID,
+                  name: 'Owner',
+                  avatarUrl: null,
+                  role: 'ADMIN'
+                }
+              }])
+            })
+          })
+        })
+      });
+      
+      // Mock partner update
       mockDb.update.mockReturnValue({
         set: jest.fn().mockReturnValue({
           where: jest.fn().mockReturnValue({

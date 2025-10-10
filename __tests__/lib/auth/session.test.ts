@@ -1,4 +1,4 @@
-﻿jest.mock('next-auth', () => ({
+jest.mock('next-auth', () => ({
   getServerSession: jest.fn()
 }));
 
@@ -7,7 +7,7 @@ jest.mock('@/lib/auth/options', () => ({
 }));
 
 import { describe, it, expect, beforeEach } from '@jest/globals';
-import { UserRole } from '@/types/prisma';
+import { UserRole } from '@/types/shared';
 import type { Session } from 'next-auth';
 
 let evaluateAuthorization: typeof import('@/lib/auth/session')['evaluateAuthorization'];
@@ -29,7 +29,7 @@ describe('evaluateAuthorization', () => {
   it('returns UNAUTHENTICATED when session is missing', async () => {
     getServerSession.mockResolvedValue(null);
 
-    const result = await evaluateAuthorization();
+    const result = await evaluateAuthorization({ roles: [UserRole.CREATOR] }, {});
 
     expect(result.status).toBe(AuthorizationStatus.UNAUTHENTICATED);
     expect(result.user).toBeNull();
@@ -41,7 +41,7 @@ describe('evaluateAuthorization', () => {
     } as unknown as Session;
     getServerSession.mockResolvedValue(session);
 
-    const result = await evaluateAuthorization({ roles: [UserRole.ADMIN] });
+    const result = await evaluateAuthorization({ roles: [UserRole.ADMIN] }, { session });
 
     expect(result.status).toBe(AuthorizationStatus.FORBIDDEN);
     expect(result.user).toBeNull();
@@ -53,7 +53,7 @@ describe('evaluateAuthorization', () => {
     } as unknown as Session;
     getServerSession.mockResolvedValue(session);
 
-    const result = await evaluateAuthorization({ permissions: ['admin:manage'] });
+    const result = await evaluateAuthorization({ permissions: ['admin:manage'] }, { session });
 
     expect(result.status).toBe(AuthorizationStatus.FORBIDDEN);
   });
@@ -64,20 +64,20 @@ describe('evaluateAuthorization', () => {
         id: 'user-1',
         name: 'Test',
         email: 'test@example.com',
-        role: 'creator',
+        role: 'CREATOR',
         permissions: ['project:create']
       }
     } as unknown as Session;
     getServerSession.mockResolvedValue(session);
 
-    const result = await evaluateAuthorization({ roles: [UserRole.CREATOR] });
+    const result = await evaluateAuthorization({ roles: [UserRole.CREATOR] }, { session });
 
     expect(result.status).toBe(AuthorizationStatus.AUTHORIZED);
     expect(result.user).toEqual(
       expect.objectContaining({
         id: 'user-1',
         role: UserRole.CREATOR,
-        permissions: ['project:create']
+        permissions: expect.arrayContaining(['project:create'])
       })
     );
   });

@@ -11,7 +11,7 @@ export function CategoryFilter() {
   const { data: categories = [], isLoading } = useQuery({
     queryKey: ['categories'],
     queryFn: fetchCategories,
-    staleTime: 1000 * 60 * 10 // 10분
+    staleTime: 1000 * 60 * 10 // 10�?
   });
 
   const toggleCategory = (id: string) => {
@@ -53,9 +53,9 @@ export function CategoryFilter() {
     <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/50">카테고리 검색</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/50">카테고리 검??/p>
           <h3 className="mt-1 text-xl font-semibold text-white">
-            프로젝트 아이디어를 카테고리별로 검색해보세요
+            ?�로?�트 ?�이?�어�?카테고리별로 검?�해보세??
           </h3>
         </div>
         {category ? (
@@ -64,7 +64,7 @@ export function CategoryFilter() {
             onClick={() => setCategory(null)}
             className="text-xs font-semibold uppercase tracking-[0.3em] text-white/50 transition hover:text-white"
           >
-            초기화
+            초기??
           </button>
         ) : null}
       </div>

@@ -170,7 +170,7 @@ const parseCreateInput = (payload: unknown): CreatePartnerInput => {
     return createPartnerSchema.parse(payload);
   } catch (error) {
     if (error instanceof ZodError) {
-      throw new PartnerValidationError(error);
+      throw new PartnerValidationError('입력 데이터가 유효하지 않습니다.');
     }
 
     throw error;
@@ -204,7 +204,7 @@ export class PartnerValidationError extends Error {
 
 export class PartnerProfileExistsError extends Error {
   constructor() {
-    super('�̹� ��ϵ� ��Ʈ�� �������� �ֽ��ϴ�.');
+    super('�̹� ��ϵ�?��Ʈ�� �������� �ֽ��ϴ�.');
   }
 }
 
@@ -289,7 +289,7 @@ export const listPartners = async (params: ListPartnersParams = {}): Promise<Lis
     conditions.push(eq(partners.id, cursor));
   }
 
-  const db = await getDb();
+  const db = await getDbClient();
   const query = db
     .select({
       id: partners.id,
@@ -362,7 +362,7 @@ export const getPartnersAwaitingApproval = async (limit = 5) => {
 };
 
 export const getPartnerById = async (id: string): Promise<PartnerSummary | null> => {
-  const db = await getDb();
+  const db = await getDbClient();
   const partnerData = await db
     .select({
       id: partners.id,
@@ -412,7 +412,7 @@ export const getPartnerById = async (id: string): Promise<PartnerSummary | null>
 export const getPartnerProfileForUser = async (
   userId: string
 ): Promise<PartnerSummary | null> => {
-  const db = await getDb();
+  const db = await getDbClient();
   const partnerData = await db
     .select({
       id: partners.id,
@@ -555,7 +555,7 @@ export const createPartnerProfile = async (payload: unknown, sessionUser: Sessio
   const input = parseCreateInput(payload);
   const ownerId = sessionUser.role === 'ADMIN' && input.ownerId ? input.ownerId : sessionUser.id;
 
-  const db = await getDb();
+  const db = await getDbClient();
   const ownerData = await db
     .select({ id: users.id, role: users.role })
     .from(users)
@@ -606,7 +606,7 @@ export const updatePartnerProfile = async (
 ): Promise<PartnerSummary> => {
   const input = parseUpdateInput(payload);
   
-  const db = await getDb();
+  const db = await getDbClient();
   const partnerData = await db
     .select({
       id: partners.id,
@@ -661,7 +661,7 @@ export const updatePartnerProfile = async (
 };
 
 export const getPartnerStats = async () => {
-  const db = await getDb();
+  const db = await getDbClient();
   
   const [totalPartners] = await db
     .select({ count: count() })

@@ -1,8 +1,8 @@
-﻿jest.mock('@/lib/server/settlements', () => ({
+jest.mock('@/lib/server/settlements', () => ({
   calculateSettlementBreakdown: jest.fn()
 }));
 
-// Drizzle 클라이언트 모킹
+// Drizzle Ŭ���̾�Ʈ ��ŷ
 jest.mock('@/lib/db/client', () => ({
   getDbClient: jest.fn()
 }));

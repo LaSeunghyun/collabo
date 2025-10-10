@@ -29,8 +29,8 @@ export interface SettlementCreationParams {
 }
 
 /**
- * 펀딩 성공 시 정산 레코드를 자동으로 생성하는 함수
- * 프로젝트가 목표 금액에 도달할 때만 정산을 생성합니다
+ * ?�???�공 ???�산 ?�코?��? ?�동?�로 ?�성?�는 ?�수
+ * ?�로?�트가 목표 금액???�달???�만 ?�산???�성?�니??
  */
 export async function createSettlementIfTargetReached(
     projectId: string,
@@ -41,7 +41,7 @@ export async function createSettlementIfTargetReached(
     try {
         const db = await getDbClient();
         
-        // 프로젝트 정보 조회
+        // ?�로?�트 ?�보 조회
         const [projectData] = await db
             .select({
                 id: projects.id,
@@ -55,10 +55,10 @@ export async function createSettlementIfTargetReached(
             .limit(1);
 
         if (!projectData) {
-            throw new Error('프로젝트를 찾을 수 없습니다.');
+            throw new Error('?�로?�트�?찾을 ???�습?�다.');
         }
 
-        // 파트너 매치 정보 조회
+        // ?�트??매치 ?�보 조회
         const partnerMatchesData = await db
             .select({
                 partnerId: partnerMatches.partnerId,
@@ -71,7 +71,7 @@ export async function createSettlementIfTargetReached(
                 inArray(partnerMatches.status, ['ACCEPTED', 'COMPLETED'])
             ));
 
-        // 협력자 정보 조회
+        // ?�력???�보 조회
         const collaboratorsData = await db
             .select({
                 userId: projectCollaborators.userId,
@@ -86,12 +86,12 @@ export async function createSettlementIfTargetReached(
             collaborators: collaboratorsData
         };
 
-        // 프로젝트가 목표 금액에 도달했는지 확인
+        // ?�로?�트가 목표 금액???�달?�는지 ?�인
         if (project.currentAmount < project.targetAmount) {
-            return null; // 아직 목표 금액 도달하지 않음
+            return null; // ?�직 목표 금액 ?�달?��? ?�음
         }
 
-        // 이미 진행 중인 정산이 있는지 확인
+        // ?��? 진행 중인 ?�산???�는지 ?�인
         const [existingSettlement] = await db
             .select()
             .from(settlements)
@@ -102,10 +102,10 @@ export async function createSettlementIfTargetReached(
             .limit(1);
 
         if (existingSettlement) {
-            return existingSettlement; // 이미 정산이 진행 중
+            return existingSettlement; // ?��? ?�산??진행 �?
         }
 
-        // 성공한 펀딩 데이터 조회
+        // ?�공???�???�이??조회
         const fundingsData = await db
             .select({
                 amount: fundings.amount,
@@ -121,16 +121,16 @@ export async function createSettlementIfTargetReached(
         const totalRaised = fundingsData.reduce((acc, funding) => acc + funding.amount, 0);
 
         if (totalRaised <= 0) {
-            throw new Error('성공한 펀딩이 없습니다.');
+            throw new Error('?�공???�?�이 ?�습?�다.');
         }
 
-        // 게이트웨이 수수료 계산
+        // 게이?�웨???�수�?계산
         const inferredGatewayFees = fundingsData.reduce(
             (acc, funding) => acc + (funding.gatewayFee ?? 0),
             0
         );
 
-        // 파트너 및 협력자 배분 비율 정규화
+        // ?�트??�??�력??배분 비율 ?�규??
         const partnerShares = project.partnerMatches
             .filter((match) => typeof match.settlementShare === 'number')
             .map((match) => ({
@@ -147,7 +147,7 @@ export async function createSettlementIfTargetReached(
             }))
             .filter((entry) => entry.share > 0);
 
-        // 정산 계산
+        // ?�산 계산
         const breakdown = calculateSettlementBreakdown({
             totalRaised,
             platformFeeRate,
@@ -156,7 +156,7 @@ export async function createSettlementIfTargetReached(
             collaboratorShares
         });
 
-        // 정산 레코드 생성
+        // ?�산 ?�코???�성
         const settlement = await db.transaction(async (tx) => {
             const [created] = await tx
                 .insert(settlements)
@@ -178,7 +178,7 @@ export async function createSettlementIfTargetReached(
                 })
                 .returning();
 
-            // 정산 배분 레코드 생성
+            // ?�산 배분 ?�코???�성
             const payoutPayload = [
                 {
                     stakeholderType: 'PLATFORM' as const,
@@ -233,7 +233,7 @@ export async function createSettlementIfTargetReached(
 }
 
 /**
- * 펀딩과 정산 데이터의 일치성을 검증하는 함수
+ * ?�?�과 ?�산 ?�이?�의 ?�치?�을 검증하???�수
  */
 export async function validateFundingSettlementConsistency(projectId: string) {
     try {
@@ -248,10 +248,10 @@ export async function validateFundingSettlementConsistency(projectId: string) {
             .limit(1);
 
         if (!project) {
-            throw new Error('프로젝트를 찾을 수 없습니다.');
+            throw new Error('?�로?�트�?찾을 ???�습?�다.');
         }
 
-        // 성공한 펀딩 금액 조회
+        // ?�공???�??금액 조회
         const fundingsData = await db
             .select({ amount: fundings.amount })
             .from(fundings)
@@ -260,7 +260,7 @@ export async function validateFundingSettlementConsistency(projectId: string) {
                 eq(fundings.paymentStatus, 'SUCCEEDED')
             ));
 
-        // 정산 데이터 조회
+        // ?�산 ?�이??조회
         const settlementsData = await db
             .select({ totalRaised: settlements.totalRaised })
             .from(settlements)
@@ -273,14 +273,14 @@ export async function validateFundingSettlementConsistency(projectId: string) {
 
         const issues: string[] = [];
 
-        // 실제 금액과 프로젝트 currentAmount 값 확인
+        // ?�제 금액�??�로?�트 currentAmount �??�인
         if (project.currentAmount !== totalFundingAmount) {
-            issues.push(`프로젝트 currentAmount(${project.currentAmount})와 실제 펀딩금액(${totalFundingAmount})이 일치하지 않습니다.`);
+            issues.push(`?�로?�트 currentAmount(${project.currentAmount})?� ?�제 ?�?�금??${totalFundingAmount})???�치?��? ?�습?�다.`);
         }
 
-        // 정산 금액과 펀딩금액 일치 확인
+        // ?�산 금액�??�?�금???�치 ?�인
         if (latestSettlement && latestSettlement.totalRaised !== totalFundingAmount) {
-            issues.push(`최신 정산 금액(${latestSettlement.totalRaised})과 펀딩금액(${totalFundingAmount})이 일치하지 않습니다.`);
+            issues.push(`최신 ?�산 금액(${latestSettlement.totalRaised})�??�?�금??${totalFundingAmount})???�치?��? ?�습?�다.`);
         }
 
         return {
@@ -294,7 +294,7 @@ export async function validateFundingSettlementConsistency(projectId: string) {
 }
 
 /**
- * 펀딩 데이터를 안전하게 업데이트하는 함수
+ * ?�???�이?��? ?�전?�게 ?�데?�트?�는 ?�수
  */
 export async function updateProjectAmount(
     projectId: string,
@@ -304,18 +304,18 @@ export async function updateProjectAmount(
     try {
         const db = await getDbClient();
         return await db.transaction(async (tx) => {
-            // 프로젝트 데이터 업데이트
+            // ?�로?�트 ?�이???�데?�트
             if (updateProjectAmount) {
                 await tx
                     .update(projects)
                     .set({ 
-                        currentAmount: amount, // increment 대신 직접 설정
+                        currentAmount: amount, // increment ?�??직접 ?�정
                         updatedAt: new Date().toISOString()
                     })
                     .where(eq(projects.id, projectId));
             }
 
-            // 정산 자동 생성 시도
+            // ?�산 ?�동 ?�성 ?�도
             const settlement = await createSettlementIfTargetReached(projectId);
 
             return { settlement };
@@ -327,7 +327,7 @@ export async function updateProjectAmount(
 }
 
 /**
- * 배분 비율 정규화 함수
+ * 배분 비율 ?�규???�수
  */
 function normaliseShare(value: number, hundredScale = false) {
     if (!Number.isFinite(value) || value <= 0) {

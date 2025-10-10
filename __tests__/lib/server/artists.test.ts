@@ -1,4 +1,4 @@
-﻿jest.mock('react', () => {
+jest.mock('react', () => {
   const actual = jest.requireActual('react');
   return {
     ...actual,
@@ -6,12 +6,12 @@
   };
 });
 
-import { UserRole } from '@/types/prisma';
+import { UserRole } from '@/types/shared';
 import { getArtistProfile, listFeaturedArtists } from '@/lib/server/artists';
 import { getDbClient } from '@/lib/db/client';
 import { eq, and, count } from 'drizzle-orm';
 
-// Drizzle 클라이언트 모킹
+// Drizzle Ŭ���̾�Ʈ ��ŷ
 jest.mock('@/lib/db/client', () => ({
   getDbClient: jest.fn()
 }));
@@ -71,8 +71,17 @@ describe('artist domain service', () => {
 
     it('resolves composite profile with stats, updates, and follow state', async () => {
       // Mock artist data
+      // Mock artist lookup
+      mockDb.select.mockReturnValue({
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([artistRecord])
+          })
+        })
+      });
+      
+      // Mock other queries
       mockDb.select
-        .mockResolvedValueOnce([artistRecord]) // artist query
         .mockResolvedValueOnce([{ count: 12 }]) // follower count
         .mockResolvedValueOnce([{ count: 3 }]) // project count
         .mockResolvedValueOnce([{ userId: 'backer-1' }, { userId: 'backer-2' }]) // backers
@@ -134,8 +143,19 @@ describe('artist domain service', () => {
         }
       ];
 
+      // Mock artists query
+      mockDb.select.mockReturnValue({
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            orderBy: jest.fn().mockReturnValue({
+              limit: jest.fn().mockResolvedValue(artists)
+            })
+          })
+        })
+      });
+      
+      // Mock follower and project counts
       mockDb.select
-        .mockResolvedValueOnce(artists) // artists query
         .mockResolvedValueOnce([{ count: 2 }]) // follower count for artist-1
         .mockResolvedValueOnce([{ count: 1 }]); // project count for artist-1
 

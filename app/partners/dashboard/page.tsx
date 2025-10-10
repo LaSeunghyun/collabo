@@ -18,7 +18,7 @@ const dateFormatter = new Intl.DateTimeFormat('ko-KR', {
 });
 
 const statusLabel = (verified: boolean | null | undefined) =>
-  verified ? '인증 완료' : '검토 중';
+  verified ? '?�증 ?�료' : '검??�?;
 
 export default async function PartnerDashboardPage() {
   const session = await getServerSession(authOptions);
@@ -27,13 +27,13 @@ export default async function PartnerDashboardPage() {
   if (!user) {
     return (
       <div className="text-center py-12">
-        <p className="text-white/60">로그인이 필요합니다.</p>
+        <p className="text-white/60">로그?�이 ?�요?�니??</p>
       </div>
     );
   }
 
   try {
-    // 임시로 빈 통계 데이터 사용
+    // ?�시�?�??�계 ?�이???�용
     const stats = {
       totalMatches: 0,
       successfulProjects: 0,
@@ -41,31 +41,31 @@ export default async function PartnerDashboardPage() {
       averageRating: 0,
       verified: false,
       createdAt: new Date().toISOString(),
-      location: '미설정',
-      contactEmail: '미설정'
+      location: '미설??,
+      contactEmail: '미설??
     };
 
     const overviewItems = [
       {
-        label: '총 매칭 수',
+        label: '�?매칭 ??,
         value: stats.totalMatches.toString(),
         icon: Users,
         accent: 'text-blue-400'
       },
       {
-        label: '성공한 프로젝트',
+        label: '?�공???�로?�트',
         value: stats.successfulProjects.toString(),
         icon: Star,
         accent: 'text-yellow-400'
       },
       {
-        label: '총 수익',
+        label: '�??�익',
         value: currencyFormatter.format(stats.totalRevenue),
         icon: TrendingUp,
         accent: 'text-green-400'
       },
       {
-        label: '평균 평점',
+        label: '?�균 ?�점',
         value: stats.averageRating.toFixed(1),
         icon: Building2,
         accent: 'text-purple-400'
@@ -75,14 +75,14 @@ export default async function PartnerDashboardPage() {
     return (
       <div className="space-y-8">
         <div>
-          <h1 className="text-3xl font-semibold text-white">파트너 대시보드</h1>
+          <h1 className="text-3xl font-semibold text-white">?�트???�?�보??/h1>
           <p className="mt-2 text-sm text-white/60">
-            파트너 활동 현황과 통계를 확인하세요
+            ?�트???�동 ?�황�??�계�??�인?�세??
           </p>
         </div>
 
         <section id="overview" className="space-y-6">
-          <h2 className="text-xl font-semibold text-white">현황 요약</h2>
+          <h2 className="text-xl font-semibold text-white">?�황 ?�약</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {overviewItems.map((item) => (
               <div
@@ -100,11 +100,11 @@ export default async function PartnerDashboardPage() {
         </section>
 
         <section id="profile" className="space-y-6">
-          <h2 className="text-xl font-semibold text-white">프로필 관리</h2>
+          <h2 className="text-xl font-semibold text-white">?�로??관�?/h2>
           <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-white/60">인증 상태</span>
+                <span className="text-sm text-white/60">?�증 ?�태</span>
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                   stats.verified ? 'bg-green-500/10 text-green-300' : 'bg-yellow-500/10 text-yellow-300'
                 }`}>
@@ -112,26 +112,26 @@ export default async function PartnerDashboardPage() {
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-white/60">등록일</span>
+                <span className="text-sm text-white/60">?�록??/span>
                 <span className="text-sm text-white">{dateFormatter.format(new Date(stats.createdAt))}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-white/60">위치</span>
-                <span className="text-sm text-white">{stats.location || '미설정'}</span>
+                <span className="text-sm text-white/60">?�치</span>
+                <span className="text-sm text-white">{stats.location || '미설??}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-white/60">연락처</span>
-                <span className="text-sm text-white">{stats.contactEmail || '미설정'}</span>
+                <span className="text-sm text-white/60">?�락�?/span>
+                <span className="text-sm text-white">{stats.contactEmail || '미설??}</span>
               </div>
             </div>
           </div>
         </section>
 
         <section id="insights" className="space-y-6">
-          <h2 className="text-xl font-semibold text-white">추천 아티스트</h2>
+          <h2 className="text-xl font-semibold text-white">추천 ?�티?�트</h2>
           <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
             <p className="text-white/60">
-              추천 아티스트 기능은 곧 출시될 예정입니다.
+              추천 ?�티?�트 기능?� �?출시???�정?�니??
             </p>
           </div>
         </section>
@@ -141,7 +141,7 @@ export default async function PartnerDashboardPage() {
     console.error('Failed to load partner dashboard data:', error);
     return (
       <div className="text-center py-12">
-        <p className="text-white/60">데이터를 불러올 수 없습니다.</p>
+        <p className="text-white/60">?�이?��? 불러?????�습?�다.</p>
       </div>
     );
   }

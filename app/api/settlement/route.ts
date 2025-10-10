@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
   const projectId = searchParams.get('projectId');
 
   if (!projectId) {
-    return buildError('projectId �Ķ���Ͱ� �ʿ��մϴ�.');
+    return buildError('projectId �Ķ���Ͱ�?�ʿ��մϴ�.');
   }
 
   try {
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
       return buildError('������ ������ ������ ������Ʈ�� ������ ������ �� �ֽ��ϴ�.', 409);
     }
 
-    // ���� ��� ���� ���� Ȯ��
+    // ���� ���?���� ���� Ȯ��
     const [existingPending] = await db
       .select()
       .from(settlements)
@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
       const consistencyCheck = await validateFundingSettlementConsistency(projectId);
       if (!consistencyCheck.isValid) {
         console.warn('���� ������ �ϰ��� ����:', consistencyCheck.issues);
-        // �α׸� ����� ��� ���� (������ ����ġ �� �ļ� ��ġ �ʿ�)
+        // �α׸� �����?���?���� (������ ����ġ �� �ļ� ��ġ �ʿ�)
       }
     } catch (error) {
       console.warn('���� ������ ���� ����:', error);
@@ -163,7 +163,7 @@ export async function POST(request: NextRequest) {
 
     const totalRaised = fundingsList.reduce((acc, funding) => acc + funding.amount, 0);
     if (totalRaised <= 0) {
-      return buildError('��ݾ��� �����մϴ�.', 409);
+      return buildError('��ݾ���?�����մϴ�.', 409);
     }
 
     if (totalRaised < project.targetAmount) {
@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
         .where(eq(projects.id, projectId));
     }
 
-    // Gateway fee�� ������ ����ϰų� �⺻�� ���
+    // Gateway fee�� ������ ����ϰų�?�⺻�� ���?
     const inferredGatewayFees = gatewayFeeOverride ?? (totalRaised * 0.03); // �⺻ 3% ������
 
     // ��Ʈ�� ��ġ ���� ��ȸ
@@ -227,11 +227,11 @@ export async function POST(request: NextRequest) {
       collaboratorShares
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : '���� ��� ��꿡 �����߽��ϴ�.';
+    const message = error instanceof Error ? error.message : '���� ���?���?�����߽��ϴ�.';
     return buildError(message, 422);
   }
 
-    // Drizzle Ʈ��������� ���� ����
+    // Drizzle Ʈ���������?���� ����
     const settlement = await db.transaction(async (tx) => {
       const settlementId = crypto.randomUUID();
       const now = new Date().toISOString();

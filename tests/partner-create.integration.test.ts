@@ -1,4 +1,4 @@
-import { PartnerType, UserRole } from '@/types/prisma';
+import { PartnerType, UserRole } from '@/types/shared';
 
 import { PartnerProfileExistsError, createPartnerProfile } from '@/lib/server/partners';
 
@@ -10,7 +10,7 @@ const { revalidatePath: mockRevalidatePath } = jest.requireMock('next/cache') as
   revalidatePath: jest.Mock;
 };
 
-jest.mock('@/lib/prisma', () => {
+jest.mock('@/lib/db/client', () => {
   const prismaMocks = {
     userFindUnique: jest.fn(),
     partnerFindUnique: jest.fn(),
@@ -22,12 +22,18 @@ jest.mock('@/lib/prisma', () => {
   (globalThis as unknown as { __prismaMocks?: typeof prismaMocks }).__prismaMocks = prismaMocks;
 
   return {
-    prisma: {
+    getDb: () => ({
       user: { findUnique: (...args: unknown[]) => prismaMocks.userFindUnique(...args) },
       partner: { findUnique: (...args: unknown[]) => prismaMocks.partnerFindUnique(...args) },
       $transaction: (callback: unknown) => prismaMocks.transaction(callback)
-    },
-    Prisma: { JsonNull: Symbol('JsonNull') }
+    }),
+    getDbClient: () => ({
+      user: { findUnique: (...args: unknown[]) => prismaMocks.userFindUnique(...args) },
+      partner: { findUnique: (...args: unknown[]) => prismaMocks.partnerFindUnique(...args) },
+      $transaction: (callback: unknown) => prismaMocks.transaction(callback)
+    }),
+    isDrizzleAvailable: () => true,
+    closeDb: jest.fn()
   };
 });
 

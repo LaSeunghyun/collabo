@@ -1,7 +1,7 @@
-ï»¿import { describe, expect, it, beforeEach, jest } from '@jest/globals';
+import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import { NextRequest } from 'next/server';
 
-// AuthorizationError í´ë˜ìŠ¤ ì •ì˜
+// AuthorizationError Å¬·¡½º Á¤ÀÇ
 class AuthorizationError extends Error {
   constructor(message: string, public statusCode: number) {
     super(message);
@@ -9,7 +9,7 @@ class AuthorizationError extends Error {
   }
 }
 
-// requireApiUser ëª¨í‚¹
+// requireApiUser ¸ğÅ·
 const mockRequireApiUser = jest.fn();
 
 jest.mock('@/lib/auth/guards', () => ({
@@ -25,9 +25,9 @@ describe('Funding API authentication', () => {
   });
 
   it('returns 401 when session is not authenticated', async () => {
-    // requireApiUserê°€ AuthorizationErrorë¥¼ ë˜ì§€ë„ë¡ ì„¤ì •
+    // requireApiUser°¡ AuthorizationError¸¦ ´øÁöµµ·Ï ¼³Á¤
     mockRequireApiUser.mockImplementation(() => {
-      const error = new AuthorizationError('ì¸ì¦ì´ í•„ìš”í•©ë‹ˆë‹¤.', 401);
+      const error = new AuthorizationError('ÀÎÁõÀÌ ÇÊ¿äÇÕ´Ï´Ù.', 401);
       return Promise.reject(error);
     });
 
@@ -40,7 +40,7 @@ describe('Funding API authentication', () => {
     expect(response.status).toBe(401);
 
     const json = await response.json();
-    expect(json.error).toBe('ì¸ì¦ì´ í•„ìš”í•©ë‹ˆë‹¤.');
+    expect(json.error).toBe('ÀÎÁõÀÌ ÇÊ¿äÇÕ´Ï´Ù.');
 
     expect(mockRequireApiUser).toHaveBeenCalledTimes(1);
   });

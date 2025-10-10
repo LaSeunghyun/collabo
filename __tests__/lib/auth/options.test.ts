@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, beforeAll } from '@jest/globals';
-import { UserRole } from '@/types/prisma';
+import { UserRole } from '@/types/shared';
 import { compare } from 'bcryptjs';
 
 const dbMock = {

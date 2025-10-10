@@ -1135,3 +1135,78 @@ export const communityReports = pgTable('CommunityReport', {
     name: 'CommunityReport_reporterId_User_id_fk'
   }).onUpdate('cascade').onDelete('restrict'),
 ]);
+
+// Additional tables from drizzle/schema.ts
+export const announcements = pgTable('Announcement', {
+  id: text('id').notNull().primaryKey(),
+  title: text('title').notNull(),
+  content: text('content').notNull(),
+  type: text('type').notNull().default('GENERAL'),
+  priority: text('priority').notNull().default('NORMAL'),
+  isActive: boolean('isActive').notNull().default(true),
+  publishedAt: timestamp('publishedAt', { mode: 'string' }),
+  expiresAt: timestamp('expiresAt', { mode: 'string' }),
+  createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt', { mode: 'string' }).notNull(),
+});
+
+export const announcementReads = pgTable('AnnouncementRead', {
+  id: text('id').notNull().primaryKey(),
+  announcementId: text('announcementId')
+    .notNull()
+    .references(() => announcements.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+  userId: text('userId')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+  readAt: timestamp('readAt', { mode: 'string' }).defaultNow().notNull(),
+}, (table) => ({
+  announcementUserUnique: uniqueIndex('AnnouncementRead_announcementId_userId_key').on(
+    table.announcementId,
+    table.userId,
+  ),
+}));
+
+export const eventRegistrations = pgTable('EventRegistration', {
+  id: text('id').notNull().primaryKey(),
+  eventId: text('eventId').notNull(),
+  userId: text('userId')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+  status: text('status').notNull().default('REGISTERED'),
+  registeredAt: timestamp('registeredAt', { mode: 'string' }).defaultNow().notNull(),
+  attendedAt: timestamp('attendedAt', { mode: 'string' }),
+}, (table) => ({
+  eventUserUnique: uniqueIndex('EventRegistration_eventId_userId_key').on(
+    table.eventId,
+    table.userId,
+  ),
+}));
+
+// Permission tables
+export const permission = pgTable('Permission', {
+  id: text('id').notNull().primaryKey(),
+  name: text('name').notNull().unique(),
+  description: text('description'),
+  resource: text('resource').notNull(),
+  action: text('action').notNull(),
+  createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt', { mode: 'string' }).notNull(),
+});
+
+export const userPermission = pgTable('UserPermission', {
+  id: text('id').notNull().primaryKey(),
+  userId: text('userId')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+  permissionId: text('permissionId')
+    .notNull()
+    .references(() => permission.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+  grantedAt: timestamp('grantedAt', { mode: 'string' }).defaultNow().notNull(),
+  grantedBy: text('grantedBy')
+    .references(() => users.id, { onDelete: 'set null', onUpdate: 'cascade' }),
+}, (table) => ({
+  userPermissionUnique: uniqueIndex('UserPermission_userId_permissionId_key').on(
+    table.userId,
+    table.permissionId,
+  ),
+}));

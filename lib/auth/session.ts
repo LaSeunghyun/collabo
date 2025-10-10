@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth';
 import type { Session } from 'next-auth';
 
-import { userRole } from '@/drizzle/schema';
+import { userRole } from '@/lib/db/schema';
 
 import { verifyAccessToken } from './access-token';
 import { authOptions } from './options';
@@ -45,7 +45,7 @@ export const evaluateBearerToken = async (
   try {
     const verified = await verifyAccessToken(token);
 
-    // JWT 토큰에서 직접 사용자 정보 사용
+    // JWT ?�큰?�서 직접 ?�용???�보 ?�용
     const role = normalizeRole(verified.role) as typeof userRole.enumValues[number];
     const permissions = deriveEffectivePermissions(role, verified.permissions);
 
@@ -98,7 +98,7 @@ export const evaluateAuthorization = async (
     };
   }
 
-  // Bearer 토큰이 있는 경우 JWT 검증
+  // Bearer ?�큰???�는 경우 JWT 검�?
   const authHeader = extractBearerToken(context);
   if (authHeader?.startsWith('Bearer ')) {
     const token = authHeader.slice(7).trim();
@@ -107,7 +107,7 @@ export const evaluateAuthorization = async (
     }
   }
 
-  // 세션 기반 인증
+  // ?�션 기반 ?�증
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return {

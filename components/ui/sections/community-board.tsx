@@ -100,7 +100,7 @@ function useCommunityFeed(params: {
 
       const res = await fetch(`/api/community?${query.toString()}`);
       if (!res.ok) {
-        throw new Error('커뮤니티 게시글을 불러오지 못했습니다.');
+        throw new Error('커�??�티 게시글??불러?��? 못했?�니??');
       }
 
       const json = (await res.json()) as CommunityFeedResponse;
@@ -146,14 +146,14 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
     : selectedCategories;
   const categoriesForQuery = effectiveCategories.includes('all') ? ['all'] : effectiveCategories;
   
-  // 글쓰기 버튼 클릭 핸들러
+  // 글?�기 버튼 ?�릭 ?�들??
   const handleCreatePost = () => {
     if (!session) {
-      // 로그인되지 않은 경우 로그인 페이지로 리다이렉트
+      // 로그?�되지 ?��? 경우 로그???�이지�?리다?�렉??
       signIn(undefined, { callbackUrl: '/community/new' });
       return;
     }
-    // 로그인된 경우 글쓰기 페이지로 이동
+    // 로그?�된 경우 글?�기 ?�이지�??�동
     if (router) {
       router.push('/community/new');
       return;
@@ -223,7 +223,7 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
       });
 
       if (!response.ok) {
-        throw new Error('좋아요를 변경하지 못했습니다.');
+        throw new Error('좋아?��? 변경하지 못했?�니??');
       }
 
       return response.json();
@@ -380,7 +380,7 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
             <span className="text-xs text-white/60">
               {t('community.labels.selectedCategories', { count: categoriesForQuery.length })}
             </span>
-            <span className="hidden md:inline">•</span>
+            <span className="hidden md:inline">/</span>
             <span>{t('community.labels.selectedCategories', { count: categoriesForQuery.length })}</span>
           </div>
         </div>
@@ -488,13 +488,13 @@ function CommunityPostCard({ post, onToggleLike, isLiking }: CommunityPostCardPr
             {post.isPinned ? (
               <>
                 <span>{t(`community.categories.${post.category}`)}</span>
-                <span>•</span>
+                <span>/</span>
                 <span>{t('community.badges.pinned')}</span>
               </>
             ) : (
               <span>{displayCategory}</span>
             )}
-            <span>•</span>
+            <span>/</span>
             <time dateTime={createdAt?.toISOString()}>
               {createdAt?.toLocaleDateString('ko-KR')}
             </time>
@@ -515,9 +515,9 @@ function CommunityPostCard({ post, onToggleLike, isLiking }: CommunityPostCardPr
 
           <div className="mt-4 flex items-center gap-4 text-xs text-white/60">
             <span className="font-semibold text-white">{authorName}</span>
-            <span>•</span>
+            <span>/</span>
             <span>{commentLabel}</span>
-            <span>•</span>
+            <span>/</span>
             <span>{likeLabel}</span>
           </div>
         </div>

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 interface RateLimitConfig {
-  windowMs: number; // 시간 윈도우 (밀리초)
-  maxRequests: number; // 최대 요청 수
-  message?: string; // 제한 초과 시 메시지
-  skipSuccessfulRequests?: boolean; // 성공한 요청도 카운트할지 여부
+  windowMs: number; // ?�간 ?�도??(밀리초)
+  maxRequests: number; // 최�? ?�청 ??
+  message?: string; // ?�한 초과 ??메시지
+  skipSuccessfulRequests?: boolean; // ?�공???�청??카운?�할지 ?��?
 }
 
 interface RateLimitStore {
@@ -14,18 +14,18 @@ interface RateLimitStore {
   };
 }
 
-// 메모리 기반 저장소 (프로덕션에서는 Redis 사용 권장)
+// 메모�?기반 ?�?�소 (?�로?�션?�서??Redis ?�용 권장)
 const store: RateLimitStore = {};
 
-// 기본 설정
+// 기본 ?�정
 const defaultConfig: RateLimitConfig = {
-  windowMs: 60 * 1000, // 1분
-  maxRequests: 100, // 최대 100 요청
+  windowMs: 60 * 1000, // 1�?
+  maxRequests: 100, // 최�? 100 ?�청
   message: 'Too many requests, please try again later.',
   skipSuccessfulRequests: false
 };
 
-// IP 주소 추출 함수
+// IP 주소 추출 ?�수
 function getClientIP(request: NextRequest): string {
   const forwarded = request.headers.get('x-forwarded-for');
   const realIP = request.headers.get('x-real-ip');
@@ -41,7 +41,7 @@ function getClientIP(request: NextRequest): string {
   return 'unknown';
 }
 
-// 레이트 리미터 클래스
+// ?�이??리�????�래??
 export class RateLimiter {
   private config: RateLimitConfig;
   private store: RateLimitStore;
@@ -51,13 +51,13 @@ export class RateLimiter {
     this.store = store;
   }
 
-  // 요청 제한 확인
+  // ?�청 ?�한 ?�인
   isAllowed(identifier: string): { allowed: boolean; remaining: number; resetTime: number } {
     const now = Date.now();
     const windowMs = this.config.windowMs;
     const maxRequests = this.config.maxRequests;
 
-    // 기존 기록이 없거나 윈도우가 만료된 경우
+    // 기존 기록???�거???�도?��? 만료??경우
     if (!this.store[identifier] || now > this.store[identifier].resetTime) {
       this.store[identifier] = {
         count: 1,
@@ -71,7 +71,7 @@ export class RateLimiter {
       };
     }
 
-    // 현재 윈도우 내에서 요청 수 확인
+    // ?�재 ?�도???�에???�청 ???�인
     if (this.store[identifier].count >= maxRequests) {
       return {
         allowed: false,
@@ -80,7 +80,7 @@ export class RateLimiter {
       };
     }
 
-    // 요청 수 증가
+    // ?�청 ??증�?
     this.store[identifier].count++;
     
     return {
@@ -90,7 +90,7 @@ export class RateLimiter {
     };
   }
 
-  // 미들웨어 함수 생성
+  // 미들?�어 ?�수 ?�성
   middleware() {
     return (request: NextRequest): NextResponse | null => {
       const identifier = getClientIP(request);
@@ -115,7 +115,7 @@ export class RateLimiter {
         );
       }
 
-      // 성공한 경우 헤더 추가
+      // ?�공??경우 ?�더 추�?
       const response = NextResponse.next();
       response.headers.set('X-RateLimit-Limit', this.config.maxRequests.toString());
       response.headers.set('X-RateLimit-Remaining', result.remaining.toString());
@@ -126,46 +126,46 @@ export class RateLimiter {
   }
 }
 
-// 사전 정의된 레이트 리미터들
+// ?�전 ?�의???�이??리�??�들
 export const rateLimiters = {
-  // 일반 API 요청
+  // ?�반 API ?�청
   general: new RateLimiter({
-    windowMs: 60 * 1000, // 1분
+    windowMs: 60 * 1000, // 1�?
     maxRequests: 100
   }),
 
-  // 게시글 작성
+  // 게시글 ?�성
   postCreation: new RateLimiter({
-    windowMs: 60 * 1000, // 1분
+    windowMs: 60 * 1000, // 1�?
     maxRequests: 10,
     message: 'Too many post creation attempts, please try again later.'
   }),
 
-  // 로그인 시도
+  // 로그???�도
   auth: new RateLimiter({
-    windowMs: 15 * 60 * 1000, // 15분
+    windowMs: 15 * 60 * 1000, // 15�?
     maxRequests: 5,
     message: 'Too many login attempts, please try again later.'
   }),
 
-  // 회원가입
+  // ?�원가??
   registration: new RateLimiter({
-    windowMs: 60 * 60 * 1000, // 1시간
+    windowMs: 60 * 60 * 1000, // 1?�간
     maxRequests: 3,
     message: 'Too many registration attempts, please try again later.'
   }),
 
-  // 댓글 작성
+  // ?��? ?�성
   comment: new RateLimiter({
-    windowMs: 60 * 1000, // 1분
+    windowMs: 60 * 1000, // 1�?
     maxRequests: 20,
     message: 'Too many comment attempts, please try again later.'
   })
 };
 
-// 특정 경로에 대한 레이트 리미터 매핑
+// ?�정 경로???�???�이??리�???매핑
 export function getRateLimiterForPath(pathname: string): RateLimiter | null {
-  // API 경로별 레이트 리미터 매핑
+  // API 경로�??�이??리�???매핑
   if (pathname.startsWith('/api/auth/login') || pathname.startsWith('/api/auth/register')) {
     return rateLimiters.auth;
   }
@@ -182,11 +182,11 @@ export function getRateLimiterForPath(pathname: string): RateLimiter | null {
     return rateLimiters.comment;
   }
   
-  // 기본적으로 일반 레이트 리미터 적용
+  // 기본?�으�??�반 ?�이??리�????�용
   return rateLimiters.general;
 }
 
-// 정리 함수 (메모리 누수 방지)
+// ?�리 ?�수 (메모�??�수 방�?)
 export function cleanupExpiredEntries(): void {
   const now = Date.now();
   
@@ -197,7 +197,7 @@ export function cleanupExpiredEntries(): void {
   });
 }
 
-// 주기적으로 만료된 항목 정리 (5분마다)
+// 주기?�으�?만료????�� ?�리 (5분마??
 if (typeof window === 'undefined') {
   setInterval(cleanupExpiredEntries, 5 * 60 * 1000);
 }

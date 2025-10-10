@@ -6,16 +6,21 @@ type SessionModule = typeof import('@/lib/auth/session');
 
 type PrismaModule = { prisma: MockPrisma };
 
-jest.mock('@/lib/prisma', () => {
+jest.mock('@/lib/db/client', () => {
   const { createPrismaMock: factory } = require('../helpers/prisma-mock');
-  return { prisma: factory() } as PrismaModule;
+  return { 
+    getDb: () => factory(),
+    getDbClient: () => factory(),
+    isDrizzleAvailable: () => true,
+    closeDb: jest.fn()
+  };
 });
 
 jest.mock('@/lib/auth/session', () => ({
   evaluateAuthorization: jest.fn().mockResolvedValue({ user: null })
 }));
 
-const prismaMock = (jest.requireMock('@/lib/prisma') as PrismaModule).prisma;
+const prismaMock = (jest.requireMock('@/lib/db/client') as any).getDb();
 const { evaluateAuthorization } = require('@/lib/auth/session') as SessionModule & {
   evaluateAuthorization: jest.MockedFunction<SessionModule['evaluateAuthorization']>;
 };
@@ -42,10 +47,20 @@ describe('Community feed API', () => {
   });
 
   const setupPrismaSequence = () => {
-    prismaMock.post.findMany
-      .mockResolvedValueOnce([buildPost({ id: 'initial-1' })])
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([buildPost({ id: 'popular-1', _count: { likes: 6, comments: 3 } })]);
+    // Mock Drizzle select chain
+    prismaMock.select.mockReturnValue({
+      from: jest.fn().mockReturnValue({
+        innerJoin: jest.fn().mockReturnValue({
+          leftJoin: jest.fn().mockReturnValue({
+            where: jest.fn().mockReturnValue({
+              orderBy: jest.fn().mockReturnValue({
+                limit: jest.fn().mockResolvedValue([buildPost({ id: 'initial-1' })])
+              })
+            })
+          })
+        })
+      })
+    });
 
     prismaMock.postLike.findMany.mockResolvedValue([]);
     prismaMock.postDislike.findMany.mockResolvedValue([]);
@@ -66,7 +81,7 @@ describe('Community feed API', () => {
     const { response } = await invoke('http://localhost/api/community?sort=popular&limit=5');
 
     expect(response.status).toBe(200);
-    expect(prismaMock.post.findMany).toHaveBeenCalled();
+    expect(prismaMock.select).toHaveBeenCalled();
   });
 
   it('returns 200 for trending feed when aggregating counts', async () => {

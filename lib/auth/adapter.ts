@@ -1,6 +1,6 @@
 import type { Adapter, AdapterAccount, AdapterSession, AdapterUser } from 'next-auth/adapters';
 import { getDb } from '@/lib/db/client';
-import { users, authSessions, authDevices } from '@/drizzle/schema';
+import { users, authSessions, authDevices } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 
 // const unsupported = (operation: string) => {

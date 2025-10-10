@@ -9,12 +9,12 @@ import { GuardRequirement } from '@/lib/auth/session';
 
 export async function GET(request: NextRequest) {
   try {
-    // 데이터베이스 사용 가능 여부 확인
+    // ?�이?�베?�스 ?�용 가???��? ?�인
     if (!isDrizzleAvailable()) {
       return NextResponse.json(
         { 
-          error: '데이터베이스에 연결할 수 없습니다.',
-          details: 'DATABASE_URL이 설정되지 않았습니다.'
+          error: '?�이?�베?�스???�결?????�습?�다.',
+          details: 'DATABASE_URL???�정?��? ?�았?�니??'
         },
         { status: 503 }
       );
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const offset = (page - 1) * limit;
 
-    // 조건부 필터링
+    // 조건부 ?�터�?
     const conditions = [];
     if (projectId) {
       conditions.push(eq(products.projectId, projectId));
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
       conditions.push(eq(products.type, type as any));
     }
 
-    // 상품 목록 조회
+    // ?�품 목록 조회
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
     let productsQuery = db
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .offset(offset);
 
-    // 전체 개수 조회
+    // ?�체 개수 조회
     let countQuery = db
       .select({ count: count() })
       .from(products);
@@ -94,14 +94,14 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('상품 목록 조회 중 오류 발생:', {
+    console.error('?�품 목록 조회 �??�류 발생:', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined
     });
     
     return NextResponse.json(
       { 
-        error: '상품 목록을 불러오는데 실패했습니다.',
+        error: '?�품 목록??불러?�는???�패?�습?�다.',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
@@ -111,12 +111,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // 데이터베이스 사용 가능 여부 확인
+    // ?�이?�베?�스 ?�용 가???��? ?�인
     if (!isDrizzleAvailable()) {
       return NextResponse.json(
         { 
-          error: '데이터베이스에 연결할 수 없습니다.',
-          details: 'DATABASE_URL이 설정되지 않았습니다.'
+          error: '?�이?�베?�스???�결?????�습?�다.',
+          details: 'DATABASE_URL???�정?��? ?�았?�니??'
         },
         { status: 503 }
       );
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
       body = await request.json();
     } catch {
       return NextResponse.json(
-        { error: '잘못된 요청 본문입니다.' },
+        { error: '?�못???�청 본문?�니??' },
         { status: 400 }
       );
     }
@@ -157,12 +157,12 @@ export async function POST(request: NextRequest) {
 
     if (!projectId || !name || !type || !price) {
       return NextResponse.json(
-        { error: '프로젝트 ID, 상품명, 타입, 가격은 필수입니다.' },
+        { error: '?�로?�트 ID, ?�품�? ?�?? 가격�? ?�수?�니??' },
         { status: 400 }
       );
     }
 
-    // 프로젝트 존재 확인
+    // ?�로?�트 존재 ?�인
     const project = await db
       .select({ id: projects.id, ownerId: projects.ownerId })
       .from(projects)
@@ -172,20 +172,20 @@ export async function POST(request: NextRequest) {
 
     if (!project) {
       return NextResponse.json(
-        { error: '프로젝트를 찾을 수 없습니다.' },
+        { error: '?�로?�트�?찾을 ???�습?�다.' },
         { status: 404 }
       );
     }
 
-    // 권한 확인 (프로젝트 소유자 또는 관리자)
+    // 권한 ?�인 (?�로?�트 ?�유???�는 관리자)
     if (project.ownerId !== user.id && user.role !== 'ADMIN') {
       return NextResponse.json(
-        { error: '이 프로젝트에 상품을 추가할 권한이 없습니다.' },
+        { error: '???�로?�트???�품??추�???권한???�습?�다.' },
         { status: 403 }
       );
     }
 
-    // 상품 생성
+    // ?�품 ?�성
     const newProduct = await db
       .insert(products)
       .values({
@@ -203,12 +203,12 @@ export async function POST(request: NextRequest) {
       .returning();
 
     if (!newProduct[0]) {
-      throw new Error('상품 생성에 실패했습니다.');
+      throw new Error('?�품 ?�성???�패?�습?�다.');
     }
 
     return NextResponse.json(newProduct[0], { status: 201 });
   } catch (error) {
-    console.error('상품 생성 중 오류 발생:', {
+    console.error('?�품 ?�성 �??�류 발생:', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
       userId: request.headers.get('user-id') || 'unknown'
@@ -216,7 +216,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(
       { 
-        error: '상품 생성에 실패했습니다.',
+        error: '?�품 ?�성???�패?�습?�다.',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }

@@ -1,9 +1,9 @@
-﻿import { getOpenModerationReports } from '@/lib/server/moderation';
+import { getOpenModerationReports } from '@/lib/server/moderation';
 import { getDbClient } from '@/lib/db/client';
-import { moderationReport, user } from '@/drizzle/schema';
+import { moderationReport, user } from '@/lib/db/schema';
 import { eq, and, inArray, desc, count, notInArray } from 'drizzle-orm';
 
-// Drizzle 클라이언트 모킹
+// Drizzle Ŭ���̾�Ʈ ��ŷ
 jest.mock('@/lib/db/client', () => ({
   getDbClient: jest.fn()
 }));

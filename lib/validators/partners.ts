@@ -29,7 +29,7 @@ export const partnerAvailabilitySchema = z
 
       return true;
     },
-    { message: '가능한 시간대 정보는 타임존 또는 슬롯 중 하나 이상이어야 합니다' }
+    { message: '가능한 시간 정보나 기존 슬롯 중 하나 이상이어야 합니다' }
   );
 
 const servicesArraySchema = z
@@ -69,7 +69,7 @@ export const updatePartnerSchema = z
     rating: z.number().min(0).max(5).optional()
   })
   .refine((value: z.infer<typeof updatePartnerSchema>) => Object.keys(value).length > 0, {
-    message: '업데이트할 필드가 하나 이상 있어야 합니다'
+    message: '업데이트할 데이터가 하나 이상 있어야 합니다'
   });
 
 export type CreatePartnerInput = z.infer<typeof createPartnerSchema>;

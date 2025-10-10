@@ -9,12 +9,12 @@ import { wallets } from '@/lib/db/schema';
 
 export async function GET(request: NextRequest) {
   try {
-    // 데이터베이스 사용 가능 여부 확인
+    // ?�이?�베?�스 ?�용 가???��? ?�인
     if (!(await isDrizzleAvailable())) {
       return NextResponse.json(
         { 
-          error: '데이터베이스에 연결할 수 없습니다.',
-          details: 'DATABASE_URL이 설정되지 않았습니다.'
+          error: '?�이?�베?�스???�결?????�습?�다.',
+          details: 'DATABASE_URL???�정?��? ?�았?�니??'
         },
         { status: 503 }
       );
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     const wallet = await db.select().from(wallets).where(eq(wallets.userId, user.id)).limit(1).then(rows => rows[0] || null);
 
     if (!wallet) {
-      // 지갑이 없으면 생성
+      // 지갑이 ?�으�??�성
       const now = new Date().toISOString();
       const [created] = await db
         .insert(wallets)
@@ -42,13 +42,13 @@ export async function GET(request: NextRequest) {
         .returning({ id: wallets.id });
 
       if (!created) {
-        throw new Error('지갑 생성에 실패했습니다.');
+        throw new Error('지�??�성???�패?�습?�다.');
       }
 
       const newWallet = await db.select().from(wallets).where(eq(wallets.id, created.id)).limit(1).then(rows => rows[0] || null);
 
       if (!newWallet) {
-        throw new Error('생성된 지갑을 불러올 수 없습니다.');
+        throw new Error('?�성??지갑을 불러?????�습?�다.');
       }
 
       return NextResponse.json(newWallet);
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(wallet);
   } catch (error) {
-    console.error('지갑 조회 중 오류 발생:', {
+    console.error('지�?조회 �??�류 발생:', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
       userId: request.headers.get('user-id') || 'unknown'
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json(
       { 
-        error: '지갑 정보를 불러오는데 실패했습니다.',
+        error: '지�??�보�?불러?�는???�패?�습?�다.',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
@@ -74,12 +74,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // 데이터베이스 사용 가능 여부 확인
+    // ?�이?�베?�스 ?�용 가???��? ?�인
     if (!(await isDrizzleAvailable())) {
       return NextResponse.json(
         { 
-          error: '데이터베이스에 연결할 수 없습니다.',
-          details: 'DATABASE_URL이 설정되지 않았습니다.'
+          error: '?�이?�베?�스???�결?????�습?�다.',
+          details: 'DATABASE_URL???�정?��? ?�았?�니??'
         },
         { status: 503 }
       );
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
       body = await request.json();
     } catch {
       return NextResponse.json(
-        { error: '잘못된 요청 본문입니다.' },
+        { error: '?�못???�청 본문?�니??' },
         { status: 400 }
       );
     }
@@ -102,19 +102,19 @@ export async function POST(request: NextRequest) {
 
     if (!amount || typeof amount !== 'number' || amount <= 0) {
       return NextResponse.json(
-        { error: '유효하지 않은 거래 금액입니다.' },
+        { error: '?�효?��? ?��? 거래 금액?�니??' },
         { status: 400 }
       );
     }
 
     if (!type || !['DEPOSIT', 'WITHDRAW', 'TRANSFER'].includes(type)) {
       return NextResponse.json(
-        { error: '유효하지 않은 거래 유형입니다.' },
+        { error: '?�효?��? ?��? 거래 ?�형?�니??' },
         { status: 400 }
       );
     }
 
-    // 지갑이 없으면 생성
+    // 지갑이 ?�으�??�성
     let wallet = await db.select().from(wallets).where(eq(wallets.userId, user.id)).limit(1).then(rows => rows[0] || null);
 
     if (!wallet) {
@@ -133,24 +133,24 @@ export async function POST(request: NextRequest) {
         .returning({ id: wallets.id });
 
       if (!created) {
-        throw new Error('지갑 생성에 실패했습니다.');
+        throw new Error('지�??�성???�패?�습?�다.');
       }
 
       wallet = await db.select().from(wallets).where(eq(wallets.id, created.id)).limit(1).then(rows => rows[0] || null);
 
       if (!wallet) {
-        throw new Error('생성된 지갑을 불러올 수 없습니다.');
+        throw new Error('?�성??지갑을 불러?????�습?�다.');
       }
     }
 
-    // 잔액 업데이트
+    // ?�액 ?�데?�트
     const newBalance = type === 'WITHDRAW'
       ? wallet.balance - amount
       : wallet.balance + amount;
 
     if (newBalance < 0) {
       return NextResponse.json(
-        { error: '잔액이 부족합니다.' },
+        { error: '?�액??부족합?�다.' },
         { status: 400 }
       );
     }
@@ -168,18 +168,18 @@ export async function POST(request: NextRequest) {
       .returning({ id: wallets.id });
 
     if (!updated) {
-      throw new Error('지갑 업데이트에 실패했습니다.');
+      throw new Error('지�??�데?�트???�패?�습?�다.');
     }
 
     const updatedWallet = await db.select().from(wallets).where(eq(wallets.id, updated.id)).limit(1).then(rows => rows[0] || null);
 
     if (!updatedWallet) {
-      throw new Error('업데이트된 지갑을 불러올 수 없습니다.');
+      throw new Error('?�데?�트??지갑을 불러?????�습?�다.');
     }
 
     return NextResponse.json(updatedWallet);
   } catch (error) {
-    console.error('지갑 업데이트 중 오류 발생:', {
+    console.error('지�??�데?�트 �??�류 발생:', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
       userId: request.headers.get('user-id') || 'unknown'
@@ -187,7 +187,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(
       { 
-        error: '지갑 업데이트에 실패했습니다.',
+        error: '지�??�데?�트???�패?�습?�다.',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }

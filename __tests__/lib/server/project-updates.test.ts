@@ -1,4 +1,4 @@
-﻿import {
+import {
   assertProjectOwner,
   createProjectUpdate,
   deleteProjectUpdate,
@@ -10,7 +10,7 @@
 import { getDbClient } from '@/lib/db/client';
 import { eq, and, desc, inArray } from 'drizzle-orm';
 
-// Drizzle 클라이언트 모킹
+// Drizzle Ŭ���̾�Ʈ ��ŷ
 jest.mock('@/lib/db/client', () => ({
   getDbClient: jest.fn()
 }));
@@ -65,18 +65,30 @@ describe('project updates domain service', () => {
     });
 
     it('returns project info for owner', async () => {
-      mockDb.select.mockResolvedValue([{ id: 'project-1', ownerId: 'owner-1' }]);
+      mockDb.select.mockReturnValue({
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([{ id: 'project-1', ownerId: 'owner-1', status: 'LIVE' }])
+          })
+        })
+      });
 
       const project = await assertProjectOwner(
         'project-1',
         { id: 'owner-1', role: 'CREATOR' } as any
       );
 
-      expect(project).toEqual({ id: 'project-1', ownerId: 'owner-1' });
+      expect(project).toEqual({ id: 'project-1', ownerId: 'owner-1', status: 'LIVE' });
     });
 
     it('throws when project not found', async () => {
-      mockDb.select.mockResolvedValue([]);
+      mockDb.select.mockReturnValue({
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([])
+          })
+        })
+      });
 
       await expect(
         assertProjectOwner('missing', { id: 'u1', role: 'CREATOR' } as any)
@@ -86,7 +98,13 @@ describe('project updates domain service', () => {
 
   describe('listProjectUpdates', () => {
     it('throws when project does not exist', async () => {
-      mockDb.select.mockResolvedValue([]);
+      mockDb.select.mockReturnValue({
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockResolvedValue([])
+          })
+        })
+      });
 
       await expect(listProjectUpdates('project-1')).rejects.toBeInstanceOf(ProjectUpdateNotFoundError);
     });
@@ -204,7 +222,6 @@ describe('project updates domain service', () => {
         {
           title: 'Updated Title',
           content: 'Updated Content',
-          milestoneId: null,
           attachments: []
         },
         { id: 'owner-1', role: 'CREATOR', permissions: [] as string[] } as any

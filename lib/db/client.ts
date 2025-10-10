@@ -2,9 +2,9 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import { eq } from 'drizzle-orm';
 
 import { normalizeServerlessConnectionString } from '@/lib/db/connection-string';
-import * as schema from '@/drizzle/schema';
+import * as schema from '@/lib/db/schema';
 
-// 서버 사이드에서만 postgres 모듈을 동적으로 import
+// ?�버 ?�이?�에?�만 postgres 모듈???�적?�로 import
 const getPostgres = async () => {
   if (typeof window !== 'undefined') {
     throw new Error('Database client can only be used on the server side');
@@ -13,7 +13,7 @@ const getPostgres = async () => {
   return postgres;
 };
 
-// 스키마가 제대로 로드되었는지 확인
+// ?�키마�? ?��?�?로드?�었?��? ?�인
 if (!schema || typeof schema !== 'object') {
   throw new Error('Failed to load Drizzle schema');
 }
@@ -34,7 +34,7 @@ const globalForDrizzle = globalThis as unknown as {
 
 const loggerEnabled = () => process.env.NODE_ENV === 'development';
 
-// Node.js 관련코드 제거 - 서버리스 환경지원
+// Node.js 관?�코???�거 - ?�버리스 ?�경지??
 
 const createServerlessInstance = async (connectionString: string): Promise<DrizzleInstance> => {
   try {
@@ -57,7 +57,7 @@ const createServerlessInstance = async (connectionString: string): Promise<Drizz
     const reason = error instanceof Error ? error.message : String(error);
     console.error('Failed to create serverless instance:', reason);
     
-    // Vercel 환경에서 연결 실패 시 상세한 로깅
+    // Vercel ?�경?�서 ?�결 ?�패 ???�세??로깅
     if (process.env.VERCEL) {
       console.error('Vercel environment detected. Connection string format:', {
         hasUrl: !!connectionString,
@@ -77,7 +77,7 @@ const createDisabledInstance = (reason: string): DrizzleInstance => {
 
   console.warn(message);
 
-  // 더미 객체 생성 (실제 postgres 연결 없이)
+  // ?��? 객체 ?�성 (?�제 postgres ?�결 ?�이)
   const dummyDb = new Proxy({} as DatabaseClient, {
     get(target, prop) {
       if (prop === Symbol.toStringTag) {
@@ -85,7 +85,7 @@ const createDisabledInstance = (reason: string): DrizzleInstance => {
       }
       
       if (typeof prop === 'string') {
-        // query 객체와 테이블에 접근하는 메서드들
+        // query 객체?� ?�이블에 ?�근?�는 메서?�들
         if (prop === 'query') {
           return new Proxy({}, {
             get(target, tableName) {
@@ -103,17 +103,17 @@ const createDisabledInstance = (reason: string): DrizzleInstance => {
           });
         }
         
-        // Drizzle의 다른 메서드들 - 체이닝을 위한 함수들
+        // Drizzle???�른 메서?�들 - 체이?�을 ?�한 ?�수??
         if (['select', 'insert', 'update', 'delete', 'from', 'transaction'].includes(prop)) {
           return () => { throw new Error(message); };
         }
         
-        // execute 메서드는 별도로 처리
+        // execute 메서?�는 별도�?처리
         if (prop === 'execute') {
           return () => { throw new Error(message); };
         }
         
-        // Drizzle ORM 연산자들
+        // Drizzle ORM ?�산?�들
         if (['eq', 'and', 'or', 'not', 'like', 'inArray', 'notInArray', 'desc', 'asc', 'count', 'sql'].includes(prop)) {
           return () => { throw new Error(message); };
         }
@@ -130,13 +130,13 @@ const createDisabledInstance = (reason: string): DrizzleInstance => {
   };
 };
 
-// Node.js 관련코드 제거 - 서버리스 환경지원
+// Node.js 관?�코???�거 - ?�버리스 ?�경지??
 
 const instantiateDrizzle = async (): Promise<DrizzleInstance> => {
   const databaseUrl = process.env.DATABASE_URL;
 
   if (!databaseUrl) {
-    // Vercel 환경에서 빌드 시에 비활성화, 런타임에는 에러 발생
+    // Vercel ?�경?�서 빌드 ?�에 비활?�화, ?��??�에???�러 발생
     if (process.env.NODE_ENV === 'production' && process.env.VERCEL) {
       return createDisabledInstance('DATABASE_URL is not set in production environment.');
     }
@@ -152,7 +152,7 @@ const instantiateDrizzle = async (): Promise<DrizzleInstance> => {
     throw new Error('Prisma Data Proxy URLs are not supported by Drizzle.');
   }
 
-  // 서버리스 환경지원
+  // ?�버리스 ?�경지??
   const instance = await createServerlessInstance(normalizedUrl);
 
   return instance;
@@ -176,8 +176,8 @@ export const getDbClient = async (): Promise<DatabaseClient> => {
   return instance.db;
 };
 
-// topLevelAwait 제거 - db export 제거
-// 모든 곳에서 getDbClient() 사용
+// topLevelAwait ?�거 - db export ?�거
+// 모든 곳에??getDbClient() ?�용
 export const getDb = () => getDbClient();
 
 export const isDrizzleAvailable = async () => {
@@ -186,7 +186,7 @@ export const isDrizzleAvailable = async () => {
 };
 
 export const closeDb = async () => {
-  // 서버리스 환경에서 연결 관리가 필요하지 않음
+  // ?�버리스 ?�경?�서 ?�결 관리�? ?�요?��? ?�음
   return;
 };
 
