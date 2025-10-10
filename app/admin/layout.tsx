@@ -4,41 +4,49 @@ import { requireUser } from '@/lib/auth/guards';
 import { ROLE_LABELS, UserRole } from '@/types/shared';
 
 const navigationAnchors = [
-  { href: '/admin', label: '?�?�보?? },
-  { href: '/admin/projects', label: '?�로?�트 검?? },
-  { href: '/admin/partners', label: '?�트???�인' },
-  { href: '/admin/reports', label: '?�고 관�? },
-  { href: '/admin/settlements', label: '?�산 관�? }
+  { href: '/admin', label: '대시보드' },
+  { href: '/admin/projects', label: '프로젝트 검토' },
+  { href: '/admin/partners', label: '파트너 관리' },
+  { href: '/admin/reports', label: '신고 관리' },
+  { href: '/admin/announcements', label: '공지사항' },
+  { href: '/admin/moderation', label: '커뮤니티 관리' },
 ];
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
-  const { user } = await requireUser({
-    roles: [UserRole.ADMIN],
-    redirectTo: '/admin'
-  });
+  const user = await requireUser({ roles: [UserRole.ADMIN] });
 
   return (
-    <div className="mx-auto max-w-6xl px-4 pb-24">
-      <header className="pb-6 pt-12">
-        <p className="text-xs uppercase tracking-[0.2em] text-primary/60">Admin</p>
-        <h1 className="mt-2 text-3xl font-semibold text-white">관리자</h1>
-        <p className="mt-3 text-sm text-white/60">
-          {user.name ? `${user.name}?? ` : ''}
-          {ROLE_LABELS[user.role]} 권한?�로 ?�랫?�의 질서�??�립?????�습?�다.
-        </p>
-        <nav className="mt-6 flex flex-wrap gap-3">
-          {navigationAnchors.map((item) => (
-            <a
-              key={item.href}
-              href={item.href}
-              className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-medium text-white/80 transition hover:border-white/30 hover:bg-white/[0.08] hover:text-white"
-            >
-              {item.label}
-            </a>
-          ))}
-        </nav>
-      </header>
-      <div className="space-y-10 pb-8">{children}</div>
+    <div className="min-h-screen bg-gray-50">
+      <nav className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex">
+              <div className="flex-shrink-0 flex items-center">
+                <h1 className="text-xl font-semibold text-gray-900">관리자 패널</h1>
+              </div>
+              <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+                {navigationAnchors.map((anchor) => (
+                  <a
+                    key={anchor.href}
+                    href={anchor.href}
+                    className="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm"
+                  >
+                    {anchor.label}
+                  </a>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center">
+              <span className="text-sm text-gray-700">
+                {user.name} ({ROLE_LABELS[user.role]})
+              </span>
+            </div>
+          </div>
+        </div>
+      </nav>
+      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        {children}
+      </main>
     </div>
   );
 }
