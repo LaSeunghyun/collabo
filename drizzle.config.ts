@@ -21,5 +21,11 @@ export default defineConfig({
     url: databaseUrl
   },
   verbose: true,
-  strict: true
+  strict: true,
+  // Disable schema file generation to prevent conflicts
+  schemaFilter: ['lib/db/schema'],
+  // Only generate migrations, not schema files
+  migrations: {
+    prefix: 'timestamp'
+  }
 });

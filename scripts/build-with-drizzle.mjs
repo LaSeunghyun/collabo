@@ -58,8 +58,8 @@ if (isDrizzle) {
   if (shouldSkipGenerate) {
     console.log('[build] SKIP_DRIZZLE_GENERATE is set. Skipping drizzle-kit generate.');
   } else {
-    console.log('[build] Generating Drizzle artifacts...');
-    tryRun('npx', ['drizzle-kit', 'generate']);
+    console.log('[build] Generating Drizzle migrations...');
+    tryRun('npx', ['drizzle-kit', 'generate', '--config=drizzle.config.ts']);
   }
 } else {
   console.log('[build] Generating Prisma client...');
