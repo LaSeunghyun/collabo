@@ -38,10 +38,15 @@ if (!hasDatabaseUrl) {
   console.log('[build] Database URL:', sanitizedUrl);
 
   if (isDrizzle) {
-    const shouldSkipPush = process.env.SKIP_DRIZZLE_PUSH === '1' || process.env.DATABASE_URL?.includes('test:test@localhost');
+    const isVercel = process.env.VERCEL === '1';
+    const isProduction = process.env.NODE_ENV === 'production';
+    const shouldSkipPush = process.env.SKIP_DRIZZLE_PUSH === '1' || 
+                          process.env.DATABASE_URL?.includes('test:test@localhost') ||
+                          isVercel || 
+                          isProduction;
     
     if (shouldSkipPush) {
-      console.log('[build] Skipping drizzle-kit push (SKIP_DRIZZLE_PUSH is set or not localhost)');
+      console.log('[build] Skipping drizzle-kit push (SKIP_DRIZZLE_PUSH is set, localhost, Vercel, or production)');
     } else {
       console.log('[build] Running drizzle-kit push...');
       tryRun('npx', ['drizzle-kit', 'push']);
