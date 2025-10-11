@@ -14,6 +14,7 @@ import { AUTH_V3_ENABLED } from './flags';
 import { deriveEffectivePermissions } from './permissions';
 import { createDrizzleAuthAdapter } from './adapter';
 import { fetchUserWithPermissions } from './user';
+import { UserRoleValue } from '@/types/shared';
 
 // Skip OAuth validation during build time
 const isBuildTime = process.env.NODE_ENV === 'production' && process.env.NEXT_PHASE === 'phase-production-build';
@@ -138,11 +139,11 @@ export const authOptions: NextAuthOptions = {
         }
 
         token.role = resolvedRole;
-        token.permissions = deriveEffectivePermissions(resolvedRole, explicitPermissions);
+        token.permissions = deriveEffectivePermissions(resolvedRole as UserRoleValue, explicitPermissions);
       }
 
       if (!Array.isArray(token.permissions)) {
-        token.permissions = deriveEffectivePermissions(token.role as string, []);
+        token.permissions = deriveEffectivePermissions(token.role as UserRoleValue, []);
       }
 
       return token;

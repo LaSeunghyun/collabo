@@ -177,20 +177,20 @@ export default function PostDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-neutral-950">
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* 뒤로가기 버튼 */}
         <Button 
           variant="ghost" 
           onClick={() => router.back()}
-          className="mb-6 gap-2 text-neutral-600 hover:text-neutral-900"
+          className="mb-6 gap-2 text-neutral-400 hover:text-white"
         >
           <ArrowLeft className="w-4 h-4" />
           목록으로
         </Button>
 
         {/* 게시글 헤더 */}
-        <Card className="mb-6 bg-white shadow-sm">
+        <Card className="mb-6 bg-neutral-800 border-neutral-700 shadow-sm">
           <CardContent className="p-8">
             <div className="flex items-center gap-3 mb-6">
               {post.isPinned && (
@@ -201,15 +201,15 @@ export default function PostDetailPage() {
               <CategoryBadge categorySlug={post.categorySlug} />
             </div>
             
-            <h1 className="text-4xl font-bold text-neutral-900 mb-6 leading-tight">
+            <h1 className="text-4xl font-bold text-white mb-6 leading-tight">
               {post.title}
             </h1>
             
-            <div className="flex items-center justify-between text-sm text-neutral-600 mb-6">
+            <div className="flex items-center justify-between text-sm text-neutral-400 mb-6">
               <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2">
                   <User className="w-4 h-4" />
-                  <span className="font-medium">{post.authorName}</span>
+                  <span className="font-medium text-white">{post.authorName}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
@@ -228,15 +228,15 @@ export default function PostDetailPage() {
         </Card>
 
         {/* 게시글 내용 */}
-        <Card className="mb-6 bg-white shadow-sm">
+        <Card className="mb-6 bg-neutral-800 border-neutral-700 shadow-sm">
           <CardContent className="p-8">
-            <div className="prose prose-lg max-w-none text-neutral-800">
+            <div className="prose prose-lg max-w-none text-white">
               <div className="whitespace-pre-wrap leading-relaxed">{post.content}</div>
             </div>
             
             {post.tags.length > 0 && (
-              <div className="mt-8 pt-6 border-t border-neutral-200">
-                <h4 className="text-sm font-medium text-neutral-700 mb-3">태그</h4>
+              <div className="mt-8 pt-6 border-t border-neutral-700">
+                <h4 className="text-sm font-medium text-neutral-300 mb-3">태그</h4>
                 <div className="flex flex-wrap gap-2">
                   {post.tags.map((tag) => (
                     <Badge key={tag} variant="outline" className="text-xs px-3 py-1">

@@ -202,130 +202,58 @@ function CommunityPageContent() {
 
         {/* 게시글 목록 */}
         {loading ? (
-          <div className="bg-neutral-800 rounded-lg border border-neutral-700">
-            <div className="animate-pulse">
-              <div className="grid grid-cols-12 gap-4 p-4 border-b border-neutral-700 bg-neutral-700/50">
-                <div className="col-span-1 h-4 bg-neutral-600 rounded"></div>
-                <div className="col-span-5 h-4 bg-neutral-600 rounded"></div>
-                <div className="col-span-2 h-4 bg-neutral-600 rounded"></div>
-                <div className="col-span-2 h-4 bg-neutral-600 rounded"></div>
-                <div className="col-span-2 h-4 bg-neutral-600 rounded"></div>
-              </div>
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="grid grid-cols-12 gap-4 p-4 border-b border-neutral-700">
-                  <div className="col-span-1 h-4 bg-neutral-600 rounded"></div>
-                  <div className="col-span-5 h-4 bg-neutral-600 rounded"></div>
-                  <div className="col-span-2 h-4 bg-neutral-600 rounded"></div>
-                  <div className="col-span-2 h-4 bg-neutral-600 rounded"></div>
-                  <div className="col-span-2 h-4 bg-neutral-600 rounded"></div>
-                </div>
-              ))}
-            </div>
+          <div className="space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <Card key={i} className="animate-pulse bg-neutral-800 border-neutral-700">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="w-8 h-8 bg-neutral-600 rounded-full"></div>
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-neutral-600 rounded w-3/4"></div>
+                      <div className="h-3 bg-neutral-600 rounded w-1/2"></div>
+                      <div className="h-3 bg-neutral-600 rounded w-full"></div>
+                    </div>
+                    <div className="w-16 space-y-2">
+                      <div className="h-4 bg-neutral-600 rounded"></div>
+                      <div className="h-4 bg-neutral-600 rounded"></div>
+                      <div className="h-4 bg-neutral-600 rounded"></div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         ) : error ? (
-          <div className="bg-neutral-800 rounded-lg border border-neutral-700 p-12 text-center">
-            <div className="text-red-400 text-lg font-medium">{error}</div>
-            <p className="text-neutral-400 mt-2">게시글을 불러오는 중 문제가 발생했습니다.</p>
-          </div>
+          <Card className="bg-neutral-800 border-neutral-700">
+            <CardContent className="p-12 text-center">
+              <div className="text-red-400 text-lg font-medium">{error}</div>
+              <p className="text-neutral-400 mt-2">게시글을 불러오는 중 문제가 발생했습니다.</p>
+            </CardContent>
+          </Card>
         ) : posts.length === 0 ? (
-          <div className="bg-neutral-800 rounded-lg border border-neutral-700 p-12 text-center">
-            <div className="text-neutral-400 text-6xl mb-4">📝</div>
-            <h3 className="text-xl font-semibold text-white mb-2">게시글이 없습니다</h3>
-            <p className="text-neutral-400 mb-6">첫 번째 게시글을 작성해보세요!</p>
-            <Link href="/community/new">
-              <Button size="lg" className="gap-2">
-                <Plus className="w-5 h-5" />
-                글쓰기
-              </Button>
-            </Link>
-          </div>
+          <Card className="bg-neutral-800 border-neutral-700">
+            <CardContent className="p-12 text-center">
+              <div className="text-neutral-400 text-6xl mb-4">📝</div>
+              <h3 className="text-xl font-semibold text-white mb-2">게시글이 없습니다</h3>
+              <p className="text-neutral-400 mb-6">첫 번째 게시글을 작성해보세요!</p>
+              <Link href="/community/new">
+                <Button size="lg" className="gap-2">
+                  <Plus className="w-5 h-5" />
+                  글쓰기
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
         ) : (
-          <div className="bg-neutral-800 rounded-lg border border-neutral-700 overflow-hidden">
-            {/* 테이블 헤더 */}
-            <div className="grid grid-cols-12 gap-4 p-4 bg-neutral-700/50 border-b border-neutral-600 text-sm font-medium text-neutral-300">
-              <div className="col-span-1 text-center">번호</div>
-              <div className="col-span-5">제목</div>
-              <div className="col-span-2 text-center">작성자</div>
-              <div className="col-span-2 text-center">작성일</div>
-              <div className="col-span-2 text-center">조회/좋아요/댓글</div>
-            </div>
-            
+          <div className="space-y-3">
             {/* 상단고정글 */}
-            {posts.filter(post => post.isPinned).map((post, index) => (
-              <div key={post.id} className="grid grid-cols-12 gap-4 p-4 border-b border-neutral-700 hover:bg-neutral-700/30 transition-colors">
-                <div className="col-span-1 text-center text-neutral-400">
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-900/30 text-red-400">
-                    고정
-                  </span>
-                </div>
-                <div className="col-span-5">
-                  <Link href={`/community/${post.id}`} className="group">
-                    <div className="flex items-center gap-2">
-                      <span className="text-white group-hover:text-blue-400 transition-colors font-medium line-clamp-1">
-                        {post.title}
-                      </span>
-                      <CategoryBadge categorySlug={post.categorySlug} />
-                    </div>
-                    <div className="text-sm text-neutral-400 mt-1 line-clamp-1">
-                      {post.excerpt || post.content}
-                    </div>
-                  </Link>
-                </div>
-                <div className="col-span-2 text-center text-neutral-300 text-sm">
-                  {post.authorName}
-                </div>
-                <div className="col-span-2 text-center text-neutral-400 text-sm">
-                  {new Date(post.createdAt).toLocaleDateString('ko-KR', {
-                    month: '2-digit',
-                    day: '2-digit'
-                  })}
-                </div>
-                <div className="col-span-2 text-center text-neutral-400 text-sm">
-                  <div className="flex justify-center gap-3">
-                    <span>{post.viewCount}</span>
-                    <span className="text-red-400">{post.likesCount}</span>
-                    <span className="text-blue-400">{post.commentsCount}</span>
-                  </div>
-                </div>
-              </div>
+            {posts.filter(post => post.isPinned).map((post) => (
+              <PostCard key={post.id} post={post} showRecommendBadge={true} />
             ))}
             
             {/* 일반 게시글 */}
-            {posts.filter(post => !post.isPinned).map((post, index) => (
-              <div key={post.id} className="grid grid-cols-12 gap-4 p-4 border-b border-neutral-700 hover:bg-neutral-700/30 transition-colors last:border-b-0">
-                <div className="col-span-1 text-center text-neutral-400 text-sm">
-                  {index + 1}
-                </div>
-                <div className="col-span-5">
-                  <Link href={`/community/${post.id}`} className="group">
-                    <div className="flex items-center gap-2">
-                      <span className="text-white group-hover:text-blue-400 transition-colors font-medium line-clamp-1">
-                        {post.title}
-                      </span>
-                      <CategoryBadge categorySlug={post.categorySlug} />
-                    </div>
-                    <div className="text-sm text-neutral-400 mt-1 line-clamp-1">
-                      {post.excerpt || post.content}
-                    </div>
-                  </Link>
-                </div>
-                <div className="col-span-2 text-center text-neutral-300 text-sm">
-                  {post.authorName}
-                </div>
-                <div className="col-span-2 text-center text-neutral-400 text-sm">
-                  {new Date(post.createdAt).toLocaleDateString('ko-KR', {
-                    month: '2-digit',
-                    day: '2-digit'
-                  })}
-                </div>
-                <div className="col-span-2 text-center text-neutral-400 text-sm">
-                  <div className="flex justify-center gap-3">
-                    <span>{post.viewCount}</span>
-                    <span className="text-red-400">{post.likesCount}</span>
-                    <span className="text-blue-400">{post.commentsCount}</span>
-                  </div>
-                </div>
-              </div>
+            {posts.filter(post => !post.isPinned).map((post) => (
+              <PostCard key={post.id} post={post} showRecommendBadge={false} />
             ))}
           </div>
         )}

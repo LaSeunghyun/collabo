@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
         excerpt: validatedData.content.substring(0, 200),
         categoryId: validatedData.categoryId,
         attachments: validatedData.attachments,
-        tags: validatedData.tags || [],
+        tags: validatedData.tags || ['RAY'],
         scope: PostScope.GLOBAL,
         status: PostStatus.PUBLISHED,
         visibility: 'PUBLIC',

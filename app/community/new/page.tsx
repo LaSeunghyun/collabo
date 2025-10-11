@@ -32,7 +32,7 @@ export default function NewPostPage() {
     title: '',
     content: '',
     categoryId: '',
-    tags: [] as string[],
+    tags: ['RAY'] as string[],
   });
   const [tagInput, setTagInput] = useState('');
 
@@ -101,6 +101,9 @@ export default function NewPostPage() {
   };
 
   const handleTagRemove = (tagToRemove: string) => {
+    // 'RAY' 태그는 제거할 수 없음
+    if (tagToRemove === 'RAY') return;
+    
     setFormData(prev => ({
       ...prev,
       tags: prev.tags.filter(tag => tag !== tagToRemove)
@@ -123,28 +126,28 @@ export default function NewPostPage() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-neutral-950">
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* 헤더 */}
         <div className="mb-8">
           <Button 
             variant="ghost" 
             onClick={() => router.back()}
-            className="mb-6 gap-2 text-neutral-600 hover:text-neutral-900"
+            className="mb-6 gap-2 text-neutral-400 hover:text-white"
           >
             <ArrowLeft className="w-4 h-4" />
             목록으로
           </Button>
           
           <div>
-            <h1 className="text-4xl font-bold text-neutral-900 mb-2">글쓰기</h1>
-            <p className="text-neutral-600 text-lg">커뮤니티에 새로운 글을 작성해보세요</p>
+            <h1 className="text-4xl font-bold text-white mb-2">글쓰기</h1>
+            <p className="text-neutral-400 text-lg">커뮤니티에 새로운 글을 작성해보세요</p>
           </div>
         </div>
 
-        <Card className="bg-white shadow-sm">
+        <Card className="bg-neutral-800 border-neutral-700 shadow-sm">
           <CardHeader className="pb-6">
-            <CardTitle className="text-2xl font-semibold flex items-center gap-2">
+            <CardTitle className="text-2xl font-semibold flex items-center gap-2 text-white">
               <FileText className="w-6 h-6" />
               새 게시글 작성
             </CardTitle>
@@ -152,7 +155,7 @@ export default function NewPostPage() {
           <CardContent className="space-y-8">
             <form onSubmit={handleSubmit} className="space-y-8">
               <div className="space-y-2">
-                <Label htmlFor="title" className="text-base font-medium">제목</Label>
+                <Label htmlFor="title" className="text-base font-medium text-white">제목</Label>
                 <Input
                   id="title"
                   value={formData.title}
@@ -160,20 +163,20 @@ export default function NewPostPage() {
                   placeholder="제목을 입력하세요"
                   required
                   maxLength={200}
-                  className="text-lg py-3 border-2 border-neutral-200 focus:border-blue-500 rounded-xl"
+                  className="text-lg py-3 border-2 border-neutral-700 bg-neutral-800 text-white placeholder-neutral-400 focus:border-blue-500 rounded-xl"
                 />
-                <p className="text-sm text-neutral-500">
+                <p className="text-sm text-neutral-400">
                   {formData.title.length}/200
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="category" className="text-base font-medium">카테고리</Label>
+                <Label htmlFor="category" className="text-base font-medium text-white">카테고리</Label>
                 <Select
                   value={formData.categoryId}
                   onValueChange={(value) => setFormData(prev => ({ ...prev, categoryId: value }))}
                 >
-                  <SelectTrigger className="py-3 border-2 border-neutral-200 focus:border-blue-500 rounded-xl">
+                  <SelectTrigger className="py-3 border-2 border-neutral-700 bg-neutral-800 text-white focus:border-blue-500 rounded-xl">
                     <SelectValue placeholder="카테고리를 선택하세요" />
                   </SelectTrigger>
                   <SelectContent>
@@ -187,7 +190,7 @@ export default function NewPostPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="content" className="text-base font-medium">내용</Label>
+                <Label htmlFor="content" className="text-base font-medium text-white">내용</Label>
                 <Textarea
                   id="content"
                   value={formData.content}
@@ -196,15 +199,15 @@ export default function NewPostPage() {
                   required
                   maxLength={10000}
                   rows={12}
-                  className="resize-none text-base border-2 border-neutral-200 focus:border-blue-500 rounded-xl"
+                  className="resize-none text-base border-2 border-neutral-700 bg-neutral-800 text-white placeholder-neutral-400 focus:border-blue-500 rounded-xl"
                 />
-                <p className="text-sm text-neutral-500">
+                <p className="text-sm text-neutral-400">
                   {formData.content.length}/10,000
                 </p>
               </div>
 
               <div className="space-y-3">
-                <Label htmlFor="tags" className="text-base font-medium flex items-center gap-2">
+                <Label htmlFor="tags" className="text-base font-medium flex items-center gap-2 text-white">
                   <Hash className="w-4 h-4" />
                   태그
                 </Label>
@@ -219,9 +222,9 @@ export default function NewPostPage() {
                         handleTagAdd();
                       }
                     }}
-                    className="border-2 border-neutral-200 focus:border-blue-500 rounded-xl"
+                    className="border-2 border-neutral-700 bg-neutral-800 text-white placeholder-neutral-400 focus:border-blue-500 rounded-xl"
                   />
-                  <Button type="button" onClick={handleTagAdd} variant="outline" className="gap-2">
+                  <Button type="button" onClick={handleTagAdd} variant="outline" className="gap-2 border-neutral-700 text-white hover:bg-neutral-700">
                     <Plus className="w-4 h-4" />
                     추가
                   </Button>
@@ -231,13 +234,17 @@ export default function NewPostPage() {
                     {formData.tags.map((tag) => (
                       <Badge
                         key={tag}
-                        variant="secondary"
-                        className="cursor-pointer gap-1 px-3 py-1 text-sm"
+                        variant={tag === 'RAY' ? 'default' : 'secondary'}
+                        className={`gap-1 px-3 py-1 text-sm ${
+                          tag === 'RAY' 
+                            ? 'bg-blue-600 text-white cursor-default' 
+                            : 'cursor-pointer hover:bg-neutral-600'
+                        }`}
                         onClick={() => handleTagRemove(tag)}
                       >
                         <Tag className="w-3 h-3" />
                         {tag}
-                        <X className="w-3 h-3" />
+                        {tag !== 'RAY' && <X className="w-3 h-3" />}
                       </Badge>
                     ))}
                   </div>
