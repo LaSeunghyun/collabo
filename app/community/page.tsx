@@ -3,7 +3,7 @@
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { CommunityBoard } from '@/components/ui/sections/community-board';
+import { CommunityBoard } from '@/components/ui/sections/community-board-threads';
 import type { CommunityPost } from '@/lib/data/community';
 
 interface FeedHighlights {

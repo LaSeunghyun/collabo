@@ -476,6 +476,11 @@ export const comments = pgTable(
     deletedAt: timestamp('deletedAt', { mode: 'string' }),
     isDeleted: boolean('isDeleted').notNull().default(false),
   },
+  (table) => ({
+    postIdIdx: index('Comment_postId_idx').on(table.postId),
+    authorIdIdx: index('Comment_authorId_idx').on(table.authorId),
+    createdAtIdx: index('Comment_createdAt_idx').on(table.createdAt),
+  }),
 );
 
 export const postLikes = pgTable(
@@ -511,6 +516,8 @@ export const communityPostLikes = pgTable(
     createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
   },
   (table) => ({
+    postIdIdx: index('CommunityPostLike_postId_idx').on(table.postId),
+    userIdIdx: index('CommunityPostLike_userId_idx').on(table.userId),
     postUserUnique: uniqueIndex('CommunityPostLike_postId_userId_key').on(
       table.postId,
       table.userId,
@@ -551,6 +558,8 @@ export const communityPostDislikes = pgTable(
     createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
   },
   (table) => ({
+    postIdIdx: index('CommunityPostDislike_postId_idx').on(table.postId),
+    userIdIdx: index('CommunityPostDislike_userId_idx').on(table.userId),
     postUserUnique: uniqueIndex('CommunityPostDislike_postId_userId_key').on(
       table.postId,
       table.userId,
@@ -1162,24 +1171,43 @@ export const communityPosts = pgTable('CommunityPost', {
   category: communityCategoryEnum().notNull(),
   authorId: text().notNull(),
   projectId: text(),
+  images: text().array().notNull().default(['RAY']),
+  attachments: jsonb('attachments'),
+  linkPreviews: jsonb('linkPreviews'),
+  parentPostId: text('parentPostId'),
   likesCount: integer().default(0).notNull(),
   commentsCount: integer().default(0).notNull(),
+  replyCount: integer().default(0).notNull(),
+  viewCount: integer().default(0).notNull(),
   isPinned: boolean().default(false).notNull(),
   status: text().default('PUBLISHED').notNull(),
   createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
   updatedAt: timestamp({ mode: 'string' }).notNull(),
-}, (table) => [
-  foreignKey({
+}, (table) => ({
+  authorIdIdx: index('CommunityPost_authorId_idx').on(table.authorId),
+  projectIdIdx: index('CommunityPost_projectId_idx').on(table.projectId),
+  categoryIdx: index('CommunityPost_category_idx').on(table.category),
+  isPinnedIdx: index('CommunityPost_isPinned_idx').on(table.isPinned),
+  statusIdx: index('CommunityPost_status_idx').on(table.status),
+  createdAtIdx: index('CommunityPost_createdAt_idx').on(table.createdAt),
+  likesCountIdx: index('CommunityPost_likesCount_idx').on(table.likesCount),
+  // 복합 인덱스 - 인기 게시글 쿼리 최적화
+  statusPinnedIdx: index('CommunityPost_status_isPinned_idx').on(table.status, table.isPinned),
+  // 복합 인덱스 - 정렬 최적화
+  createdAtStatusIdx: index('CommunityPost_createdAt_status_idx').on(table.createdAt, table.status),
+  likesCountStatusIdx: index('CommunityPost_likesCount_status_idx').on(table.likesCount, table.status),
+  // 외래키 제약조건
+  authorIdFk: foreignKey({
     columns: [table.authorId],
     foreignColumns: [users.id],
     name: 'CommunityPost_authorId_User_id_fk'
   }).onUpdate('cascade').onDelete('restrict'),
-  foreignKey({
+  projectIdFk: foreignKey({
     columns: [table.projectId],
     foreignColumns: [projects.id],
     name: 'CommunityPost_projectId_Project_id_fk'
   }).onUpdate('cascade').onDelete('set null'),
-]);
+}));
 
 export const communityPostsRelations = relations(communityPosts, ({ one, many }) => ({
   author: one(users, {

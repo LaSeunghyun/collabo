@@ -22,6 +22,20 @@
       "when": 1760016101870,
       "tag": "0002_solid_talos",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1760140908161,
+      "tag": "20251011000148_futuristic_jackpot",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1760169498111,
+      "tag": "20251011075818_opposite_next_avengers",
+      "breakpoints": true
     }
   ]
 }

@@ -5,6 +5,9 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Flag, Heart, Loader2, MessageCircle, MinusCircle, UserCircle2, X } from 'lucide-react';
+import { ThreadsImageGrid } from '@/components/ui/community/ThreadsImageGrid';
+import { MediaPlayer } from '@/components/ui/community/MediaPlayer';
+import { LinkPreview } from '@/components/ui/community/LinkPreview';
 import { useTranslation } from 'react-i18next';
 import { signIn, useSession } from 'next-auth/react';
 import clsx from 'clsx';
@@ -432,7 +435,7 @@ export default function CommunityPostDetailPage() {
       </div>
 
       <article className="mt-6 space-y-8 rounded-3xl border border-white/10 bg-white/5 p-8">
-        <header className="space-y-3">
+        <header className="space-y-4">
           <div className="flex items-center gap-3 text-sm text-white/60">
             <button
               type="button"
@@ -445,8 +448,35 @@ export default function CommunityPostDetailPage() {
             <span>•</span>
             <span>{formattedDate}</span>
           </div>
-          <h1 className="text-3xl font-semibold text-white">{post.title}</h1>
+          
+          {post.title && (
+            <h1 className="text-3xl font-semibold text-white">{post.title}</h1>
+          )}
+          
           <p className="text-base leading-relaxed text-white/80 whitespace-pre-line">{post.content}</p>
+
+          {/* Images */}
+          {post.images && post.images.length > 0 && (
+            <ThreadsImageGrid images={post.images} />
+          )}
+
+          {/* Attachments */}
+          {post.attachments && post.attachments.length > 0 && (
+            <div className="space-y-2">
+              {post.attachments.map((attachment) => (
+                <MediaPlayer key={attachment.id} attachment={attachment} />
+              ))}
+            </div>
+          )}
+
+          {/* Link Previews */}
+          {post.linkPreviews && post.linkPreviews.length > 0 && (
+            <div className="space-y-2">
+              {post.linkPreviews.map((preview, index) => (
+                <LinkPreview key={index} preview={preview} />
+              ))}
+            </div>
+          )}
         </header>
 
         <div className="flex flex-wrap gap-3 text-sm text-white/70">

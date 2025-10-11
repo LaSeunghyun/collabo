@@ -23,6 +23,34 @@ export interface CommunityPost {
   dislikes?: number;
   reports?: number;
   authorId?: string;
+  images?: string[];
+  attachments?: AttachmentMetadata[];
+  linkPreviews?: LinkPreviewMetadata[];
+  parentPostId?: string;
+  replyCount?: number;
+  viewCount?: number;
+}
+
+export interface AttachmentMetadata {
+  id: string;
+  type: 'image' | 'video' | 'audio' | 'document';
+  url: string;
+  filename: string;
+  size: number;
+  mimeType: string;
+  thumbnailUrl?: string;
+  duration?: number; // for video/audio
+  width?: number; // for images/videos
+  height?: number; // for images/videos
+}
+
+export interface LinkPreviewMetadata {
+  url: string;
+  title: string;
+  description: string;
+  image?: string;
+  siteName?: string;
+  domain?: string;
 }
 
 export interface CommunityComment {

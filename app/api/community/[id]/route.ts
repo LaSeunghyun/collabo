@@ -63,23 +63,55 @@ const buildPostResponse = async (postId: string, viewerId?: string | null) => {
       return null;
     }
 
-    // 좋아요, 싫어요, 댓글 수를 별도로 조회
-    const [likesResult, dislikesResult, commentsResult] = await Promise.all([
-      db.select({ count: count() }).from(communityPostLikes).where(eq(communityPostLikes.postId, postId)),
-      db.select({ count: count() }).from(communityPostDislikes).where(eq(communityPostDislikes.postId, postId)),
-      db.select({ count: count() }).from(comments).where(eq(comments.postId, postId))
-    ]);
+    // 좋아요, 싫어요, 댓글 수를 별도로 조회 (병렬 실행으로 성능 최적화)
+    // 테이블이 존재하지 않을 경우를 대비한 안전한 처리
+    let likesCount = 0;
+    let dislikesCount = 0;
+    let commentsCount = 0;
+
+    try {
+      const [likesResult, dislikesResult, commentsResult] = await Promise.all([
+        db.select({ count: count() }).from(communityPostLikes).where(eq(communityPostLikes.postId, postId)),
+        db.select({ count: count() }).from(communityPostDislikes).where(eq(communityPostDislikes.postId, postId)),
+        db.select({ count: count() }).from(comments).where(eq(comments.postId, postId))
+      ]);
+      
+      likesCount = likesResult[0]?.count || 0;
+      dislikesCount = dislikesResult[0]?.count || 0;
+      commentsCount = commentsResult[0]?.count || 0;
+    } catch (error) {
+      console.warn('Failed to load counts, using fallback values:', error);
+      // 테이블이 존재하지 않을 경우 기본값 사용
+      likesCount = 0;
+      dislikesCount = 0;
+      commentsCount = 0;
+    }
 
     const postWithCounts = {
       ...post,
       _count: {
-        likes: likesResult[0]?.count || 0,
-        dislikes: dislikesResult[0]?.count || 0,
-        comments: commentsResult[0]?.count || 0
+        likes: likesCount,
+        dislikes: dislikesCount,
+        comments: commentsCount
       }
     };
 
-    // 안전한 liked/disliked 체크
+    // communityPosts 테이블의 likesCount 업데이트
+    if (likesCount !== post.likesCount) {
+      try {
+        await db
+          .update(communityPosts)
+          .set({ 
+            likesCount: likesCount,
+            updatedAt: new Date().toISOString()
+          })
+          .where(eq(communityPosts.id, postId));
+      } catch (error) {
+        console.warn('Failed to update likesCount:', error);
+      }
+    }
+
+    // 안전한 liked/disliked 체크 (병렬 실행으로 성능 최적화)
     let liked = false;
     let disliked = false;
     if (viewerId) {
@@ -96,6 +128,7 @@ const buildPostResponse = async (postId: string, viewerId?: string | null) => {
         disliked = Boolean(dislikeRecord[0]);
       } catch (error) {
         console.warn('Failed to check like/dislike status:', error);
+        // 테이블이 존재하지 않을 경우 기본값 사용
         liked = false;
         disliked = false;
       }
@@ -323,6 +356,57 @@ export async function PATCH(
       await db
         .delete(communityPostDislikes)
         .where(and(eq(communityPostDislikes.postId, params.id), eq(communityPostDislikes.userId, sessionUser.id)));
+    } else if (action === 'toggleLike') {
+      // 현재 좋아요 상태 확인
+      const likeRecord = await db
+        .select()
+        .from(communityPostLikes)
+        .where(and(eq(communityPostLikes.postId, params.id), eq(communityPostLikes.userId, sessionUser.id)))
+        .limit(1);
+      
+      if (likeRecord[0]) {
+        // 이미 좋아요 누른 경우 제거
+        await db
+          .delete(communityPostLikes)
+          .where(and(eq(communityPostLikes.postId, params.id), eq(communityPostLikes.userId, sessionUser.id)));
+      } else {
+        // 싫어요가 있다면 먼저 제거
+        await db
+          .delete(communityPostDislikes)
+          .where(and(eq(communityPostDislikes.postId, params.id), eq(communityPostDislikes.userId, sessionUser.id)));
+        
+        // 좋아요 추가
+        await db
+          .insert(communityPostLikes)
+          .values({
+            id: crypto.randomUUID(),
+            postId: params.id,
+            userId: sessionUser.id,
+            createdAt: new Date().toISOString()
+          })
+          .onConflictDoNothing();
+      }
+    }
+
+    // 좋아요/싫어요 처리 후 likesCount 업데이트
+    if (['like', 'unlike', 'dislike', 'undislike', 'toggleLike'].includes(action)) {
+      try {
+        const [likesResult] = await Promise.all([
+          db.select({ count: count() }).from(communityPostLikes).where(eq(communityPostLikes.postId, params.id))
+        ]);
+        
+        const newLikesCount = likesResult[0]?.count || 0;
+        
+        await db
+          .update(communityPosts)
+          .set({ 
+            likesCount: newLikesCount,
+            updatedAt: new Date().toISOString()
+          })
+          .where(eq(communityPosts.id, params.id));
+      } catch (error) {
+        console.warn('Failed to update likesCount after like/dislike:', error);
+      }
     }
 
     const updated = await buildPostResponse(params.id, sessionUser.id);

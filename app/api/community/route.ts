@@ -64,8 +64,14 @@ export async function GET(request: NextRequest) {
         category: communityPosts.category,
         authorId: communityPosts.authorId,
         projectId: communityPosts.projectId,
+        images: communityPosts.images,
+        attachments: communityPosts.attachments,
+        linkPreviews: communityPosts.linkPreviews,
+        parentPostId: communityPosts.parentPostId,
         likesCount: communityPosts.likesCount,
         commentsCount: communityPosts.commentsCount,
+        replyCount: communityPosts.replyCount,
+        viewCount: communityPosts.viewCount,
         isPinned: communityPosts.isPinned,
         status: communityPosts.status,
         createdAt: communityPosts.createdAt,
@@ -91,78 +97,89 @@ export async function GET(request: NextRequest) {
       ? await postsQuery.where(and(...conditions)).limit(limit)
       : await postsQuery.limit(limit);
 
-    // 고정 게시글 조회
-    const pinnedPosts = await db
-      .select({
-        id: communityPosts.id,
-        title: communityPosts.title,
-        content: communityPosts.content,
-        category: communityPosts.category,
-        authorId: communityPosts.authorId,
-        projectId: communityPosts.projectId,
-        likesCount: communityPosts.likesCount,
-        commentsCount: communityPosts.commentsCount,
-        isPinned: communityPosts.isPinned,
-        status: communityPosts.status,
-        createdAt: communityPosts.createdAt,
-        updatedAt: communityPosts.updatedAt,
-        author: {
-          id: users.id,
-          name: users.name,
-          email: users.email,
-          avatar: users.avatarUrl
-        },
-        project: {
-          id: projects.id,
-          title: projects.title,
-          ownerId: projects.ownerId
-        }
-      })
-      .from(communityPosts)
-      .leftJoin(users, eq(communityPosts.authorId, users.id))
-      .leftJoin(projects, eq(communityPosts.projectId, projects.id))
-      .where(eq(communityPosts.isPinned, true))
-      .orderBy(desc(communityPosts.createdAt))
-      .limit(5);
+    // 고정 게시글과 인기 게시글은 필요시에만 조회 (성능 최적화)
+    // 대부분의 경우 메인 게시글 목록만 필요하므로 기본적으로는 제외
+    let pinnedPosts: any[] = [];
+    let popularPosts: any[] = [];
+    
+    // 쿼리 파라미터로 pinned나 popular가 요청된 경우에만 조회
+    const includePinned = searchParams.get('includePinned') === 'true';
+    const includePopular = searchParams.get('includePopular') === 'true';
+    
+    if (includePinned) {
+      pinnedPosts = await db
+        .select({
+          id: communityPosts.id,
+          title: communityPosts.title,
+          content: communityPosts.content,
+          category: communityPosts.category,
+          authorId: communityPosts.authorId,
+          projectId: communityPosts.projectId,
+          likesCount: communityPosts.likesCount,
+          commentsCount: communityPosts.commentsCount,
+          isPinned: communityPosts.isPinned,
+          status: communityPosts.status,
+          createdAt: communityPosts.createdAt,
+          updatedAt: communityPosts.updatedAt,
+          author: {
+            id: users.id,
+            name: users.name,
+            email: users.email,
+            avatar: users.avatarUrl
+          },
+          project: {
+            id: projects.id,
+            title: projects.title,
+            ownerId: projects.ownerId
+          }
+        })
+        .from(communityPosts)
+        .leftJoin(users, eq(communityPosts.authorId, users.id))
+        .leftJoin(projects, eq(communityPosts.projectId, projects.id))
+        .where(eq(communityPosts.isPinned, true))
+        .orderBy(desc(communityPosts.createdAt))
+        .limit(5);
+    }
 
-    // 인기 게시글 조회 (최근 7일간)
-    const popularPosts = await db
-      .select({
-        id: communityPosts.id,
-        title: communityPosts.title,
-        content: communityPosts.content,
-        category: communityPosts.category,
-        authorId: communityPosts.authorId,
-        projectId: communityPosts.projectId,
-        likesCount: communityPosts.likesCount,
-        commentsCount: communityPosts.commentsCount,
-        isPinned: communityPosts.isPinned,
-        status: communityPosts.status,
-        createdAt: communityPosts.createdAt,
-        updatedAt: communityPosts.updatedAt,
-        author: {
-          id: users.id,
-          name: users.name,
-          email: users.email,
-          avatar: users.avatarUrl
-        },
-        project: {
-          id: projects.id,
-          title: projects.title,
-          ownerId: projects.ownerId
-        }
-      })
-      .from(communityPosts)
-      .leftJoin(users, eq(communityPosts.authorId, users.id))
-      .leftJoin(projects, eq(communityPosts.projectId, projects.id))
-      .where(
-        and(
-          eq(communityPosts.status, 'PUBLISHED'),
-          eq(communityPosts.isPinned, false)
+    if (includePopular) {
+      popularPosts = await db
+        .select({
+          id: communityPosts.id,
+          title: communityPosts.title,
+          content: communityPosts.content,
+          category: communityPosts.category,
+          authorId: communityPosts.authorId,
+          projectId: communityPosts.projectId,
+          likesCount: communityPosts.likesCount,
+          commentsCount: communityPosts.commentsCount,
+          isPinned: communityPosts.isPinned,
+          status: communityPosts.status,
+          createdAt: communityPosts.createdAt,
+          updatedAt: communityPosts.updatedAt,
+          author: {
+            id: users.id,
+            name: users.name,
+            email: users.email,
+            avatar: users.avatarUrl
+          },
+          project: {
+            id: projects.id,
+            title: projects.title,
+            ownerId: projects.ownerId
+          }
+        })
+        .from(communityPosts)
+        .leftJoin(users, eq(communityPosts.authorId, users.id))
+        .leftJoin(projects, eq(communityPosts.projectId, projects.id))
+        .where(
+          and(
+            eq(communityPosts.status, 'PUBLISHED'),
+            eq(communityPosts.isPinned, false)
+          )
         )
-      )
-      .orderBy(desc(communityPosts.likesCount))
-      .limit(5);
+        .orderBy(desc(communityPosts.likesCount))
+        .limit(5);
+    }
 
     // 전체 개수 조회
     const countQuery = db
@@ -180,6 +197,9 @@ export async function GET(request: NextRequest) {
       category: post.category?.toLowerCase() || 'general',
       likes: post.likesCount || 0,
       comments: post.commentsCount || 0,
+      images: post.images?.filter((img: string) => img !== 'RAY') || [],
+      attachments: post.attachments || [],
+      linkPreviews: post.linkPreviews || [],
       author: post.author ? {
         id: post.author.id,
         name: post.author.name,
@@ -251,22 +271,25 @@ export const POST = withCSRFProtection(async (request: NextRequest) => {
       );
     }
 
-    const { title, content, category, projectId } = body as {
+    const { title, content, category, projectId, images, attachments, linkPreviews } = body as {
       title?: string;
       content?: string;
       category?: string;
       projectId?: string;
+      images?: string[];
+      attachments?: any[];
+      linkPreviews?: any[];
     };
 
-    // 입력 검증
-    if (!title || !content) {
+    // 입력 검증 (Threads 스타일에서는 제목이 선택사항)
+    if (!content) {
       return NextResponse.json(
-        { error: '제목과 내용은 필수입니다.' },
+        { error: '내용은 필수입니다.' },
         { status: 400 }
       );
     }
 
-    if (title.length < 1 || title.length > 200) {
+    if (title && (title.length < 1 || title.length > 200)) {
       return NextResponse.json(
         { error: '제목은 1자 이상 200자 이하여야 합니다.' },
         { status: 400 }
@@ -314,13 +337,18 @@ export const POST = withCSRFProtection(async (request: NextRequest) => {
       .insert(communityPosts)
       .values({
         id: randomUUID(),
-        title: title.trim(),
+        title: title?.trim() || '',
         content: content.trim(),
         category: normalizedCategory as any,
         authorId: user.id,
         projectId: projectId || null,
+        images: images || ['RAY'],
+        attachments: attachments || null,
+        linkPreviews: linkPreviews || null,
         likesCount: 0,
         commentsCount: 0,
+        replyCount: 0,
+        viewCount: 0,
         isPinned: false,
         status: 'PUBLISHED',
         createdAt: now,

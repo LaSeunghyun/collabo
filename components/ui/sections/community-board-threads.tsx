@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { InfiniteData } from '@tanstack/react-query';
-import { Heart, MessageCircle, Search, Sparkles } from 'lucide-react';
+import { Heart, MessageCircle, Search, Sparkles, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { signIn, useSession } from 'next-auth/react';
 import clsx from 'clsx';
@@ -102,7 +102,7 @@ function useCommunityFeed(params: {
 
       const res = await fetch(`/api/community?${query.toString()}`);
       if (!res.ok) {
-        throw new Error('커�??�티 게시글??불러?��? 못했?�니??');
+        throw new Error('커뮤니티 게시글을 불러오지 못했습니다.');
       }
 
       const json = (await res.json()) as CommunityFeedResponse;
@@ -150,21 +150,56 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
     : selectedCategories;
   const categoriesForQuery = effectiveCategories.includes('all') ? ['all'] : effectiveCategories;
   
-  // 글?�기 버튼 ?�릭 ?�들??
+  // 글쓰기 버튼 클릭 핸들러
   const handleCreatePost = () => {
     if (!session) {
-      // 로그?�되지 ?��? 경우 로그???�이지�?리다?�렉??
-      signIn(undefined, { callbackUrl: '/community/new' });
+      // 로그인되지 않은 경우 로그인 페이지로 리다이렉트
+      signIn(undefined, { callbackUrl: '/community' });
       return;
     }
-    // 로그?�된 경우 글?�기 ?�이지�??�동
-    if (router) {
-      router.push('/community/new');
-      return;
-    }
+    // 로그인된 경우 컴포저 모달 열기
+    setIsComposerOpen(true);
+  };
 
-    if (typeof window !== 'undefined') {
-      window.location.assign('/community/new');
+  // 게시글 작성 핸들러
+  const handleSubmitPost = async (data: {
+    content: string;
+    images: string[];
+    attachments: AttachmentMetadata[];
+    linkPreviews: LinkPreviewMetadata[];
+    category: string;
+  }) => {
+    if (!session?.user?.id) return;
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/community', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: '', // Threads 스타일에서는 제목 없음
+          content: data.content,
+          category: data.category.toUpperCase(),
+          images: data.images,
+          attachments: data.attachments,
+          linkPreviews: data.linkPreviews
+        })
+      });
+
+      if (response.ok) {
+        // 성공 시 피드 새로고침
+        await queryClient.invalidateQueries({
+          queryKey: ['community']
+        });
+        setIsComposerOpen(false);
+      } else {
+        throw new Error('Failed to create post');
+      }
+    } catch (error) {
+      console.error('Failed to create post:', error);
+      alert('게시글 작성에 실패했습니다.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -177,8 +212,6 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
   });
 
   const firstPage = useMemo(() => data?.pages[0], [data?.pages]);
-  // const totalCount = firstPage?.meta.total ?? 0;
-  // const metaPinned = firstPage?.pinned ?? [];
 
   useEffect(() => {
     if (!onMetaChange || !firstPage) {
@@ -227,7 +260,7 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
       });
 
       if (!response.ok) {
-        throw new Error('좋아?��? 변경하지 못했?�니??');
+        throw new Error('좋아요를 변경하지 못했습니다.');
       }
 
       return response.json();
@@ -339,88 +372,77 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
   }, []);
 
   return (
-    <section className="space-y-8">
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/50">
-              {t('community.title')}
-            </p>
-            <h2 className="mt-1 text-2xl font-semibold text-white">
-              {t('community.description')}
-            </h2>
-          </div>
-          {!readOnly ? (
+    <section className="space-y-6">
+      {/* Header with floating action button */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold text-white">커뮤니티</h2>
+          <p className="text-white/60 text-sm">아티스트들과 소통하고 협업하세요</p>
+        </div>
+        
+        {!readOnly && (
+          <button
+            onClick={handleCreatePost}
+            className="flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 shadow-lg"
+          >
+            <Plus className="h-4 w-4" />
+            새 게시글
+          </button>
+        )}
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap gap-2">
+        {CATEGORY_OPTIONS.map((category) => (
+          <button
+            key={category}
+            type="button"
+            onClick={() => handleToggleCategory(category)}
+            className={clsx(
+              'rounded-full px-4 py-2 text-sm font-medium transition',
+              selectedCategories.includes(category)
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-white/5 text-white/60 hover:bg-white/10'
+            )}
+          >
+            {t(`community.categories.${category}`)}
+          </button>
+        ))}
+      </div>
+
+      {/* Search and Sort */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
+          <input
+            type="text"
+            value={searchValue}
+            onChange={(event) => setSearchValue(event.target.value)}
+            placeholder={t('community.searchPlaceholder') ?? ''}
+            className="w-full rounded-full border border-white/10 bg-neutral-950/60 py-2 pl-10 pr-4 text-sm text-white placeholder:text-white/50 focus:border-primary focus:outline-none"
+          />
+        </div>
+
+        <div className="flex gap-2">
+          {SORT_OPTIONS.map((option) => (
             <button
-              onClick={handleCreatePost}
-              className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
+              key={option}
+              type="button"
+              onClick={() => setSort(option)}
+              className={clsx(
+                'rounded-full px-4 py-2 text-sm font-medium transition',
+                sort === option
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-white/5 text-white/60 hover:bg-white/10'
+              )}
             >
-              <Sparkles className="h-4 w-4" />
-              {t('community.createPost')}
+              {t(`community.sort.${option}`)}
             </button>
-          ) : null}
-        </div>
-
-        <div className="mt-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-wrap gap-2">
-            {CATEGORY_OPTIONS.map((category) => (
-              <button
-                key={category}
-                type="button"
-                onClick={() => handleToggleCategory(category)}
-                className={clsx(
-                  'rounded-full px-3 py-1.5 text-xs font-medium transition',
-                  selectedCategories.includes(category)
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-white/5 text-white/60 hover:bg-white/10'
-                )}
-              >
-                {t(`community.categories.${category}`)}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-white/60">
-              {t('community.labels.selectedCategories', { count: categoriesForQuery.length })}
-            </span>
-            <span className="hidden md:inline">/</span>
-            <span>{t('community.labels.selectedCategories', { count: categoriesForQuery.length })}</span>
-          </div>
-        </div>
-
-        <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
-            <input
-              type="text"
-              value={searchValue}
-              onChange={(event) => setSearchValue(event.target.value)}
-              placeholder={t('community.searchPlaceholder') ?? ''}
-              className="w-full rounded-full border border-white/10 bg-neutral-950/60 py-2 pl-10 pr-4 text-sm text-white placeholder:text-white/50 focus:border-primary focus:outline-none"
-            />
-          </div>
-
-          <div className="flex gap-2">
-            {SORT_OPTIONS.map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => setSort(option)}
-                className={clsx(
-                  'rounded-full px-3 py-1.5 text-xs font-medium transition',
-                  sort === option
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-white/5 text-white/60 hover:bg-white/10'
-                )}
-              >
-                {t(`community.sort.${option}`)}
-              </button>
-            ))}
-          </div>
+          ))}
         </div>
       </div>
 
+      {/* Posts Feed */}
       {isLoading ? (
         <div className="space-y-4">
           {Array.from({ length: 3 }).map((_, index) => (
@@ -438,13 +460,14 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
           <p className="text-red-300">{t('community.error.loading')}</p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {posts && posts.length > 0 ? posts.map((post) => (
-            <CommunityPostCard
+        <div className="space-y-1">
+          {posts && posts.length > 0 ? posts.map((post, index) => (
+            <ThreadsPostCard
               key={post.id}
               post={post}
               onToggleLike={() => toggleLikeMutation.mutate(post.id)}
               isLiking={toggleLikeMutation.isPending}
+              showThreadLine={index < posts.length - 1}
             />
           )) : (
             <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
@@ -468,98 +491,14 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
           )}
         </div>
       )}
+
+      {/* Composer Modal */}
+      <ThreadsComposer
+        isOpen={isComposerOpen}
+        onClose={() => setIsComposerOpen(false)}
+        onSubmit={handleSubmitPost}
+        isSubmitting={isSubmitting}
+      />
     </section>
-  );
-}
-
-interface CommunityPostCardProps {
-  post: CommunityPost;
-  onToggleLike: () => void;
-  isLiking: boolean;
-}
-
-function CommunityPostCard({ post, onToggleLike, isLiking }: CommunityPostCardProps) {
-  const { t } = useTranslation();
-
-  const displayCategory = t(`community.categories.${post.category}`);
-  const authorName = post.author?.name ?? t('community.defaultGuestName');
-  const createdAt = post.createdAt ? new Date(post.createdAt) : null;
-
-  const commentLabel = t('community.labels.comments', { count: post.comments });
-  const likeLabel = t('community.labels.likes', { count: post.likes });
-
-  return (
-    <Link href={`/community/${post.id}`} className="block">
-      <article className="rounded-2xl border border-white/10 bg-white/5 p-6 transition hover:border-white/20 cursor-pointer">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 text-xs text-white/60">
-              {post.isPinned ? (
-                <>
-                  <span>{t(`community.categories.${post.category}`)}</span>
-                  <span>/</span>
-                  <span>{t('community.badges.pinned')}</span>
-                </>
-              ) : (
-                <span>{displayCategory}</span>
-              )}
-              <span>/</span>
-              <time dateTime={createdAt?.toISOString()}>
-                {createdAt?.toLocaleDateString('ko-KR')}
-              </time>
-            </div>
-
-            <h3 className="mt-2 text-lg font-semibold text-white transition hover:text-primary">
-              {post.title}
-            </h3>
-
-            <p className="mt-2 line-clamp-3 text-sm text-white/70">
-              {post.content}
-            </p>
-
-            <div className="mt-4 flex items-center gap-4 text-xs text-white/60">
-              <span className="font-semibold text-white">{authorName}</span>
-              <span>/</span>
-              <span>{commentLabel}</span>
-              <span>/</span>
-              <span>{likeLabel}</span>
-            </div>
-          </div>
-
-          <div className="ml-4 flex flex-col items-center gap-2">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onToggleLike();
-              }}
-              disabled={isLiking}
-              className={clsx(
-                'flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition',
-                post.liked
-                  ? 'bg-red-500/10 text-red-300 hover:bg-red-500/20'
-                  : 'bg-white/5 text-white/60 hover:bg-white/10'
-              )}
-            >
-              <Heart className={clsx('h-3 w-3', post.liked && 'fill-current')} />
-              {post.likes}
-            </button>
-
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-              }}
-              className="flex items-center gap-1 rounded-full bg-white/5 px-3 py-1.5 text-xs font-medium text-white/60 transition hover:bg-white/10"
-            >
-              <MessageCircle className="h-3 w-3" />
-              {post.comments}
-            </button>
-          </div>
-        </div>
-      </article>
-    </Link>
   );
 }
