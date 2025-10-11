@@ -228,71 +228,71 @@ function CommunityPageContent() {
         ) : (
           <div className="space-y-4">
             {posts.map((post) => (
-              <Card key={post.id} className="hover:shadow-lg transition-shadow bg-neutral-800 border-neutral-700">
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0">
-                      <div className="w-10 h-10 bg-neutral-600 rounded-full flex items-center justify-center">
-                        <User className="w-5 h-5 text-neutral-400" />
-                      </div>
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="font-medium text-white">{post.authorName}</span>
-                        <span className="text-neutral-500">•</span>
-                        <span className="text-sm text-neutral-400">{formatDate(post.createdAt)}</span>
-                        {post.isPinned && (
-                          <Badge variant="secondary" className="ml-2 bg-blue-900/30 text-blue-400 border-blue-700">
-                            상단고정
-                          </Badge>
-                        )}
+              <Link key={post.id} href={`/community/${post.id}`} className="block group">
+                <Card className="hover:shadow-lg transition-all duration-200 bg-neutral-800 border-neutral-700 group-hover:border-blue-500/50 cursor-pointer">
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0">
+                        <div className="w-10 h-10 bg-neutral-600 rounded-full flex items-center justify-center">
+                          <User className="w-5 h-5 text-neutral-400" />
+                        </div>
                       </div>
                       
-                      <Link href={`/community/${post.id}`} className="block group">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="font-medium text-white">{post.authorName}</span>
+                          <span className="text-neutral-500">•</span>
+                          <span className="text-sm text-neutral-400">{formatDate(post.createdAt)}</span>
+                          {post.isPinned && (
+                            <Badge variant="secondary" className="ml-2 bg-blue-900/30 text-blue-400 border-blue-700">
+                              상단고정
+                            </Badge>
+                          )}
+                        </div>
+                        
                         <h3 className="text-lg font-semibold text-white group-hover:text-blue-400 transition-colors mb-2 line-clamp-2">
                           {post.title}
                         </h3>
                         <p className="text-neutral-400 text-sm line-clamp-2 mb-3">
                           {post.excerpt || post.content}
                         </p>
-                      </Link>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4 text-sm text-neutral-400">
-                          <div className="flex items-center gap-1">
-                            <Eye className="w-4 h-4" />
-                            <span>{post.viewCount}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Heart className="w-4 h-4" />
-                            <span>{post.likesCount}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <MessageSquare className="w-4 h-4" />
-                            <span>{post.commentsCount}</span>
-                          </div>
-                        </div>
                         
-                        {post.tags.length > 0 && (
-                          <div className="flex gap-1">
-                            {post.tags.slice(0, 3).map((tag) => (
-                              <Badge key={tag} variant="outline" className="text-xs border-neutral-600 text-neutral-300">
-                                #{tag}
-                              </Badge>
-                            ))}
-                            {post.tags.length > 3 && (
-                              <Badge variant="outline" className="text-xs border-neutral-600 text-neutral-300">
-                                +{post.tags.length - 3}
-                              </Badge>
-                            )}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4 text-sm text-neutral-400">
+                            <div className="flex items-center gap-1">
+                              <Eye className="w-4 h-4" />
+                              <span>{post.viewCount}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Heart className="w-4 h-4" />
+                              <span>{post.likesCount}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <MessageSquare className="w-4 h-4" />
+                              <span>{post.commentsCount}</span>
+                            </div>
                           </div>
-                        )}
+                          
+                          {post.tags.length > 0 && (
+                            <div className="flex gap-1">
+                              {post.tags.slice(0, 3).map((tag) => (
+                                <Badge key={tag} variant="outline" className="text-xs border-neutral-600 text-neutral-300">
+                                  #{tag}
+                                </Badge>
+                              ))}
+                              {post.tags.length > 3 && (
+                                <Badge variant="outline" className="text-xs border-neutral-600 text-neutral-300">
+                                  +{post.tags.length - 3}
+                                </Badge>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
         )}
