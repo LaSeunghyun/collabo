@@ -80,7 +80,12 @@ export default function NewPostPage() {
       if (data.success) {
         router.push(`/community/${data.post.id}`);
       } else {
-        alert(data.error || '게시글 작성에 실패했습니다.');
+        console.error('API Error:', data);
+        if (data.details) {
+          alert(`입력 오류: ${data.details.map((d: any) => d.message).join(', ')}`);
+        } else {
+          alert(data.error || '게시글 작성에 실패했습니다.');
+        }
       }
     } catch (error) {
       console.error('게시글 작성 오류:', error);

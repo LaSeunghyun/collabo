@@ -11,7 +11,7 @@ import { PostScope, PostStatus } from '@/lib/constants/enums';
 const createPostSchema = z.object({
   title: z.string().min(1).max(200),
   content: z.string().min(1).max(10000),
-  categoryId: z.string().uuid().optional(),
+  categoryId: z.string().optional(),
   attachments: z.array(z.any()).optional(),
   tags: z.array(z.string()).optional(),
 });
