@@ -113,26 +113,26 @@ export default function PostDetailPage() {
 
   if (error || !post) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-neutral-950">
         <div className="max-w-4xl mx-auto px-4 py-8">
           <Button
             variant="ghost"
             onClick={() => router.back()}
-            className="mb-6 gap-2 text-gray-600 hover:text-gray-900"
+            className="mb-6 gap-2 text-neutral-400 hover:text-white"
           >
             <ArrowLeft className="w-4 h-4" />
             목록으로
           </Button>
 
-          <Card>
+          <Card className="bg-neutral-800 border-neutral-700">
             <CardContent className="p-12 text-center">
-              <div className="text-red-500 text-lg font-medium mb-2">
+              <div className="text-red-400 text-lg font-medium mb-2">
                 {error || '게시글을 찾을 수 없습니다'}
               </div>
-              <p className="text-gray-500 mb-6">
+              <p className="text-neutral-400 mb-6">
                 요청하신 게시글이 존재하지 않거나 삭제되었습니다.
               </p>
-              <Button onClick={() => router.push('/community')}>
+              <Button onClick={() => router.push('/community')} className="bg-blue-600 hover:bg-blue-700">
                 커뮤니티로 돌아가기
               </Button>
             </CardContent>

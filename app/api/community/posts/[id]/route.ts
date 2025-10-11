@@ -5,7 +5,7 @@ import { requireApiUser } from '@/lib/auth/guards';
 import { GuardRequirement } from '@/lib/auth/session';
 import { getDbClient } from '@/lib/db/client';
 import { posts, users, categories } from '@/lib/db/schema/tables';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import { PostScope, PostStatus } from '@/lib/constants/enums';
 
 const updatePostSchema = z.object({
