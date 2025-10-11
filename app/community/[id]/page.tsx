@@ -143,28 +143,28 @@ export default function PostDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-neutral-950">
       <div className="max-w-4xl mx-auto px-4 py-8">
         <Button
           variant="ghost"
           onClick={() => router.back()}
-          className="mb-6 gap-2 text-gray-600 hover:text-gray-900"
+          className="mb-6 gap-2 text-neutral-400 hover:text-white"
         >
           <ArrowLeft className="w-4 h-4" />
           목록으로
         </Button>
 
         {/* 게시글 헤더 */}
-        <Card className="mb-6">
+        <Card className="mb-6 bg-neutral-800 border-neutral-700">
           <CardContent className="p-8">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-                  <User className="w-6 h-6 text-gray-500" />
+                <div className="w-12 h-12 bg-neutral-600 rounded-full flex items-center justify-center">
+                  <User className="w-6 h-6 text-neutral-400" />
                 </div>
                 <div>
-                  <div className="font-semibold text-gray-900">{post.authorName}</div>
-                  <div className="text-sm text-gray-500 flex items-center gap-2">
+                  <div className="font-semibold text-white">{post.authorName}</div>
+                  <div className="text-sm text-neutral-400 flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
                     {formatDate(post.createdAt)}
                   </div>
@@ -172,17 +172,17 @@ export default function PostDetailPage() {
               </div>
               
               {post.isPinned && (
-                <Badge variant="secondary">
+                <Badge variant="secondary" className="bg-blue-900/30 text-blue-400 border-blue-700">
                   상단고정
                 </Badge>
               )}
             </div>
 
-            <h1 className="text-3xl font-bold text-gray-900 mb-6 leading-tight">
+            <h1 className="text-3xl font-bold text-white mb-6 leading-tight">
               {post.title}
             </h1>
 
-            <div className="flex items-center gap-6 text-sm text-gray-500 mb-6">
+            <div className="flex items-center gap-6 text-sm text-neutral-400 mb-6">
               <div className="flex items-center gap-1">
                 <Eye className="w-4 h-4" />
                 <span>조회 {post.viewCount}</span>
@@ -200,7 +200,7 @@ export default function PostDetailPage() {
             {post.tags.length > 0 && (
               <div className="flex gap-2">
                 {post.tags.map((tag) => (
-                  <Badge key={tag} variant="outline" className="gap-1">
+                  <Badge key={tag} variant="outline" className="gap-1 border-neutral-600 text-neutral-300">
                     <Tag className="w-3 h-3" />
                     #{tag}
                   </Badge>
@@ -211,10 +211,10 @@ export default function PostDetailPage() {
         </Card>
 
         {/* 게시글 내용 */}
-        <Card className="mb-6">
+        <Card className="mb-6 bg-neutral-800 border-neutral-700">
           <CardContent className="p-8">
             <div className="prose prose-lg max-w-none">
-              <div className="whitespace-pre-wrap leading-relaxed text-gray-900">
+              <div className="whitespace-pre-wrap leading-relaxed text-white">
                 {post.content}
               </div>
             </div>
@@ -222,31 +222,31 @@ export default function PostDetailPage() {
         </Card>
 
         {/* 댓글 섹션 */}
-        <Card>
+        <Card className="bg-neutral-800 border-neutral-700">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-white">
               <MessageSquare className="w-5 h-5" />
               댓글 {comments.length}개
             </CardTitle>
           </CardHeader>
           <CardContent>
             {comments.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-neutral-400">
                 아직 댓글이 없습니다. 첫 번째 댓글을 작성해보세요!
               </div>
             ) : (
               <div className="space-y-4">
                 {comments.map((comment) => (
-                  <div key={comment.id} className="flex gap-4 p-4 border rounded-lg">
-                    <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
-                      <User className="w-4 h-4 text-gray-500" />
+                  <div key={comment.id} className="flex gap-4 p-4 border border-neutral-700 rounded-lg">
+                    <div className="w-8 h-8 bg-neutral-600 rounded-full flex items-center justify-center flex-shrink-0">
+                      <User className="w-4 h-4 text-neutral-400" />
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="font-medium text-gray-900">{comment.authorName}</span>
-                        <span className="text-sm text-gray-500">{formatDate(comment.createdAt)}</span>
+                        <span className="font-medium text-white">{comment.authorName}</span>
+                        <span className="text-sm text-neutral-400">{formatDate(comment.createdAt)}</span>
                       </div>
-                      <p className="text-gray-700">{comment.content}</p>
+                      <p className="text-neutral-300">{comment.content}</p>
                     </div>
                   </div>
                 ))}

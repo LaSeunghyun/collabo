@@ -132,25 +132,25 @@ export default function NewPostPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-neutral-950">
       <div className="max-w-4xl mx-auto px-4 py-8">
         <Button
           variant="ghost"
           onClick={() => router.back()}
-          className="mb-6 gap-2 text-gray-600 hover:text-gray-900"
+          className="mb-6 gap-2 text-neutral-400 hover:text-white"
         >
           <ArrowLeft className="w-4 h-4" />
           목록으로
         </Button>
 
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">글쓰기</h1>
-          <p className="text-gray-600">커뮤니티에 새로운 글을 작성해보세요</p>
+          <h1 className="text-3xl font-bold text-white mb-2">글쓰기</h1>
+          <p className="text-neutral-400">커뮤니티에 새로운 글을 작성해보세요</p>
         </div>
 
-        <Card>
+        <Card className="bg-neutral-800 border-neutral-700">
           <CardHeader className="pb-6">
-            <CardTitle className="text-2xl font-semibold flex items-center gap-2">
+            <CardTitle className="text-2xl font-semibold flex items-center gap-2 text-white">
               <FileText className="w-6 h-6" />
               새 게시글 작성
             </CardTitle>
@@ -158,7 +158,7 @@ export default function NewPostPage() {
           <CardContent className="space-y-8">
             <form onSubmit={handleSubmit} className="space-y-8">
               <div className="space-y-2">
-                <Label htmlFor="title" className="text-base font-medium">제목</Label>
+                <Label htmlFor="title" className="text-base font-medium text-white">제목</Label>
                 <Input
                   id="title"
                   value={formData.title}
@@ -166,22 +166,22 @@ export default function NewPostPage() {
                   placeholder="제목을 입력하세요"
                   required
                   maxLength={200}
-                  className="text-lg py-3"
+                  className="text-lg py-3 bg-neutral-700 border-neutral-600 text-white placeholder-neutral-400"
                 />
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-neutral-400">
                   {formData.title.length}/200
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="category" className="text-base font-medium">카테고리</Label>
+                <Label htmlFor="category" className="text-base font-medium text-white">카테고리</Label>
                 <Select value={formData.categoryId} onValueChange={(value) => setFormData(prev => ({ ...prev, categoryId: value }))}>
-                  <SelectTrigger className="py-3">
+                  <SelectTrigger className="py-3 bg-neutral-700 border-neutral-600 text-white">
                     <SelectValue placeholder="카테고리를 선택하세요" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-neutral-800 border-neutral-700">
                     {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
+                      <SelectItem key={category.id} value={category.id} className="text-white hover:bg-neutral-700">
                         {category.name}
                       </SelectItem>
                     ))}
@@ -190,7 +190,7 @@ export default function NewPostPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="content" className="text-base font-medium">내용</Label>
+                <Label htmlFor="content" className="text-base font-medium text-white">내용</Label>
                 <Textarea
                   id="content"
                   value={formData.content}
@@ -199,15 +199,15 @@ export default function NewPostPage() {
                   required
                   maxLength={10000}
                   rows={12}
-                  className="resize-none"
+                  className="resize-none bg-neutral-700 border-neutral-600 text-white placeholder-neutral-400"
                 />
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-neutral-400">
                   {formData.content.length}/10,000
                 </p>
               </div>
 
               <div className="space-y-4">
-                <Label className="text-base font-medium"># 태그</Label>
+                <Label className="text-base font-medium text-white"># 태그</Label>
                 <div className="flex gap-2">
                   <Input
                     value={tagInput}
@@ -219,9 +219,9 @@ export default function NewPostPage() {
                         handleTagAdd();
                       }
                     }}
-                    className="flex-1"
+                    className="flex-1 bg-neutral-700 border-neutral-600 text-white placeholder-neutral-400"
                   />
-                  <Button type="button" onClick={handleTagAdd} variant="outline" className="gap-2">
+                  <Button type="button" onClick={handleTagAdd} variant="outline" className="gap-2 border-neutral-600 text-white hover:bg-neutral-700">
                     <Plus className="w-4 h-4" />
                     추가
                   </Button>
@@ -235,7 +235,7 @@ export default function NewPostPage() {
                         className={`gap-1 px-3 py-1 text-sm ${
                           tag === 'RAY' 
                             ? 'bg-blue-600 text-white cursor-default' 
-                            : 'cursor-pointer hover:bg-gray-200'
+                            : 'cursor-pointer hover:bg-neutral-600 border-neutral-600 text-neutral-300'
                         }`}
                         onClick={() => handleTagRemove(tag)}
                       >
@@ -248,11 +248,11 @@ export default function NewPostPage() {
                 )}
               </div>
 
-              <div className="flex gap-4 pt-6 border-t">
+              <div className="flex gap-4 pt-6 border-t border-neutral-700">
                 <Button 
                   type="submit" 
                   disabled={loading || !formData.title.trim() || !formData.content.trim()}
-                  className="flex-1"
+                  className="flex-1 bg-blue-600 hover:bg-blue-700"
                 >
                   {loading ? '작성 중...' : '게시글 작성'}
                 </Button>
@@ -260,7 +260,7 @@ export default function NewPostPage() {
                   type="button" 
                   variant="outline" 
                   onClick={() => router.back()}
-                  className="px-8"
+                  className="px-8 border-neutral-600 text-white hover:bg-neutral-700"
                 >
                   취소
                 </Button>
