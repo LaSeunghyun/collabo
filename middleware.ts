@@ -79,6 +79,7 @@ export default withAuth(
           '/api/partners',
           '/api/hero-slides',
           '/api/categories',
+          '/api/community',
           '/api/store',
           '/api/test-accounts'
         ];
@@ -90,7 +91,8 @@ export default withAuth(
         const isDynamicMatch =
           pathname.match(/^\/projects\/[^/]+$/) || // /projects/[id]
           pathname.match(/^\/api\/projects\/[^/]+$/) || // /api/projects/[id]
-          pathname.startsWith('/api/projects/'); // /api/projects/ sub-paths
+          pathname.startsWith('/api/projects/') || // /api/projects/ sub-paths
+          pathname.startsWith('/api/community/'); // /api/community/ sub-paths
 
         // If exact match or dynamic match, allow access without authentication
         if (isExactMatch || isDynamicMatch) {
