@@ -55,10 +55,12 @@ export async function GET(request: NextRequest) {
     let orderBy;
     switch (query.sort) {
       case 'popular':
-        orderBy = desc(posts.viewCount);
+        // 조회수와 좋아요 수를 고려한 인기순 정렬
+        orderBy = desc(sql`${posts.viewCount} + (SELECT COUNT(*) FROM "PostLike" WHERE "postId" = ${posts.id})`);
         break;
       case 'comments':
-        orderBy = desc(posts.viewCount);
+        // 댓글 수 기준 정렬
+        orderBy = desc(sql`(SELECT COUNT(*) FROM "Comment" WHERE "postId" = ${posts.id} AND "isDeleted" = false)`);
         break;
       case 'latest':
       default:
@@ -94,7 +96,7 @@ export async function GET(request: NextRequest) {
       .leftJoin(users, eq(posts.authorId, users.id))
       .leftJoin(categories, eq(posts.categoryId, categories.id))
       .where(whereConditions)
-      .orderBy(orderBy)
+      .orderBy(desc(posts.isPinned), orderBy) // 상단 고정글을 먼저 정렬
       .limit(query.limit)
       .offset(offset);
 

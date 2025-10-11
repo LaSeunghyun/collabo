@@ -8,14 +8,14 @@ interface CategoryBadgeProps {
 }
 
 const categoryColors: Record<string, string> = {
-  'free': 'bg-blue-100 text-blue-700 border-blue-200',
-  'question': 'bg-green-100 text-green-700 border-green-200',
-  'review': 'bg-purple-100 text-purple-700 border-purple-200',
-  'suggestion': 'bg-yellow-100 text-yellow-700 border-yellow-200',
-  'recruitment': 'bg-red-100 text-red-700 border-red-200',
-  'trade': 'bg-orange-100 text-orange-700 border-orange-200',
-  'info-share': 'bg-indigo-100 text-indigo-700 border-indigo-200',
-  'general': 'bg-gray-100 text-gray-700 border-gray-200',
+  'free': 'bg-blue-900/30 text-blue-400 border-blue-700',
+  'question': 'bg-green-900/30 text-green-400 border-green-700',
+  'review': 'bg-purple-900/30 text-purple-400 border-purple-700',
+  'suggestion': 'bg-yellow-900/30 text-yellow-400 border-yellow-700',
+  'recruitment': 'bg-red-900/30 text-red-400 border-red-700',
+  'trade': 'bg-orange-900/30 text-orange-400 border-orange-700',
+  'info-share': 'bg-indigo-900/30 text-indigo-400 border-indigo-700',
+  'general': 'bg-gray-900/30 text-gray-400 border-gray-700',
 };
 
 const categoryLabels: Record<string, string> = {

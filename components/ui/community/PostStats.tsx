@@ -17,17 +17,17 @@ export function PostStats({
 }: PostStatsProps) {
   return (
     <div className={`flex flex-col gap-2 ${className}`}>
-      <div className="flex items-center gap-1 text-sm text-neutral-600">
+      <div className="flex items-center gap-1 text-sm text-neutral-400">
         <Eye className="w-4 h-4" />
         <span className="font-medium">{viewCount}</span>
       </div>
       
-      <div className="flex items-center gap-1 text-sm text-neutral-600">
+      <div className="flex items-center gap-1 text-sm text-neutral-400">
         <Heart className="w-4 h-4" />
         <span className="font-medium">{likesCount}</span>
       </div>
       
-      <div className="flex items-center gap-1 text-sm text-neutral-600">
+      <div className="flex items-center gap-1 text-sm text-neutral-400">
         <MessageCircle className="w-4 h-4" />
         <span className="font-medium">{commentsCount}</span>
       </div>

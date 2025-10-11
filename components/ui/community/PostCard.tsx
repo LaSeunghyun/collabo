@@ -50,7 +50,7 @@ export function PostCard({ post, showRecommendBadge = true }: PostCardProps) {
   };
 
   return (
-    <Card className="group hover:shadow-lg transition-all duration-200 border-0 bg-white">
+    <Card className="group hover:shadow-lg transition-all duration-200 border-0 bg-neutral-800 border-neutral-700">
       <CardContent className="p-6">
         <div className="flex items-start gap-4">
           {/* 좌측: 추천글 배지 및 날짜 */}
@@ -58,7 +58,7 @@ export function PostCard({ post, showRecommendBadge = true }: PostCardProps) {
             {showRecommendBadge && post.isPinned && (
               <RecommendBadge count={post.likesCount} />
             )}
-            <div className="text-xs text-neutral-500 font-medium">
+            <div className="text-xs text-neutral-400 font-medium">
               {formatDate(post.createdAt)}
             </div>
           </div>
@@ -83,15 +83,15 @@ export function PostCard({ post, showRecommendBadge = true }: PostCardProps) {
             </div>
 
             <Link href={`/community/${post.id}`} className="block group">
-              <h3 className="text-lg font-semibold text-neutral-900 group-hover:text-blue-600 transition-colors mb-2 line-clamp-2">
+              <h3 className="text-lg font-semibold text-white group-hover:text-blue-400 transition-colors mb-2 line-clamp-2">
                 {post.title}
               </h3>
-              <p className="text-neutral-600 text-sm line-clamp-2 mb-3">
+              <p className="text-neutral-400 text-sm line-clamp-2 mb-3">
                 {post.excerpt || post.content}
               </p>
             </Link>
 
-            <div className="flex items-center gap-4 text-sm text-neutral-500">
+            <div className="flex items-center gap-4 text-sm text-neutral-400">
               <div className="flex items-center gap-1">
                 <User className="w-4 h-4" />
                 <span>{post.authorName}</span>

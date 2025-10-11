@@ -8,7 +8,6 @@ import { Search, Plus, TrendingUp, MessageSquare, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { PostCard } from '@/components/ui/community';
 
@@ -116,14 +115,14 @@ function CommunityPageContent() {
 
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-neutral-950">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* 헤더 영역 */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-4xl font-bold text-neutral-900 mb-2">커뮤니티</h1>
-              <p className="text-neutral-600 text-lg">자유롭게 소통하고 정보를 공유해보세요</p>
+              <h1 className="text-4xl font-bold text-white mb-2">커뮤니티</h1>
+              <p className="text-neutral-400 text-lg">자유롭게 소통하고 정보를 공유해보세요</p>
             </div>
             <Link href="/community/new">
               <Button size="lg" className="gap-2">
@@ -140,32 +139,40 @@ function CommunityPageContent() {
               placeholder="게시글 검색..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 py-3 text-lg border-2 border-neutral-200 focus:border-blue-500 rounded-xl"
+              className="pl-10 pr-4 py-3 text-lg border-2 border-neutral-700 bg-neutral-800 text-white placeholder-neutral-400 focus:border-blue-500 rounded-xl"
             />
           </form>
         </div>
 
-        {/* 카테고리 탭 */}
+        {/* 카테고리 버튼들 */}
         <div className="mb-8">
-          <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
-            <TabsList className="grid w-full grid-cols-8 bg-white p-1 rounded-xl shadow-sm border">
-              <TabsTrigger 
-                value="all" 
-                className="data-[state=active]:bg-blue-500 data-[state=active]:text-white rounded-lg font-medium"
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant={selectedCategory === 'all' ? 'default' : 'outline'}
+              onClick={() => setSelectedCategory('all')}
+              className={`${
+                selectedCategory === 'all'
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-neutral-800 text-neutral-300 border-neutral-700 hover:bg-neutral-700'
+              }`}
+            >
+              전체
+            </Button>
+            {categories.map((category) => (
+              <Button
+                key={category.id}
+                variant={selectedCategory === category.id ? 'default' : 'outline'}
+                onClick={() => setSelectedCategory(category.id)}
+                className={`${
+                  selectedCategory === category.id
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-neutral-800 text-neutral-300 border-neutral-700 hover:bg-neutral-700'
+                }`}
               >
-                전체
-              </TabsTrigger>
-              {categories.map((category) => (
-                <TabsTrigger 
-                  key={category.id} 
-                  value={category.id}
-                  className="data-[state=active]:bg-blue-500 data-[state=active]:text-white rounded-lg font-medium"
-                >
-                  {category.name}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
+                {category.name}
+              </Button>
+            ))}
+          </div>
         </div>
 
         {/* 정렬 및 필터 */}
