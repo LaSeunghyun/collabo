@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { ArrowLeft, Eye, Heart, MessageCircle, Share2, Bookmark, Flag, Edit, Trash2, User, Calendar } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { CategoryBadge } from '@/components/ui/community';
 
 interface Post {
   id: string;
@@ -147,18 +148,6 @@ export default function PostDetailPage() {
     });
   };
 
-  const getCategoryLabel = (categorySlug: string) => {
-    const labels: Record<string, string> = {
-      'FREE': '자유',
-      'QUESTION': '질문',
-      'REVIEW': '후기',
-      'SUGGESTION': '제안',
-      'RECRUITMENT': '모집',
-      'TRADE': '거래',
-      'INFO_SHARE': '정보공유',
-    };
-    return labels[categorySlug] || categorySlug;
-  };
 
   if (loading) {
     return (
@@ -188,149 +177,215 @@ export default function PostDetailPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      {/* 게시글 헤더 */}
-      <div className="mb-6">
-        <div className="flex items-center gap-2 mb-4">
-          {post.isPinned && (
-            <Badge variant="secondary">상단고정</Badge>
-          )}
-          <Badge variant="outline">{getCategoryLabel(post.categorySlug)}</Badge>
-        </div>
-        
-        <h1 className="text-3xl font-bold mb-4">{post.title}</h1>
-        
-        <div className="flex items-center justify-between text-sm text-neutral-600 mb-6">
-          <div className="flex items-center gap-4">
-            <span>{post.authorName}</span>
-            <span>{formatDate(post.createdAt)}</span>
-            {post.updatedAt !== post.createdAt && (
-              <span className="text-neutral-500">(수정됨)</span>
-            )}
-          </div>
-          <div className="flex items-center gap-4">
-            <span>조회 {post.viewCount}</span>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-neutral-50">
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        {/* 뒤로가기 버튼 */}
+        <Button 
+          variant="ghost" 
+          onClick={() => router.back()}
+          className="mb-6 gap-2 text-neutral-600 hover:text-neutral-900"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          목록으로
+        </Button>
 
-      {/* 게시글 내용 */}
-      <Card className="mb-6">
-        <CardContent className="p-6">
-          <div className="prose max-w-none">
-            <div className="whitespace-pre-wrap">{post.content}</div>
-          </div>
-          
-          {post.tags.length > 0 && (
-            <div className="mt-6 pt-6 border-t">
-              <div className="flex flex-wrap gap-2">
-                {post.tags.map((tag) => (
-                  <Badge key={tag} variant="outline">
-                    #{tag}
-                  </Badge>
-                ))}
-              </div>
+        {/* 게시글 헤더 */}
+        <Card className="mb-6 bg-white shadow-sm">
+          <CardContent className="p-8">
+            <div className="flex items-center gap-3 mb-6">
+              {post.isPinned && (
+                <Badge className="bg-red-500 text-white border-0">
+                  상단고정
+                </Badge>
+              )}
+              <CategoryBadge categorySlug={post.categorySlug} />
             </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* 액션 버튼 */}
-      <div className="flex gap-2 mb-6">
-        <Button variant="outline" size="sm">
-          좋아요
-        </Button>
-        <Button variant="outline" size="sm">
-          저장
-        </Button>
-        <Button variant="outline" size="sm">
-          신고
-        </Button>
-        {session?.user?.id === post.authorName && (
-          <>
-            <Button variant="outline" size="sm">
-              수정
-            </Button>
-            <Button variant="outline" size="sm">
-              삭제
-            </Button>
-          </>
-        )}
-      </div>
-
-      <Separator className="mb-6" />
-
-      {/* 댓글 섹션 */}
-      <div className="space-y-6">
-        <h2 className="text-xl font-semibold">댓글 {comments.length}</h2>
-
-        {/* 댓글 작성 */}
-        {session ? (
-          <Card>
-            <CardContent className="p-4">
-              <form onSubmit={handleCommentSubmit} className="space-y-4">
-                <Textarea
-                  value={commentContent}
-                  onChange={(e) => setCommentContent(e.target.value)}
-                  placeholder="댓글을 작성하세요..."
-                  rows={3}
-                  className="resize-none"
-                />
-                <div className="flex justify-end">
-                  <Button type="submit" disabled={submittingComment || !commentContent.trim()}>
-                    {submittingComment ? '작성 중...' : '댓글 작성'}
-                  </Button>
+            
+            <h1 className="text-4xl font-bold text-neutral-900 mb-6 leading-tight">
+              {post.title}
+            </h1>
+            
+            <div className="flex items-center justify-between text-sm text-neutral-600 mb-6">
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  <span className="font-medium">{post.authorName}</span>
                 </div>
-              </form>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-neutral-600">댓글을 작성하려면 로그인이 필요합니다.</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* 댓글 목록 */}
-        <div className="space-y-4">
-          {comments.map((comment) => (
-            <Card key={comment.id}>
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{comment.authorName}</span>
-                    <span className="text-sm text-neutral-500">
-                      {formatDate(comment.createdAt)}
-                    </span>
-                    {comment.editedAt && (
-                      <span className="text-sm text-neutral-500">(수정됨)</span>
-                    )}
-                  </div>
-                </div>
-                <div className="whitespace-pre-wrap">{comment.content}</div>
-                <div className="flex gap-2 mt-3">
-                  <Button variant="ghost" size="sm">
-                    좋아요
-                  </Button>
-                  <Button variant="ghost" size="sm">
-                    답글
-                  </Button>
-                  {session?.user?.id === comment.authorName && (
-                    <>
-                      <Button variant="ghost" size="sm">
-                        수정
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        삭제
-                      </Button>
-                    </>
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4" />
+                  <span>{formatDate(post.createdAt)}</span>
+                  {post.updatedAt !== post.createdAt && (
+                    <span className="text-neutral-500">(수정됨)</span>
                   )}
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Eye className="w-4 h-4" />
+                <span className="font-medium">{post.viewCount}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 게시글 내용 */}
+        <Card className="mb-6 bg-white shadow-sm">
+          <CardContent className="p-8">
+            <div className="prose prose-lg max-w-none text-neutral-800">
+              <div className="whitespace-pre-wrap leading-relaxed">{post.content}</div>
+            </div>
+            
+            {post.tags.length > 0 && (
+              <div className="mt-8 pt-6 border-t border-neutral-200">
+                <h4 className="text-sm font-medium text-neutral-700 mb-3">태그</h4>
+                <div className="flex flex-wrap gap-2">
+                  {post.tags.map((tag) => (
+                    <Badge key={tag} variant="outline" className="text-xs px-3 py-1">
+                      #{tag}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* 액션 버튼 */}
+        <Card className="mb-6 bg-white shadow-sm">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex gap-3">
+                <Button variant="outline" size="lg" className="gap-2">
+                  <Heart className="w-4 h-4" />
+                  좋아요
+                </Button>
+                <Button variant="outline" size="lg" className="gap-2">
+                  <Bookmark className="w-4 h-4" />
+                  저장
+                </Button>
+                <Button variant="outline" size="lg" className="gap-2">
+                  <Share2 className="w-4 h-4" />
+                  공유
+                </Button>
+                <Button variant="outline" size="lg" className="gap-2">
+                  <Flag className="w-4 h-4" />
+                  신고
+                </Button>
+              </div>
+              
+              {session?.user?.id === post.authorName && (
+                <div className="flex gap-2">
+                  <Button variant="outline" size="lg" className="gap-2">
+                    <Edit className="w-4 h-4" />
+                    수정
+                  </Button>
+                  <Button variant="outline" size="lg" className="gap-2 text-red-600 hover:text-red-700">
+                    <Trash2 className="w-4 h-4" />
+                    삭제
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 댓글 섹션 */}
+        <Card className="bg-white shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-xl font-semibold flex items-center gap-2">
+              <MessageCircle className="w-5 h-5" />
+              댓글 {comments.length}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+
+            {/* 댓글 작성 */}
+            {session ? (
+              <div className="bg-neutral-50 rounded-xl p-6">
+                <form onSubmit={handleCommentSubmit} className="space-y-4">
+                  <Textarea
+                    value={commentContent}
+                    onChange={(e) => setCommentContent(e.target.value)}
+                    placeholder="댓글을 작성하세요..."
+                    rows={4}
+                    className="resize-none border-2 border-neutral-200 focus:border-blue-500 rounded-xl"
+                  />
+                  <div className="flex justify-end">
+                    <Button 
+                      type="submit" 
+                      disabled={submittingComment || !commentContent.trim()}
+                      size="lg"
+                      className="gap-2"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      {submittingComment ? '작성 중...' : '댓글 작성'}
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            ) : (
+              <div className="bg-neutral-50 rounded-xl p-6 text-center">
+                <p className="text-neutral-600 mb-4">댓글을 작성하려면 로그인이 필요합니다.</p>
+                <Button variant="outline" onClick={() => router.push('/auth/signin')}>
+                  로그인하기
+                </Button>
+              </div>
+            )}
+
+            {/* 댓글 목록 */}
+            <div className="space-y-4">
+              {comments.length === 0 ? (
+                <div className="text-center py-8 text-neutral-500">
+                  <MessageCircle className="w-12 h-12 mx-auto mb-4 text-neutral-300" />
+                  <p>아직 댓글이 없습니다. 첫 번째 댓글을 작성해보세요!</p>
+                </div>
+              ) : (
+                comments.map((comment) => (
+                  <div key={comment.id} className="bg-white border border-neutral-200 rounded-xl p-6">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                          {comment.authorName.charAt(0)}
+                        </div>
+                        <div>
+                          <span className="font-medium text-neutral-900">{comment.authorName}</span>
+                          <div className="flex items-center gap-2 text-sm text-neutral-500">
+                            <span>{formatDate(comment.createdAt)}</span>
+                            {comment.editedAt && (
+                              <span>(수정됨)</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="whitespace-pre-wrap text-neutral-800 mb-4">{comment.content}</div>
+                    <div className="flex gap-2">
+                      <Button variant="ghost" size="sm" className="gap-1">
+                        <Heart className="w-4 h-4" />
+                        좋아요
+                      </Button>
+                      <Button variant="ghost" size="sm" className="gap-1">
+                        <MessageCircle className="w-4 h-4" />
+                        답글
+                      </Button>
+                      {session?.user?.id === comment.authorName && (
+                        <>
+                          <Button variant="ghost" size="sm" className="gap-1">
+                            <Edit className="w-4 h-4" />
+                            수정
+                          </Button>
+                          <Button variant="ghost" size="sm" className="gap-1 text-red-600 hover:text-red-700">
+                            <Trash2 className="w-4 h-4" />
+                            삭제
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

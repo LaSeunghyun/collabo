@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { ArrowLeft, Plus, X, FileText, Tag, Hash } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -122,115 +123,151 @@ export default function NewPostPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">글쓰기</h1>
-        <p className="text-neutral-600">커뮤니티에 새로운 글을 작성해보세요</p>
-      </div>
+    <div className="min-h-screen bg-neutral-50">
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        {/* 헤더 */}
+        <div className="mb-8">
+          <Button 
+            variant="ghost" 
+            onClick={() => router.back()}
+            className="mb-6 gap-2 text-neutral-600 hover:text-neutral-900"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            목록으로
+          </Button>
+          
+          <div>
+            <h1 className="text-4xl font-bold text-neutral-900 mb-2">글쓰기</h1>
+            <p className="text-neutral-600 text-lg">커뮤니티에 새로운 글을 작성해보세요</p>
+          </div>
+        </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>새 게시글 작성</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <Label htmlFor="title">제목</Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                placeholder="제목을 입력하세요"
-                required
-                maxLength={200}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="category">카테고리</Label>
-              <Select
-                value={formData.categoryId}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, categoryId: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="카테고리를 선택하세요" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="content">내용</Label>
-              <Textarea
-                id="content"
-                value={formData.content}
-                onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
-                placeholder="내용을 입력하세요"
-                required
-                maxLength={10000}
-                rows={12}
-                className="resize-none"
-              />
-              <p className="text-sm text-neutral-500 mt-1">
-                {formData.content.length}/10,000
-              </p>
-            </div>
-
-            <div>
-              <Label htmlFor="tags">태그</Label>
-              <div className="flex gap-2 mb-2">
+        <Card className="bg-white shadow-sm">
+          <CardHeader className="pb-6">
+            <CardTitle className="text-2xl font-semibold flex items-center gap-2">
+              <FileText className="w-6 h-6" />
+              새 게시글 작성
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-8">
+            <form onSubmit={handleSubmit} className="space-y-8">
+              <div className="space-y-2">
+                <Label htmlFor="title" className="text-base font-medium">제목</Label>
                 <Input
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  placeholder="태그를 입력하세요"
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleTagAdd();
-                    }
-                  }}
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="제목을 입력하세요"
+                  required
+                  maxLength={200}
+                  className="text-lg py-3 border-2 border-neutral-200 focus:border-blue-500 rounded-xl"
                 />
-                <Button type="button" onClick={handleTagAdd} variant="outline">
-                  추가
+                <p className="text-sm text-neutral-500">
+                  {formData.title.length}/200
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="category" className="text-base font-medium">카테고리</Label>
+                <Select
+                  value={formData.categoryId}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, categoryId: value }))}
+                >
+                  <SelectTrigger className="py-3 border-2 border-neutral-200 focus:border-blue-500 rounded-xl">
+                    <SelectValue placeholder="카테고리를 선택하세요" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="content" className="text-base font-medium">내용</Label>
+                <Textarea
+                  id="content"
+                  value={formData.content}
+                  onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+                  placeholder="내용을 입력하세요"
+                  required
+                  maxLength={10000}
+                  rows={12}
+                  className="resize-none text-base border-2 border-neutral-200 focus:border-blue-500 rounded-xl"
+                />
+                <p className="text-sm text-neutral-500">
+                  {formData.content.length}/10,000
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <Label htmlFor="tags" className="text-base font-medium flex items-center gap-2">
+                  <Hash className="w-4 h-4" />
+                  태그
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    placeholder="태그를 입력하세요"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleTagAdd();
+                      }
+                    }}
+                    className="border-2 border-neutral-200 focus:border-blue-500 rounded-xl"
+                  />
+                  <Button type="button" onClick={handleTagAdd} variant="outline" className="gap-2">
+                    <Plus className="w-4 h-4" />
+                    추가
+                  </Button>
+                </div>
+                {formData.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {formData.tags.map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant="secondary"
+                        className="cursor-pointer gap-1 px-3 py-1 text-sm"
+                        onClick={() => handleTagRemove(tag)}
+                      >
+                        <Tag className="w-3 h-3" />
+                        {tag}
+                        <X className="w-3 h-3" />
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-4 pt-6 border-t border-neutral-200">
+                <Button 
+                  type="submit" 
+                  disabled={loading} 
+                  size="lg" 
+                  className="gap-2 px-8"
+                >
+                  <FileText className="w-5 h-5" />
+                  {loading ? '작성 중...' : '게시글 작성'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.back()}
+                  size="lg"
+                  className="px-8"
+                >
+                  취소
                 </Button>
               </div>
-              {formData.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {formData.tags.map((tag) => (
-                    <Badge
-                      key={tag}
-                      variant="secondary"
-                      className="cursor-pointer"
-                      onClick={() => handleTagRemove(tag)}
-                    >
-                      {tag} ×
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="flex gap-4">
-              <Button type="submit" disabled={loading}>
-                {loading ? '작성 중...' : '게시글 작성'}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.back()}
-              >
-                취소
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
