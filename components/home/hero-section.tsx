@@ -6,11 +6,10 @@ import { useTranslation } from 'react-i18next';
 
 interface HeroSectionProps {
   projectsCount: number;
-  communityCount: number;
   artistsCount: number;
 }
 
-export function HeroSection({ projectsCount, communityCount, artistsCount }: HeroSectionProps) {
+export function HeroSection({ projectsCount, artistsCount }: HeroSectionProps) {
   const { t } = useTranslation();
 
   return (
@@ -32,17 +31,10 @@ export function HeroSection({ projectsCount, communityCount, artistsCount }: Her
             >
               {t('home.hero.ctaArtists')}
             </Link>
-            <Link
-              href="/community"
-              className="inline-flex items-center gap-2 rounded-full border border-white/20 px-5 py-2 text-sm font-semibold text-white transition hover:border-white/40 hover:text-white"
-            >
-              {t('home.hero.ctaCommunity')}
-            </Link>
           </div>
         </div>
         <div className="grid gap-4 rounded-3xl border border-white/10 bg-white/5 p-6 text-sm text-white/70">
           <MetricRow label={t('home.hero.metrics.projects')} value={projectsCount} />
-          <MetricRow label={t('home.hero.metrics.community')} value={communityCount} />
           <MetricRow label={t('home.hero.metrics.artists')} value={artistsCount} />
         </div>
       </div>

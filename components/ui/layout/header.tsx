@@ -12,8 +12,8 @@ export function Header() {
   const unreadCount = 0;
 
   const navigationItems = [
-    { href: '/announcements', label: '공지사항', unreadCount },
     { href: '/community', label: '커뮤니티' },
+    { href: '/announcements', label: '공지사항', unreadCount },
     { href: '/projects', label: '프로젝트' },
     { href: '/artists', label: '아티스트' },
     { href: '/partners', label: '파트너' },

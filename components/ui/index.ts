@@ -18,7 +18,6 @@ export { Header } from './layout/header';
 
 // Sections
 export { CategoryFilter } from './sections/category-filter';
-export { CommunityBoard } from './sections/community-board';
 export { HeroCarousel } from './sections/hero-carousel';
 export { ProjectDetailTabs } from './sections/project-detail-tabs';
 // export { ProjectFilterPanel } from './sections/project-filter-panel';

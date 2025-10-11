@@ -82,13 +82,6 @@ export const postTypeEnum = pgEnum('PostType', [
   'AMA',
 ]);
 
-export const communityCategoryEnum = pgEnum('CommunityCategory', [
-  'GENERAL',
-  'NOTICE',
-  'COLLAB',
-  'SUPPORT',
-  'SHOWCASE',
-]);
 
 export const notificationTypeEnum = pgEnum('NotificationType', [
   'FUNDING_SUCCESS',
@@ -116,4 +109,15 @@ export const moderationStatusEnum = pgEnum('ModerationStatus', [
   'REVIEWING',
   'ACTION_TAKEN',
   'DISMISSED',
+]);
+
+export const postScopeEnum = pgEnum('PostScope', [
+  'GLOBAL',
+  'PROJECT',
+]);
+
+export const postStatusEnum = pgEnum('PostStatus', [
+  'PUBLISHED',
+  'HIDDEN',
+  'DELETED',
 ]);

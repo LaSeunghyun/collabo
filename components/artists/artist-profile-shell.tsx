@@ -13,7 +13,6 @@ import { ArtistProjectUpdates } from '@/components/artists/project-updates';
 import { ExternalLinksGrid } from '@/components/artists/external-links-grid';
 import { LinkedEvents } from '@/components/artists/linked-events';
 import { ProjectCard } from '@/components/ui/cards/project-card';
-import { CommunityBoard } from '@/components/ui/sections/community-board';
 
 const DEFAULT_AVATAR = 'https://images.unsplash.com/photo-1521119989659-a83eee488004';
 
@@ -35,7 +34,6 @@ export function ArtistProfileShell({ profile, viewerId }: ArtistProfileShellProp
       { value: 'overview', label: t('artist.tabs.overview') },
       { value: 'projects', label: t('artist.tabs.projects') },
       { value: 'updates', label: t('artist.tabs.updates') },
-      { value: 'community', label: t('artist.tabs.community') },
       { value: 'portfolio', label: t('artist.tabs.portfolio') }
     ],
     [t]
@@ -151,9 +149,6 @@ export function ArtistProfileShell({ profile, viewerId }: ArtistProfileShellProp
           <ArtistProjectUpdates updates={profile.updates} />
         </Tabs.Content>
 
-        <Tabs.Content value="community">
-          <CommunityBoard authorId={profile.id} readOnly={!canEdit} />
-        </Tabs.Content>
 
         <Tabs.Content value="portfolio">
           <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-sm text-white/70">

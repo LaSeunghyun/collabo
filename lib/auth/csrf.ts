@@ -71,7 +71,6 @@ export function validateCSRFToken(request: NextRequest): { valid: boolean; error
   
   // API 경로 중 CSRF 검증이 필요한 경로들
   const protectedPaths = [
-    '/api/community',
     '/api/projects',
     '/api/partners',
     '/api/funding',

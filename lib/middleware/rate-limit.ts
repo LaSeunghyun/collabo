@@ -174,9 +174,6 @@ export function getRateLimiterForPath(pathname: string): RateLimiter | null {
     return rateLimiters.registration;
   }
   
-  if (pathname === '/api/community' && pathname.includes('POST')) {
-    return rateLimiters.postCreation;
-  }
   
   if (pathname.includes('/comments') && pathname.includes('POST')) {
     return rateLimiters.comment;

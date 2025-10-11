@@ -8,11 +8,11 @@ import { canAccessRoute } from '@/lib/auth/role-guards';
 // import { useAnnouncementUnreadCount } from '@/hooks/use-announcement-read';
 
 const baseTabs = [
-  { href: '/', label: '??, icon: '? ' },
-  { href: '/projects', label: '?„ë¡œ?íŠ¸', icon: '?µ' },
-  { href: '/artists', label: '?„í‹°?¤íŠ¸', icon: '?‘¤' },
-  { href: '/partners', label: '?ŒíŠ¸??, icon: '?¤' },
-  { href: '/community', label: 'ì»¤ë??ˆí‹°', icon: '?’¬' }
+  { href: '/', label: 'í™ˆ', icon: 'ğŸ ' },
+  { href: '/community', label: 'ì»¤ë®¤ë‹ˆí‹°', icon: 'ğŸ’¬' },
+  { href: '/projects', label: 'í”„ë¡œì íŠ¸', icon: 'ğŸ’¼' },
+  { href: '/artists', label: 'ì•„í‹°ìŠ¤íŠ¸', icon: 'ğŸ¨' },
+  { href: '/partners', label: 'íŒŒíŠ¸ë„ˆ', icon: 'ğŸ¤' }
 ];
 
 export function MobileTabBar() {
@@ -21,14 +21,14 @@ export function MobileTabBar() {
   // const { data: unreadCount = 0 } = useAnnouncementUnreadCount(Boolean(session?.user));
 
   const tabs = [...baseTabs];
-  tabs.splice(4, 0, { href: '/announcements', label: 'ê³µì?', icon: '?“¢' });
+  tabs.splice(4, 0, { href: '/announcements', label: 'ê³µì§€', icon: 'ğŸ“¢' });
 
   if (session?.user && canAccessRoute(session.user, '/partners/dashboard')) {
-    tabs.push({ href: '/partners/dashboard', label: '?€??, icon: '?“Š' });
+    tabs.push({ href: '/partners/dashboard', label: 'ëŒ€ì‹œë³´ë“œ', icon: 'ğŸ“Š' });
   }
 
   if (session?.user && canAccessRoute(session.user, '/admin')) {
-    tabs.push({ href: '/admin', label: 'ê´€ë¦?, icon: '?™ï¸' });
+    tabs.push({ href: '/admin', label: 'ê´€ë¦¬ì', icon: 'âš™ï¸' });
   }
 
   return (

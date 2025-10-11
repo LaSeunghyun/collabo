@@ -4,9 +4,7 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
 import en from '@/locales/en/common.json';
-import enCommunity from '@/locales/en/community.json';
 import ko from '@/locales/ko/common.json';
-import koCommunity from '@/locales/ko/community.json';
 
 type TranslationRecord = Record<string, unknown>;
 
@@ -29,8 +27,8 @@ const mergeDeep = (target: TranslationRecord, source: TranslationRecord): Transl
 };
 
 const resources = {
-  en: { translation: mergeDeep(en, { community: enCommunity }) },
-  ko: { translation: mergeDeep(ko, { community: koCommunity }) }
+  en: { translation: en },
+  ko: { translation: ko }
 };
 
 const initI18n = () => {

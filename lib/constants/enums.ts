@@ -25,7 +25,8 @@ export {
   productTypeEnum,
   orderStatusEnum,
   postTypeEnum,
-  communityCategoryEnum,
+  postScopeEnum,
+  postStatusEnum,
   notificationTypeEnum,
   milestoneStatusEnum,
   moderationTargetTypeEnum,
@@ -118,13 +119,17 @@ export const PostType = {
   AMA: 'AMA',
 } as const;
 
-export const CommunityCategory = {
-  GENERAL: 'GENERAL',
-  NOTICE: 'NOTICE',
-  COLLAB: 'COLLAB',
-  SUPPORT: 'SUPPORT',
-  SHOWCASE: 'SHOWCASE',
+export const PostScope = {
+  GLOBAL: 'GLOBAL',
+  PROJECT: 'PROJECT',
 } as const;
+
+export const PostStatus = {
+  PUBLISHED: 'PUBLISHED',
+  HIDDEN: 'HIDDEN',
+  DELETED: 'DELETED',
+} as const;
+
 
 export const NotificationType = {
   FUNDING_SUCCESS: 'FUNDING_SUCCESS',
@@ -162,6 +167,16 @@ export const AnnouncementCategory = {
   EVENT: 'EVENT',
 } as const;
 
+export const CommunityCategory = {
+  FREE: 'FREE',
+  QUESTION: 'QUESTION',
+  REVIEW: 'REVIEW',
+  SUGGESTION: 'SUGGESTION',
+  RECRUITMENT: 'RECRUITMENT',
+  TRADE: 'TRADE',
+  INFO_SHARE: 'INFO_SHARE',
+} as const;
+
 // ============================================================================
 // 3. TypeScript Types
 // ============================================================================
@@ -177,12 +192,14 @@ export type PartnerMatchStatusValue = (typeof PartnerMatchStatus)[keyof typeof P
 export type ProductTypeValue = (typeof ProductType)[keyof typeof ProductType];
 export type OrderStatusValue = (typeof OrderStatus)[keyof typeof OrderStatus];
 export type PostTypeValue = (typeof PostType)[keyof typeof PostType];
-export type CommunityCategoryValue = (typeof CommunityCategory)[keyof typeof CommunityCategory];
+export type PostScopeValue = (typeof PostScope)[keyof typeof PostScope];
+export type PostStatusValue = (typeof PostStatus)[keyof typeof PostStatus];
 export type NotificationTypeValue = (typeof NotificationType)[keyof typeof NotificationType];
 export type MilestoneStatusValue = (typeof MilestoneStatus)[keyof typeof MilestoneStatus];
 export type ModerationTargetTypeValue = (typeof ModerationTargetType)[keyof typeof ModerationTargetType];
 export type ModerationStatusValue = (typeof ModerationStatus)[keyof typeof ModerationStatus];
 export type AnnouncementCategoryValue = (typeof AnnouncementCategory)[keyof typeof AnnouncementCategory];
+export type CommunityCategoryValue = (typeof CommunityCategory)[keyof typeof CommunityCategory];
 
 // ============================================================================
 // 4. 한글 라벨 매핑 (UI 표시용)
@@ -270,13 +287,17 @@ export const POST_TYPE_LABELS: Record<PostTypeValue, string> = {
   [PostType.AMA]: 'AMA',
 };
 
-export const COMMUNITY_CATEGORY_LABELS: Record<CommunityCategoryValue, string> = {
-  [CommunityCategory.GENERAL]: '일반',
-  [CommunityCategory.NOTICE]: '공지사항',
-  [CommunityCategory.COLLAB]: '협업',
-  [CommunityCategory.SUPPORT]: '지원',
-  [CommunityCategory.SHOWCASE]: '쇼케이스',
+export const POST_SCOPE_LABELS: Record<PostScopeValue, string> = {
+  [PostScope.GLOBAL]: '전체게시판',
+  [PostScope.PROJECT]: '프로젝트',
 };
+
+export const POST_STATUS_LABELS: Record<PostStatusValue, string> = {
+  [PostStatus.PUBLISHED]: '게시됨',
+  [PostStatus.HIDDEN]: '숨김',
+  [PostStatus.DELETED]: '삭제됨',
+};
+
 
 export const NOTIFICATION_TYPE_LABELS: Record<NotificationTypeValue, string> = {
   [NotificationType.FUNDING_SUCCESS]: '펀딩 성공',
@@ -314,6 +335,16 @@ export const ANNOUNCEMENT_CATEGORY_LABELS: Record<AnnouncementCategoryValue, str
   [AnnouncementCategory.EVENT]: '이벤트',
 };
 
+export const COMMUNITY_CATEGORY_LABELS: Record<CommunityCategoryValue, string> = {
+  [CommunityCategory.FREE]: '자유',
+  [CommunityCategory.QUESTION]: '질문',
+  [CommunityCategory.REVIEW]: '후기',
+  [CommunityCategory.SUGGESTION]: '제안',
+  [CommunityCategory.RECRUITMENT]: '모집',
+  [CommunityCategory.TRADE]: '거래',
+  [CommunityCategory.INFO_SHARE]: '정보공유',
+};
+
 // ============================================================================
 // 5. 값 배열 (드롭다운이나 선택 옵션용)
 // ============================================================================
@@ -329,12 +360,14 @@ export const PARTNER_MATCH_STATUS_VALUES = Object.values(PartnerMatchStatus);
 export const PRODUCT_TYPE_VALUES = Object.values(ProductType);
 export const ORDER_STATUS_VALUES = Object.values(OrderStatus);
 export const POST_TYPE_VALUES = Object.values(PostType);
-export const COMMUNITY_CATEGORY_VALUES = Object.values(CommunityCategory);
+export const POST_SCOPE_VALUES = Object.values(PostScope);
+export const POST_STATUS_VALUES = Object.values(PostStatus);
 export const NOTIFICATION_TYPE_VALUES = Object.values(NotificationType);
 export const MILESTONE_STATUS_VALUES = Object.values(MilestoneStatus);
 export const MODERATION_TARGET_TYPE_VALUES = Object.values(ModerationTargetType);
 export const MODERATION_STATUS_VALUES = Object.values(ModerationStatus);
 export const ANNOUNCEMENT_CATEGORY_VALUES = Object.values(AnnouncementCategory);
+export const COMMUNITY_CATEGORY_VALUES = Object.values(CommunityCategory);
 
 // ============================================================================
 // 6. 기본값
@@ -343,5 +376,7 @@ export const ANNOUNCEMENT_CATEGORY_VALUES = Object.values(AnnouncementCategory);
 export const DEFAULT_ANNOUNCEMENT_CATEGORY: AnnouncementCategoryValue = AnnouncementCategory.GENERAL;
 export const DEFAULT_USER_ROLE: UserRoleValue = UserRole.PARTICIPANT;
 export const DEFAULT_PROJECT_STATUS: ProjectStatusValue = ProjectStatus.DRAFT;
-export const DEFAULT_COMMUNITY_CATEGORY: CommunityCategoryValue = CommunityCategory.GENERAL;
+export const DEFAULT_POST_SCOPE: PostScopeValue = PostScope.PROJECT;
+export const DEFAULT_POST_STATUS: PostStatusValue = PostStatus.PUBLISHED;
+export const DEFAULT_COMMUNITY_CATEGORY: CommunityCategoryValue = CommunityCategory.FREE;
 

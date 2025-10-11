@@ -36,6 +36,13 @@
       "when": 1760169498111,
       "tag": "20251011075818_opposite_next_avengers",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1760186889733,
+      "tag": "20251011124809_wonderful_manta",
+      "breakpoints": true
     }
   ]
 }

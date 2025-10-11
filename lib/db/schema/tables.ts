@@ -2,7 +2,6 @@ import { relations } from 'drizzle-orm';
 import {
   boolean,
   doublePrecision,
-  foreignKey,
   index,
   integer,
   jsonb,
@@ -13,7 +12,6 @@ import {
 } from 'drizzle-orm/pg-core';
 
 import {
-  communityCategoryEnum,
   fundingStatusEnum,
   milestoneStatusEnum,
   moderationStatusEnum,
@@ -23,6 +21,8 @@ import {
   partnerMatchStatusEnum,
   partnerTypeEnum,
   paymentProviderEnum,
+  postScopeEnum,
+  postStatusEnum,
   postTypeEnum,
   productTypeEnum,
   projectStatusEnum,
@@ -426,6 +426,23 @@ export const orderItems = pgTable(
   },
 );
 
+export const categories = pgTable(
+  'Category',
+  {
+    id: text('id').notNull().primaryKey(),
+    slug: text('slug').notNull(),
+    name: text('name').notNull(),
+    description: text('description'),
+    displayOrder: integer('displayOrder').notNull().default(0),
+    isActive: boolean('isActive').notNull().default(true),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt', { mode: 'string' }).notNull(),
+  },
+  (table) => ({
+    slugUnique: uniqueIndex('Category_slug_key').on(table.slug),
+  }),
+);
+
 export const posts = pgTable(
   'Post',
   {
@@ -437,9 +454,15 @@ export const posts = pgTable(
     authorId: text('authorId')
       .notNull()
       .references(() => users.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
+    categoryId: text('categoryId').references(() => categories.id, {
+      onDelete: 'set null',
+      onUpdate: 'cascade',
+    }),
     title: text('title').notNull(),
     content: text('content').notNull(),
     type: postTypeEnum('type').notNull().default('UPDATE'),
+    scope: postScopeEnum('scope').notNull().default('PROJECT'),
+    status: postStatusEnum('status').notNull().default('PUBLISHED'),
     visibility: text('visibility').default('PUBLIC'),
     attachments: jsonb('attachments'),
     milestoneId: text('milestoneId').references(() => projectMilestones.id, {
@@ -448,14 +471,36 @@ export const posts = pgTable(
     }),
     excerpt: text('excerpt'),
     tags: text('tags').array().notNull().default(['RAY']),
-    category: communityCategoryEnum('category').notNull().default('GENERAL'),
+    category: text('category').notNull().default('GENERAL'),
     language: text('language').notNull().default('ko'),
     scheduledAt: timestamp('scheduledAt', { mode: 'string' }),
     publishedAt: timestamp('publishedAt', { mode: 'string' }),
     isPinned: boolean('isPinned').notNull().default(false),
+    reportCount: integer('reportCount').notNull().default(0),
+    viewCount: integer('viewCount').notNull().default(0),
     createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
     updatedAt: timestamp('updatedAt', { mode: 'string' }).notNull(),
   },
+  (table) => ({
+    scopeCategoryStatusCreatedIdx: index('Post_scope_categoryId_status_createdAt_idx').on(
+      table.scope,
+      table.categoryId,
+      table.status,
+      table.createdAt
+    ),
+    scopeStatusPinnedCreatedIdx: index('Post_scope_status_isPinned_createdAt_idx').on(
+      table.scope,
+      table.status,
+      table.isPinned,
+      table.createdAt
+    ),
+    authorScopeCreatedIdx: index('Post_authorId_scope_createdAt_idx').on(
+      table.authorId,
+      table.scope,
+      table.createdAt
+    ),
+    reportCountIdx: index('Post_reportCount_idx').on(table.reportCount),
+  }),
 );
 
 export const comments = pgTable(
@@ -464,7 +509,7 @@ export const comments = pgTable(
     id: text('id').notNull().primaryKey(),
     postId: text('postId')
       .notNull()
-      .references(() => communityPosts.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+      .references(() => posts.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
     authorId: text('authorId')
       .notNull()
       .references(() => users.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
@@ -503,27 +548,6 @@ export const postLikes = pgTable(
   }),
 );
 
-export const communityPostLikes = pgTable(
-  'CommunityPostLike',
-  {
-    id: text('id').notNull().primaryKey(),
-    postId: text('postId')
-      .notNull()
-      .references(() => communityPosts.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-    userId: text('userId')
-      .notNull()
-      .references(() => users.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
-    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
-  },
-  (table) => ({
-    postIdIdx: index('CommunityPostLike_postId_idx').on(table.postId),
-    userIdIdx: index('CommunityPostLike_userId_idx').on(table.userId),
-    postUserUnique: uniqueIndex('CommunityPostLike_postId_userId_key').on(
-      table.postId,
-      table.userId,
-    ),
-  }),
-);
 
 export const postDislikes = pgTable(
   'PostDislike',
@@ -545,27 +569,6 @@ export const postDislikes = pgTable(
   }),
 );
 
-export const communityPostDislikes = pgTable(
-  'CommunityPostDislike',
-  {
-    id: text('id').notNull().primaryKey(),
-    postId: text('postId')
-      .notNull()
-      .references(() => communityPosts.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-    userId: text('userId')
-      .notNull()
-      .references(() => users.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
-    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
-  },
-  (table) => ({
-    postIdIdx: index('CommunityPostDislike_postId_idx').on(table.postId),
-    userIdIdx: index('CommunityPostDislike_userId_idx').on(table.userId),
-    postUserUnique: uniqueIndex('CommunityPostDislike_postId_userId_key').on(
-      table.postId,
-      table.userId,
-    ),
-  }),
-);
 
 export const notifications = pgTable(
   'Notification',
@@ -773,6 +776,26 @@ export const userBlocks = pgTable(
   }),
 );
 
+export const postBookmarks = pgTable(
+  'PostBookmark',
+  {
+    id: text('id').notNull().primaryKey(),
+    postId: text('postId')
+      .notNull()
+      .references(() => posts.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
+    userId: text('userId')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
+  },
+  (table) => ({
+    postUserUnique: uniqueIndex('PostBookmark_postId_userId_key').on(
+      table.postId,
+      table.userId,
+    ),
+  }),
+);
+
 // Relations
 
 export const usersRelations = relations(users, ({ many, one }) => ({
@@ -800,6 +823,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   visitLogs: many(visitLogs),
   authDevices: many(authDevices),
   authSessions: many(authSessions),
+  postBookmarks: many(postBookmarks),
 }));
 
 export const projectsRelations = relations(projects, ({ many, one }) => ({
@@ -988,6 +1012,10 @@ export const postsRelations = relations(posts, ({ one, many }) => ({
     fields: [posts.authorId],
     references: [users.id],
   }),
+  category: one(categories, {
+    fields: [posts.categoryId],
+    references: [categories.id],
+  }),
   milestone: one(projectMilestones, {
     fields: [posts.milestoneId],
     references: [projectMilestones.id],
@@ -996,25 +1024,18 @@ export const postsRelations = relations(posts, ({ one, many }) => ({
   comments: many(comments),
   likes: many(postLikes),
   dislikes: many(postDislikes),
+  bookmarks: many(postBookmarks),
 }));
 
 export const commentsRelations = relations(comments, ({ one, many }) => ({
-  post: one(communityPosts, {
+  post: one(posts, {
     fields: [comments.postId],
-    references: [communityPosts.id],
+    references: [posts.id],
   }),
   author: one(users, {
     fields: [comments.authorId],
     references: [users.id],
   }),
-  // parent: one(comments, {
-  //   fields: [comments.parentCommentId],
-  //   references: [comments.id],
-  //   relationName: 'CommentReplies',
-  // }),
-  // replies: many(comments, {
-  //   relationName: 'CommentReplies',
-  // }),
   reactions: many(commentReactions),
 }));
 
@@ -1040,27 +1061,6 @@ export const postDislikesRelations = relations(postDislikes, ({ one }) => ({
   }),
 }));
 
-export const communityPostLikesRelations = relations(communityPostLikes, ({ one }) => ({
-  post: one(communityPosts, {
-    fields: [communityPostLikes.postId],
-    references: [communityPosts.id],
-  }),
-  user: one(users, {
-    fields: [communityPostLikes.userId],
-    references: [users.id],
-  }),
-}));
-
-export const communityPostDislikesRelations = relations(communityPostDislikes, ({ one }) => ({
-  post: one(communityPosts, {
-    fields: [communityPostDislikes.postId],
-    references: [communityPosts.id],
-  }),
-  user: one(users, {
-    fields: [communityPostDislikes.userId],
-    references: [users.id],
-  }),
-}));
 
 export const notificationsRelations = relations(notifications, ({ one }) => ({
   user: one(users, {
@@ -1163,81 +1163,20 @@ export const userBlocksRelations = relations(userBlocks, ({ one }) => ({
   }),
 }));
 
-// Community tables
-export const communityPosts = pgTable('CommunityPost', {
-  id: text().primaryKey().notNull(),
-  title: text().notNull(),
-  content: text().notNull(),
-  category: communityCategoryEnum().notNull(),
-  authorId: text().notNull(),
-  projectId: text(),
-  images: text().array().notNull().default(['RAY']),
-  attachments: jsonb('attachments'),
-  linkPreviews: jsonb('linkPreviews'),
-  parentPostId: text('parentPostId'),
-  likesCount: integer().default(0).notNull(),
-  commentsCount: integer().default(0).notNull(),
-  replyCount: integer().default(0).notNull(),
-  viewCount: integer().default(0).notNull(),
-  isPinned: boolean().default(false).notNull(),
-  status: text().default('PUBLISHED').notNull(),
-  createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-  updatedAt: timestamp({ mode: 'string' }).notNull(),
-}, (table) => ({
-  authorIdIdx: index('CommunityPost_authorId_idx').on(table.authorId),
-  projectIdIdx: index('CommunityPost_projectId_idx').on(table.projectId),
-  categoryIdx: index('CommunityPost_category_idx').on(table.category),
-  isPinnedIdx: index('CommunityPost_isPinned_idx').on(table.isPinned),
-  statusIdx: index('CommunityPost_status_idx').on(table.status),
-  createdAtIdx: index('CommunityPost_createdAt_idx').on(table.createdAt),
-  likesCountIdx: index('CommunityPost_likesCount_idx').on(table.likesCount),
-  // 복합 인덱스 - 인기 게시글 쿼리 최적화
-  statusPinnedIdx: index('CommunityPost_status_isPinned_idx').on(table.status, table.isPinned),
-  // 복합 인덱스 - 정렬 최적화
-  createdAtStatusIdx: index('CommunityPost_createdAt_status_idx').on(table.createdAt, table.status),
-  likesCountStatusIdx: index('CommunityPost_likesCount_status_idx').on(table.likesCount, table.status),
-  // 외래키 제약조건
-  authorIdFk: foreignKey({
-    columns: [table.authorId],
-    foreignColumns: [users.id],
-    name: 'CommunityPost_authorId_User_id_fk'
-  }).onUpdate('cascade').onDelete('restrict'),
-  projectIdFk: foreignKey({
-    columns: [table.projectId],
-    foreignColumns: [projects.id],
-    name: 'CommunityPost_projectId_Project_id_fk'
-  }).onUpdate('cascade').onDelete('set null'),
+export const categoriesRelations = relations(categories, ({ many }) => ({
+  posts: many(posts),
 }));
 
-export const communityPostsRelations = relations(communityPosts, ({ one, many }) => ({
-  author: one(users, {
-    fields: [communityPosts.authorId],
+export const postBookmarksRelations = relations(postBookmarks, ({ one }) => ({
+  post: one(posts, {
+    fields: [postBookmarks.postId],
+    references: [posts.id],
+  }),
+  user: one(users, {
+    fields: [postBookmarks.userId],
     references: [users.id],
   }),
-  project: one(projects, {
-    fields: [communityPosts.projectId],
-    references: [projects.id],
-  }),
-  comments: many(comments),
-  likes: many(communityPostLikes),
-  dislikes: many(communityPostDislikes),
 }));
 
-export const communityReports = pgTable('CommunityReport', {
-  id: text().primaryKey().notNull(),
-  reporterId: text().notNull(),
-  targetType: moderationTargetTypeEnum().notNull(),
-  targetId: text().notNull(),
-  reason: text(),
-  status: moderationStatusEnum().default('PENDING').notNull(),
-  createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-  updatedAt: timestamp({ mode: 'string' }).notNull(),
-}, (table) => [
-  foreignKey({
-    columns: [table.reporterId],
-    foreignColumns: [users.id],
-    name: 'CommunityReport_reporterId_User_id_fk'
-  }).onUpdate('cascade').onDelete('restrict'),
-]);
 
 

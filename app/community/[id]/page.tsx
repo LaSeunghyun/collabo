@@ -1,862 +1,337 @@
 'use client';
 
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Flag, Heart, Loader2, MessageCircle, MinusCircle, UserCircle2, X } from 'lucide-react';
-import { ThreadsImageGrid } from '@/components/ui/community/ThreadsImageGrid';
-import { MediaPlayer } from '@/components/ui/community/MediaPlayer';
-import { LinkPreview } from '@/components/ui/community/LinkPreview';
-import { useTranslation } from 'react-i18next';
-import { signIn, useSession } from 'next-auth/react';
-import clsx from 'clsx';
+import { useSession } from 'next-auth/react';
 
-import type { CommunityComment, CommunityFeedResponse, CommunityPost } from '@/lib/data/community';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 
-function useCommunityPost(postId: string) {
-  return useQuery({
-    queryKey: ['community', 'detail', postId],
-    queryFn: async () => {
-      const res = await fetch(`/api/community/${postId}`);
-      if (!res.ok) {
-        throw new Error('Failed to load post');
-      }
-      return (await res.json()) as CommunityPost;
-    },
-    staleTime: 15_000
-  });
+interface Post {
+  id: string;
+  title: string;
+  content: string;
+  authorName: string;
+  authorAvatar: string;
+  categoryName: string;
+  categorySlug: string;
+  attachments: any[];
+  tags: string[];
+  isPinned: boolean;
+  viewCount: number;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string;
 }
 
-function useCommunityComments(postId: string) {
-  return useQuery({
-    queryKey: ['community', 'comments', postId],
-    queryFn: async () => {
-      const res = await fetch(`/api/community/${postId}/comments`);
-      if (!res.ok) {
-        throw new Error('Failed to load comments');
-      }
-      return (await res.json()) as CommunityComment[];
-    },
-    staleTime: 15_000
-  });
+interface Comment {
+  id: string;
+  content: string;
+  authorName: string;
+  authorAvatar: string;
+  parentCommentId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  editedAt: string | null;
+  isDeleted: boolean;
 }
 
-export default function CommunityPostDetailPage() {
-  const params = useParams<{ id: string }>();
-  const postId = params.id;
-  const { t } = useTranslation();
+export default function PostDetailPage() {
+  const params = useParams();
   const router = useRouter();
-  const queryClient = useQueryClient();
-  const { data: session, status } = useSession();
-  const isAuthenticated = Boolean(session?.user);
+  const { data: session } = useSession();
+  const [post, setPost] = useState<Post | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [commentContent, setCommentContent] = useState('');
+  const [submittingComment, setSubmittingComment] = useState(false);
 
-  // 세션 상태 디버깅
+  const postId = params.id as string;
+
+  // 게시글 로드
   useEffect(() => {
-    console.log('Session status:', { status, isAuthenticated });
-  }, [status, isAuthenticated]);
+    const fetchPost = async () => {
+      setLoading(true);
+      setError(null);
 
-  const { data: post, isLoading, isError } = useCommunityPost(postId);
-  const { data: comments = [], isLoading: commentsLoading } = useCommunityComments(postId);
+      try {
+        const response = await fetch(`/api/community/posts/${postId}`);
+        const data = await response.json();
 
-  // 싫어요 상태는 서버에서 관리하므로 로컬 상태 제거
-  const [reportOpen, setReportOpen] = useState(false);
-  const [reportStatus, setReportStatus] = useState<'idle' | 'submitted'>('idle');
-  const [reportReasonKey, setReportReasonKey] = useState<string | null>(null);
-  const [reportCustomReason, setReportCustomReason] = useState('');
-  const [reportError, setReportError] = useState<string | null>(null);
-  const [likeError, setLikeError] = useState<string | null>(null);
-  const [authorMenuOpen, setAuthorMenuOpen] = useState(false);
-  const [showAuthorPosts, setShowAuthorPosts] = useState(false);
-  const [showMessageModal, setShowMessageModal] = useState(false);
-  const [messageDraft, setMessageDraft] = useState('');
-  const [messages, setMessages] = useState<{ id: string; sender: 'me' | 'them'; content: string; createdAt: string }[]>([]);
-
-  const commentInputRef = useRef<HTMLTextAreaElement | null>(null);
-  const [commentValue, setCommentValue] = useState('');
-
-  const redirectToSignIn = useCallback(() => {
-    const callbackUrl = typeof window !== 'undefined' ? window.location.href : undefined;
-    void signIn(undefined, { callbackUrl });
-  }, []);
-
-  const toggleLikeMutation = useMutation({
-    mutationFn: async (like: boolean) => {
-      const res = await fetch(`/api/community/${postId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: like ? 'like' : 'unlike' })
-      });
-      if (!res.ok) {
-        const payload = await res.json().catch(() => null);
-        const message =
-          (payload && (payload.error ?? payload.message)) ?? t('community.detail.likeError');
-        throw new Error(message);
+        if (data.success) {
+          setPost(data.post);
+        } else {
+          setError(data.error || '게시글을 불러오는데 실패했습니다.');
+        }
+      } catch (error) {
+        console.error('게시글 로드 오류:', error);
+        setError('게시글을 불러오는데 실패했습니다.');
+      } finally {
+        setLoading(false);
       }
-      return (await res.json()) as CommunityPost;
-    },
-    onSuccess: (updated) => {
-      queryClient.setQueryData<CommunityPost>(['community', 'detail', postId], updated);
-      setLikeError(null);
-    },
-    onMutate: () => {
-      setLikeError(null);
-    },
-    onError: (error: unknown) => {
-      const message =
-        error instanceof Error ? error.message : t('community.detail.likeError');
-      setLikeError(message);
-    }
-  });
+    };
 
-  const toggleDislikeMutation = useMutation({
-    mutationFn: async (dislike: boolean) => {
-      const res = await fetch(`/api/community/${postId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: dislike ? 'dislike' : 'undislike' })
-      });
-      if (!res.ok) {
-        const payload = await res.json().catch(() => null);
-        const message =
-          (payload && (payload.error ?? payload.message)) ?? t('community.detail.dislikeError');
-        throw new Error(message);
+    if (postId) {
+      fetchPost();
+    }
+  }, [postId]);
+
+  // 댓글 로드
+  useEffect(() => {
+    const fetchComments = async () => {
+      try {
+        const response = await fetch(`/api/community/posts/${postId}/comments`);
+        const data = await response.json();
+
+        if (data.success) {
+          setComments(data.comments);
+        }
+      } catch (error) {
+        console.error('댓글 로드 오류:', error);
       }
-      return (await res.json()) as CommunityPost;
-    },
-    onSuccess: (updated) => {
-      queryClient.setQueryData<CommunityPost>(['community', 'detail', postId], updated);
-      setLikeError(null);
-    },
-    onMutate: () => {
-      setLikeError(null);
-    },
-    onError: (error: unknown) => {
-      const message =
-        error instanceof Error ? error.message : t('community.detail.dislikeError');
-      setLikeError(message);
-    }
-  });
+    };
 
-  const addCommentMutation = useMutation({
-    mutationFn: async (value: string) => {
-      const res = await fetch(`/api/community/${postId}/comments`, {
+    if (postId) {
+      fetchComments();
+    }
+  }, [postId]);
+
+  const handleCommentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!session || !commentContent.trim()) return;
+
+    setSubmittingComment(true);
+    try {
+      const response = await fetch(`/api/community/posts/${postId}/comments`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: value })
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: commentContent.trim(),
+        }),
       });
-      if (!res.ok) {
-        throw new Error('Failed to add comment');
-      }
-      return (await res.json()) as CommunityComment;
-    },
-    onSuccess: (comment) => {
-      queryClient.setQueryData<CommunityComment[]>(['community', 'comments', postId], (current = []) => [
-        ...current,
-        comment
-      ]);
-      setCommentValue('');
-    }
-  });
 
-  const authorPostsQuery = useQuery({
-    queryKey: ['community', 'author-posts', post?.author?.id],
-    enabled: Boolean(post?.author?.id) && showAuthorPosts,
-    queryFn: async () => {
-      const query = new URLSearchParams();
-      if (post?.author?.id) {
-        query.set('authorId', post.author.id);
-      }
-      query.set('limit', '8');
-      const res = await fetch(`/api/community?${query.toString()}`);
-      if (!res.ok) {
-        throw new Error('Failed to load author posts');
-      }
-      const data = (await res.json()) as CommunityFeedResponse;
-      return data.posts;
-    }
-  });
+      const data = await response.json();
 
-  const reportReasonOptions = useMemo(() => {
-    const entries = (t('community.detail.reportReasons', { returnObjects: true }) as
-      | Record<string, { title?: string; description?: string } | string>
-      | undefined) ?? {};
-
-    return Object.entries(entries)
-      .map(([value, raw]) => {
-        if (typeof raw === 'string') {
-          return { value, title: raw, description: '' };
+      if (data.success) {
+        setCommentContent('');
+        // 댓글 목록 새로고침
+        const commentsResponse = await fetch(`/api/community/posts/${postId}/comments`);
+        const commentsData = await commentsResponse.json();
+        if (commentsData.success) {
+          setComments(commentsData.comments);
         }
-
-        if (raw?.title) {
-          return { value, title: raw.title, description: raw.description ?? '' };
-        }
-
-        return null;
-      })
-      .filter((option): option is { value: string; title: string; description: string } => option !== null);
-  }, [t]);
-
-  const selectedReportReason = reportReasonKey
-    ? reportReasonOptions.find((option) => option.value === reportReasonKey)
-    : undefined;
-
-  const isOtherReportReason = reportReasonKey === 'other';
-  const trimmedCustomReportReason = reportCustomReason.trim();
-  const canSubmitReport =
-    Boolean(isAuthenticated) &&
-    Boolean(selectedReportReason) &&
-    (!isOtherReportReason || trimmedCustomReportReason.length > 0);
-
-  const resolveReportErrorMessage = (message: string | null | undefined) => {
-    if (!message) {
-      return t('community.detail.reportError');
-    }
-
-    switch (message) {
-      case 'Report already submitted.':
-        return t('community.detail.reportDuplicate');
-      case 'Post not found.':
-        return t('community.detail.reportPostNotFound');
-      case 'User not found.':
-        return t('community.detail.reportUserNotFound');
-      case 'Reporter is required.':
-        return t('community.detail.reportAuthRequired');
-      default:
-        return message;
+      } else {
+        alert(data.error || '댓글 작성에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('댓글 작성 오류:', error);
+      alert('댓글 작성에 실패했습니다.');
+    } finally {
+      setSubmittingComment(false);
     }
   };
 
-  const reportMutation = useMutation({
-    mutationFn: async ({ reporterId, reason }: { reporterId: string; reason: string }) => {
-      console.log('Sending report request:', { reporterId, reason, postId });
-
-      const res = await fetch(`/api/community/${postId}/report`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reporterId, reason })
-      });
-
-      console.log('Report response status:', res.status);
-
-      if (!res.ok) {
-        const payload = await res.json().catch(() => null);
-        console.log('Report error payload:', payload);
-        const message = resolveReportErrorMessage(payload?.message);
-        const error = new Error(message);
-        (error as any).details = payload?.details;
-        throw error;
-      }
-
-      return res.json() as Promise<{ id: string }>;
-    },
-    onSuccess: () => {
-      setReportStatus('submitted');
-      setReportError(null);
-      void queryClient.invalidateQueries({ queryKey: ['community', 'detail', postId] });
-    },
-    onError: (error) => {
-      console.error('Failed to submit report', error);
-      const message =
-        error instanceof Error
-          ? resolveReportErrorMessage(error.message)
-          : t('community.detail.reportError');
-
-      // 에러 상세 정보가 있으면 함께 표시
-      const errorDetails = (error as any)?.details;
-      const fullMessage = errorDetails ? `${message} (${errorDetails})` : message;
-
-      setReportError(fullMessage);
-    }
-  });
-
-  const resetReportFields = useCallback(() => {
-    setReportStatus('idle');
-    setReportReasonKey(null);
-    setReportCustomReason('');
-    setReportError(null);
-  }, []);
-
-  const closeReportModal = useCallback(() => {
-    setReportOpen(false);
-    resetReportFields();
-    reportMutation.reset();
-  }, [resetReportFields, reportMutation]);
-
-  const openReportModal = useCallback(() => {
-    resetReportFields();
-    reportMutation.reset();
-    setReportOpen(true);
-  }, [resetReportFields, reportMutation]);
-
-  const handleReportSubmit = useCallback(() => {
-    if (reportStatus === 'submitted') {
-      closeReportModal();
-      return;
-    }
-
-    console.log('Report submit attempt:', {
-      isAuthenticated,
-      userId: session?.user?.id,
-      session: session
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     });
+  };
 
-    if (!isAuthenticated || !session?.user?.id) {
-      console.log('Authentication check failed:', { isAuthenticated, userId: session?.user?.id });
-      setReportError(t('community.detail.reportAuthRequired'));
-      redirectToSignIn();
-      return;
-    }
+  const getCategoryLabel = (categorySlug: string) => {
+    const labels: Record<string, string> = {
+      'FREE': '자유',
+      'QUESTION': '질문',
+      'REVIEW': '후기',
+      'SUGGESTION': '제안',
+      'RECRUITMENT': '모집',
+      'TRADE': '거래',
+      'INFO_SHARE': '정보공유',
+    };
+    return labels[categorySlug] || categorySlug;
+  };
 
-    // 사용자 ID 유효성 검사
-    if (typeof session.user.id !== 'string' || session.user.id.trim() === '') {
-      console.log('Invalid user ID:', session.user.id);
-      setReportError(t('community.detail.reportUserNotFound'));
-      return;
-    }
-
-    if (!selectedReportReason) {
-      setReportError(t('community.detail.reportReasonRequired'));
-      return;
-    }
-
-    if (isOtherReportReason && trimmedCustomReportReason.length === 0) {
-      setReportError(t('community.detail.reportOtherRequired'));
-      return;
-    }
-
-    const finalReason =
-      isOtherReportReason ? trimmedCustomReportReason : selectedReportReason.title;
-
-    setReportError(null);
-    reportMutation.mutate({ reporterId: session.user.id, reason: finalReason });
-  }, [
-    reportStatus,
-    closeReportModal,
-    isAuthenticated,
-    selectedReportReason,
-    isOtherReportReason,
-    trimmedCustomReportReason,
-    t,
-    reportMutation,
-    redirectToSignIn,
-    session
-  ]);
-
-  const messageIsValid = useMemo(() => messageDraft.trim().length > 0, [messageDraft]);
-
-  const handleSendMessage = useCallback((event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!messageIsValid) {
-      return;
-    }
-
-    const now = new Date().toISOString();
-    setMessages((prev) => [
-      ...prev,
-      { id: crypto.randomUUID(), sender: 'me', content: messageDraft.trim(), createdAt: now }
-    ]);
-    setMessageDraft('');
-
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          sender: 'them',
-          content: t('community.messages.autoReply'),
-          createdAt: new Date().toISOString()
-        }
-      ]);
-    }, 800);
-  }, [messageIsValid, messageDraft, t]);
-
-  // 싫어요 상태는 서버에서 관리하므로 로컬 useEffect 제거
-
-  useEffect(() => {
-    if (!reportOpen) {
-      setReportStatus('idle');
-      setReportReasonKey(null);
-      setReportCustomReason('');
-      setReportError(null);
-      // reportMutation.reset()은 모달이 닫힐 때만 호출하도록 제거
-    }
-  }, [reportOpen]);
-
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="mx-auto max-w-4xl px-4 pb-20">
-        <div className="flex items-center gap-2 pt-16 text-sm text-white/70">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          {t('common.loading')}
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="animate-pulse space-y-6">
+          <div className="h-8 bg-neutral-200 rounded w-3/4"></div>
+          <div className="h-4 bg-neutral-200 rounded w-1/2"></div>
+          <div className="h-64 bg-neutral-200 rounded"></div>
         </div>
       </div>
     );
   }
 
-  if (isError || !post) {
+  if (error || !post) {
     return (
-      <div className="mx-auto max-w-4xl px-4 pb-20">
-        <div className="space-y-4 rounded-3xl border border-red-500/30 bg-red-500/10 p-8 text-white">
-          <p className="text-lg font-semibold">{t('community.detail.errorTitle')}</p>
-          <p className="text-sm text-white/70">{t('community.detail.errorDescription')}</p>
-          <button
-            type="button"
-            onClick={() => router.push('/community')}
-            className="rounded-full bg-white/10 px-4 py-2 text-sm transition hover:bg-white/20"
-          >
-            {t('community.actions.backToList')}
-          </button>
-        </div>
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <Card>
+          <CardContent className="p-6 text-center">
+            <p className="text-red-600">{error || '게시글을 찾을 수 없습니다.'}</p>
+            <Button onClick={() => router.back()} className="mt-4">
+              돌아가기
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
-
-  const likeLabel = t('community.likesLabel_other', { count: post.likes });
-  const commentLabel = t('community.commentsLabel_other', { count: comments.length });
-  const authorName = post.author?.name ?? t('community.defaultGuestName');
-  const categoryLabel = t(`community.categories.${post.category}`);
-  const createdAt = post.createdAt ? new Date(post.createdAt) : null;
-  const formattedDate = createdAt
-    ? createdAt.toLocaleString('ko-KR', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-    : '';
 
   return (
-    <div className="mx-auto max-w-4xl px-4 pb-24">
-      <div className="flex items-center justify-between pt-10">
-        <Link
-          href="/community"
-          className="inline-flex items-center gap-2 text-sm text-white/60 transition hover:text-white"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          {t('community.actions.backToList')}
-        </Link>
-        <span className="text-xs uppercase tracking-[0.3em] text-white/50">{categoryLabel}</span>
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      {/* 게시글 헤더 */}
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-4">
+          {post.isPinned && (
+            <Badge variant="secondary">상단고정</Badge>
+          )}
+          <Badge variant="outline">{getCategoryLabel(post.categorySlug)}</Badge>
+        </div>
+        
+        <h1 className="text-3xl font-bold mb-4">{post.title}</h1>
+        
+        <div className="flex items-center justify-between text-sm text-neutral-600 mb-6">
+          <div className="flex items-center gap-4">
+            <span>{post.authorName}</span>
+            <span>{formatDate(post.createdAt)}</span>
+            {post.updatedAt !== post.createdAt && (
+              <span className="text-neutral-500">(수정됨)</span>
+            )}
+          </div>
+          <div className="flex items-center gap-4">
+            <span>조회 {post.viewCount}</span>
+          </div>
+        </div>
       </div>
 
-      <article className="mt-6 space-y-8 rounded-3xl border border-white/10 bg-white/5 p-8">
-        <header className="space-y-4">
-          <div className="flex items-center gap-3 text-sm text-white/60">
-            <button
-              type="button"
-              onClick={() => setAuthorMenuOpen((prev) => !prev)}
-              className="inline-flex items-center gap-2 rounded-full border border-white/20 px-3 py-1 text-white transition hover:border-white/40 hover:text-white"
-            >
-              <UserCircle2 className="h-4 w-4" />
-              <span>{authorName}</span>
-            </button>
-            <span>•</span>
-            <span>{formattedDate}</span>
+      {/* 게시글 내용 */}
+      <Card className="mb-6">
+        <CardContent className="p-6">
+          <div className="prose max-w-none">
+            <div className="whitespace-pre-wrap">{post.content}</div>
           </div>
           
-          {post.title && (
-            <h1 className="text-3xl font-semibold text-white">{post.title}</h1>
-          )}
-          
-          <p className="text-base leading-relaxed text-white/80 whitespace-pre-line">{post.content}</p>
-
-          {/* Images */}
-          {post.images && post.images.length > 0 && (
-            <ThreadsImageGrid images={post.images} />
-          )}
-
-          {/* Attachments */}
-          {post.attachments && post.attachments.length > 0 && (
-            <div className="space-y-2">
-              {post.attachments.map((attachment) => (
-                <MediaPlayer key={attachment.id} attachment={attachment} />
-              ))}
+          {post.tags.length > 0 && (
+            <div className="mt-6 pt-6 border-t">
+              <div className="flex flex-wrap gap-2">
+                {post.tags.map((tag) => (
+                  <Badge key={tag} variant="outline">
+                    #{tag}
+                  </Badge>
+                ))}
+              </div>
             </div>
           )}
+        </CardContent>
+      </Card>
 
-          {/* Link Previews */}
-          {post.linkPreviews && post.linkPreviews.length > 0 && (
-            <div className="space-y-2">
-              {post.linkPreviews.map((preview, index) => (
-                <LinkPreview key={index} preview={preview} />
-              ))}
-            </div>
-          )}
-        </header>
+      {/* 액션 버튼 */}
+      <div className="flex gap-2 mb-6">
+        <Button variant="outline" size="sm">
+          좋아요
+        </Button>
+        <Button variant="outline" size="sm">
+          저장
+        </Button>
+        <Button variant="outline" size="sm">
+          신고
+        </Button>
+        {session?.user?.id === post.authorName && (
+          <>
+            <Button variant="outline" size="sm">
+              수정
+            </Button>
+            <Button variant="outline" size="sm">
+              삭제
+            </Button>
+          </>
+        )}
+      </div>
 
-        <div className="flex flex-wrap gap-3 text-sm text-white/70">
-          <button
-            type="button"
-            onClick={() => {
-              if (!isAuthenticated) {
-                redirectToSignIn();
-                return;
-              }
-              toggleLikeMutation.mutate(!post.liked);
-            }}
-            className={clsx(
-              'inline-flex items-center gap-2 rounded-full border px-4 py-2 transition disabled:cursor-not-allowed disabled:opacity-60',
-              post.liked
-                ? 'border-primary/60 bg-primary/20 text-primary'
-                : 'border-white/10 bg-white/5 text-white/80 hover:border-white/30 hover:bg-white/10'
-            )}
-            disabled={toggleLikeMutation.isPending}
-          >
-            <Heart className={clsx('h-4 w-4', post.liked ? 'fill-current' : undefined)} />
-            <span>{likeLabel}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              if (!isAuthenticated) {
-                redirectToSignIn();
-                return;
-              }
-              toggleDislikeMutation.mutate(!post.disliked);
-            }}
-            className={clsx(
-              'inline-flex items-center gap-2 rounded-full border px-4 py-2 transition disabled:cursor-not-allowed disabled:opacity-60',
-              post.disliked
-                ? 'border-white/20 bg-white/20 text-white'
-                : 'border-white/10 bg-white/5 text-white/80 hover:border-white/30 hover:bg-white/10'
-            )}
-            disabled={toggleDislikeMutation.isPending}
-          >
-            <MinusCircle className="h-4 w-4" />
-            <span>{t('community.detail.dislikeLabel', { count: post.dislikes })}</span>
-          </button>
-          <button
-            type="button"
-            onClick={openReportModal}
-            className="inline-flex items-center gap-2 rounded-full border border-red-400/40 bg-red-500/10 px-4 py-2 text-sm text-red-200 transition hover:border-red-300/60 hover:text-red-100"
-          >
-            <Flag className="h-4 w-4" />
-            <span>{t('community.detail.report')}</span>
-          </button>
-        </div>
-        {likeError ? <p className="text-xs text-red-400">{likeError}</p> : null}
-      </article>
+      <Separator className="mb-6" />
 
-      <section className="mt-8 space-y-6 rounded-3xl border border-white/10 bg-white/5 p-8">
-        <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-white">{t('community.commentsSectionTitle')}</h2>
-            <p className="text-sm text-white/60">{commentLabel}</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => commentInputRef.current?.focus()}
-            className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2 text-sm text-white/80 transition hover:border-white/40 hover:text-white"
-          >
-            <MessageCircle className="h-4 w-4" />
-            <span>{t('community.detail.writeComment')}</span>
-          </button>
-        </header>
+      {/* 댓글 섹션 */}
+      <div className="space-y-6">
+        <h2 className="text-xl font-semibold">댓글 {comments.length}</h2>
 
+        {/* 댓글 작성 */}
+        {session ? (
+          <Card>
+            <CardContent className="p-4">
+              <form onSubmit={handleCommentSubmit} className="space-y-4">
+                <Textarea
+                  value={commentContent}
+                  onChange={(e) => setCommentContent(e.target.value)}
+                  placeholder="댓글을 작성하세요..."
+                  rows={3}
+                  className="resize-none"
+                />
+                <div className="flex justify-end">
+                  <Button type="submit" disabled={submittingComment || !commentContent.trim()}>
+                    {submittingComment ? '작성 중...' : '댓글 작성'}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardContent className="p-4 text-center">
+              <p className="text-neutral-600">댓글을 작성하려면 로그인이 필요합니다.</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* 댓글 목록 */}
         <div className="space-y-4">
-          {commentsLoading ? (
-            <p className="text-sm text-white/60">{t('community.commentLoading')}</p>
-          ) : null}
-          {!commentsLoading && comments.length === 0 ? (
-            <p className="text-sm text-white/60">{t('community.noComments')}</p>
-          ) : null}
-          <ul className="space-y-3">
-            {comments.map((comment) => (
-              <li key={comment.id} className="rounded-2xl border border-white/10 bg-neutral-950/60 px-4 py-3 text-sm text-white/80">
-                <p className="font-semibold text-white">{comment.authorName}</p>
-                <p className="mt-1 whitespace-pre-line text-white/70">{comment.content}</p>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (!isAuthenticated) {
-              redirectToSignIn();
-              return;
-            }
-            const trimmed = commentValue.trim();
-            if (!trimmed) {
-              return;
-            }
-            addCommentMutation.mutate(trimmed);
-          }}
-          className="space-y-3"
-        >
-          <textarea
-            ref={commentInputRef}
-            value={commentValue}
-            onChange={(event) => setCommentValue(event.target.value)}
-            placeholder={t('community.commentPlaceholder') ?? ''}
-            className="h-32 w-full rounded-2xl border border-white/10 bg-neutral-950/60 px-4 py-3 text-sm text-white placeholder:text-white/50 focus:border-primary focus:outline-none"
-          />
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-white/50">
-              {isAuthenticated
-                ? t('community.commentUserLabel', { name: session?.user?.name ?? t('community.defaultGuestName') })
-                : t('community.commentLoginPrompt')}
-            </span>
-            <button
-              type="submit"
-              disabled={addCommentMutation.isPending}
-              className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {addCommentMutation.isPending
-                ? t('community.commentSubmitting')
-                : t('community.commentSubmit')}
-            </button>
-          </div>
-          {addCommentMutation.isError ? (
-            <p className="text-xs text-red-400">{t('community.commentErrorMessage')}</p>
-          ) : null}
-        </form>
-      </section>
-
-      {authorMenuOpen ? (
-        <div className="fixed inset-0 z-30" onClick={() => setAuthorMenuOpen(false)}>
-          <div
-            className="absolute right-6 top-24 w-56 rounded-2xl border border-white/10 bg-neutral-900/95 p-3 text-sm text-white shadow-xl"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <button
-              type="button"
-              onClick={() => {
-                setAuthorMenuOpen(false);
-                setShowAuthorPosts(true);
-              }}
-              className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left transition hover:bg-white/10"
-            >
-              <span>{t('community.detail.authorPosts')}</span>
-              <span className="text-xs text-white/40">↗</span>
-            </button>
-            {post.author?.id ? (
-              <Link
-                href={`/artists/${post.author.id}`}
-                className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left transition hover:bg-white/10"
-                onClick={() => setAuthorMenuOpen(false)}
-              >
-                <span>{t('community.detail.authorProfile')}</span>
-                <span className="text-xs text-white/40">↗</span>
-              </Link>
-            ) : null}
-            <button
-              type="button"
-              onClick={() => {
-                setAuthorMenuOpen(false);
-                setShowMessageModal(true);
-              }}
-              className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left transition hover:bg-white/10"
-            >
-              <span>{t('community.detail.authorMessage')}</span>
-              <span className="text-xs text-white/40">↗</span>
-            </button>
-          </div>
-        </div>
-      ) : null}
-
-      {showAuthorPosts ? (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4">
-          <div
-            className="w-full max-w-2xl space-y-4 rounded-3xl border border-white/10 bg-neutral-950/95 p-6"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-white">
-                {t('community.detail.authorPostsTitle', { name: authorName })}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowAuthorPosts(false)}
-                className="rounded-full bg-white/10 p-2 text-white/70 transition hover:bg-white/20"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            {authorPostsQuery.isLoading ? (
-              <p className="text-sm text-white/60">{t('common.loading')}</p>
-            ) : null}
-            {authorPostsQuery.isError ? (
-              <p className="text-sm text-red-400">{t('community.detail.authorPostsError')}</p>
-            ) : null}
-            <div className="space-y-3">
-              {(authorPostsQuery.data ?? []).map((item) => (
-                <Link
-                  key={item.id}
-                  href={`/community/${item.id}`}
-                  className="block rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white transition hover:border-primary/40 hover:text-primary"
-                  onClick={() => setShowAuthorPosts(false)}
-                >
-                  <p className="text-sm font-semibold">{item.title}</p>
-                  <p className="text-xs text-white/60 line-clamp-2">{item.content}</p>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {showMessageModal ? (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4">
-          <div
-            className="flex w-full max-w-md flex-col gap-4 rounded-3xl border border-white/10 bg-neutral-950/95 p-6"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-white">
-                {t('community.detail.messageTitle', { name: authorName })}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowMessageModal(false)}
-                className="rounded-full bg-white/10 p-2 text-white/70 transition hover:bg-white/20"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="flex-1 space-y-3 overflow-y-auto rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/80">
-              {messages.length === 0 ? (
-                <p className="text-xs text-white/60">{t('community.messages.empty')}</p>
-              ) : null}
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={clsx(
-                    'flex flex-col gap-1 rounded-2xl px-3 py-2',
-                    message.sender === 'me'
-                      ? 'self-end bg-primary/20 text-primary-foreground'
-                      : 'self-start bg-white/10 text-white'
+          {comments.map((comment) => (
+            <Card key={comment.id}>
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{comment.authorName}</span>
+                    <span className="text-sm text-neutral-500">
+                      {formatDate(comment.createdAt)}
+                    </span>
+                    {comment.editedAt && (
+                      <span className="text-sm text-neutral-500">(수정됨)</span>
+                    )}
+                  </div>
+                </div>
+                <div className="whitespace-pre-wrap">{comment.content}</div>
+                <div className="flex gap-2 mt-3">
+                  <Button variant="ghost" size="sm">
+                    좋아요
+                  </Button>
+                  <Button variant="ghost" size="sm">
+                    답글
+                  </Button>
+                  {session?.user?.id === comment.authorName && (
+                    <>
+                      <Button variant="ghost" size="sm">
+                        수정
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        삭제
+                      </Button>
+                    </>
                   )}
-                >
-                  <span className="text-xs uppercase tracking-[0.3em] text-white/50">
-                    {message.sender === 'me' ? t('community.messages.me') : authorName}
-                  </span>
-                  <p>{message.content}</p>
                 </div>
-              ))}
-            </div>
-            <form onSubmit={handleSendMessage} className="space-y-3">
-              <textarea
-                value={messageDraft}
-                onChange={(event) => setMessageDraft(event.target.value)}
-                placeholder={t('community.messages.placeholder') ?? ''}
-                className="h-24 w-full rounded-2xl border border-white/10 bg-neutral-900/80 px-3 py-2 text-sm text-white placeholder:text-white/50 focus:border-primary focus:outline-none"
-              />
-              <button
-                type="submit"
-                disabled={!messageIsValid}
-                className="w-full rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {t('community.messages.send')}
-              </button>
-            </form>
-          </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
-      ) : null}
-
-      {reportOpen ? (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4">
-          <div
-            className="w-full max-w-md space-y-4 rounded-3xl border border-white/10 bg-neutral-950/95 p-6 text-white"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">{t('community.detail.reportTitle')}</h3>
-              <button
-                type="button"
-                onClick={closeReportModal}
-                className="rounded-full bg-white/10 p-2 text-white/70 transition hover:bg-white/20"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            {reportStatus === 'submitted' ? (
-              <p className="text-sm text-white/70">{t('community.detail.reportSuccess')}</p>
-            ) : (
-              <>
-                <p className="text-sm text-white/70">{t('community.detail.reportDescription')}</p>
-                {!isAuthenticated ? (
-                  <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-xs text-amber-100">
-                    {t('community.detail.reportAuthRequired')}
-                  </div>
-                ) : null}
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-sm font-medium text-white">
-                      {t('community.detail.reportReasonLabel')}
-                    </p>
-                    <p className="mt-1 text-xs text-white/60">
-                      {t('community.detail.reportReasonDescription')}
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    {reportReasonOptions.map((option) => {
-                      const selected = option.value === reportReasonKey;
-                      return (
-                        <button
-                          key={option.value}
-                          type="button"
-                          onClick={() => {
-                            setReportReasonKey(option.value);
-                            if (option.value !== 'other') {
-                              setReportCustomReason('');
-                            }
-                            setReportError(null);
-                          }}
-                          className={clsx(
-                            'w-full rounded-2xl border px-4 py-3 text-left transition',
-                            selected
-                              ? 'border-red-400/70 bg-red-500/20 text-white'
-                              : 'border-white/10 bg-white/5 text-white/80 hover:border-white/20 hover:text-white'
-                          )}
-                        >
-                          <p className="text-sm font-semibold">{option.title}</p>
-                          {option.description ? (
-                            <p className="mt-1 text-xs text-white/60">{option.description}</p>
-                          ) : null}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-                {isOtherReportReason ? (
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-widest text-white/60">
-                      {t('community.detail.reportReasonOtherLabel')}
-                    </label>
-                    <textarea
-                      value={reportCustomReason}
-                      onChange={(event) => setReportCustomReason(event.target.value)}
-                      placeholder={t('community.detail.reportReasonOtherPlaceholder') ?? ''}
-                      className="min-h-[96px] w-full rounded-2xl border border-white/10 bg-neutral-900/80 px-3 py-2 text-sm text-white placeholder:text-white/50 focus:border-primary focus:outline-none"
-                    />
-                  </div>
-                ) : null}
-              </>
-            )}
-            {reportError ? <p className="text-xs text-red-400">{reportError}</p> : null}
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={closeReportModal}
-                className="rounded-full border border-white/20 px-4 py-2 text-sm text-white/80 transition hover:border-white/40 hover:text-white"
-              >
-                {t('community.detail.reportCancel')}
-              </button>
-              <button
-                type="button"
-                onClick={handleReportSubmit}
-                disabled={
-                  reportStatus !== 'submitted' && (!canSubmitReport || reportMutation.isPending)
-                }
-                className="rounded-full bg-red-500/80 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {reportStatus === 'submitted'
-                  ? t('community.detail.reportSubmitted')
-                  : reportMutation.isPending
-                    ? t('community.detail.reportSubmitting')
-                    : t('community.detail.reportConfirm')}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      </div>
     </div>
   );
 }

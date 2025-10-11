@@ -74,9 +74,7 @@ export default withAuth(
         const publicPaths = [
           '/',
           '/projects',
-          '/community',
           '/help',
-          '/api/community',
           '/api/projects',
           '/api/partners',
           '/api/hero-slides',
