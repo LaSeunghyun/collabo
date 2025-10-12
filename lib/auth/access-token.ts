@@ -2,8 +2,8 @@ import { randomUUID } from 'crypto';
 import { SignJWT, jwtVerify } from 'jose';
 import { eq } from 'drizzle-orm';
 import { getDbClient } from '@/lib/db/client';
-import { tokenBlacklist } from '@/drizzle/schema';
-import { userRole } from '@/drizzle/schema';
+import { tokenBlacklist } from '@/lib/db/schema';
+import { userRole } from '@/lib/db/schema';
 
 export interface AccessTokenContext {
   userId: string;

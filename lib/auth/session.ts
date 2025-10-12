@@ -3,8 +3,8 @@ import type { Session } from 'next-auth';
 import { eq } from 'drizzle-orm';
 
 import { getDbClient } from '@/lib/db/client';
-import { authSession, userPermission } from '@/drizzle/schema';
-import { userRole } from '@/drizzle/schema';
+import { authSession, userPermission } from '@/lib/db/schema';
+import { userRole } from '@/lib/db/schema';
 
 import { verifyAccessToken } from './access-token';
 import { authOptions } from './options';

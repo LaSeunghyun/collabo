@@ -6,7 +6,7 @@ import {
   authSession,
   refreshToken,
   userRole
-} from '@/drizzle/schema';
+} from '@/lib/db/schema';
 
 import { issueAccessToken } from './access-token';
 import { createOpaqueToken, fingerprintToken, hashClientHint, hashToken, verifyTokenHash } from './crypto';

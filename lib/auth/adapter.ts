@@ -10,7 +10,7 @@ import type {
 import { eq } from 'drizzle-orm';
 
 import { getDbClient } from '@/lib/db/client';
-import { user } from '@/drizzle/schema';
+import { user } from '@/lib/db/schema';
 
 type DatabaseClient = Awaited<ReturnType<typeof getDbClient>>;
 

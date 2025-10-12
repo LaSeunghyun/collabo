@@ -1,4 +1,4 @@
-import { userRole } from '@/drizzle/schema';
+import { userRole } from '@/lib/db/schema';
 
 export const UserRole = userRole.enumValues;
 export const USER_ROLE_VALUES = userRole.enumValues;

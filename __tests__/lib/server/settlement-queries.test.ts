@@ -1,6 +1,6 @@
 ﻿import { getSettlementsPendingPayout } from '@/lib/server/settlement-queries';
 import { getDbClient } from '@/lib/db/client';
-import { settlement, project } from '@/drizzle/schema';
+import { settlement, project } from '@/lib/db/schema';
 import { eq, inArray, desc } from 'drizzle-orm';
 
 // Drizzle 클라이언트 모킹

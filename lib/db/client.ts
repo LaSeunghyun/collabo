@@ -2,7 +2,7 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import { eq } from 'drizzle-orm';
 
 import { normalizeServerlessConnectionString } from '@/lib/db/connection-string';
-import * as schema from '@/drizzle/schema';
+import * as schema from '@/lib/db/schema';
 
 // 서버 사이드에서만 postgres 모듈을 동적으로 import
 const getPostgres = async () => {
