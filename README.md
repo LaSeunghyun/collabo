@@ -6,7 +6,11 @@ Next.js 14 기반으로 재구성한 콜라보리움 아티스트 팬 협업 플
 - 홈 배너 캐러셀, 실시간 인기/마감 임박/테마별 프로젝트 섹션
 - 프로젝트 목록 필터링, 상세 탭(Story/Updates/Community/Roadmap/Settlement)
 - 아티스트 KPI 대시보드, 파트너 추천 및 등록 폼, 커뮤니티 게시판
-- Prisma 스키마, NextAuth 인증, Stripe 결제/정산 API 스텁, i18next 다국어 지원
+- **Drizzle ORM**: Prisma에서 Drizzle로 마이그레이션 완료
+- **새로운 인증 시스템**: 세션 기반 인증 및 권한 관리
+- **구조화된 로깅**: 컨텍스트 정보를 포함한 에러 로깅 시스템
+- **성능 최적화**: 메모리 캐싱 및 N+1 쿼리 최적화
+- **타입 안정성**: TypeScript 타입 안정성 강화
 - Zustand 기반 전역 상태, React Query 데이터 패칭, Jest + RTL 컴포넌트 테스트
 - **Funding-Settlement 통합**: 펀딩 성공 시 자동 정산 생성 및 데이터 일관성 보장
 

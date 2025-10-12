@@ -2,7 +2,7 @@
 import { z } from 'zod';
 import { eq, and, desc } from 'drizzle-orm';
 
-import { 
+import {
   settlements,
   settlementPayouts,
   projects,
@@ -16,6 +16,7 @@ import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import { calculateSettlementBreakdown } from '@/lib/server/settlements';
 import { validateFundingSettlementConsistency } from '@/lib/server/funding-settlement';
 import { buildApiError } from '@/lib/server/error-handling';
+import { Logger, logApiError } from '@/lib/utils/logger';
 
 const requestSchema = z.object({
   projectId: z.string().min(1, 'projectId는 필수입니다.'),
@@ -101,7 +102,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const db = await getDb();
-    
+
     // 프로젝트 정보 조회
     const [project] = await db
       .select({
@@ -217,19 +218,19 @@ export async function POST(request: NextRequest) {
       }))
       .filter(entry => entry.share > 0);
 
-  let breakdown;
-  try {
-    breakdown = calculateSettlementBreakdown({
-      totalRaised,
-      platformFeeRate,
-      gatewayFees: gatewayFeeOverride ?? (typeof inferredGatewayFees === 'number' ? inferredGatewayFees : 0),
-      partnerShares,
-      collaboratorShares
-    });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : '정산 배분 계산에 실패했습니다.';
-    return buildError(message, 422);
-  }
+    let breakdown;
+    try {
+      breakdown = calculateSettlementBreakdown({
+        totalRaised,
+        platformFeeRate,
+        gatewayFees: gatewayFeeOverride ?? (typeof inferredGatewayFees === 'number' ? inferredGatewayFees : 0),
+        partnerShares,
+        collaboratorShares
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '정산 배분 계산에 실패했습니다.';
+      return buildError(message, 422);
+    }
 
     // Drizzle 트랜잭션으로 정산 생성
     const settlement = await db.transaction(async (tx) => {
@@ -315,7 +316,18 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(settlement, { status: 201 });
   } catch (error) {
-    console.error('정산 생성 오류:', error);
+    logApiError(
+      error instanceof Error ? error : new Error(String(error)),
+      'POST',
+      '/api/settlement',
+      {
+        projectId: payload?.projectId,
+        platformFeeRate: payload?.platformFeeRate,
+        gatewayFeeOverride: payload?.gatewayFeeOverride,
+        input: payload
+      }
+    );
+
     return buildError('정산 생성에 실패했습니다.', 500);
   }
 }

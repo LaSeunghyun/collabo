@@ -76,7 +76,7 @@ type ProjectInfo = {
 
 const toJsonInput = (
   value: ProjectUpdateAttachment[] | undefined
-): any => {
+): ProjectUpdateAttachment[] | null => {
   if (!value || value.length === 0) {
     return null;
   }
@@ -84,7 +84,7 @@ const toJsonInput = (
   return value;
 };
 
-const normalizeAttachments = (value: any | null): ProjectUpdateAttachment[] => {
+const normalizeAttachments = (value: unknown | null): ProjectUpdateAttachment[] => {
   if (!value) {
     return [];
   }
@@ -177,10 +177,10 @@ const toProjectUpdateRecord = (
   attachments: normalizeAttachments(post.attachments ?? null),
   milestone: post.milestone
     ? {
-        id: post.milestone.id,
-        title: post.milestone.title,
-        status: post.milestone.status
-      }
+      id: post.milestone.id,
+      title: post.milestone.title,
+      status: post.milestone.status
+    }
     : null,
   createdAt: new Date(post.createdAt),
   updatedAt: new Date(post.updatedAt),
@@ -232,9 +232,9 @@ export const assertProjectOwner = async (
   try {
     const db = await getDb();
     const [project] = await db
-      .select({ 
-        id: projects.id, 
-        ownerId: projects.ownerId 
+      .select({
+        id: projects.id,
+        ownerId: projects.ownerId
       })
       .from(projects)
       .where(eq(projects.id, projectId))
@@ -266,9 +266,9 @@ export const listProjectUpdates = async (
   try {
     const db = await getDb();
     const [project] = await db
-      .select({ 
-        id: projects.id, 
-        ownerId: projects.ownerId 
+      .select({
+        id: projects.id,
+        ownerId: projects.ownerId
       })
       .from(projects)
       .where(eq(projects.id, projectId))

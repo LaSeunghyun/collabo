@@ -1,14 +1,14 @@
 import { getDb } from '@/lib/db/client';
 import { calculateSettlementBreakdown } from './settlements';
 import { eq, and, inArray, desc } from 'drizzle-orm';
-import { 
-  projects, 
-  fundings, 
-  settlements, 
-  settlementPayouts, 
-  partnerMatches, 
-  projectCollaborators,
-  paymentTransactions
+import {
+    projects,
+    fundings,
+    settlements,
+    settlementPayouts,
+    partnerMatches,
+    projectCollaborators,
+    paymentTransactions
 } from '@/lib/db/schema';
 
 export interface FundingSettlementData {
@@ -29,7 +29,20 @@ export interface SettlementCreationParams {
 
 /**
  * 펀딩 성공 후 정산 데이터를 자동으로 생성하는 함수
- * 프로젝트가 목표 금액을 달성했을 때만 정산을 생성합니다.
+ * 
+ * 이 함수는 프로젝트가 목표 금액을 달성했을 때만 정산을 생성합니다.
+ * 정산 생성 과정:
+ * 1. 프로젝트 정보 및 상태 확인
+ * 2. 파트너 매치 및 협업자 정보 조회
+ * 3. 성공한 펀딩 데이터 집계
+ * 4. 정산 배분 계산 (플랫폼 수수료, 크리에이터, 파트너, 협업자)
+ * 5. 정산 레코드 및 배분 상세 내역 생성
+ * 
+ * @param projectId - 정산을 생성할 프로젝트 ID
+ * @param platformFeeRate - 플랫폼 수수료율 (기본값: 0.05 = 5%)
+ * @param gatewayFeeOverride - 게이트웨이 수수료 오버라이드 (선택사항)
+ * @param notes - 정산 관련 메모 (선택사항)
+ * @returns 생성된 정산 데이터 또는 null (목표 미달성 시)
  */
 export async function createSettlementIfTargetReached(
     projectId: string,
@@ -127,31 +140,31 @@ export async function createSettlementIfTargetReached(
             0
         );
 
-    // 파트너 및 협력자 배분 비율 정규화
-    const partnerShares = project.partnerMatches
-        .filter((match) => typeof match.settlementShare === 'number')
-        .map((match) => ({
-            stakeholderId: match.partnerId,
-            share: normaliseShare(match.settlementShare ?? 0)
-        }))
-        .filter((entry) => entry.share > 0);
+        // 파트너 및 협력자 배분 비율 정규화
+        const partnerShares = project.partnerMatches
+            .filter((match) => typeof match.settlementShare === 'number')
+            .map((match) => ({
+                stakeholderId: match.partnerId,
+                share: normaliseShare(match.settlementShare ?? 0)
+            }))
+            .filter((entry) => entry.share > 0);
 
-    const collaboratorShares = project.collaborators
-        .filter((collab) => typeof collab.share === 'number')
-        .map((collab) => ({
-            stakeholderId: collab.userId,
-            share: normaliseShare(collab.share ?? 0, true)
-        }))
-        .filter((entry) => entry.share > 0);
+        const collaboratorShares = project.collaborators
+            .filter((collab) => typeof collab.share === 'number')
+            .map((collab) => ({
+                stakeholderId: collab.userId,
+                share: normaliseShare(collab.share ?? 0, true)
+            }))
+            .filter((entry) => entry.share > 0);
 
-    // 정산 계산
-    const breakdown = calculateSettlementBreakdown({
-        totalRaised,
-        platformFeeRate,
-        gatewayFees: gatewayFeeOverride ?? inferredGatewayFees,
-        partnerShares,
-        collaboratorShares
-    });
+        // 정산 계산
+        const breakdown = calculateSettlementBreakdown({
+            totalRaised,
+            platformFeeRate,
+            gatewayFees: gatewayFeeOverride ?? inferredGatewayFees,
+            partnerShares,
+            collaboratorShares
+        });
 
         // 정산 레코드 생성
         const db = await getDb();
@@ -232,6 +245,15 @@ export async function createSettlementIfTargetReached(
 
 /**
  * 펀딩과 정산 데이터의 일관성을 검증하는 함수
+ * 
+ * 이 함수는 다음과 같은 데이터 일관성을 검증합니다:
+ * 1. 프로젝트의 currentAmount와 실제 펀딩 금액의 일치 여부
+ * 2. 최신 정산 금액과 펀딩 금액의 일치 여부
+ * 
+ * 데이터 불일치가 발견되면 issues 배열에 상세한 문제점을 기록합니다.
+ * 
+ * @param projectId - 검증할 프로젝트 ID
+ * @returns 일관성 검증 결과와 발견된 문제점 목록
  */
 export async function validateFundingSettlementConsistency(projectId: string) {
     try {
@@ -291,6 +313,17 @@ export async function validateFundingSettlementConsistency(projectId: string) {
 
 /**
  * 펀딩 데이터를 안전하게 업데이트하는 함수
+ * 
+ * 이 함수는 펀딩 데이터 업데이트와 정산 자동 생성을 트랜잭션으로 처리합니다.
+ * 
+ * 처리 과정:
+ * 1. 프로젝트의 currentAmount 업데이트 (선택사항)
+ * 2. 목표 금액 달성 시 정산 자동 생성 시도
+ * 
+ * @param projectId - 업데이트할 프로젝트 ID
+ * @param amount - 새로운 펀딩 금액
+ * @param updateProjectAmount - 프로젝트 금액 업데이트 여부 (기본값: true)
+ * @returns 업데이트 결과 및 생성된 정산 정보
  */
 export async function safeUpdateFundingData(
     projectId: string,
@@ -304,7 +337,7 @@ export async function safeUpdateFundingData(
             if (updateProjectAmount) {
                 await tx
                     .update(projects)
-                    .set({ 
+                    .set({
                         currentAmount: amount, // increment 대신 직접 설정
                         updatedAt: new Date().toISOString()
                     })
@@ -324,6 +357,17 @@ export async function safeUpdateFundingData(
 
 /**
  * 배분 비율 정규화 함수
+ * 
+ * 파트너 및 협업자의 배분 비율을 정규화합니다.
+ * 
+ * 정규화 규칙:
+ * - 0 이하의 값은 0으로 처리
+ * - hundredScale이 true인 경우: 100으로 나누어 소수점 비율로 변환
+ * - hundredScale이 false인 경우: 1보다 큰 값은 100으로 나누어 정규화
+ * 
+ * @param value - 정규화할 배분 비율 값
+ * @param hundredScale - 100 단위 스케일 여부 (기본값: false)
+ * @returns 정규화된 배분 비율 (0-1 사이의 값)
  */
 function normaliseShare(value: number, hundredScale = false) {
     if (!Number.isFinite(value) || value <= 0) {

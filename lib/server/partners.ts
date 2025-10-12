@@ -53,9 +53,14 @@ const sanitizeTags = (value?: string[] | null) => {
   return unique.length ? unique : null;
 };
 
+interface PartnerAvailability {
+  timezone?: string;
+  slots?: unknown[];
+}
+
 const sanitizeAvailability = (
   value: unknown
-): any | null => {
+): PartnerAvailability | null => {
   if (!value || typeof value !== 'object') {
     return null;
   }
@@ -89,13 +94,13 @@ const sanitizeAvailability = (
           return null;
         }
 
-        const payload: any = note
+        const payload: { day: string; start: string; end: string; note?: string } = note
           ? { day, start, end, note }
           : { day, start, end };
 
         return payload;
       })
-      .filter((slot): slot is any => Boolean(slot))
+      .filter((slot): slot is { day: string; start: string; end: string; note?: string } => Boolean(slot))
     : [];
 
   if (!timezone && slots.length === 0) {
@@ -320,15 +325,15 @@ export const listPartners = async (params: ListPartnersParams = {}): Promise<Lis
 
   // Get match counts for each partner
   const partnerIds = partnersData.map(p => p.id);
-  const matchCounts = partnerIds.length > 0 
+  const matchCounts = partnerIds.length > 0
     ? await db
-        .select({
-          partnerId: partnerMatches.partnerId,
-          count: count()
-        })
-        .from(partnerMatches)
-        .where(inArray(partnerMatches.partnerId, partnerIds))
-        .groupBy(partnerMatches.partnerId)
+      .select({
+        partnerId: partnerMatches.partnerId,
+        count: count()
+      })
+      .from(partnerMatches)
+      .where(inArray(partnerMatches.partnerId, partnerIds))
+      .groupBy(partnerMatches.partnerId)
     : [];
 
   const matchCountMap = new Map(
@@ -605,7 +610,7 @@ export const updatePartnerProfile = async (
   sessionUser: SessionUser
 ): Promise<PartnerSummary> => {
   const input = parseUpdateInput(payload);
-  
+
   const db = await getDb();
   const partnerData = await db
     .select({

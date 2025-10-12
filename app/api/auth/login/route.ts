@@ -9,6 +9,7 @@ import { buildRefreshCookie } from '@/lib/auth/cookies';
 import type { ClientKind } from '@/lib/auth/policy';
 import { issueSessionWithTokens } from '@/lib/auth/session-store';
 import { verifyPassword } from '@/lib/auth/password';
+import { Logger, logApiError } from '@/lib/utils/logger';
 
 type UserRoleType = typeof users.$inferSelect['role'];
 
@@ -77,8 +78,12 @@ export async function POST(req: NextRequest) {
   const userAgent = req.headers.get('user-agent');
 
   try {
-    console.log('로그인 시도:', { userId: user.id, role: user.role, email: user.email });
-    
+    Logger.authEvent('login_attempt', {
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    });
+
     const issued = await issueSessionWithTokens({
       userId: user.id,
       role: user.role as UserRoleType,
@@ -89,8 +94,12 @@ export async function POST(req: NextRequest) {
       deviceFingerprint: data.deviceFingerprint ?? null,
       deviceLabel: data.deviceLabel ?? null
     });
-    
-    console.log('세션 생성 성공:', { sessionId: issued.session.id });
+
+    Logger.authEvent('login_success', {
+      userId: user.id,
+      sessionId: issued.session.id,
+      email: user.email,
+    });
 
     const refreshMaxAge = Math.max(
       0,
@@ -124,13 +133,18 @@ export async function POST(req: NextRequest) {
       }
     );
   } catch (error) {
-    console.error('로그인 처리 중 오류 발생:', {
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      userId: user?.id,
-      email: user?.email
-    });
-    return NextResponse.json({ 
+    logApiError(
+      error instanceof Error ? error : new Error(String(error)),
+      'POST',
+      '/api/auth/login',
+      {
+        userId: user?.id,
+        email: user?.email,
+        input: { email: data.email, rememberMe: data.rememberMe }
+      }
+    );
+
+    return NextResponse.json({
       error: '로그인 처리에 실패했습니다.',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });

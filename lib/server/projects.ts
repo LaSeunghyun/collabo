@@ -1,6 +1,8 @@
 import { revalidatePath } from 'next/cache';
 import { eq, and, inArray, desc, count } from 'drizzle-orm';
 
+import { withCache, CACHE_KEYS, CACHE_TTL, invalidateCache } from '@/lib/utils/cache';
+
 export interface ProjectSummary {
   id: string;
   title: string;
@@ -68,7 +70,7 @@ export type ProjectSummaryOptions = {
 const fetchProjectsFromDb = async (options?: ProjectSummaryOptions) => {
   // Apply filters
   const conditions = [];
-  
+
   if (options?.ownerId) {
     conditions.push(eq(projects.ownerId, options.ownerId));
   }
@@ -110,15 +112,15 @@ const fetchProjectsFromDb = async (options?: ProjectSummaryOptions) => {
 
   // Get funding counts for each project
   const projectIds = projectsData.map(p => p.id);
-  const fundingCounts = projectIds.length > 0 
+  const fundingCounts = projectIds.length > 0
     ? await db
-        .select({
-          projectId: fundings.projectId,
-          count: count()
-        })
-        .from(fundings)
-        .where(inArray(fundings.projectId, projectIds))
-        .groupBy(fundings.projectId)
+      .select({
+        projectId: fundings.projectId,
+        count: count()
+      })
+      .from(fundings)
+      .where(inArray(fundings.projectId, projectIds))
+      .groupBy(fundings.projectId)
     : [];
 
   const fundingCountMap = new Map(
@@ -175,63 +177,81 @@ const revalidateProjectPaths = (projectId?: string) => {
 };
 
 export const getProjectSummaries = async (options?: ProjectSummaryOptions) => {
-  const projects = await fetchProjectsFromDb(options);
-  return projects.map(toProjectSummary);
+  const cacheKey = CACHE_KEYS.PROJECTS(
+    options ? JSON.stringify(options) : 'default'
+  );
+
+  return withCache(
+    cacheKey,
+    async () => {
+      const projects = await fetchProjectsFromDb(options);
+      return projects.map(toProjectSummary);
+    },
+    CACHE_TTL.MEDIUM
+  );
 };
 
 export const getProjectsPendingReview = async (limit = 5) =>
   getProjectSummaries({ statuses: ['REVIEWING'], take: limit });
 
 export const getProjectSummaryById = async (id: string) => {
-  const projectData = await db
-    .select({
-      id: projects.id,
-      title: projects.title,
-      description: projects.description,
-      category: projects.category,
-      thumbnail: projects.thumbnail,
-      targetAmount: projects.targetAmount,
-      currentAmount: projects.currentAmount,
-      status: projects.status,
-      createdAt: projects.createdAt,
-      updatedAt: projects.updatedAt,
-      ownerId: projects.ownerId,
-      owner: {
-        id: users.id,
-        name: users.name,
-        avatarUrl: users.avatarUrl
+  const cacheKey = CACHE_KEYS.PROJECT(id);
+
+  return withCache(
+    cacheKey,
+    async () => {
+      const projectData = await db
+        .select({
+          id: projects.id,
+          title: projects.title,
+          description: projects.description,
+          category: projects.category,
+          thumbnail: projects.thumbnail,
+          targetAmount: projects.targetAmount,
+          currentAmount: projects.currentAmount,
+          status: projects.status,
+          createdAt: projects.createdAt,
+          updatedAt: projects.updatedAt,
+          ownerId: projects.ownerId,
+          owner: {
+            id: users.id,
+            name: users.name,
+            avatarUrl: users.avatarUrl
+          }
+        })
+        .from(projects)
+        .innerJoin(users, eq(projects.ownerId, users.id))
+        .where(eq(projects.id, id))
+        .limit(1);
+
+      if (projectData.length === 0) {
+        return null;
       }
-    })
-    .from(projects)
-    .innerJoin(users, eq(projects.ownerId, users.id))
-    .where(eq(projects.id, id))
-    .limit(1);
 
-  if (projectData.length === 0) {
-    return null;
-  }
+      const project = projectData[0];
 
-  const project = projectData[0];
+      // Get funding count
+      const fundingCountResult = await db
+        .select({ count: count() })
+        .from(fundings)
+        .where(eq(fundings.projectId, id));
 
-  // Get funding count
-  const fundingCountResult = await db
-    .select({ count: count() })
-    .from(fundings)
-    .where(eq(fundings.projectId, id));
+      const projectWithCount = {
+        ...project,
+        _count: {
+          fundings: fundingCountResult[0]?.count || 0
+        }
+      };
 
-  const projectWithCount = {
-    ...project,
-    _count: {
-      fundings: fundingCountResult[0]?.count || 0
-    }
-  };
-
-  return toProjectSummary(projectWithCount);
+      return toProjectSummary(projectWithCount);
+    },
+    CACHE_TTL.MEDIUM
+  );
 };
 
 const toJsonInput = (
   value: unknown
-): any => {
+): unknown => {
   if (value === undefined || value === null) {
     return null;
   }
@@ -239,10 +259,26 @@ const toJsonInput = (
   return value;
 };
 
+interface ProjectCreateData {
+  title: string;
+  description: string;
+  category: string;
+  targetAmount: number;
+  currency: string;
+  startDate: string | null;
+  endDate: string | null;
+  rewardTiers: unknown;
+  milestones: unknown;
+  thumbnail: string | null;
+  status: 'DRAFT';
+  ownerId: string;
+  currentAmount: number;
+}
+
 const buildProjectCreateData = (
   input: CreateProjectInput,
   ownerId: string
-): any => ({
+): ProjectCreateData => ({
   title: input.title,
   description: input.description,
   category: input.category,
@@ -258,10 +294,25 @@ const buildProjectCreateData = (
   currentAmount: 0
 });
 
+interface ProjectUpdateData {
+  title?: string;
+  description?: string;
+  category?: string;
+  targetAmount?: number;
+  currency?: string;
+  startDate?: string | null;
+  endDate?: string | null;
+  rewardTiers?: unknown;
+  milestones?: unknown;
+  thumbnail?: string | null;
+  status?: string;
+  updatedAt: string;
+}
+
 const buildProjectUpdateData = (
   input: UpdateProjectInput
-): any => {
-  const data: any = {};
+): Partial<ProjectUpdateData> => {
+  const data: Partial<ProjectUpdateData> = {};
 
   if (input.title !== undefined) {
     data.title = input.title;
@@ -373,6 +424,10 @@ export const createProject = async (rawInput: unknown, user: SessionUser) => {
 
   revalidateProjectPaths(projectId);
 
+  // 캐시 무효화
+  invalidateCache('^projects:');
+  invalidateCache(`^project:${projectId}$`);
+
   return getProjectSummaryById(projectId);
 };
 
@@ -422,6 +477,10 @@ export const updateProject = async (id: string, rawInput: unknown, user: Session
 
   revalidateProjectPaths(id);
 
+  // 캐시 무효화
+  invalidateCache('^projects:');
+  invalidateCache(`^project:${id}$`);
+
   return getProjectSummaryById(id);
 };
 
@@ -457,5 +516,9 @@ export const deleteProject = async (id: string, user: SessionUser) => {
   });
 
   revalidateProjectPaths(id);
+
+  // 캐시 무효화
+  invalidateCache('^projects:');
+  invalidateCache(`^project:${id}$`);
 };
 
