@@ -3,8 +3,8 @@ import { randomUUID } from 'crypto';
 import { eq } from 'drizzle-orm';
 
 import { getDb } from '@/lib/db/client';
-import { permission, userPermission, user } from '@/drizzle/schema';
-import { userRole } from '@/drizzle/schema';
+import { permission, userPermission, user } from '@/lib/db/schema';
+import { userRole } from '@/lib/db/schema';
 
 type UserRecord = typeof user.$inferSelect;
 type UserPermissionRecord = typeof userPermission.$inferSelect;
@@ -25,8 +25,8 @@ export const fetchUserWithPermissions = async (
   const where = identifier.id
     ? eq(user.id, identifier.id)
     : identifier.email
-    ? eq(user.email, identifier.email)
-    : null;
+      ? eq(user.email, identifier.email)
+      : null;
 
   if (!where) {
     return null;
@@ -92,7 +92,7 @@ export const createParticipantUser = async (
       name: input.name,
       email: input.email,
       passwordHash: input.passwordHash,
-      role: typeof userRole.enumValues[number].PARTICIPANT,
+      role: 'PARTICIPANT',
       updatedAt: now
     } satisfies UserInsert)
     .returning({

@@ -365,9 +365,8 @@ export default function CommunityPostDetailPage() {
       setReportReasonKey(null);
       setReportCustomReason('');
       setReportError(null);
-      reportMutation.reset();
     }
-  }, [reportOpen, reportMutation]);
+  }, [reportOpen]);
 
   if (isLoading) {
     return (
@@ -402,10 +401,21 @@ export default function CommunityPostDetailPage() {
   const commentLabel = t('community.commentsLabel_other', { count: comments.length });
   const authorName = post.author?.name ?? t('community.defaultGuestName');
   // const categoryLabel = t(`community.filters.${post.category}`);
-  const createdAt = post.createdAt ? new Date(post.createdAt) : null;
-  const formattedDate = createdAt
-    ? createdAt.toLocaleString('ko-KR', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-    : '';
+
+  // 클라이언트 전용 날짜 포맷팅으로 hydration mismatch 방지
+  const [formattedDate, setFormattedDate] = useState<string>('');
+
+  useEffect(() => {
+    if (post?.createdAt) {
+      const date = new Date(post.createdAt);
+      setFormattedDate(date.toLocaleString('ko-KR', {
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }));
+    }
+  }, [post?.createdAt]);
 
   return (
     <div className="mx-auto max-w-4xl px-4 pb-24">
@@ -435,17 +445,64 @@ export default function CommunityPostDetailPage() {
 
       <article className="mt-6 space-y-8 rounded-3xl border border-white/10 bg-white/5 p-8">
         <header className="space-y-3">
-          <div className="flex items-center gap-3 text-sm text-white/60">
-            <button
-              type="button"
-              onClick={() => setAuthorMenuOpen((prev) => !prev)}
-              className="inline-flex items-center gap-2 rounded-full border border-white/20 px-3 py-1 text-white transition hover:border-white/40 hover:text-white"
-            >
-              <UserCircle2 className="h-4 w-4" />
-              <span>{authorName}</span>
-            </button>
-            <span>•</span>
-            <span>{formattedDate}</span>
+          <div className="flex items-center justify-between text-sm text-white/60">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setAuthorMenuOpen((prev) => !prev)}
+                className="inline-flex items-center gap-2 rounded-full border border-white/20 px-3 py-1 text-white transition hover:border-white/40 hover:text-white"
+              >
+                <UserCircle2 className="h-4 w-4" />
+                <span>{authorName}</span>
+              </button>
+              <span>•</span>
+              <span>{formattedDate}</span>
+            </div>
+
+            {/* 작성자 메뉴 - 통합된 위치 */}
+            {authorMenuOpen && (
+              <div className="fixed inset-0 z-30" onClick={() => setAuthorMenuOpen(false)}>
+                <div className="relative">
+                  <div
+                    className="absolute right-0 top-8 w-48 rounded-2xl border border-white/10 bg-neutral-900/95 p-2 text-sm text-white shadow-xl z-10"
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAuthorMenuOpen(false);
+                        setShowAuthorPosts(true);
+                      }}
+                      className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left transition hover:bg-white/10"
+                    >
+                      <span>{t('community.detail.authorPosts')}</span>
+                      <span className="text-xs text-white/40">↗</span>
+                    </button>
+                    {post.author?.id ? (
+                      <Link
+                        href={`/artists/${post.author.id}`}
+                        className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left transition hover:bg-white/10"
+                        onClick={() => setAuthorMenuOpen(false)}
+                      >
+                        <span>{t('community.detail.authorProfile')}</span>
+                        <span className="text-xs text-white/40">↗</span>
+                      </Link>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAuthorMenuOpen(false);
+                        setShowMessageModal(true);
+                      }}
+                      className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left transition hover:bg-white/10"
+                    >
+                      <span>{t('community.detail.authorMessage')}</span>
+                      <span className="text-xs text-white/40">↗</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           <h1 className="text-3xl font-semibold text-white">{post.title}</h1>
           <p className="text-base leading-relaxed text-white/80 whitespace-pre-line">{post.content}</p>
@@ -538,12 +595,18 @@ export default function CommunityPostDetailPage() {
                     <p className="font-semibold text-white">{comment.authorName}</p>
                     <span className="text-xs text-white/50">•</span>
                     <span className="text-xs text-white/50">
-                      {comment.createdAt ? new Date(comment.createdAt).toLocaleString('ko-KR', {
-                        month: 'numeric',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      }) : ''}
+                      {comment.createdAt ? (() => {
+                        try {
+                          return new Date(comment.createdAt).toLocaleString('ko-KR', {
+                            month: 'numeric',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          });
+                        } catch {
+                          return '';
+                        }
+                      })() : ''}
                     </span>
                   </div>
                   <p className="whitespace-pre-line text-white/70">{comment.content}</p>
@@ -619,47 +682,6 @@ export default function CommunityPostDetailPage() {
         </form>
       </section>
 
-      {authorMenuOpen ? (
-        <div className="fixed inset-0 z-30" onClick={() => setAuthorMenuOpen(false)}>
-          <div
-            className="absolute right-6 top-24 w-56 rounded-2xl border border-white/10 bg-neutral-900/95 p-3 text-sm text-white shadow-xl"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <button
-              type="button"
-              onClick={() => {
-                setAuthorMenuOpen(false);
-                setShowAuthorPosts(true);
-              }}
-              className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left transition hover:bg-white/10"
-            >
-              <span>{t('community.detail.authorPosts')}</span>
-              <span className="text-xs text-white/40">↗</span>
-            </button>
-            {post.author?.id ? (
-              <Link
-                href={`/artists/${post.author.id}`}
-                className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left transition hover:bg-white/10"
-                onClick={() => setAuthorMenuOpen(false)}
-              >
-                <span>{t('community.detail.authorProfile')}</span>
-                <span className="text-xs text-white/40">↗</span>
-              </Link>
-            ) : null}
-            <button
-              type="button"
-              onClick={() => {
-                setAuthorMenuOpen(false);
-                setShowMessageModal(true);
-              }}
-              className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left transition hover:bg-white/10"
-            >
-              <span>{t('community.detail.authorMessage')}</span>
-              <span className="text-xs text-white/40">↗</span>
-            </button>
-          </div>
-        </div>
-      ) : null}
 
       {showAuthorPosts ? (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4">

@@ -62,8 +62,15 @@ async function deleteAnnouncementRequest(id: string) {
   }
 }
 
-const formatDate = (value: string | null) =>
-  value ? new Date(value).toLocaleString('ko-KR') : '발행 예정';
+const formatDate = (value: string | null) => {
+  if (!value) return '발행 예정';
+  if (typeof window === 'undefined') return value;
+  try {
+    return new Date(value).toLocaleString('ko-KR');
+  } catch {
+    return value;
+  }
+};
 
 export function AnnouncementList() {
   const queryClient = useQueryClient();

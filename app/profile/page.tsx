@@ -108,7 +108,14 @@ export default function ProfilePage() {
                 {isLoadingProfile
                   ? '로딩 중...'
                   : userProfile?.createdAt
-                    ? new Date(userProfile.createdAt).toLocaleDateString('ko-KR')
+                    ? (() => {
+                      try {
+                        if (typeof window === 'undefined') return userProfile.createdAt;
+                        return new Date(userProfile.createdAt).toLocaleDateString('ko-KR');
+                      } catch {
+                        return userProfile.createdAt;
+                      }
+                    })()
                     : '정보 없음'
                 }
               </p>

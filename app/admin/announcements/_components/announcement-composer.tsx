@@ -184,14 +184,21 @@ export function AnnouncementComposer() {
             disabled={mutation.isPending}
             className="inline-flex items-center justify-center rounded-lg bg-blue-500 px-5 py-3 text-sm font-medium text-white transition hover:bg-blue-400 disabled:cursor-not-allowed disabled:bg-blue-500/50"
           >
-            {mutation.isPending ? '등록 중…' : '공지 발행' }
+            {mutation.isPending ? '등록 중…' : '공지 발행'}
           </button>
         </div>
 
         <aside className="hidden rounded-2xl border border-white/10 bg-white/[0.02] p-6 text-sm text-white/70 shadow-inner lg:block">
           <h3 className="text-sm font-semibold text-white">미리보기</h3>
           <p className="mt-1 text-xs text-white/50">
-            {formState.publishedAt ? `예약 발행: ${new Date(formState.publishedAt).toLocaleString('ko-KR')}` : '즉시 발행 예정'}
+            {formState.publishedAt ? (() => {
+              try {
+                if (typeof window === 'undefined') return `예약 발행: ${formState.publishedAt}`;
+                return `예약 발행: ${new Date(formState.publishedAt).toLocaleString('ko-KR')}`;
+              } catch {
+                return `예약 발행: ${formState.publishedAt}`;
+              }
+            })() : '즉시 발행 예정'}
           </p>
           <div className="mt-5 space-y-3">
             <div className="flex items-center gap-2 text-xs text-white/60">
@@ -212,7 +219,14 @@ export function AnnouncementComposer() {
               {formState.content ? formState.content.slice(0, 160) : '공지 내용을 입력하면 여기에서 미리보기가 업데이트됩니다.'}
               {formState.content.length > 160 ? '…' : ''}
             </p>
-            <p className="text-xs text-white/40">{previewDate.toLocaleString('ko-KR')}</p>
+            <p className="text-xs text-white/40">{(() => {
+              try {
+                if (typeof window === 'undefined') return previewDate;
+                return previewDate.toLocaleString('ko-KR');
+              } catch {
+                return previewDate;
+              }
+            })()}</p>
           </div>
         </aside>
       </form>

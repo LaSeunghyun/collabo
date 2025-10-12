@@ -277,21 +277,37 @@ export async function GET(request: NextRequest) {
       reportMap = new Map(reportsResult.map(r => [r.targetId, r.count]));
     }
 
-    // 각 게시글의 좋아요/싫어요/댓글 수 조회
+    // 각 게시글의 좋아요/싫어요/댓글 수 조회 - 배치 쿼리로 최적화
     const postCounts = new Map<string, { likes: number; dislikes: number; comments: number }>();
 
-    for (const postId of allPostIds) {
-      const [likesResult, dislikesResult, commentsResult] = await Promise.all([
-        db.select({ count: count() }).from(postLikes).where(eq(postLikes.postId, postId)),
-        db.select({ count: count() }).from(postDislikes).where(eq(postDislikes.postId, postId)),
-        db.select({ count: count() }).from(comments).where(eq(comments.postId, postId))
+    if (allPostIds.size > 0) {
+      const [allLikes, allDislikes, allComments] = await Promise.all([
+        db.select({ postId: postLikes.postId, count: count() })
+          .from(postLikes)
+          .where(inArray(postLikes.postId, Array.from(allPostIds)))
+          .groupBy(postLikes.postId),
+        db.select({ postId: postDislikes.postId, count: count() })
+          .from(postDislikes)
+          .where(inArray(postDislikes.postId, Array.from(allPostIds)))
+          .groupBy(postDislikes.postId),
+        db.select({ postId: comments.postId, count: count() })
+          .from(comments)
+          .where(inArray(comments.postId, Array.from(allPostIds)))
+          .groupBy(comments.postId)
       ]);
 
-      postCounts.set(postId, {
-        likes: likesResult[0]?.count || 0,
-        dislikes: dislikesResult[0]?.count || 0,
-        comments: commentsResult[0]?.count || 0
-      });
+      // Map으로 변환
+      const likesMap = new Map(allLikes.map(r => [r.postId, r.count]));
+      const dislikesMap = new Map(allDislikes.map(r => [r.postId, r.count]));
+      const commentsMap = new Map(allComments.map(r => [r.postId, r.count]));
+
+      for (const postId of allPostIds) {
+        postCounts.set(postId, {
+          likes: likesMap.get(postId) || 0,
+          dislikes: dislikesMap.get(postId) || 0,
+          comments: commentsMap.get(postId) || 0
+        });
+      }
     }
 
     // 트렌딩 게시글 ID 계산
@@ -322,7 +338,9 @@ export async function GET(request: NextRequest) {
         reports: reportMap?.get(post.id) || 0,
         category: toCategorySlug(post.category),
         projectId: post.projectId ?? undefined,
-        createdAt: post.createdAt,
+        createdAt: post.createdAt instanceof Date
+          ? post.createdAt.toISOString()
+          : String(post.createdAt),
         liked: likedSet?.has(post.id) || false,
         disliked: dislikedSet?.has(post.id) || false,
         isPinned: post.isPinned,

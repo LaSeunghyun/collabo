@@ -128,6 +128,10 @@ const useProjectUpdates = (projectId: string) =>
 
 const formatDateTime = (value: string) => {
   try {
+    // 클라이언트에서만 실행되도록 보장
+    if (typeof window === 'undefined') {
+      return value; // 서버에서는 원본 값 반환
+    }
     return new Date(value).toLocaleString();
   } catch {
     return value;

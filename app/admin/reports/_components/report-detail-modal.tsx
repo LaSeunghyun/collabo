@@ -39,11 +39,11 @@ interface ReportDetailModalProps {
   onStatusUpdate: () => void;
 }
 
-export function ReportDetailModal({ 
-  postId, 
-  isOpen, 
-  onClose, 
-  onStatusUpdate 
+export function ReportDetailModal({
+  postId,
+  isOpen,
+  onClose,
+  onStatusUpdate
 }: ReportDetailModalProps) {
   const [post, setPost] = useState<Post | null>(null);
   const [reports, setReports] = useState<Report[]>([]);
@@ -77,7 +77,7 @@ export function ReportDetailModal({
   const handleStatusUpdate = async (reportId: string, status: string) => {
     setProcessing(true);
     setSelectedReportId(reportId);
-    
+
     try {
       const response = await fetch('/api/admin/moderation', {
         method: 'PATCH',
@@ -106,10 +106,15 @@ export function ReportDetailModal({
   };
 
   const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('ko-KR', {
-      dateStyle: 'medium',
-      timeStyle: 'short'
-    }).format(new Date(date));
+    if (typeof window === 'undefined') return date.toString();
+    try {
+      return new Intl.DateTimeFormat('ko-KR', {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+      }).format(new Date(date));
+    } catch {
+      return date.toString();
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -169,9 +174,9 @@ export function ReportDetailModal({
                 <div className="flex items-start gap-4 mb-4">
                   <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
                     {post.author.avatarUrl ? (
-                      <Image 
-                        src={post.author.avatarUrl} 
-                        alt={post.author.name || 'User'} 
+                      <Image
+                        src={post.author.avatarUrl}
+                        alt={post.author.name || 'User'}
                         width={40}
                         height={40}
                         className="w-10 h-10 rounded-full"
@@ -222,7 +227,7 @@ export function ReportDetailModal({
                           {formatDate(report.createdAt)}
                         </span>
                       </div>
-                      
+
                       {report.reason && (
                         <p className="text-sm text-white/70 mb-3 p-3 rounded-lg bg-white/5">
                           {report.reason}

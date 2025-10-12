@@ -7,8 +7,13 @@ import { getAnalyticsOverview, VISIT_LOOKBACK_DAYS } from '@/lib/server/analytic
 const numberFormatter = new Intl.NumberFormat('en-US');
 
 const formatDateLabel = (iso: string) => {
-  const date = new Date(iso);
-  return date.toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
+  if (typeof window === 'undefined') return iso;
+  try {
+    const date = new Date(iso);
+    return date.toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
+  } catch {
+    return iso;
+  }
 };
 
 interface AnalyticsOverviewSectionProps {
@@ -31,8 +36,15 @@ export function AnalyticsOverviewSection({ overview }: AnalyticsOverviewSectionP
           </p>
         </div>
         <span className="text-xs text-white/40">
-          {t('admin.analytics.updated', { 
-            time: new Date(overview.timestamp).toLocaleString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+          {t('admin.analytics.updated', {
+            time: (() => {
+              try {
+                if (typeof window === 'undefined') return overview.timestamp;
+                return new Date(overview.timestamp).toLocaleString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+              } catch {
+                return overview.timestamp;
+              }
+            })()
           })}
         </span>
       </header>

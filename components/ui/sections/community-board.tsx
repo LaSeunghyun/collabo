@@ -508,15 +508,21 @@ function CommunityPostCard({
   // const commentLabel = t('community.commentsLabel_other', { count: post.comments });
   const displayCategory = t(`community.filters.${post.category}`);
   const authorName = post.author?.name ?? t('community.defaultGuestName');
-  const createdAt = post.createdAt ? new Date(post.createdAt) : null;
-  const formattedDate = createdAt
-    ? createdAt.toLocaleDateString('ko-KR', {
-      month: 'numeric',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-    : '';
+
+  // 클라이언트 전용 날짜 포맷팅으로 hydration mismatch 방지
+  const [formattedDate, setFormattedDate] = useState<string>('');
+
+  useEffect(() => {
+    if (post.createdAt) {
+      const date = new Date(post.createdAt);
+      setFormattedDate(date.toLocaleDateString('ko-KR', {
+        month: 'numeric',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }));
+    }
+  }, [post.createdAt]);
 
   return (
     <article className="group rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:border-primary/60 hover:bg-white/10">
