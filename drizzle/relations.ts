@@ -1,346 +1,352 @@
 import { relations } from "drizzle-orm/relations";
-import { user, partner, partnerMatch, project, product, order, post, projectMilestone, comment, notification, postLike, wallet, auditLog, permission, userPermission, funding, paymentTransaction, settlement, settlementPayout, projectCollaborator, projectRewardTier, projectRequirement, orderItem, userFollow, commentReaction, moderationReport, userBlock, authDevice, authSession, refreshToken, postDislike, visitLog } from "./schema";
+import {
+	users, partners, partnerMatches, projects, products, orders, posts, projectMilestones,
+	comments, notification, postLikes, wallets, auditLogs, permissions, userPermissions,
+	fundings, paymentTransactions, settlements, settlementPayouts, projectCollaborators,
+	projectRewardTiers, projectRequirements, orderItems, userFollows, commentReactions,
+	moderationReports, userBlocks, authDevices, authSessions, refreshTokens, postDislikes, visitLogs
+} from "./schema";
 
-export const partnerRelations = relations(partner, ({one, many}) => ({
-	user: one(user, {
-		fields: [partner.userId],
-		references: [user.id]
+export const partnerRelations = relations(partners, ({ one, many }) => ({
+	user: one(users, {
+		fields: [partners.userId],
+		references: [users.id]
 	}),
-	partnerMatches: many(partnerMatch),
+	partnerMatches: many(partnerMatches),
 }));
 
-export const userRelations = relations(user, ({many}) => ({
-	partners: many(partner),
-	orders: many(order),
-	posts: many(post),
-	comments: many(comment),
+export const userRelations = relations(users, ({ many }) => ({
+	partners: many(partners),
+	orders: many(orders),
+	posts: many(posts),
+	comments: many(comments),
 	notifications: many(notification),
-	postLikes: many(postLike),
-	wallets: many(wallet),
-	auditLogs: many(auditLog),
-	userPermissions: many(userPermission),
-	projects: many(project),
-	projectCollaborators: many(projectCollaborator),
-	fundings: many(funding),
-	userFollows_followerId: many(userFollow, {
+	postLikes: many(postLikes),
+	wallets: many(wallets),
+	auditLogs: many(auditLogs),
+	userPermissions: many(userPermissions),
+	projects: many(projects),
+	projectCollaborators: many(projectCollaborators),
+	fundings: many(fundings),
+	userFollows_followerId: many(userFollows, {
 		relationName: "userFollow_followerId_user_id"
 	}),
-	userFollows_followingId: many(userFollow, {
+	userFollows_followingId: many(userFollows, {
 		relationName: "userFollow_followingId_user_id"
 	}),
-	commentReactions: many(commentReaction),
-	moderationReports: many(moderationReport),
-	userBlocks_blockedUserId: many(userBlock, {
+	commentReactions: many(commentReactions),
+	moderationReports: many(moderationReports),
+	userBlocks_blockedUserId: many(userBlocks, {
 		relationName: "userBlock_blockedUserId_user_id"
 	}),
-	userBlocks_blockerId: many(userBlock, {
+	userBlocks_blockerId: many(userBlocks, {
 		relationName: "userBlock_blockerId_user_id"
 	}),
-	authSessions: many(authSession),
-	authDevices: many(authDevice),
-	postDislikes: many(postDislike),
-	visitLogs: many(visitLog),
+	authSessions: many(authSessions),
+	authDevices: many(authDevices),
+	postDislikes: many(postDislikes),
+	visitLogs: many(visitLogs),
 }));
 
-export const partnerMatchRelations = relations(partnerMatch, ({one}) => ({
-	partner: one(partner, {
-		fields: [partnerMatch.partnerId],
-		references: [partner.id]
+export const partnerMatchRelations = relations(partnerMatches, ({ one }) => ({
+	partner: one(partners, {
+		fields: [partnerMatches.partnerId],
+		references: [partners.id]
 	}),
-	project: one(project, {
-		fields: [partnerMatch.projectId],
-		references: [project.id]
-	}),
-}));
-
-export const projectRelations = relations(project, ({one, many}) => ({
-	partnerMatches: many(partnerMatch),
-	products: many(product),
-	posts: many(post),
-	user: one(user, {
-		fields: [project.ownerId],
-		references: [user.id]
-	}),
-	projectCollaborators: many(projectCollaborator),
-	fundings: many(funding),
-	settlements: many(settlement),
-	projectMilestones: many(projectMilestone),
-	projectRewardTiers: many(projectRewardTier),
-	projectRequirements: many(projectRequirement),
-}));
-
-export const productRelations = relations(product, ({one, many}) => ({
-	project: one(project, {
-		fields: [product.projectId],
-		references: [project.id]
-	}),
-	orderItems: many(orderItem),
-}));
-
-export const orderRelations = relations(order, ({one, many}) => ({
-	user: one(user, {
-		fields: [order.userId],
-		references: [user.id]
-	}),
-	orderItems: many(orderItem),
-}));
-
-export const postRelations = relations(post, ({one, many}) => ({
-	user: one(user, {
-		fields: [post.authorId],
-		references: [user.id]
-	}),
-	projectMilestone: one(projectMilestone, {
-		fields: [post.milestoneId],
-		references: [projectMilestone.id]
-	}),
-	project: one(project, {
-		fields: [post.projectId],
-		references: [project.id]
-	}),
-	comments: many(comment),
-	postLikes: many(postLike),
-	postDislikes: many(postDislike),
-}));
-
-export const projectMilestoneRelations = relations(projectMilestone, ({one, many}) => ({
-	posts: many(post),
-	project: one(project, {
-		fields: [projectMilestone.projectId],
-		references: [project.id]
+	project: one(projects, {
+		fields: [partnerMatches.projectId],
+		references: [projects.id]
 	}),
 }));
 
-export const commentRelations = relations(comment, ({one, many}) => ({
-	user: one(user, {
-		fields: [comment.authorId],
-		references: [user.id]
+export const projectRelations = relations(projects, ({ one, many }) => ({
+	partnerMatches: many(partnerMatches),
+	products: many(products),
+	posts: many(posts),
+	user: one(users, {
+		fields: [projects.ownerId],
+		references: [users.id]
 	}),
-	comment: one(comment, {
-		fields: [comment.parentCommentId],
-		references: [comment.id],
+	projectCollaborators: many(projectCollaborators),
+	fundings: many(fundings),
+	settlements: many(settlements),
+	projectMilestones: many(projectMilestones),
+	projectRewardTiers: many(projectRewardTiers),
+	projectRequirements: many(projectRequirements),
+}));
+
+export const productRelations = relations(products, ({ one, many }) => ({
+	project: one(projects, {
+		fields: [products.projectId],
+		references: [projects.id]
+	}),
+	orderItems: many(orderItems),
+}));
+
+export const orderRelations = relations(orders, ({ one, many }) => ({
+	user: one(users, {
+		fields: [orders.userId],
+		references: [users.id]
+	}),
+	orderItems: many(orderItems),
+}));
+
+export const postRelations = relations(posts, ({ one, many }) => ({
+	user: one(users, {
+		fields: [posts.authorId],
+		references: [users.id]
+	}),
+	projectMilestone: one(projectMilestones, {
+		fields: [posts.milestoneId],
+		references: [projectMilestones.id]
+	}),
+	project: one(projects, {
+		fields: [posts.projectId],
+		references: [projects.id]
+	}),
+	comments: many(comments),
+	postLikes: many(postLikes),
+	postDislikes: many(postDislikes),
+}));
+
+export const projectMilestoneRelations = relations(projectMilestones, ({ one, many }) => ({
+	posts: many(posts),
+	project: one(projects, {
+		fields: [projectMilestones.projectId],
+		references: [projects.id]
+	}),
+}));
+
+export const commentRelations = relations(comments, ({ one, many }) => ({
+	user: one(users, {
+		fields: [comments.authorId],
+		references: [users.id]
+	}),
+	comment: one(comments, {
+		fields: [comments.parentCommentId],
+		references: [comments.id],
 		relationName: "comment_parentCommentId_comment_id"
 	}),
-	comments: many(comment, {
+	comments: many(comments, {
 		relationName: "comment_parentCommentId_comment_id"
 	}),
-	post: one(post, {
-		fields: [comment.postId],
-		references: [post.id]
+	post: one(posts, {
+		fields: [comments.postId],
+		references: [posts.id]
 	}),
-	commentReactions: many(commentReaction),
+	commentReactions: many(commentReactions),
 }));
 
-export const notificationRelations = relations(notification, ({one}) => ({
-	user: one(user, {
+export const notificationRelations = relations(notification, ({ one }) => ({
+	user: one(users, {
 		fields: [notification.userId],
-		references: [user.id]
+		references: [users.id]
 	}),
 }));
 
-export const postLikeRelations = relations(postLike, ({one}) => ({
-	post: one(post, {
-		fields: [postLike.postId],
-		references: [post.id]
+export const postLikeRelations = relations(postLikes, ({ one }) => ({
+	post: one(posts, {
+		fields: [postLikes.postId],
+		references: [posts.id]
 	}),
-	user: one(user, {
-		fields: [postLike.userId],
-		references: [user.id]
-	}),
-}));
-
-export const walletRelations = relations(wallet, ({one}) => ({
-	user: one(user, {
-		fields: [wallet.userId],
-		references: [user.id]
+	user: one(users, {
+		fields: [postLikes.userId],
+		references: [users.id]
 	}),
 }));
 
-export const auditLogRelations = relations(auditLog, ({one}) => ({
-	user: one(user, {
-		fields: [auditLog.userId],
-		references: [user.id]
+export const walletRelations = relations(wallets, ({ one }) => ({
+	user: one(users, {
+		fields: [wallets.userId],
+		references: [users.id]
 	}),
 }));
 
-export const userPermissionRelations = relations(userPermission, ({one}) => ({
-	permission: one(permission, {
-		fields: [userPermission.permissionId],
-		references: [permission.id]
-	}),
-	user: one(user, {
-		fields: [userPermission.userId],
-		references: [user.id]
+export const auditLogRelations = relations(auditLogs, ({ one }) => ({
+	user: one(users, {
+		fields: [auditLogs.userId],
+		references: [users.id]
 	}),
 }));
 
-export const permissionRelations = relations(permission, ({many}) => ({
-	userPermissions: many(userPermission),
-}));
-
-export const paymentTransactionRelations = relations(paymentTransaction, ({one}) => ({
-	funding: one(funding, {
-		fields: [paymentTransaction.fundingId],
-		references: [funding.id]
+export const userPermissionRelations = relations(userPermissions, ({ one }) => ({
+	permission: one(permissions, {
+		fields: [userPermissions.permissionId],
+		references: [permissions.id]
+	}),
+	user: one(users, {
+		fields: [userPermissions.userId],
+		references: [users.id]
 	}),
 }));
 
-export const fundingRelations = relations(funding, ({one, many}) => ({
-	paymentTransactions: many(paymentTransaction),
-	project: one(project, {
-		fields: [funding.projectId],
-		references: [project.id]
-	}),
-	user: one(user, {
-		fields: [funding.userId],
-		references: [user.id]
+export const permissionRelations = relations(permissions, ({ many }) => ({
+	userPermissions: many(userPermissions),
+}));
+
+export const paymentTransactionRelations = relations(paymentTransactions, ({ one }) => ({
+	funding: one(fundings, {
+		fields: [paymentTransactions.fundingId],
+		references: [fundings.id]
 	}),
 }));
 
-export const settlementPayoutRelations = relations(settlementPayout, ({one}) => ({
-	settlement: one(settlement, {
-		fields: [settlementPayout.settlementId],
-		references: [settlement.id]
+export const fundingRelations = relations(fundings, ({ one, many }) => ({
+	paymentTransactions: many(paymentTransactions),
+	project: one(projects, {
+		fields: [fundings.projectId],
+		references: [projects.id]
+	}),
+	user: one(users, {
+		fields: [fundings.userId],
+		references: [users.id]
 	}),
 }));
 
-export const settlementRelations = relations(settlement, ({one, many}) => ({
-	settlementPayouts: many(settlementPayout),
-	project: one(project, {
-		fields: [settlement.projectId],
-		references: [project.id]
+export const settlementPayoutRelations = relations(settlementPayouts, ({ one }) => ({
+	settlement: one(settlements, {
+		fields: [settlementPayouts.settlementId],
+		references: [settlements.id]
 	}),
 }));
 
-export const projectCollaboratorRelations = relations(projectCollaborator, ({one}) => ({
-	project: one(project, {
-		fields: [projectCollaborator.projectId],
-		references: [project.id]
-	}),
-	user: one(user, {
-		fields: [projectCollaborator.userId],
-		references: [user.id]
+export const settlementRelations = relations(settlements, ({ one, many }) => ({
+	settlementPayouts: many(settlementPayouts),
+	project: one(projects, {
+		fields: [settlements.projectId],
+		references: [projects.id]
 	}),
 }));
 
-export const projectRewardTierRelations = relations(projectRewardTier, ({one}) => ({
-	project: one(project, {
-		fields: [projectRewardTier.projectId],
-		references: [project.id]
+export const projectCollaboratorRelations = relations(projectCollaborators, ({ one }) => ({
+	project: one(projects, {
+		fields: [projectCollaborators.projectId],
+		references: [projects.id]
+	}),
+	user: one(users, {
+		fields: [projectCollaborators.userId],
+		references: [users.id]
 	}),
 }));
 
-export const projectRequirementRelations = relations(projectRequirement, ({one}) => ({
-	project: one(project, {
-		fields: [projectRequirement.projectId],
-		references: [project.id]
+export const projectRewardTierRelations = relations(projectRewardTiers, ({ one }) => ({
+	project: one(projects, {
+		fields: [projectRewardTiers.projectId],
+		references: [projects.id]
 	}),
 }));
 
-export const orderItemRelations = relations(orderItem, ({one}) => ({
-	order: one(order, {
-		fields: [orderItem.orderId],
-		references: [order.id]
-	}),
-	product: one(product, {
-		fields: [orderItem.productId],
-		references: [product.id]
+export const projectRequirementRelations = relations(projectRequirements, ({ one }) => ({
+	project: one(projects, {
+		fields: [projectRequirements.projectId],
+		references: [projects.id]
 	}),
 }));
 
-export const userFollowRelations = relations(userFollow, ({one}) => ({
-	user_followerId: one(user, {
-		fields: [userFollow.followerId],
-		references: [user.id],
+export const orderItemRelations = relations(orderItems, ({ one }) => ({
+	order: one(orders, {
+		fields: [orderItems.orderId],
+		references: [orders.id]
+	}),
+	product: one(products, {
+		fields: [orderItems.productId],
+		references: [products.id]
+	}),
+}));
+
+export const userFollowRelations = relations(userFollows, ({ one }) => ({
+	user_followerId: one(users, {
+		fields: [userFollows.followerId],
+		references: [users.id],
 		relationName: "userFollow_followerId_user_id"
 	}),
-	user_followingId: one(user, {
-		fields: [userFollow.followingId],
-		references: [user.id],
+	user_followingId: one(users, {
+		fields: [userFollows.followingId],
+		references: [users.id],
 		relationName: "userFollow_followingId_user_id"
 	}),
 }));
 
-export const commentReactionRelations = relations(commentReaction, ({one}) => ({
-	comment: one(comment, {
-		fields: [commentReaction.commentId],
-		references: [comment.id]
+export const commentReactionRelations = relations(commentReactions, ({ one }) => ({
+	comment: one(comments, {
+		fields: [commentReactions.commentId],
+		references: [comments.id]
 	}),
-	user: one(user, {
-		fields: [commentReaction.userId],
-		references: [user.id]
-	}),
-}));
-
-export const moderationReportRelations = relations(moderationReport, ({one}) => ({
-	user: one(user, {
-		fields: [moderationReport.reporterId],
-		references: [user.id]
+	user: one(users, {
+		fields: [commentReactions.userId],
+		references: [users.id]
 	}),
 }));
 
-export const userBlockRelations = relations(userBlock, ({one}) => ({
-	user_blockedUserId: one(user, {
-		fields: [userBlock.blockedUserId],
-		references: [user.id],
+export const moderationReportRelations = relations(moderationReports, ({ one }) => ({
+	user: one(users, {
+		fields: [moderationReports.reporterId],
+		references: [users.id]
+	}),
+}));
+
+export const userBlockRelations = relations(userBlocks, ({ one }) => ({
+	user_blockedUserId: one(users, {
+		fields: [userBlocks.blockedUserId],
+		references: [users.id],
 		relationName: "userBlock_blockedUserId_user_id"
 	}),
-	user_blockerId: one(user, {
-		fields: [userBlock.blockerId],
-		references: [user.id],
+	user_blockerId: one(users, {
+		fields: [userBlocks.blockerId],
+		references: [users.id],
 		relationName: "userBlock_blockerId_user_id"
 	}),
 }));
 
-export const authSessionRelations = relations(authSession, ({one, many}) => ({
-	authDevice: one(authDevice, {
-		fields: [authSession.deviceId],
-		references: [authDevice.id]
+export const authSessionRelations = relations(authSessions, ({ one, many }) => ({
+	authDevice: one(authDevices, {
+		fields: [authSessions.deviceId],
+		references: [authDevices.id]
 	}),
-	user: one(user, {
-		fields: [authSession.userId],
-		references: [user.id]
+	user: one(users, {
+		fields: [authSessions.userId],
+		references: [users.id]
 	}),
-	refreshTokens: many(refreshToken),
+	refreshTokens: many(refreshTokens),
 }));
 
-export const authDeviceRelations = relations(authDevice, ({one, many}) => ({
-	authSessions: many(authSession),
-	user: one(user, {
-		fields: [authDevice.userId],
-		references: [user.id]
+export const authDeviceRelations = relations(authDevices, ({ one, many }) => ({
+	authSessions: many(authSessions),
+	user: one(users, {
+		fields: [authDevices.userId],
+		references: [users.id]
 	}),
 }));
 
-export const refreshTokenRelations = relations(refreshToken, ({one, many}) => ({
-	refreshToken: one(refreshToken, {
-		fields: [refreshToken.rotatedToId],
-		references: [refreshToken.id],
+export const refreshTokenRelations = relations(refreshTokens, ({ one, many }) => ({
+	refreshToken: one(refreshTokens, {
+		fields: [refreshTokens.rotatedToId],
+		references: [refreshTokens.id],
 		relationName: "refreshToken_rotatedToId_refreshToken_id"
 	}),
-	refreshTokens: many(refreshToken, {
+	refreshTokens: many(refreshTokens, {
 		relationName: "refreshToken_rotatedToId_refreshToken_id"
 	}),
-	authSession: one(authSession, {
-		fields: [refreshToken.sessionId],
-		references: [authSession.id]
+	authSession: one(authSessions, {
+		fields: [refreshTokens.sessionId],
+		references: [authSessions.id]
 	}),
 }));
 
-export const postDislikeRelations = relations(postDislike, ({one}) => ({
-	post: one(post, {
-		fields: [postDislike.postId],
-		references: [post.id]
+export const postDislikeRelations = relations(postDislikes, ({ one }) => ({
+	post: one(posts, {
+		fields: [postDislikes.postId],
+		references: [posts.id]
 	}),
-	user: one(user, {
-		fields: [postDislike.userId],
-		references: [user.id]
+	user: one(users, {
+		fields: [postDislikes.userId],
+		references: [users.id]
 	}),
 }));
 
-export const visitLogRelations = relations(visitLog, ({one}) => ({
-	user: one(user, {
-		fields: [visitLog.userId],
-		references: [user.id]
+export const visitLogRelations = relations(visitLogs, ({ one }) => ({
+	user: one(users, {
+		fields: [visitLogs.userId],
+		references: [users.id]
 	}),
 }));
