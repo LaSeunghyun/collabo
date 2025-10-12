@@ -1,15 +1,15 @@
-import { userRole } from '@/lib/db/schema';
+import { userRoleEnum } from '@/lib/db/schema';
 
-export const UserRole = userRole.enumValues;
-export const USER_ROLE_VALUES = userRole.enumValues;
-export const USER_ROLE_LABELS: Record<typeof userRole.enumValues[number], string> = {
+export const UserRole = userRoleEnum.enumValues;
+export const USER_ROLE_VALUES = userRoleEnum.enumValues;
+export const USER_ROLE_LABELS: Record<typeof userRoleEnum.enumValues[number], string> = {
   CREATOR: '크리에이터',
   PARTICIPANT: '참여자',
   PARTNER: '파트너',
   ADMIN: '관리자'
 };
 
-export type AppUserRole = typeof userRole.enumValues[number];
+export type AppUserRole = typeof userRoleEnum.enumValues[number];
 
 const DEFAULT_SESSION_PERMISSION = 'session:read';
 

@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireApiUser } from '@/lib/auth/guards';
-import { UserRole } from '@/types/prisma';
 import {
   ModerationDataUnavailableError,
   getReportedPostDetails,
   updateModerationStatus
 } from '@/lib/server/moderation';
-import { moderationStatusEnum } from '@/lib/db/schema';
+import { moderationStatusEnum, userRoleEnum } from '@/lib/db/schema';
 
 export async function GET(request: NextRequest) {
   try {
-    await requireApiUser({ roles: [UserRole.ADMIN] });
+    await requireApiUser({ roles: ['ADMIN'] });
     const { searchParams } = new URL(request.url);
     const postId = searchParams.get('postId');
 
@@ -38,7 +37,7 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const user = await requireApiUser({ roles: [UserRole.ADMIN] });
+    const user = await requireApiUser({ roles: ['ADMIN'] });
     const body = await request.json();
     const { reportId, status, actionNote } = body;
 

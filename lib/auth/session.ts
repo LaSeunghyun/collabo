@@ -3,7 +3,7 @@ import type { Session } from 'next-auth';
 import { eq } from 'drizzle-orm';
 
 import { getDbClient } from '@/lib/db/client';
-import { authSession, userPermission } from '@/lib/db/schema';
+import { authSessions, userPermission } from '@/lib/db/schema';
 import { userRole } from '@/lib/db/schema';
 
 import { verifyAccessToken } from './access-token';
@@ -89,8 +89,8 @@ const evaluateBearerToken = async (
     const verified = await verifyAccessToken(token);
 
     const db = await getDbClient();
-    const session = await (db as any).query.authSession.findFirst({
-      where: eq(authSession.id, verified.sessionId),
+    const session = await (db as any).query.authSessions.findFirst({
+      where: eq(authSessions.id, verified.sessionId),
       with: {
         user: {
           with: {

@@ -8,7 +8,7 @@ import { compare } from 'bcryptjs';
 import { eq } from 'drizzle-orm';
 
 import { getDbClient } from '@/lib/db/client';
-import { user } from '@/lib/db/schema';
+import { users } from '@/lib/db/schema';
 
 import { AUTH_V3_ENABLED } from './flags';
 import { deriveEffectivePermissions } from './permissions';
@@ -57,19 +57,19 @@ export const authOptions: NextAuthOptions = {
         }
 
         const db = await getDbClient();
-        const userRecord = await (db as any).query.user.findFirst({
-          where: eq(user.email, credentials.email)
+        const usersRecord = await (db as any).query.users.findFirst({
+          where: eq(users.email, credentials.email)
         });
 
-        if (!userRecord || !userRecord.passwordHash) {
+        if (!usersRecord || !usersRecord.passwordHash) {
           return null;
         }
 
         let passwordMatches = false;
-        if (userRecord.passwordHash.startsWith('$2')) {
-          passwordMatches = await compare(credentials.password, userRecord.passwordHash);
+        if (usersRecord.passwordHash.startsWith('$2')) {
+          passwordMatches = await compare(credentials.password, usersRecord.passwordHash);
         } else {
-          passwordMatches = safeCompare(userRecord.passwordHash, credentials.password);
+          passwordMatches = safeCompare(usersRecord.passwordHash, credentials.password);
         }
 
         if (!passwordMatches) {
@@ -77,10 +77,10 @@ export const authOptions: NextAuthOptions = {
         }
 
         return {
-          id: userRecord.id,
-          name: userRecord.name,
-          email: userRecord.email,
-          role: userRecord.role as any
+          id: usersRecord.id,
+          name: usersRecord.name,
+          email: usersRecord.email,
+          role: usersRecord.role as any
         };
       }
     }),
@@ -99,18 +99,18 @@ export const authOptions: NextAuthOptions = {
     ] : [])
   ],
   callbacks: {
-    async jwt({ token, user, trigger }) {
+    async jwt({ token, users, trigger }) {
       const identifier = {
-        id: (user as { id?: string })?.id ?? (token.sub as string | undefined),
-        email: (user?.email as string | undefined) ?? (token.email as string | undefined)
+        id: (users as { id?: string })?.id ?? (token.sub as string | undefined),
+        email: (users?.email as string | undefined) ?? (token.email as string | undefined)
       };
 
-      if (user && 'role' in user && user.role) {
-        token.role = user.role;
+      if (users && 'role' in users && users.role) {
+        token.role = users.role;
       }
 
       const shouldRefresh =
-        Boolean(user) ||
+        Boolean(users) ||
         !token.role ||
         !token.permissions ||
         trigger === 'update';
@@ -122,7 +122,7 @@ export const authOptions: NextAuthOptions = {
 
         let resolvedRole =
           (typeof token.role === 'string' && token.role) ||
-          ((user as { role?: string })?.role ?? undefined);
+          ((users as { role?: string })?.role ?? undefined);
         let explicitPermissions = existingPermissions;
 
         if (AUTH_V3_ENABLED && !isBuildTime) {
@@ -147,16 +147,16 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
+      if (session.users) {
         if (token.sub) {
-          session.user.id = token.sub;
+          session.users.id = token.sub;
         }
 
         if (typeof token.role === 'string') {
-          (session.user as any).role = token.role;
+          (session.users as any).role = token.role;
         }
 
-        session.user.permissions = Array.isArray(token.permissions)
+        session.users.permissions = Array.isArray(token.permissions)
           ? (token.permissions as string[])
           : [];
       }

@@ -10,19 +10,19 @@ import type {
 import { eq } from 'drizzle-orm';
 
 import { getDbClient } from '@/lib/db/client';
-import { user } from '@/lib/db/schema';
+import { users } from '@/lib/db/schema';
 
 type DatabaseClient = Awaited<ReturnType<typeof getDbClient>>;
 
-type UserSelect = typeof user.$inferSelect;
-type UserInsert = typeof user.$inferInsert;
+type UserSelect = typeof users.$inferSelect;
+type UserInsert = typeof users.$inferInsert;
 
-const toAdapterUser = (user: UserSelect): AdapterUser => ({
-  id: user.id,
-  name: user.name,
-  email: user.email,
+const toAdapterUser = (users: UserSelect): AdapterUser => ({
+  id: users.id,
+  name: users.name,
+  email: users.email,
   emailVerified: null,
-  image: user.avatarUrl ?? null
+  image: users.avatarUrl ?? null
 });
 
 const ensureEmail = (email: string | null | undefined): string => {
@@ -44,35 +44,35 @@ export const createDrizzleAuthAdapter = (database?: DatabaseClient): Adapter => 
 
   const readUserById = async (id: string) => {
     const db = await getDatabase();
-    return (db as any).query.user.findFirst({
-      where: eq(user.id, id)
+    return (db as any).query.users.findFirst({
+      where: eq(users.id, id)
     });
   };
 
   const readUserByEmail = async (email: string) => {
     const db = await getDatabase();
-    return (db as any).query.user.findFirst({
-      where: eq(user.email, email)
+    return (db as any).query.users.findFirst({
+      where: eq(users.email, email)
     });
   };
 
   const touchTimestamp = () => new Date().toISOString();
 
   return {
-    createUser: async (userData: Omit<AdapterUser, 'id'> & { id?: string }) => {
+    createUser: async (usersData: Omit<AdapterUser, 'id'> & { id?: string }) => {
       const db = await getDatabase();
-      const id = userData.id ?? randomUUID();
-      const email = ensureEmail(userData.email);
-      const name = userData.name ?? email;
+      const id = usersData.id ?? randomUUID();
+      const email = ensureEmail(usersData.email);
+      const name = usersData.name ?? email;
       const now = touchTimestamp();
 
       const [record] = await db
-        .insert(user)
+        .insert(users)
         .values({
           id,
           email,
           name,
-          avatarUrl: userData.image ?? null,
+          avatarUrl: usersData.image ?? null,
           updatedAt: now
         } satisfies UserInsert)
         .returning();
@@ -84,20 +84,20 @@ export const createDrizzleAuthAdapter = (database?: DatabaseClient): Adapter => 
       return toAdapterUser(record);
     },
     getUser: async (id) => {
-      const userRecord = await readUserById(id);
-      return userRecord ? toAdapterUser(userRecord) : null;
+      const usersRecord = await readUserById(id);
+      return usersRecord ? toAdapterUser(usersRecord) : null;
     },
     getUserByEmail: async (email) => {
-      const userRecord = await readUserByEmail(email);
-      return userRecord ? toAdapterUser(userRecord) : null;
+      const usersRecord = await readUserByEmail(email);
+      return usersRecord ? toAdapterUser(usersRecord) : null;
     },
     getUserByAccount: async () => null,
-    updateUser: async (userData: Partial<AdapterUser> & Pick<AdapterUser, 'id'>) => {
-      if (!userData.id) {
+    updateUser: async (usersData: Partial<AdapterUser> & Pick<AdapterUser, 'id'>) => {
+      if (!usersData.id) {
         throw new Error('사용자 업데이트에는 ID가 필요합니다.');
       }
 
-      const existing = await readUserById(userData.id);
+      const existing = await readUserById(usersData.id);
 
       if (!existing) {
         throw new Error('사용자를 찾을 수 없습니다.');
@@ -107,23 +107,23 @@ export const createDrizzleAuthAdapter = (database?: DatabaseClient): Adapter => 
         updatedAt: touchTimestamp()
       };
 
-      if (userData.name !== undefined) {
-        updates.name = userData.name ?? existing.name;
+      if (usersData.name !== undefined) {
+        updates.name = usersData.name ?? existing.name;
       }
 
-      if (userData.email !== undefined) {
-        updates.email = ensureEmail(userData.email);
+      if (usersData.email !== undefined) {
+        updates.email = ensureEmail(usersData.email);
       }
 
-      if (userData.image !== undefined) {
-        updates.avatarUrl = userData.image ?? null;
+      if (usersData.image !== undefined) {
+        updates.avatarUrl = usersData.image ?? null;
       }
 
       const db = await getDatabase();
       const [record] = await db
-        .update(user)
+        .update(users)
         .set(updates)
-        .where(eq(user.id, userData.id))
+        .where(eq(users.id, usersData.id))
         .returning();
 
       if (!record) {
@@ -140,7 +140,7 @@ export const createDrizzleAuthAdapter = (database?: DatabaseClient): Adapter => 
       }
 
       const db = await getDatabase();
-      await db.delete(user).where(eq(user.id, id)).execute();
+      await db.delete(users).where(eq(users.id, id)).execute();
       return toAdapterUser(existing);
     },
     linkAccount: async (account: AdapterAccount) => {
