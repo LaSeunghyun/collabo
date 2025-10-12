@@ -21,6 +21,7 @@ export interface CommunityPost {
   dislikes?: number;
   reports?: number;
   authorId?: string;
+  views?: number;
 }
 
 export interface CommunityComment {

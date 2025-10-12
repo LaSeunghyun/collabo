@@ -1,17 +1,18 @@
 {
   "filters": {
     "all": "All",
-    "notice": "Notices",
-    "general": "General",
-    "collab": "Collaboration",
-    "support": "Support",
-    "showcase": "Showcase"
+    "music": "Music",
+    "art": "Art",
+    "literature": "Literature",
+    "performance": "Performance",
+    "photo": "Photo"
   },
-  "searchPlaceholder": "Search posts or @mention people",
+  "searchPlaceholder": "Search posts...",
   "sortTrending": "Trending",
   "badges": {
     "pinned": "Pinned",
-    "trending": "Trending"
+    "trending": "Trending",
+    "hot": "HOT"
   },
   "share": {
     "label": "Share",
@@ -31,14 +32,18 @@
   "emptyStateTitle": "Start the first conversation",
   "emptyStateDescription": "Share the first idea to get the discussion going.",
   "actions": {
-    "create": "New post",
+    "create": "Write",
     "viewDetail": "View details",
     "backToList": "Back to list",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "writePost": "Write"
   },
   "labels": {
-    "total": "Total {{count}} posts",
-    "selectedCategories": "{{count}} categories selected"
+    "total": "{{count}} posts total",
+    "selectedCategories": "{{count}} categories selected",
+    "views": "Views",
+    "comments": "Comments",
+    "likes": "Likes"
   },
   "hero": {
     "tagline": "Collaboration Hub",
@@ -73,7 +78,7 @@
     "report": "Report",
     "writeComment": "Write a comment",
     "authorPosts": "View author's posts",
-    "authorProfile": "Go to profile",
+    "authorProfile": "View profile",
     "authorMessage": "Send message",
     "authorPostsTitle": "More from {{name}}",
     "authorPostsError": "Failed to load other posts from this author.",

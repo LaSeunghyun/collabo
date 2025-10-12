@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { eq } from 'drizzle-orm';
+import { eq, and, or, desc, count, sql, like, inArray } from 'drizzle-orm';
 
-import { communityCategoryEnum, posts, users } from '@/lib/db/schema';
+import { communityCategoryEnum, posts, users, postLikes, postDislikes, comments, moderationReports } from '@/lib/db/schema';
 import { getDb } from '@/lib/db/client';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
@@ -90,16 +90,16 @@ const mapPostToResponse = (
   }
 });
 
-const isTrendingCandidate = (post: PostWithAuthor) => {
-  const { trendingDays, trendingMinComments, trendingMinLikes } = FEED_CONFIG;
-  const thresholdDate = new Date(Date.now() - trendingDays * 24 * 60 * 60 * 1000);
+// const isTrendingCandidate = (post: PostWithAuthor) => {
+//   const { trendingDays, trendingMinComments, trendingMinLikes } = FEED_CONFIG;
+//   const thresholdDate = new Date(Date.now() - trendingDays * 24 * 60 * 60 * 1000);
 
-  const createdAt = new Date(post.createdAt);
-  return (
-    createdAt >= thresholdDate &&
-    ((post._count.comments ?? 0) >= trendingMinComments || (post._count.likes ?? 0) >= trendingMinLikes)
-  );
-};
+//   const createdAt = new Date(post.createdAt);
+//   return (
+//     createdAt >= thresholdDate &&
+//     ((post._count.comments ?? 0) >= trendingMinComments || (post._count.likes ?? 0) >= trendingMinLikes)
+//   );
+// };
 
 export async function GET(request: NextRequest) {
   try {
@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
     const sort = sortParam === 'popular' || sortParam === 'trending' ? sortParam : 'recent';
     const limitParam = Number.parseInt(searchParams.get('limit') ?? '10', 10);
     const limit = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(limitParam, 50) : 10;
-    // const cursor = searchParams.get('cursor'); // TODO: Drizzle로 전환 필요
+    const cursor = searchParams.get('cursor');
     const projectId = searchParams.get('projectId');
     const authorId = searchParams.get('authorId');
     const search = searchParams.get('search')?.trim() ?? '';
@@ -119,81 +119,232 @@ export async function GET(request: NextRequest) {
       .filter((value): value is string => Boolean(value));
 
     const { user: viewer } = await evaluateAuthorization({}, authContext);
+    const db = await getDb();
 
-    // TODO: Drizzle로 전환 필요
-    const posts: PostWithAuthor[] = [];
+    // 기본 WHERE 조건 구성
+    const whereConditions = [];
 
-    // const popularityPoolSize = Math.max(limit * 3, FEED_CONFIG.popularLimit * 3, FEED_CONFIG.trendingLimit * 3); // TODO: Drizzle로 전환 필요
+    if (projectId) {
+      whereConditions.push(eq(posts.projectId, projectId));
+    }
 
-    // TODO: Drizzle로 전환 필요
-    const pinnedRaw: PostWithAuthor[] = [];
-    const popularityPool: PostWithAuthor[] = [];
+    if (authorId) {
+      whereConditions.push(eq(posts.authorId, authorId));
+    }
 
-    const popularityScore = (post: PostWithAuthor) => post._count.likes * 3 + post._count.comments * 2;
+    if (normalizedCategories.length > 0) {
+      whereConditions.push(inArray(posts.category, normalizedCategories));
+    }
 
-    const popularSorted = [...popularityPool].sort((a, b) => {
-      const scoreDiff = popularityScore(b) - popularityScore(a);
-      if (scoreDiff !== 0) {
-        return scoreDiff;
-      }
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
+    if (search) {
+      whereConditions.push(
+        or(
+          like(posts.title, `%${search}%`),
+          like(posts.content, `%${search}%`)
+        )
+      );
+    }
 
-    const popularRaw = popularSorted
-      .filter(
-        (post) =>
-          (post._count.likes ?? 0) >= FEED_CONFIG.popularMinLikes ||
-          (post._count.comments ?? 0) >= FEED_CONFIG.popularMinComments
-      )
-      .slice(0, FEED_CONFIG.popularLimit);
+    const baseWhere = whereConditions.length > 0 ? and(...whereConditions) : undefined;
 
-    const trendingRaw = popularityPool
-      .filter(isTrendingCandidate)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .slice(0, FEED_CONFIG.trendingLimit);
+    // 전체 게시글 수 조회
+    const [totalResult] = await db
+      .select({ count: count() })
+      .from(posts)
+      .where(baseWhere);
 
-    let feedPosts = posts;
+    const total = totalResult?.count || 0;
 
+    // 메인 피드 게시글 조회
+    let feedQuery = db
+      .select({
+        id: posts.id,
+        title: posts.title,
+        content: posts.content,
+        category: posts.category,
+        projectId: posts.projectId,
+        createdAt: posts.createdAt,
+        isPinned: posts.isPinned,
+        author: {
+          id: users.id,
+          name: users.name,
+          avatarUrl: users.avatarUrl
+        }
+      })
+      .from(posts)
+      .innerJoin(users, eq(posts.authorId, users.id))
+      .where(baseWhere);
+
+    // 정렬 적용
     if (sort === 'popular') {
-      feedPosts = popularSorted.slice(0, limit);
+      // 인기도 기반 정렬을 위해 서브쿼리로 좋아요/댓글 수를 계산
+      feedQuery = feedQuery.orderBy(desc(posts.createdAt));
     } else if (sort === 'trending') {
-      feedPosts = trendingRaw.slice(0, limit);
+      feedQuery = feedQuery.orderBy(desc(posts.createdAt));
+    } else {
+      feedQuery = feedQuery.orderBy(desc(posts.createdAt));
     }
 
-    const nextCursor =
-      sort === 'recent' && feedPosts.length === limit ? feedPosts[feedPosts.length - 1]?.id ?? null : null;
+    // 커서 기반 페이지네이션
+    if (cursor) {
+      feedQuery = feedQuery.where(and(baseWhere, sql`${posts.id} < ${cursor}`));
+    }
 
+    const feedPosts = await feedQuery.limit(limit);
+
+    // 고정 게시글 조회
+    const pinnedPosts = await db
+      .select({
+        id: posts.id,
+        title: posts.title,
+        content: posts.content,
+        category: posts.category,
+        projectId: posts.projectId,
+        createdAt: posts.createdAt,
+        isPinned: posts.isPinned,
+        author: {
+          id: users.id,
+          name: users.name,
+          avatarUrl: users.avatarUrl
+        }
+      })
+      .from(posts)
+      .innerJoin(users, eq(posts.authorId, users.id))
+      .where(and(baseWhere, eq(posts.isPinned, true)))
+      .limit(FEED_CONFIG.pinnedLimit);
+
+    // 인기 게시글 조회 (좋아요/댓글 수 기반)
+    const popularPosts = await db
+      .select({
+        id: posts.id,
+        title: posts.title,
+        content: posts.content,
+        category: posts.category,
+        projectId: posts.projectId,
+        createdAt: posts.createdAt,
+        isPinned: posts.isPinned,
+        author: {
+          id: users.id,
+          name: users.name,
+          avatarUrl: users.avatarUrl
+        }
+      })
+      .from(posts)
+      .innerJoin(users, eq(posts.authorId, users.id))
+      .where(baseWhere)
+      .orderBy(desc(posts.createdAt))
+      .limit(FEED_CONFIG.popularLimit);
+
+    // 모든 게시글 ID 수집
     const allPostIds = new Set<string>();
-    for (const collection of [feedPosts, pinnedRaw, popularRaw, trendingRaw]) {
-      for (const post of collection) {
-        allPostIds.add(post.id);
-      }
+    for (const post of [...feedPosts, ...pinnedPosts, ...popularPosts]) {
+      allPostIds.add(post.id);
     }
 
+    // 사용자별 좋아요/싫어요 상태 조회
     let likedSet: Set<string> | undefined;
     let dislikedSet: Set<string> | undefined;
 
-    // TODO: Drizzle로 전환 필요
     if (viewer && allPostIds.size > 0) {
-      likedSet = new Set();
-      dislikedSet = new Set();
+      const [likesResult, dislikesResult] = await Promise.all([
+        db.select({ postId: postLikes.postId })
+          .from(postLikes)
+          .where(and(eq(postLikes.userId, viewer.id), inArray(postLikes.postId, Array.from(allPostIds)))),
+        db.select({ postId: postDislikes.postId })
+          .from(postDislikes)
+          .where(and(eq(postDislikes.userId, viewer.id), inArray(postDislikes.postId, Array.from(allPostIds))))
+      ]);
+
+      likedSet = new Set(likesResult.map(l => l.postId));
+      dislikedSet = new Set(dislikesResult.map(d => d.postId));
     }
 
-    // TODO: Drizzle로 전환 필요
+    // 신고 수 조회
     let reportMap: Map<string, number> | undefined;
     if (allPostIds.size > 0) {
-      reportMap = new Map();
+      const reportsResult = await db
+        .select({
+          targetId: moderationReports.targetId,
+          count: count()
+        })
+        .from(moderationReports)
+        .where(and(
+          eq(moderationReports.targetType, 'POST'),
+          inArray(moderationReports.targetId, Array.from(allPostIds))
+        ))
+        .groupBy(moderationReports.targetId);
+
+      reportMap = new Map(reportsResult.map(r => [r.targetId, r.count]));
     }
 
-    const trendingIds = new Set(trendingRaw.map((post) => post.id));
+    // 각 게시글의 좋아요/싫어요/댓글 수 조회
+    const postCounts = new Map<string, { likes: number; dislikes: number; comments: number }>();
+
+    for (const postId of allPostIds) {
+      const [likesResult, dislikesResult, commentsResult] = await Promise.all([
+        db.select({ count: count() }).from(postLikes).where(eq(postLikes.postId, postId)),
+        db.select({ count: count() }).from(postDislikes).where(eq(postDislikes.postId, postId)),
+        db.select({ count: count() }).from(comments).where(eq(comments.postId, postId))
+      ]);
+
+      postCounts.set(postId, {
+        likes: likesResult[0]?.count || 0,
+        dislikes: dislikesResult[0]?.count || 0,
+        comments: commentsResult[0]?.count || 0
+      });
+    }
+
+    // 트렌딩 게시글 ID 계산
+    const trendingIds = new Set<string>();
+    const now = new Date();
+    const trendingThreshold = new Date(now.getTime() - FEED_CONFIG.trendingDays * 24 * 60 * 60 * 1000);
+
+    for (const post of [...feedPosts, ...pinnedPosts, ...popularPosts]) {
+      const counts = postCounts.get(post.id);
+      const createdAt = new Date(post.createdAt);
+
+      if (counts && createdAt >= trendingThreshold &&
+        (counts.comments >= FEED_CONFIG.trendingMinComments || counts.likes >= FEED_CONFIG.trendingMinLikes)) {
+        trendingIds.add(post.id);
+      }
+    }
+
+    // 응답 데이터 구성
+    const mapPost = (post: any) => {
+      const counts = postCounts.get(post.id) || { likes: 0, dislikes: 0, comments: 0 };
+      return {
+        id: post.id,
+        title: post.title,
+        content: post.content,
+        likes: counts.likes,
+        comments: counts.comments,
+        dislikes: counts.dislikes,
+        reports: reportMap?.get(post.id) || 0,
+        category: toCategorySlug(post.category),
+        projectId: post.projectId ?? undefined,
+        createdAt: post.createdAt,
+        liked: likedSet?.has(post.id) || false,
+        disliked: dislikedSet?.has(post.id) || false,
+        isPinned: post.isPinned,
+        isTrending: trendingIds.has(post.id),
+        views: 0, // 조회수는 추후 구현
+        author: {
+          id: post.author.id,
+          name: post.author.name || 'Unknown',
+          avatarUrl: post.author.avatarUrl
+        }
+      };
+    };
+
+    const nextCursor = feedPosts.length === limit ? feedPosts[feedPosts.length - 1]?.id ?? null : null;
 
     const response: CommunityFeedResponse = {
-      posts: feedPosts.map((post) => mapPostToResponse(post, likedSet, dislikedSet, reportMap, trendingIds)),
-      pinned: pinnedRaw.map((post) => mapPostToResponse(post, likedSet, dislikedSet, reportMap, trendingIds)),
-      popular: popularRaw.map((post) => mapPostToResponse(post, likedSet, dislikedSet, reportMap, trendingIds)),
+      posts: feedPosts.map(mapPost),
+      pinned: pinnedPosts.map(mapPost),
+      popular: popularPosts.map(mapPost),
       meta: {
         nextCursor,
-        total: 0, // TODO: Drizzle로 전환 필요
+        total,
         sort: sort as 'recent' | 'popular' | 'trending',
         categories: normalizedCategories.length
           ? normalizedCategories.map((category) => toCategorySlug(category))
@@ -246,13 +397,13 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    console.log('Received POST request body:', { 
-      title: body.title?.substring(0, 50) + '...', 
-      content: body.content?.substring(0, 50) + '...', 
+    console.log('Received POST request body:', {
+      title: body.title?.substring(0, 50) + '...',
+      content: body.content?.substring(0, 50) + '...',
       category: body.category,
-      hasProjectId: !!body.projectId 
+      hasProjectId: !!body.projectId
     });
-    
+
     const title = body.title?.trim();
     const content = body.content?.trim();
     const projectId = body.projectId ? String(body.projectId) : undefined;
@@ -280,13 +431,13 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      console.log('Creating post with data:', { 
-        title: title.substring(0, 50) + '...', 
-        category, 
+      console.log('Creating post with data:', {
+        title: title.substring(0, 50) + '...',
+        category,
         authorId: sessionUser.id,
         projectId: projectId || 'none'
       });
-      
+
       // Drizzle로 게시글 생성
       const db = await getDb();
       const [createdPost] = await db
@@ -335,10 +486,10 @@ export async function POST(request: NextRequest) {
         projectId: createdPost.projectId,
         createdAt: createdPost.createdAt,
         isPinned: createdPost.isPinned,
-        author: author ? { 
-          id: author.id, 
-          name: author.name ?? 'Guest', 
-          avatarUrl: author.avatarUrl 
+        author: author ? {
+          id: author.id,
+          name: author.name ?? 'Guest',
+          avatarUrl: author.avatarUrl
         } : null,
         _count: { likes: 0, dislikes: 0, comments: 0 }
       };
@@ -349,14 +500,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(created, { status: 201 });
     } catch (error) {
       console.error('Failed to create post in database:', error);
-      return NextResponse.json({ 
+      return NextResponse.json({
         message: 'Unable to create community post.',
         error: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : undefined
       }, { status: 500 });
     }
   } catch (error) {
     console.error('Unexpected error in POST /api/community:', error);
-    return NextResponse.json({ 
+    return NextResponse.json({
       message: 'Invalid request format.',
       error: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : undefined
     }, { status: 400 });

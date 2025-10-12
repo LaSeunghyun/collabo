@@ -84,10 +84,11 @@ export const postTypeEnum = pgEnum('PostType', [
 
 export const communityCategoryEnum = pgEnum('CommunityCategory', [
   'GENERAL',
-  'NOTICE',
-  'COLLAB',
-  'SUPPORT',
-  'SHOWCASE',
+  'MUSIC',
+  'ART',
+  'LITERATURE',
+  'PERFORMANCE',
+  'PHOTO',
 ]);
 
 export const notificationTypeEnum = pgEnum('NotificationType', [

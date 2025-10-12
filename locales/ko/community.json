@@ -1,17 +1,18 @@
 {
   "filters": {
     "all": "전체",
-    "notice": "공지",
-    "general": "자유",
-    "collab": "협업",
-    "support": "도움요청",
-    "showcase": "쇼케이스"
+    "music": "음악",
+    "art": "미술",
+    "literature": "문학",
+    "performance": "공연",
+    "photo": "사진"
   },
-  "searchPlaceholder": "게시글 검색 또는 @멘션하기",
+  "searchPlaceholder": "게시글 검색...",
   "sortTrending": "트렌딩",
   "badges": {
     "pinned": "고정됨",
-    "trending": "트렌딩"
+    "trending": "트렌딩",
+    "hot": "HOT"
   },
   "share": {
     "label": "공유",
@@ -31,14 +32,18 @@
   "emptyStateTitle": "첫 대화를 시작해 보세요",
   "emptyStateDescription": "아이디어를 공유하여 커뮤니티의 대화를 열어 보세요.",
   "actions": {
-    "create": "새 글 작성",
+    "create": "글쓰기",
     "viewDetail": "자세히 보기",
     "backToList": "목록으로 돌아가기",
-    "cancel": "취소"
+    "cancel": "취소",
+    "writePost": "글쓰기"
   },
   "labels": {
-    "total": "전체 {{count}}건",
-    "selectedCategories": "선택한 카테고리 {{count}}개"
+    "total": "총 {{count}}개의 게시글",
+    "selectedCategories": "선택한 카테고리 {{count}}개",
+    "views": "조회수",
+    "comments": "댓글수",
+    "likes": "좋아요수"
   },
   "hero": {
     "tagline": "Collaboration Hub",
@@ -73,7 +78,7 @@
     "report": "신고",
     "writeComment": "댓글 작성",
     "authorPosts": "작성글 보기",
-    "authorProfile": "프로필 이동",
+    "authorProfile": "프로필 보기",
     "authorMessage": "메세지 보내기",
     "authorPostsTitle": "{{name}}님의 다른 글",
     "authorPostsError": "작성글을 불러오지 못했습니다.",

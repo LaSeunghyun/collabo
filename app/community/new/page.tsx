@@ -12,11 +12,11 @@ import clsx from 'clsx';
 import type { CommunityPost } from '@/lib/data/community';
 
 const CATEGORY_OPTIONS = [
-  'notice',
-  'general',
-  'collab',
-  'support',
-  'showcase'
+  'music',
+  'art',
+  'literature',
+  'performance',
+  'photo'
 ] as const;
 
 interface NewPostFormValues {
@@ -35,7 +35,7 @@ function CommunityNewPostForm() {
   const [formValues, setFormValues] = useState<NewPostFormValues>({
     title: '',
     content: '',
-    category: 'general',
+    category: 'music',
     attachments: []
   });
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +47,7 @@ function CommunityNewPostForm() {
       return; // 로딩 중이면 대기
     }
 
-    if (status === 'unauthenticated') {
+    if (status === 'unauthenticated' && !isRedirecting) {
       setIsRedirecting(true);
       const callbackUrl = searchParamsString
         ? `/community/new?${searchParamsString}`
@@ -59,7 +59,7 @@ function CommunityNewPostForm() {
     if (status === 'authenticated') {
       setIsRedirecting(false);
     }
-  }, [status, searchParamsString]);
+  }, [status, searchParamsString, isRedirecting]);
 
   const isValid = useMemo(() => {
     return formValues.title.trim().length > 0 && formValues.content.trim().length > 0;
@@ -92,7 +92,7 @@ function CommunityNewPostForm() {
       return (await res.json()) as CommunityPost;
     },
     onSuccess: (post) => {
-      setFormValues({ title: '', content: '', category: 'general', attachments: [] });
+      setFormValues({ title: '', content: '', category: 'music', attachments: [] });
       router.push(`/community/${post.id}`);
     },
     onError: (error: Error) => {
@@ -199,74 +199,54 @@ function CommunityNewPostForm() {
         </Link>
       </div>
 
+      <div className="mt-6">
+        <h1 className="text-2xl font-semibold text-white">새 글 작성</h1>
+
+        {/* 카테고리 탭 */}
+        <div className="mt-4 flex flex-wrap gap-2">
+          {CATEGORY_OPTIONS.map((option) => {
+            const isActive = formValues.category === option;
+            return (
+              <button
+                key={option}
+                type="button"
+                onClick={() => setFormValues((prev) => ({ ...prev, category: option }))}
+                className={clsx(
+                  'rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-widest transition focus:outline-none focus:ring-2 focus:ring-primary/60 focus:ring-offset-0',
+                  isActive
+                    ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+                    : 'bg-white/5 text-white/60 hover:bg-white/10'
+                )}
+              >
+                {t(`community.filters.${option}`)}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <form
         onSubmit={handleSubmit}
-        className="mt-6 space-y-8 rounded-3xl border border-white/10 bg-white/5 p-8"
+        className="mt-6 space-y-6 rounded-2xl border border-white/10 bg-white/5 p-6"
       >
-        <header className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/50">
-            {t('community.newPost.lead')}
-          </p>
-          <h1 className="text-3xl font-semibold text-white">{t('community.newPost.title')}</h1>
-          <p className="text-sm text-white/70">{t('community.newPost.description')}</p>
-        </header>
 
-        <section className="space-y-4">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.3em] text-white/50">
-            {t('community.newPost.categoryLabel')}
-          </h2>
-          <div className="flex flex-wrap gap-2">
-            {CATEGORY_OPTIONS.map((option) => {
-              const isActive = formValues.category === option;
-              return (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => setFormValues((prev) => ({ ...prev, category: option }))}
-                  className={clsx(
-                    'rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.3em] transition focus:outline-none focus:ring-2 focus:ring-primary/60 focus:ring-offset-0',
-                    isActive
-                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
-                      : 'bg-white/5 text-white/60 hover:bg-white/10'
-                  )}
-                >
-                  {t(`community.filters.${option}`)}
-                </button>
-              );
-            })}
-          </div>
-        </section>
+        <div className="space-y-4">
+          <input
+            value={formValues.title}
+            onChange={(event) => setFormValues((prev) => ({ ...prev, title: event.target.value }))}
+            placeholder={t('community.newPostTitlePlaceholder') ?? ''}
+            className="w-full rounded-2xl border border-white/10 bg-neutral-950/60 px-4 py-3 text-sm text-white placeholder:text-white/50 focus:border-primary focus:outline-none"
+          />
 
-        <section className="grid gap-6">
-          <label className="space-y-3">
-            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-white/50">
-              {t('community.newPostTitleLabel')}
-            </span>
-            <input
-              value={formValues.title}
-              onChange={(event) => setFormValues((prev) => ({ ...prev, title: event.target.value }))}
-              placeholder={t('community.newPostTitlePlaceholder') ?? ''}
-              className="w-full rounded-2xl border border-white/10 bg-neutral-950/60 px-4 py-3 text-sm text-white placeholder:text-white/50 focus:border-primary focus:outline-none"
-            />
-          </label>
+          <textarea
+            value={formValues.content}
+            onChange={(event) => setFormValues((prev) => ({ ...prev, content: event.target.value }))}
+            placeholder={t('community.writePlaceholder') ?? ''}
+            className="h-48 w-full rounded-2xl border border-white/10 bg-neutral-950/60 px-4 py-3 text-sm text-white placeholder:text-white/50 focus:border-primary focus:outline-none"
+          />
+        </div>
 
-          <label className="space-y-3">
-            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-white/50">
-              {t('community.newPostContentLabel')}
-            </span>
-            <textarea
-              value={formValues.content}
-              onChange={(event) => setFormValues((prev) => ({ ...prev, content: event.target.value }))}
-              placeholder={t('community.writePlaceholder') ?? ''}
-              className="h-48 w-full rounded-2xl border border-white/10 bg-neutral-950/60 px-4 py-3 text-sm text-white placeholder:text-white/50 focus:border-primary focus:outline-none"
-            />
-          </label>
-        </section>
-
-        <section className="space-y-4">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.3em] text-white/50">
-            {t('community.newPost.attachmentLabel')}
-          </h2>
+        <div className="space-y-4">
           <label className="flex cursor-pointer items-center justify-between rounded-2xl border border-dashed border-white/20 bg-white/5 px-4 py-3 text-sm text-white/70 transition hover:border-white/40">
             <div className="flex items-center gap-3">
               <Paperclip className="h-4 w-4" />
@@ -304,35 +284,32 @@ function CommunityNewPostForm() {
               ))}
             </ul>
           ) : null}
-        </section>
+        </div>
 
         {error ? <p className="text-sm text-red-400">{error}</p> : null}
 
-        <footer className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-white/50">{t('community.newPost.notice')}</p>
-          <div className="flex gap-2">
-            <Link
-              href="/community"
-              className="inline-flex items-center gap-2 rounded-full border border-white/20 px-5 py-2 text-sm text-white/80 transition hover:border-white/40 hover:text-white"
-            >
-              {t('community.actions.cancel')}
-            </Link>
-            <button
-              type="submit"
-              disabled={!isValid || createPostMutation.isPending}
-              className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {createPostMutation.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {t('community.newPost.submitting')}
-                </>
-              ) : (
-                t('community.newPost.submit')
-              )}
-            </button>
-          </div>
-        </footer>
+        <div className="flex justify-end gap-2">
+          <Link
+            href="/community"
+            className="inline-flex items-center gap-2 rounded-full border border-white/20 px-5 py-2 text-sm text-white/80 transition hover:border-white/40 hover:text-white"
+          >
+            {t('community.actions.cancel')}
+          </Link>
+          <button
+            type="submit"
+            disabled={!isValid || createPostMutation.isPending}
+            className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {createPostMutation.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {t('community.newPost.submitting')}
+              </>
+            ) : (
+              t('community.newPost.submit')
+            )}
+          </button>
+        </div>
       </form>
     </div>
   );

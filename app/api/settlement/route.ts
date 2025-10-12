@@ -16,7 +16,7 @@ import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import { calculateSettlementBreakdown } from '@/lib/server/settlements';
 import { validateFundingSettlementConsistency } from '@/lib/server/funding-settlement';
 import { buildApiError } from '@/lib/server/error-handling';
-import { Logger, logApiError } from '@/lib/utils/logger';
+import { logApiError } from '@/lib/utils/logger';
 
 const requestSchema = z.object({
   projectId: z.string().min(1, 'projectId는 필수입니다.'),

@@ -51,6 +51,8 @@ export async function createSettlementIfTargetReached(
     notes?: any
 ) {
     try {
+        const db = await getDb();
+
         // 프로젝트 정보 조회
         const [projectData] = await db
             .select({
@@ -128,7 +130,7 @@ export async function createSettlementIfTargetReached(
                 eq(fundings.paymentStatus, 'SUCCEEDED')
             ));
 
-        const totalRaised = fundingsData.reduce((acc, funding) => acc + funding.amount, 0);
+        const totalRaised = fundingsData.reduce((acc: number, funding: { amount: number }) => acc + funding.amount, 0);
 
         if (totalRaised <= 0) {
             throw new Error('성공한 펀딩 내역이 없습니다.');
@@ -136,26 +138,26 @@ export async function createSettlementIfTargetReached(
 
         // 게이트웨이 수수료 계산
         const inferredGatewayFees = fundingsData.reduce(
-            (acc, funding) => acc + (funding.gatewayFee ?? 0),
+            (acc: number, funding: { gatewayFee?: number | null }) => acc + (funding.gatewayFee ?? 0),
             0
         );
 
         // 파트너 및 협력자 배분 비율 정규화
         const partnerShares = project.partnerMatches
-            .filter((match) => typeof match.settlementShare === 'number')
-            .map((match) => ({
+            .filter((match: { settlementShare: unknown }) => typeof match.settlementShare === 'number')
+            .map((match: { partnerId: string; settlementShare: number | null }) => ({
                 stakeholderId: match.partnerId,
                 share: normaliseShare(match.settlementShare ?? 0)
             }))
-            .filter((entry) => entry.share > 0);
+            .filter((entry: { share: number }) => entry.share > 0);
 
         const collaboratorShares = project.collaborators
-            .filter((collab) => typeof collab.share === 'number')
-            .map((collab) => ({
+            .filter((collab: { share: unknown }) => typeof collab.share === 'number')
+            .map((collab: { userId: string; share: number | null }) => ({
                 stakeholderId: collab.userId,
                 share: normaliseShare(collab.share ?? 0, true)
             }))
-            .filter((entry) => entry.share > 0);
+            .filter((entry: { share: number }) => entry.share > 0);
 
         // 정산 계산
         const breakdown = calculateSettlementBreakdown({
@@ -167,8 +169,7 @@ export async function createSettlementIfTargetReached(
         });
 
         // 정산 레코드 생성
-        const db = await getDb();
-        const settlement = await db.transaction(async (tx) => {
+        const settlement = await db.transaction(async (tx: any) => {
             const [created] = await tx
                 .insert(settlements)
                 .values({
@@ -257,6 +258,7 @@ export async function createSettlementIfTargetReached(
  */
 export async function validateFundingSettlementConsistency(projectId: string) {
     try {
+        const db = await getDb();
         const [project] = await db
             .select({
                 currentAmount: projects.currentAmount
@@ -286,7 +288,7 @@ export async function validateFundingSettlementConsistency(projectId: string) {
             .orderBy(desc(settlements.createdAt))
             .limit(1);
 
-        const totalFundingAmount = fundingsData.reduce((acc, funding) => acc + funding.amount, 0);
+        const totalFundingAmount = fundingsData.reduce((acc: number, funding: { amount: number }) => acc + funding.amount, 0);
         const latestSettlement = settlementsData[0];
 
         const issues: string[] = [];
@@ -332,7 +334,7 @@ export async function safeUpdateFundingData(
 ) {
     try {
         const db = await getDb();
-        return await db.transaction(async (tx) => {
+        return await db.transaction(async (tx: any) => {
             // 펀딩 데이터 업데이트
             if (updateProjectAmount) {
                 await tx

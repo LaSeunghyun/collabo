@@ -1,5 +1,5 @@
 // Drizzle enum 타입들을 테스트에서 사용할 수 있도록 export
-export { 
+export {
   userRoleEnum,
   projectStatusEnum,
   fundingStatusEnum,
@@ -73,11 +73,11 @@ export const ProductType = {
 } as const;
 
 export const CommunityCategory = {
-  GENERAL: 'GENERAL',
-  NOTICE: 'NOTICE',
-  COLLAB: 'COLLAB',
-  SUPPORT: 'SUPPORT',
-  SHOWCASE: 'SHOWCASE'
+  MUSIC: 'MUSIC',
+  ART: 'ART',
+  LITERATURE: 'LITERATURE',
+  PERFORMANCE: 'PERFORMANCE',
+  PHOTO: 'PHOTO'
 } as const;
 
 export const ModerationTargetType = {

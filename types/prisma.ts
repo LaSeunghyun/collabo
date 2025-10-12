@@ -2,7 +2,7 @@
 // Auth related types and enums
 export enum UserRole {
   CREATOR = 'CREATOR',
-  PARTICIPANT = 'PARTICIPANT', 
+  PARTICIPANT = 'PARTICIPANT',
   PARTNER = 'PARTNER',
   ADMIN = 'ADMIN'
 }
@@ -112,11 +112,11 @@ export enum SettlementStakeholderType {
 }
 
 export enum CommunityCategory {
-  GENERAL = 'GENERAL',
-  NOTICE = 'NOTICE',
-  COLLAB = 'COLLAB',
-  SUPPORT = 'SUPPORT',
-  SHOWCASE = 'SHOWCASE'
+  MUSIC = 'MUSIC',
+  ART = 'ART',
+  LITERATURE = 'LITERATURE',
+  PERFORMANCE = 'PERFORMANCE',
+  PHOTO = 'PHOTO'
 }
 
 export enum MilestoneStatus {

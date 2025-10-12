@@ -1,7 +1,7 @@
 import { pgTable, uniqueIndex, foreignKey, text, jsonb, doublePrecision, boolean, timestamp, integer, index, pgEnum } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
-export const communityCategory = pgEnum("CommunityCategory", ['GENERAL', 'NOTICE', 'COLLAB', 'SUPPORT', 'SHOWCASE'])
+export const communityCategory = pgEnum("CommunityCategory", ['MUSIC', 'ART', 'LITERATURE', 'PERFORMANCE', 'PHOTO'])
 export const fundingStatus = pgEnum("FundingStatus", ['PENDING', 'SUCCEEDED', 'FAILED', 'REFUNDED', 'CANCELLED'])
 export const milestoneStatus = pgEnum("MilestoneStatus", ['PLANNED', 'IN_PROGRESS', 'COMPLETED', 'RELEASED'])
 export const moderationStatus = pgEnum("ModerationStatus", ['PENDING', 'REVIEWING', 'ACTION_TAKEN', 'DISMISSED'])
@@ -38,10 +38,10 @@ export const partner = pgTable("Partner", {
 }, (table) => [
 	uniqueIndex("Partner_userId_key").using("btree", table.userId.asc().nullsLast().op("text_ops")),
 	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [user.id],
-			name: "Partner_userId_User_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.userId],
+		foreignColumns: [user.id],
+		name: "Partner_userId_User_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 ]);
 
 export const partnerMatch = pgTable("PartnerMatch", {
@@ -62,15 +62,15 @@ export const partnerMatch = pgTable("PartnerMatch", {
 	updatedAt: timestamp({ mode: 'string' }).notNull(),
 }, (table) => [
 	foreignKey({
-			columns: [table.partnerId],
-			foreignColumns: [partner.id],
-			name: "PartnerMatch_partnerId_Partner_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.partnerId],
+		foreignColumns: [partner.id],
+		name: "PartnerMatch_partnerId_Partner_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 	foreignKey({
-			columns: [table.projectId],
-			foreignColumns: [project.id],
-			name: "PartnerMatch_projectId_Project_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.projectId],
+		foreignColumns: [project.id],
+		name: "PartnerMatch_projectId_Project_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 ]);
 
 export const product = pgTable("Product", {
@@ -89,10 +89,10 @@ export const product = pgTable("Product", {
 	updatedAt: timestamp({ mode: 'string' }).notNull(),
 }, (table) => [
 	foreignKey({
-			columns: [table.projectId],
-			foreignColumns: [project.id],
-			name: "Product_projectId_Project_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.projectId],
+		foreignColumns: [project.id],
+		name: "Product_projectId_Project_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 ]);
 
 export const order = pgTable("Order", {
@@ -112,10 +112,10 @@ export const order = pgTable("Order", {
 	updatedAt: timestamp({ mode: 'string' }).notNull(),
 }, (table) => [
 	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [user.id],
-			name: "Order_userId_User_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.userId],
+		foreignColumns: [user.id],
+		name: "Order_userId_User_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 ]);
 
 export const post = pgTable("Post", {
@@ -139,20 +139,20 @@ export const post = pgTable("Post", {
 	milestoneId: text(),
 }, (table) => [
 	foreignKey({
-			columns: [table.authorId],
-			foreignColumns: [user.id],
-			name: "Post_authorId_User_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.authorId],
+		foreignColumns: [user.id],
+		name: "Post_authorId_User_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 	foreignKey({
-			columns: [table.milestoneId],
-			foreignColumns: [projectMilestone.id],
-			name: "Post_milestoneId_ProjectMilestone_id_fk"
-		}).onUpdate("cascade").onDelete("set null"),
+		columns: [table.milestoneId],
+		foreignColumns: [projectMilestone.id],
+		name: "Post_milestoneId_ProjectMilestone_id_fk"
+	}).onUpdate("cascade").onDelete("set null"),
 	foreignKey({
-			columns: [table.projectId],
-			foreignColumns: [project.id],
-			name: "Post_projectId_Project_id_fk"
-		}).onUpdate("cascade").onDelete("set null"),
+		columns: [table.projectId],
+		foreignColumns: [project.id],
+		name: "Post_projectId_Project_id_fk"
+	}).onUpdate("cascade").onDelete("set null"),
 ]);
 
 export const comment = pgTable("Comment", {
@@ -168,20 +168,20 @@ export const comment = pgTable("Comment", {
 	isDeleted: boolean().default(false).notNull(),
 }, (table) => [
 	foreignKey({
-			columns: [table.authorId],
-			foreignColumns: [user.id],
-			name: "Comment_authorId_User_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.authorId],
+		foreignColumns: [user.id],
+		name: "Comment_authorId_User_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 	foreignKey({
-			columns: [table.parentCommentId],
-			foreignColumns: [table.id],
-			name: "Comment_parentCommentId_Comment_id_fk"
-		}).onUpdate("cascade").onDelete("set null"),
+		columns: [table.parentCommentId],
+		foreignColumns: [table.id],
+		name: "Comment_parentCommentId_Comment_id_fk"
+	}).onUpdate("cascade").onDelete("set null"),
 	foreignKey({
-			columns: [table.postId],
-			foreignColumns: [post.id],
-			name: "Comment_postId_Post_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.postId],
+		foreignColumns: [post.id],
+		name: "Comment_postId_Post_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 ]);
 
 export const notification = pgTable("Notification", {
@@ -193,10 +193,10 @@ export const notification = pgTable("Notification", {
 	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
 	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [user.id],
-			name: "Notification_userId_User_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.userId],
+		foreignColumns: [user.id],
+		name: "Notification_userId_User_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 ]);
 
 export const postLike = pgTable("PostLike", {
@@ -207,15 +207,15 @@ export const postLike = pgTable("PostLike", {
 }, (table) => [
 	uniqueIndex("PostLike_postId_userId_key").using("btree", table.postId.asc().nullsLast().op("text_ops"), table.userId.asc().nullsLast().op("text_ops")),
 	foreignKey({
-			columns: [table.postId],
-			foreignColumns: [post.id],
-			name: "PostLike_postId_Post_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.postId],
+		foreignColumns: [post.id],
+		name: "PostLike_postId_Post_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [user.id],
-			name: "PostLike_userId_User_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.userId],
+		foreignColumns: [user.id],
+		name: "PostLike_userId_User_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 ]);
 
 export const wallet = pgTable("Wallet", {
@@ -229,10 +229,10 @@ export const wallet = pgTable("Wallet", {
 }, (table) => [
 	uniqueIndex("Wallet_userId_key").using("btree", table.userId.asc().nullsLast().op("text_ops")),
 	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [user.id],
-			name: "Wallet_userId_User_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.userId],
+		foreignColumns: [user.id],
+		name: "Wallet_userId_User_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 ]);
 
 export const auditLog = pgTable("AuditLog", {
@@ -248,10 +248,10 @@ export const auditLog = pgTable("AuditLog", {
 	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
 	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [user.id],
-			name: "AuditLog_userId_User_id_fk"
-		}).onUpdate("cascade").onDelete("set null"),
+		columns: [table.userId],
+		foreignColumns: [user.id],
+		name: "AuditLog_userId_User_id_fk"
+	}).onUpdate("cascade").onDelete("set null"),
 ]);
 
 export const userPermission = pgTable("UserPermission", {
@@ -262,15 +262,15 @@ export const userPermission = pgTable("UserPermission", {
 }, (table) => [
 	uniqueIndex("UserPermission_userId_permissionId_key").using("btree", table.userId.asc().nullsLast().op("text_ops"), table.permissionId.asc().nullsLast().op("text_ops")),
 	foreignKey({
-			columns: [table.permissionId],
-			foreignColumns: [permission.id],
-			name: "UserPermission_permissionId_Permission_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.permissionId],
+		foreignColumns: [permission.id],
+		name: "UserPermission_permissionId_Permission_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [user.id],
-			name: "UserPermission_userId_User_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.userId],
+		foreignColumns: [user.id],
+		name: "UserPermission_userId_User_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 ]);
 
 export const permission = pgTable("Permission", {
@@ -298,10 +298,10 @@ export const paymentTransaction = pgTable("PaymentTransaction", {
 }, (table) => [
 	uniqueIndex("PaymentTransaction_fundingId_key").using("btree", table.fundingId.asc().nullsLast().op("text_ops")),
 	foreignKey({
-			columns: [table.fundingId],
-			foreignColumns: [funding.id],
-			name: "PaymentTransaction_fundingId_Funding_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.fundingId],
+		foreignColumns: [funding.id],
+		name: "PaymentTransaction_fundingId_Funding_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 ]);
 
 export const settlementPayout = pgTable("SettlementPayout", {
@@ -319,10 +319,10 @@ export const settlementPayout = pgTable("SettlementPayout", {
 	updatedAt: timestamp({ mode: 'string' }).notNull(),
 }, (table) => [
 	foreignKey({
-			columns: [table.settlementId],
-			foreignColumns: [settlement.id],
-			name: "SettlementPayout_settlementId_Settlement_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.settlementId],
+		foreignColumns: [settlement.id],
+		name: "SettlementPayout_settlementId_Settlement_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 ]);
 
 export const user = pgTable("User", {
@@ -362,10 +362,10 @@ export const project = pgTable("Project", {
 	updatedAt: timestamp({ mode: 'string' }).notNull(),
 }, (table) => [
 	foreignKey({
-			columns: [table.ownerId],
-			foreignColumns: [user.id],
-			name: "Project_ownerId_User_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.ownerId],
+		foreignColumns: [user.id],
+		name: "Project_ownerId_User_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 ]);
 
 export const projectCollaborator = pgTable("ProjectCollaborator", {
@@ -378,15 +378,15 @@ export const projectCollaborator = pgTable("ProjectCollaborator", {
 }, (table) => [
 	uniqueIndex("ProjectCollaborator_projectId_userId_key").using("btree", table.projectId.asc().nullsLast().op("text_ops"), table.userId.asc().nullsLast().op("text_ops")),
 	foreignKey({
-			columns: [table.projectId],
-			foreignColumns: [project.id],
-			name: "ProjectCollaborator_projectId_Project_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.projectId],
+		foreignColumns: [project.id],
+		name: "ProjectCollaborator_projectId_Project_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [user.id],
-			name: "ProjectCollaborator_userId_User_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.userId],
+		foreignColumns: [user.id],
+		name: "ProjectCollaborator_userId_User_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 ]);
 
 export const funding = pgTable("Funding", {
@@ -405,15 +405,15 @@ export const funding = pgTable("Funding", {
 }, (table) => [
 	uniqueIndex("Funding_paymentIntentId_key").using("btree", table.paymentIntentId.asc().nullsLast().op("text_ops")),
 	foreignKey({
-			columns: [table.projectId],
-			foreignColumns: [project.id],
-			name: "Funding_projectId_Project_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.projectId],
+		foreignColumns: [project.id],
+		name: "Funding_projectId_Project_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [user.id],
-			name: "Funding_userId_User_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.userId],
+		foreignColumns: [user.id],
+		name: "Funding_userId_User_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 ]);
 
 export const settlement = pgTable("Settlement", {
@@ -433,10 +433,10 @@ export const settlement = pgTable("Settlement", {
 	updatedAt: timestamp({ mode: 'string' }).notNull(),
 }, (table) => [
 	foreignKey({
-			columns: [table.projectId],
-			foreignColumns: [project.id],
-			name: "Settlement_projectId_Project_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.projectId],
+		foreignColumns: [project.id],
+		name: "Settlement_projectId_Project_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 ]);
 
 export const projectMilestone = pgTable("ProjectMilestone", {
@@ -454,10 +454,10 @@ export const projectMilestone = pgTable("ProjectMilestone", {
 	updatedAt: timestamp({ mode: 'string' }).notNull(),
 }, (table) => [
 	foreignKey({
-			columns: [table.projectId],
-			foreignColumns: [project.id],
-			name: "ProjectMilestone_projectId_Project_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.projectId],
+		foreignColumns: [project.id],
+		name: "ProjectMilestone_projectId_Project_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 ]);
 
 export const projectRewardTier = pgTable("ProjectRewardTier", {
@@ -475,10 +475,10 @@ export const projectRewardTier = pgTable("ProjectRewardTier", {
 	updatedAt: timestamp({ mode: 'string' }).notNull(),
 }, (table) => [
 	foreignKey({
-			columns: [table.projectId],
-			foreignColumns: [project.id],
-			name: "ProjectRewardTier_projectId_Project_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.projectId],
+		foreignColumns: [project.id],
+		name: "ProjectRewardTier_projectId_Project_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 ]);
 
 export const projectRequirement = pgTable("ProjectRequirement", {
@@ -496,10 +496,10 @@ export const projectRequirement = pgTable("ProjectRequirement", {
 	updatedAt: timestamp({ mode: 'string' }).notNull(),
 }, (table) => [
 	foreignKey({
-			columns: [table.projectId],
-			foreignColumns: [project.id],
-			name: "ProjectRequirement_projectId_Project_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.projectId],
+		foreignColumns: [project.id],
+		name: "ProjectRequirement_projectId_Project_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 ]);
 
 export const orderItem = pgTable("OrderItem", {
@@ -514,15 +514,15 @@ export const orderItem = pgTable("OrderItem", {
 	updatedAt: timestamp({ mode: 'string' }).notNull(),
 }, (table) => [
 	foreignKey({
-			columns: [table.orderId],
-			foreignColumns: [order.id],
-			name: "OrderItem_orderId_Order_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.orderId],
+		foreignColumns: [order.id],
+		name: "OrderItem_orderId_Order_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 	foreignKey({
-			columns: [table.productId],
-			foreignColumns: [product.id],
-			name: "OrderItem_productId_Product_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.productId],
+		foreignColumns: [product.id],
+		name: "OrderItem_productId_Product_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 ]);
 
 export const userFollow = pgTable("UserFollow", {
@@ -533,15 +533,15 @@ export const userFollow = pgTable("UserFollow", {
 }, (table) => [
 	uniqueIndex("UserFollow_followerId_followingId_key").using("btree", table.followerId.asc().nullsLast().op("text_ops"), table.followingId.asc().nullsLast().op("text_ops")),
 	foreignKey({
-			columns: [table.followerId],
-			foreignColumns: [user.id],
-			name: "UserFollow_followerId_User_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.followerId],
+		foreignColumns: [user.id],
+		name: "UserFollow_followerId_User_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 	foreignKey({
-			columns: [table.followingId],
-			foreignColumns: [user.id],
-			name: "UserFollow_followingId_User_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.followingId],
+		foreignColumns: [user.id],
+		name: "UserFollow_followingId_User_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 ]);
 
 export const commentReaction = pgTable("CommentReaction", {
@@ -553,15 +553,15 @@ export const commentReaction = pgTable("CommentReaction", {
 }, (table) => [
 	uniqueIndex("CommentReaction_commentId_userId_type_key").using("btree", table.commentId.asc().nullsLast().op("text_ops"), table.userId.asc().nullsLast().op("text_ops"), table.type.asc().nullsLast().op("text_ops")),
 	foreignKey({
-			columns: [table.commentId],
-			foreignColumns: [comment.id],
-			name: "CommentReaction_commentId_Comment_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.commentId],
+		foreignColumns: [comment.id],
+		name: "CommentReaction_commentId_Comment_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [user.id],
-			name: "CommentReaction_userId_User_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.userId],
+		foreignColumns: [user.id],
+		name: "CommentReaction_userId_User_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 ]);
 
 export const moderationReport = pgTable("ModerationReport", {
@@ -576,10 +576,10 @@ export const moderationReport = pgTable("ModerationReport", {
 	resolvedAt: timestamp({ mode: 'string' }),
 }, (table) => [
 	foreignKey({
-			columns: [table.reporterId],
-			foreignColumns: [user.id],
-			name: "ModerationReport_reporterId_User_id_fk"
-		}).onUpdate("cascade").onDelete("set null"),
+		columns: [table.reporterId],
+		foreignColumns: [user.id],
+		name: "ModerationReport_reporterId_User_id_fk"
+	}).onUpdate("cascade").onDelete("set null"),
 ]);
 
 export const userBlock = pgTable("UserBlock", {
@@ -590,15 +590,15 @@ export const userBlock = pgTable("UserBlock", {
 }, (table) => [
 	uniqueIndex("UserBlock_blockerId_blockedUserId_key").using("btree", table.blockerId.asc().nullsLast().op("text_ops"), table.blockedUserId.asc().nullsLast().op("text_ops")),
 	foreignKey({
-			columns: [table.blockedUserId],
-			foreignColumns: [user.id],
-			name: "UserBlock_blockedUserId_User_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.blockedUserId],
+		foreignColumns: [user.id],
+		name: "UserBlock_blockedUserId_User_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 	foreignKey({
-			columns: [table.blockerId],
-			foreignColumns: [user.id],
-			name: "UserBlock_blockerId_User_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.blockerId],
+		foreignColumns: [user.id],
+		name: "UserBlock_blockerId_User_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 ]);
 
 export const authSession = pgTable("AuthSession", {
@@ -618,15 +618,15 @@ export const authSession = pgTable("AuthSession", {
 	index("AuthSession_lastUsedAt_idx").using("btree", table.lastUsedAt.asc().nullsLast().op("timestamp_ops")),
 	index("AuthSession_userId_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
 	foreignKey({
-			columns: [table.deviceId],
-			foreignColumns: [authDevice.id],
-			name: "AuthSession_deviceId_AuthDevice_id_fk"
-		}).onUpdate("cascade").onDelete("set null"),
+		columns: [table.deviceId],
+		foreignColumns: [authDevice.id],
+		name: "AuthSession_deviceId_AuthDevice_id_fk"
+	}).onUpdate("cascade").onDelete("set null"),
 	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [user.id],
-			name: "AuthSession_userId_User_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.userId],
+		foreignColumns: [user.id],
+		name: "AuthSession_userId_User_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 ]);
 
 export const authDevice = pgTable("AuthDevice", {
@@ -674,15 +674,15 @@ export const refreshToken = pgTable("RefreshToken", {
 	index("RefreshToken_sessionId_idx").using("btree", table.sessionId.asc().nullsLast().op("text_ops")),
 	uniqueIndex("RefreshToken_tokenFingerprint_key").using("btree", table.tokenFingerprint.asc().nullsLast().op("text_ops")),
 	foreignKey({
-			columns: [table.rotatedToId],
-			foreignColumns: [table.id],
-			name: "RefreshToken_rotatedToId_RefreshToken_id_fk"
-		}).onUpdate("cascade").onDelete("set null"),
+		columns: [table.rotatedToId],
+		foreignColumns: [table.id],
+		name: "RefreshToken_rotatedToId_RefreshToken_id_fk"
+	}).onUpdate("cascade").onDelete("set null"),
 	foreignKey({
-			columns: [table.sessionId],
-			foreignColumns: [authSession.id],
-			name: "RefreshToken_sessionId_AuthSession_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.sessionId],
+		foreignColumns: [authSession.id],
+		name: "RefreshToken_sessionId_AuthSession_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 ]);
 
 export const tokenBlacklist = pgTable("TokenBlacklist", {
@@ -698,15 +698,15 @@ export const postDislike = pgTable("PostDislike", {
 }, (table) => [
 	uniqueIndex("PostDislike_postId_userId_key").using("btree", table.postId.asc().nullsLast().op("text_ops"), table.userId.asc().nullsLast().op("text_ops")),
 	foreignKey({
-			columns: [table.postId],
-			foreignColumns: [post.id],
-			name: "PostDislike_postId_Post_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.postId],
+		foreignColumns: [post.id],
+		name: "PostDislike_postId_Post_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [user.id],
-			name: "PostDislike_userId_User_id_fk"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.userId],
+		foreignColumns: [user.id],
+		name: "PostDislike_userId_User_id_fk"
+	}).onUpdate("cascade").onDelete("restrict"),
 ]);
 
 export const visitLog = pgTable("VisitLog", {
@@ -722,8 +722,8 @@ export const visitLog = pgTable("VisitLog", {
 	index("VisitLog_sessionId_idx").using("btree", table.sessionId.asc().nullsLast().op("text_ops")),
 	index("VisitLog_userId_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
 	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [user.id],
-			name: "VisitLog_userId_User_id_fk"
-		}).onUpdate("cascade").onDelete("set null"),
+		columns: [table.userId],
+		foreignColumns: [user.id],
+		name: "VisitLog_userId_User_id_fk"
+	}).onUpdate("cascade").onDelete("set null"),
 ]);

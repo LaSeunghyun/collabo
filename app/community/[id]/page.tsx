@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Flag, Heart, Loader2, MessageCircle, MinusCircle, UserCircle2, X } from 'lucide-react';
+import { ArrowLeft, Flag, Heart, Loader2, MessageCircle, MinusCircle, UserCircle2, X, Eye } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { signIn, useSession } from 'next-auth/react';
 import clsx from 'clsx';
@@ -401,7 +401,7 @@ export default function CommunityPostDetailPage() {
   const likeLabel = t('community.likesLabel_other', { count: post.likes });
   const commentLabel = t('community.commentsLabel_other', { count: comments.length });
   const authorName = post.author?.name ?? t('community.defaultGuestName');
-  const categoryLabel = t(`community.filters.${post.category}`);
+  // const categoryLabel = t(`community.filters.${post.category}`);
   const createdAt = post.createdAt ? new Date(post.createdAt) : null;
   const formattedDate = createdAt
     ? createdAt.toLocaleString('ko-KR', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -409,7 +409,7 @@ export default function CommunityPostDetailPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 pb-24">
-      <div className="flex items-center justify-between pt-10">
+      <div className="flex flex-col gap-4 pt-10 sm:flex-row sm:items-center sm:justify-between">
         <Link
           href="/community"
           className="inline-flex items-center gap-2 text-sm text-white/60 transition hover:text-white"
@@ -417,7 +417,20 @@ export default function CommunityPostDetailPage() {
           <ArrowLeft className="h-4 w-4" />
           {t('community.actions.backToList')}
         </Link>
-        <span className="text-xs uppercase tracking-[0.3em] text-white/50">{categoryLabel}</span>
+        <div className="flex items-center gap-4 text-sm text-white/60">
+          <div className="flex items-center gap-1">
+            <Heart className="h-4 w-4" />
+            <span>{post.likes || 0}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <MessageCircle className="h-4 w-4" />
+            <span>{comments.length}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Eye className="h-4 w-4" />
+            <span>{post.views || 0}</span>
+          </div>
+        </div>
       </div>
 
       <article className="mt-6 space-y-8 rounded-3xl border border-white/10 bg-white/5 p-8">
@@ -517,8 +530,46 @@ export default function CommunityPostDetailPage() {
           <ul className="space-y-3">
             {comments.map((comment) => (
               <li key={comment.id} className="rounded-2xl border border-white/10 bg-neutral-950/60 px-4 py-3 text-sm text-white/80">
-                <p className="font-semibold text-white">{comment.authorName}</p>
-                <p className="mt-1 whitespace-pre-line text-white/70">{comment.content}</p>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10">
+                      <UserCircle2 className="h-4 w-4 text-white/70" />
+                    </div>
+                    <p className="font-semibold text-white">{comment.authorName}</p>
+                    <span className="text-xs text-white/50">•</span>
+                    <span className="text-xs text-white/50">
+                      {comment.createdAt ? new Date(comment.createdAt).toLocaleString('ko-KR', {
+                        month: 'numeric',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      }) : ''}
+                    </span>
+                  </div>
+                  <p className="whitespace-pre-line text-white/70">{comment.content}</p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-1 text-xs text-white/60 transition hover:border-white/20 hover:text-white"
+                    >
+                      <Heart className="h-3 w-3" />
+                      <span>0</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-1 text-xs text-white/60 transition hover:border-white/20 hover:text-white"
+                    >
+                      <MinusCircle className="h-3 w-3" />
+                      <span>0</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-full p-1 text-white/40 transition hover:text-red-400"
+                    >
+                      <Flag className="h-3 w-3" />
+                    </button>
+                  </div>
+                </div>
               </li>
             ))}
           </ul>

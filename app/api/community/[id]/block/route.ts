@@ -1,46 +1,89 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { eq, and } from 'drizzle-orm';
 
-// import { prisma } from '@/lib/prisma'; // TODO: Drizzle로 전환 필요
+import { userBlocks, posts } from '@/lib/db/schema';
+import { getDb } from '@/lib/db/client';
+import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
+import type { SessionUser } from '@/lib/auth/session';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { id } = params;
-  const body = await request.json().catch(() => ({}));
-  const blockerId = typeof body.blockerId === 'string' ? body.blockerId : undefined;
+  let sessionUser: SessionUser;
+  const authContext = { headers: request.headers };
 
-  if (!blockerId) {
-    return NextResponse.json({ message: 'blockerId is required.' }, { status: 400 });
+  try {
+    sessionUser = await requireApiUser({}, authContext);
+  } catch (error) {
+    const response = handleAuthorizationError(error);
+    if (response) {
+      return response;
+    }
+
+    throw error;
   }
 
   try {
-    // TODO: Drizzle로 전환 필요
-    const post = { authorId: 'temp-author-id' };
+    const { id } = params;
+    const db = await getDb();
 
-    if (!post) {
+    // 게시글과 작성자 정보 조회
+    const postResult = await db
+      .select({
+        id: posts.id,
+        authorId: posts.authorId
+      })
+      .from(posts)
+      .where(eq(posts.id, id))
+      .limit(1);
+
+    if (!postResult[0]) {
       return NextResponse.json({ message: 'Post not found.' }, { status: 404 });
     }
 
-    if (post.authorId === blockerId) {
+    const post = postResult[0];
+
+    if (post.authorId === sessionUser.id) {
       return NextResponse.json({ message: 'You cannot block yourself.' }, { status: 400 });
     }
 
-    // TODO: Drizzle로 전환 필요
-    const block = { 
-      id: 'temp-block-id',
-      blockerId,
-      blockedUserId: post.authorId,
-      createdAt: new Date()
-    };
+    // 중복 차단 확인
+    const existingBlock = await db
+      .select({ id: userBlocks.id })
+      .from(userBlocks)
+      .where(and(
+        eq(userBlocks.blockerId, sessionUser.id),
+        eq(userBlocks.blockedUserId, post.authorId)
+      ))
+      .limit(1);
+
+    if (existingBlock[0]) {
+      return NextResponse.json({ message: 'User already blocked.' }, { status: 409 });
+    }
+
+    // 차단 생성
+    const [newBlock] = await db
+      .insert(userBlocks)
+      .values({
+        id: crypto.randomUUID(),
+        blockerId: sessionUser.id,
+        blockedUserId: post.authorId,
+        createdAt: new Date().toISOString()
+      })
+      .returning({
+        id: userBlocks.id,
+        blockerId: userBlocks.blockerId,
+        blockedUserId: userBlocks.blockedUserId,
+        createdAt: userBlocks.createdAt
+      });
 
     return NextResponse.json(
       {
-        id: block.id,
-        blockerId: block.blockerId,
-        blockedUserId: block.blockedUserId,
-        createdAt: block.createdAt.toISOString()
+        id: newBlock.id,
+        blockerId: newBlock.blockerId,
+        blockedUserId: newBlock.blockedUserId,
+        createdAt: newBlock.createdAt
       },
       { status: 201 }
     );

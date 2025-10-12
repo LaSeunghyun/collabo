@@ -8,6 +8,20 @@
       "when": 1759882139951,
       "tag": "0000_rich_matthew_murdock",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1760249024324,
+      "tag": "0001_slow_legion",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1760250756454,
+      "tag": "0002_jittery_iron_man",
+      "breakpoints": true
     }
   ]
 }
