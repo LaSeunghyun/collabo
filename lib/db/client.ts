@@ -173,6 +173,12 @@ const getDrizzleInstance = async (): Promise<DrizzleInstance> => {
 
 export const getDbClient = async (): Promise<DatabaseClient> => {
   const instance = await getDrizzleInstance();
+  
+  if (instance.kind === 'disabled') {
+    console.error('Database is disabled:', instance.reason);
+    throw new Error(`Database connection failed: ${instance.reason}`);
+  }
+  
   return instance.db;
 };
 

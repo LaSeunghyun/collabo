@@ -144,6 +144,13 @@ export async function POST(req: NextRequest) {
       }
     );
 
+    // 데이터베이스 연결 에러인지 확인
+    if (error instanceof Error && error.message.includes('Database connection failed')) {
+      return NextResponse.json({
+        error: '데이터베이스 연결에 실패했습니다. 잠시 후 다시 시도해주세요.'
+      }, { status: 503 });
+    }
+
     return NextResponse.json({
       error: '로그인 처리에 실패했습니다.',
       details: error instanceof Error ? error.message : 'Unknown error'
