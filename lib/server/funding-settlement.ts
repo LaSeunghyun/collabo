@@ -1,6 +1,7 @@
 import { getDb } from '@/lib/db/client';
 import { calculateSettlementBreakdown } from './settlements';
 import { eq, and, inArray, desc } from 'drizzle-orm';
+import { randomUUID } from 'crypto';
 import {
     projects,
     fundings,
@@ -173,7 +174,7 @@ export async function createSettlementIfTargetReached(
             const [created] = await tx
                 .insert(settlements)
                 .values({
-                    id: crypto.randomUUID(),
+                    id: randomUUID(),
                     projectId,
                     totalRaised: breakdown.totalRaised,
                     platformFee: breakdown.platformFee,
@@ -221,7 +222,7 @@ export async function createSettlementIfTargetReached(
             await Promise.all(
                 payoutPayload.map((payout) =>
                     tx.insert(settlementPayouts).values({
-                        id: crypto.randomUUID(),
+                        id: randomUUID(),
                         settlementId: created.id,
                         stakeholderType: payout.stakeholderType,
                         stakeholderId: payout.stakeholderId,

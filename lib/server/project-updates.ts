@@ -1,4 +1,5 @@
 import { eq, and, desc, inArray } from 'drizzle-orm';
+import { randomUUID } from 'crypto';
 
 import type { SessionUser } from '@/lib/auth/session';
 import { getDb } from '@/lib/db/client';
@@ -347,7 +348,7 @@ export const createProjectUpdate = async (
     const [post] = await db
       .insert(posts)
       .values({
-        id: crypto.randomUUID(),
+        id: randomUUID(),
         projectId,
         authorId: user.id,
         title: input.title,

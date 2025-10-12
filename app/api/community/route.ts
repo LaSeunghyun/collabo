@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { eq, and, or, desc, count, sql, like, inArray } from 'drizzle-orm';
+import { randomUUID } from 'crypto';
 
 import { communityCategoryEnum, posts, users, postLikes, postDislikes, comments, moderationReports } from '@/lib/db/schema';
 import { getDb } from '@/lib/db/client';
@@ -133,7 +134,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (normalizedCategories.length > 0) {
-      whereConditions.push(inArray(posts.category, normalizedCategories));
+      whereConditions.push(inArray(posts.category, normalizedCategories as (typeof communityCategoryEnum.enumValues)[number][]));
     }
 
     if (search) {
@@ -156,7 +157,11 @@ export async function GET(request: NextRequest) {
     const total = totalResult?.count || 0;
 
     // 메인 피드 게시글 조회
-    let feedQuery = db
+    const finalWhere = cursor
+      ? (baseWhere ? and(baseWhere, sql`${posts.id} < ${cursor}`) : sql`${posts.id} < ${cursor}`)
+      : baseWhere;
+
+    const feedQuery = db
       .select({
         id: posts.id,
         title: posts.title,
@@ -173,22 +178,8 @@ export async function GET(request: NextRequest) {
       })
       .from(posts)
       .innerJoin(users, eq(posts.authorId, users.id))
-      .where(baseWhere);
-
-    // 정렬 적용
-    if (sort === 'popular') {
-      // 인기도 기반 정렬을 위해 서브쿼리로 좋아요/댓글 수를 계산
-      feedQuery = feedQuery.orderBy(desc(posts.createdAt));
-    } else if (sort === 'trending') {
-      feedQuery = feedQuery.orderBy(desc(posts.createdAt));
-    } else {
-      feedQuery = feedQuery.orderBy(desc(posts.createdAt));
-    }
-
-    // 커서 기반 페이지네이션
-    if (cursor) {
-      feedQuery = feedQuery.where(and(baseWhere, sql`${posts.id} < ${cursor}`));
-    }
+      .where(finalWhere)
+      .orderBy(desc(posts.createdAt));
 
     const feedPosts = await feedQuery.limit(limit);
 
@@ -461,10 +452,10 @@ export async function POST(request: NextRequest) {
       const [createdPost] = await db
         .insert(posts)
         .values({
-          id: crypto.randomUUID(),
+          id: randomUUID(),
           title,
           content,
-          category,
+          category: category as (typeof communityCategoryEnum.enumValues)[number],
           type: 'DISCUSSION',
           projectId: projectId ?? null,
           authorId: sessionUser.id,

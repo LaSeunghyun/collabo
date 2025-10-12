@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { eq, and, count, desc, inArray } from 'drizzle-orm';
+import { randomUUID } from 'crypto';
 
 import { orders, orderItems, products, orderStatusEnum } from '@/lib/db/schema';
 import { getDb } from '@/lib/db/client';
@@ -78,7 +79,7 @@ export async function GET(request: NextRequest) {
       .select({ count: count() })
       .from(orders)
       .where(and(...conditions));
-    
+
     const total = totalResult[0]?.count || 0;
 
     return NextResponse.json({
@@ -152,7 +153,7 @@ export async function POST(request: NextRequest) {
       const product = productsList.find(p => p.id === item.productId)!;
       const itemTotal = product.price * item.quantity;
       subtotal += itemTotal;
-      
+
       return {
         productId: item.productId,
         quantity: item.quantity,
@@ -164,8 +165,8 @@ export async function POST(request: NextRequest) {
     const totalPrice = subtotal; // 배송비 등 추가 가능
 
     // 트랜잭션으로 주문 생성 및 재고 차감
-    const orderId = crypto.randomUUID();
-    
+    const orderId = randomUUID();
+
     // 주문 생성
     const newOrder = await db
       .insert(orders)
@@ -183,9 +184,9 @@ export async function POST(request: NextRequest) {
     // 주문 아이템 생성
     const db = await getDb();
     const newOrderItems = await Promise.all(
-      orderItemsData.map(item => 
+      orderItemsData.map(item =>
         db.insert(orderItems).values({
-          id: crypto.randomUUID(),
+          id: randomUUID(),
           orderId,
           productId: item.productId,
           quantity: item.quantity,

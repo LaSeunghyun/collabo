@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { eq, and, desc, count } from 'drizzle-orm';
+import { randomUUID } from 'crypto';
 
 import { settlementPayouts, settlements, projects } from '@/lib/db/schema';
 import { getDb } from '@/lib/db/client';
@@ -118,7 +119,7 @@ export async function POST(request: NextRequest) {
     const [payout] = await db
       .insert(settlementPayouts)
       .values({
-        id: crypto.randomUUID(),
+        id: randomUUID(),
         settlementId,
         stakeholderType: stakeholderType as any,
         stakeholderId: user.id,

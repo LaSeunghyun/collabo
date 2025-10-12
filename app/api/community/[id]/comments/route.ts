@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { eq, and, desc } from 'drizzle-orm';
+import { randomUUID } from 'crypto';
 
 import { comments, posts, users } from '@/lib/db/schema';
 import { getDb } from '@/lib/db/client';
@@ -110,7 +111,7 @@ export async function POST(
     const [newComment] = await db
       .insert(comments)
       .values({
-        id: crypto.randomUUID(),
+        id: randomUUID(),
         postId: params.id,
         authorId: sessionUser.id,
         content,

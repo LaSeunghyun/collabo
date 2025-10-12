@@ -1,4 +1,4 @@
-﻿import { createHash } from 'crypto';
+﻿import { createHash, randomUUID } from 'crypto';
 import { gte } from 'drizzle-orm';
 
 import { getDbClient } from '@/lib/db/client';
@@ -67,7 +67,7 @@ export const recordVisit = async ({
 
     const db = await getDbClient();
     await db.insert(visitLogs).values({
-      id: crypto.randomUUID(),
+      id: randomUUID(),
       sessionId: normalizedSessionId,
       userId: user?.id ?? null,
       ipHash: hashIp(ipAddress),

@@ -1,6 +1,7 @@
 ﻿import { revalidatePath } from 'next/cache';
 import { eq, and, or, like, desc, count, inArray, not } from 'drizzle-orm';
 import { ZodError } from 'zod';
+import { randomUUID } from 'crypto';
 
 import type { SessionUser } from '@/lib/auth/session';
 import { getDb } from '@/lib/db/client';
@@ -476,7 +477,7 @@ const buildCreateData = (
   const portfolioUrl = sanitizeText(input.portfolioUrl);
 
   return {
-    id: crypto.randomUUID(),
+    id: randomUUID(),
     userId: ownerId,
     type: input.type,
     name: input.name.trim(),

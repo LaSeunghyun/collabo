@@ -1,5 +1,6 @@
 import { revalidatePath } from 'next/cache';
 import { eq, and, inArray, desc, count } from 'drizzle-orm';
+import { randomUUID } from 'crypto';
 
 import { withCache, CACHE_KEYS, CACHE_TTL, invalidateCache } from '@/lib/utils/cache';
 
@@ -400,7 +401,7 @@ export const createProject = async (rawInput: unknown, user: SessionUser) => {
   const ownerId = user.role === 'ADMIN' && input.ownerId ? input.ownerId : user.id;
 
   const createData = buildProjectCreateData(input, ownerId);
-  const projectId = crypto.randomUUID();
+  const projectId = randomUUID();
 
   const db = await getDb();
   await db.transaction(async (tx) => {
@@ -412,7 +413,7 @@ export const createProject = async (rawInput: unknown, user: SessionUser) => {
 
     // Create audit log
     await tx.insert(auditLogs).values({
-      id: crypto.randomUUID(),
+      id: randomUUID(),
       userId: user.id,
       entity: 'Project',
       entityId: projectId,
@@ -465,7 +466,7 @@ export const updateProject = async (id: string, rawInput: unknown, user: Session
 
     // Create audit log
     await tx.insert(auditLogs).values({
-      id: crypto.randomUUID(),
+      id: randomUUID(),
       userId: user.id,
       entity: 'Project',
       entityId: id,
@@ -505,7 +506,7 @@ export const deleteProject = async (id: string, user: SessionUser) => {
 
     // Create audit log
     await tx.insert(auditLogs).values({
-      id: crypto.randomUUID(),
+      id: randomUUID(),
       userId: user.id,
       entity: 'Project',
       entityId: id,

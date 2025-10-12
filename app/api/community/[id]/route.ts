@@ -1,7 +1,8 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { eq, and, count } from 'drizzle-orm';
+import { randomUUID } from 'crypto';
 
-import { 
+import {
   posts,
   users,
   postLikes,
@@ -170,15 +171,15 @@ export async function GET(
     return NextResponse.json(post);
   } catch (error) {
     console.error('Failed to load post:', error);
-    
+
     // 더 자세한 에러 정보 제공
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
+
     return NextResponse.json(
-      { 
+      {
         message: 'Unable to load post.',
         error: errorMessage
-      }, 
+      },
       { status: 500 }
     );
   }
@@ -224,12 +225,12 @@ export async function PATCH(
       await db
         .delete(postDislikes)
         .where(and(eq(postDislikes.postId, params.id), eq(postDislikes.userId, sessionUser.id)));
-      
+
       // 좋아요 추가 (중복 방지를 위해 INSERT ... ON CONFLICT 사용)
       await db
         .insert(postLikes)
         .values({
-          id: crypto.randomUUID(),
+          id: randomUUID(),
           postId: params.id,
           userId: sessionUser.id,
           createdAt: new Date().toISOString()
@@ -240,12 +241,12 @@ export async function PATCH(
       await db
         .delete(postLikes)
         .where(and(eq(postLikes.postId, params.id), eq(postLikes.userId, sessionUser.id)));
-      
+
       // 싫어요 추가 (중복 방지를 위해 INSERT ... ON CONFLICT 사용)
       await db
         .insert(postDislikes)
         .values({
-          id: crypto.randomUUID(),
+          id: randomUUID(),
           postId: params.id,
           userId: sessionUser.id,
           createdAt: new Date().toISOString()

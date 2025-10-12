@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { eq, and, count } from 'drizzle-orm';
+import { randomUUID } from 'crypto';
 
 import { userFollows, users } from '@/lib/db/schema';
 import { getDb } from '@/lib/db/client';
@@ -71,7 +72,7 @@ export async function POST(_request: NextRequest, { params }: { params: { id: st
     await db
       .insert(userFollows)
       .values({
-        id: crypto.randomUUID(),
+        id: randomUUID(),
         followerId: session.user.id,
         followingId: artistId,
         createdAt: new Date().toISOString()

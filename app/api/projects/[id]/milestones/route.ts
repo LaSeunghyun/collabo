@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { eq, and, desc, count } from 'drizzle-orm';
+import { randomUUID } from 'crypto';
 
 import { projectMilestones, projects } from '@/lib/db/schema';
 import { getDb } from '@/lib/db/client';
@@ -148,7 +149,7 @@ export async function POST(
     const [milestone] = await db
       .insert(projectMilestones)
       .values({
-        id: crypto.randomUUID(),
+        id: randomUUID(),
         projectId: params.id,
         title,
         description: description || null,

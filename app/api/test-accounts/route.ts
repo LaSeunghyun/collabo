@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { hash } from 'bcryptjs';
 import { inArray } from 'drizzle-orm';
+import { randomUUID } from 'crypto';
 import { users } from '@/lib/db/schema';
 import { getDb } from '@/lib/db/client';
 
@@ -18,7 +19,7 @@ export async function POST() {
 
     // 1. 관리자 계정 생성
     const admin = await db.insert(users).values({
-      id: crypto.randomUUID(),
+      id: randomUUID(),
       name: '관리자',
       email: 'admin@collabo.com',
       passwordHash: hashedPassword,
@@ -30,7 +31,7 @@ export async function POST() {
 
     // 2. 팬 계정 생성 (참여자)
     const fan = await db.insert(users).values({
-      id: crypto.randomUUID(),
+      id: randomUUID(),
       name: '팬',
       email: 'fan@collabo.com',
       passwordHash: hashedPassword,
@@ -42,7 +43,7 @@ export async function POST() {
 
     // 3. 파트너 계정 생성
     const partner = await db.insert(users).values({
-      id: crypto.randomUUID(),
+      id: randomUUID(),
       name: '파트너',
       email: 'partner@collabo.com',
       passwordHash: hashedPassword,
@@ -65,8 +66,8 @@ export async function POST() {
   } catch (error) {
     console.error('❌ 계정 생성 중 오류 발생:', error);
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: '계정 생성 중 오류가 발생했습니다.',
         details: error instanceof Error ? error.message : 'Unknown error'
       },

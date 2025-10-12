@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { eq, and } from 'drizzle-orm';
+import { randomUUID } from 'crypto';
 
 import { moderationReports, posts } from '@/lib/db/schema';
 import { getDb } from '@/lib/db/client';
@@ -64,7 +65,7 @@ export async function POST(
     const [newReport] = await db
       .insert(moderationReports)
       .values({
-        id: crypto.randomUUID(),
+        id: randomUUID(),
         reporterId: sessionUser.id,
         targetType: 'POST',
         targetId: params.id,

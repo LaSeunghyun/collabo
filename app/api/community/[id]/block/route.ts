@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { eq, and } from 'drizzle-orm';
+import { randomUUID } from 'crypto';
 
 import { userBlocks, posts } from '@/lib/db/schema';
 import { getDb } from '@/lib/db/client';
@@ -66,7 +67,7 @@ export async function POST(
     const [newBlock] = await db
       .insert(userBlocks)
       .values({
-        id: crypto.randomUUID(),
+        id: randomUUID(),
         blockerId: sessionUser.id,
         blockedUserId: post.authorId,
         createdAt: new Date().toISOString()

@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { eq, and, desc } from 'drizzle-orm';
+import { randomUUID } from 'crypto';
 
 import {
   settlements,
@@ -234,7 +235,7 @@ export async function POST(request: NextRequest) {
 
     // Drizzle 트랜잭션으로 정산 생성
     const settlement = await db.transaction(async (tx) => {
-      const settlementId = crypto.randomUUID();
+      const settlementId = randomUUID();
       const now = new Date().toISOString();
 
       // 정산 생성
@@ -292,7 +293,7 @@ export async function POST(request: NextRequest) {
 
       // 정산 지급 내역 생성
       const payoutValues = payoutPayload.map((payout) => ({
-        id: crypto.randomUUID(),
+        id: randomUUID(),
         settlementId,
         stakeholderType: payout.stakeholderType,
         stakeholderId: payout.stakeholderId,
