@@ -56,7 +56,7 @@ const createServerlessInstance = async (connectionString: string): Promise<Drizz
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
     console.error('Failed to create serverless instance:', reason);
-    
+
     // Vercel 환경에서 연결 실패 시 더 자세한 로깅
     if (process.env.VERCEL) {
       console.error('Vercel environment detected. Connection string format:', {
@@ -66,7 +66,7 @@ const createServerlessInstance = async (connectionString: string): Promise<Drizz
         containsPooler: connectionString?.includes('pooler'),
       });
     }
-    
+
     return createDisabledInstance(`Serverless instance creation failed: ${reason}`);
   }
 };
@@ -83,7 +83,7 @@ const createDisabledInstance = (reason: string): DrizzleInstance => {
       if (prop === Symbol.toStringTag) {
         return 'DrizzleClientStub';
       }
-      
+
       if (typeof prop === 'string') {
         // query 객체의 각 테이블에 대한 메서드들
         if (prop === 'query') {
@@ -102,23 +102,23 @@ const createDisabledInstance = (reason: string): DrizzleInstance => {
             }
           });
         }
-        
+
         // Drizzle의 다른 메서드들 - 체이닝을 위한 함수들
         if (['select', 'insert', 'update', 'delete', 'from', 'transaction'].includes(prop)) {
           return () => { throw new Error(message); };
         }
-        
+
         // execute 메서드는 특별히 처리
         if (prop === 'execute') {
           return () => { throw new Error(message); };
         }
-        
+
         // Drizzle ORM 연산자들
         if (['eq', 'and', 'or', 'not', 'like', 'inArray', 'notInArray', 'desc', 'asc', 'count', 'sql'].includes(prop)) {
           return () => { throw new Error(message); };
         }
       }
-      
+
       return target[prop as keyof typeof target];
     }
   });
@@ -173,12 +173,12 @@ const getDrizzleInstance = async (): Promise<DrizzleInstance> => {
 
 export const getDbClient = async (): Promise<DatabaseClient> => {
   const instance = await getDrizzleInstance();
-  
+
   if (instance.kind === 'disabled') {
     console.error('Database is disabled:', instance.reason);
     throw new Error(`Database connection failed: ${instance.reason}`);
   }
-  
+
   return instance.db;
 };
 

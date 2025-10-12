@@ -3,13 +3,13 @@ import { randomUUID } from 'crypto';
 import { eq } from 'drizzle-orm';
 
 import { getDb } from '@/lib/db/client';
-import { permission, userPermission, user } from '@/lib/db/schema';
+import { permission, userPermission, users } from '@/lib/db/schema';
 import { userRole } from '@/lib/db/schema';
 
-type UserRecord = typeof user.$inferSelect;
+type UserRecord = typeof users.$inferSelect;
 type UserPermissionRecord = typeof userPermission.$inferSelect;
 type PermissionRecord = typeof permission.$inferSelect;
-type UserInsert = typeof user.$inferInsert;
+type UserInsert = typeof users.$inferInsert;
 
 export type UserWithPermissions = UserRecord & {
   permission: Array<UserPermissionRecord & { permission: PermissionRecord }>;
@@ -23,9 +23,9 @@ export const fetchUserWithPermissions = async (
   identifier: UserIdentifier
 ): Promise<UserWithPermissions | null> => {
   const where = identifier.id
-    ? eq(user.id, identifier.id)
+    ? eq(users.id, identifier.id)
     : identifier.email
-      ? eq(user.email, identifier.email)
+      ? eq(users.email, identifier.email)
       : null;
 
   if (!where) {
@@ -34,7 +34,7 @@ export const fetchUserWithPermissions = async (
 
   const db = await getDb();
 
-  const user = await db.query.user.findFirst({
+  const user = await db.query.users.findFirst({
     where,
     with: {
       permission: {
@@ -66,8 +66,8 @@ export const fetchUserWithPermissions = async (
 
 export const findUserByEmail = async (email: string) => {
   const db = await getDb();
-  return db.query.user.findFirst({
-    where: eq(user.email, email)
+  return db.query.users.findFirst({
+    where: eq(users.email, email)
   });
 };
 
@@ -86,7 +86,7 @@ export const createParticipantUser = async (
   const db = await getDb();
 
   const [record] = await db
-    .insert(user)
+    .insert(users)
     .values({
       id: randomUUID(),
       name: input.name,
@@ -96,11 +96,11 @@ export const createParticipantUser = async (
       updatedAt: now
     } satisfies UserInsert)
     .returning({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      createdAt: user.createdAt
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      role: users.role,
+      createdAt: users.createdAt
     });
 
   if (!record) {

@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 
     } catch (error) {
         console.error('회원가입 에러:', error);
-        
+
         // 데이터베이스 연결 에러인지 확인
         if (error instanceof Error && error.message.includes('Database connection failed')) {
             return NextResponse.json(
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
                 { status: 503 }
             );
         }
-        
+
         return NextResponse.json(
             { error: '회원가입 중 오류가 발생했습니다.' },
             { status: 500 }
