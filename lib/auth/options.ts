@@ -59,9 +59,12 @@ export const authOptions: NextAuthOptions = {
         }
 
         const db = await getDbClient();
-        const userRecord = await (db as any).query.users.findFirst({
-          where: eq(users.email, credentials.email)
-        });
+        const userRows = await db
+          .select()
+          .from(users)
+          .where(eq(users.email, credentials.email))
+          .limit(1);
+        const userRecord = userRows[0] || null;
 
         if (!userRecord || !userRecord.passwordHash) {
           return null;

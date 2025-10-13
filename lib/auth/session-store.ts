@@ -283,9 +283,12 @@ export const rotateRefreshToken = async (
 ): Promise<RefreshResult> => {
   const db = await getDbClient();
   const fingerprint = fingerprintToken(refreshTokenValue);
-  const existingRow = await (db as any).query.refreshTokens.findFirst({
-    where: eq(refreshTokens.tokenFingerprint, fingerprint)
-  });
+  const existingRows = await db
+    .select()
+    .from(refreshTokens)
+    .where(eq(refreshTokens.tokenFingerprint, fingerprint))
+    .limit(1);
+  const existingRow = existingRows[0] || null;
 
   if (!existingRow) {
     throw new Error('Invalid refresh token.');
@@ -303,9 +306,12 @@ export const rotateRefreshToken = async (
     throw new Error('Refresh token reuse detected.');
   }
 
-  const sessionRow = await (db as any).query.authSessions.findFirst({
-    where: eq(authSessions.id, existing.sessionId)
-  });
+  const sessionRows = await db
+    .select()
+    .from(authSessions)
+    .where(eq(authSessions.id, existing.sessionId))
+    .limit(1);
+  const sessionRow = sessionRows[0] || null;
 
   if (!sessionRow) {
     throw new Error('Session has expired.');
@@ -462,9 +468,12 @@ export const revokeAllSessionsForUser = async (userId: string) => {
 export const revokeSessionByRefreshToken = async (refreshTokenValue: string) => {                                                                        
   const db = await getDbClient();
   const fingerprint = fingerprintToken(refreshTokenValue);
-  const recordRow = await (db as any).query.refreshTokens.findFirst({
-    where: eq(refreshTokens.tokenFingerprint, fingerprint)
-  });
+  const recordRows = await db
+    .select()
+    .from(refreshTokens)
+    .where(eq(refreshTokens.tokenFingerprint, fingerprint))
+    .limit(1);
+  const recordRow = recordRows[0] || null;
 
   if (!recordRow) {
     return null;
@@ -477,9 +486,12 @@ export const revokeSessionByRefreshToken = async (refreshTokenValue: string) => 
     return null;
   }
 
-  const sessionRow = await (db as any).query.authSessions.findFirst({
-    where: eq(authSessions.id, record.sessionId)
-  });
+  const sessionRows = await db
+    .select()
+    .from(authSessions)
+    .where(eq(authSessions.id, record.sessionId))
+    .limit(1);
+  const sessionRow = sessionRows[0] || null;
 
   if (!sessionRow) {
     return null;
