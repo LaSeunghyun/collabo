@@ -1,14 +1,36 @@
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/options';
-import { redirect } from 'next/navigation';
+'use client';
 
-export default async function ProfilePage() {
-  const session = await getServerSession(authOptions);
-  const user = session?.user;
+import { useSession, signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
-  if (!user) {
-    redirect('/auth/signin');
+export default function ProfilePage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === 'loading') return;
+    if (!session) {
+      router.push('/auth/signin');
+    }
+  }, [session, status, router]);
+
+  if (status === 'loading') {
+    return (
+      <div className="mx-auto max-w-3xl px-4 pb-20">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">로딩 중...</p>
+        </div>
+      </div>
+    );
   }
+
+  if (!session) {
+    return null;
+  }
+
+  const user = session.user;
 
   return (
     <div className="mx-auto max-w-3xl px-4 pb-20">
@@ -37,32 +59,13 @@ export default async function ProfilePage() {
         </div>
 
         <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-          <h2 className="text-lg font-semibold text-white mb-4">권한</h2>
-          <div className="space-y-2">
-            {user.permissions && user.permissions.length > 0 ? (
-              user.permissions.map((permission) => (
-                <div key={permission} className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-green-400" />
-                  <span className="text-sm text-white">{permission}</span>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-white/60">특별한 권한이 없습니다.</p>
-            )}
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
           <h2 className="text-lg font-semibold text-white mb-4">계정 관리</h2>
           <div className="space-y-4">
-            <button className="w-full rounded-lg bg-blue-600 px-4 py-3 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
-              프로필 수정
-            </button>
-            <button className="w-full rounded-lg border border-white/20 bg-white/5 px-4 py-3 text-sm font-medium text-white hover:bg-white/10 transition-colors">
-              비밀번호 변경
-            </button>
-            <button className="w-full rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm font-medium text-red-300 hover:bg-red-500/10 transition-colors">
-              계정 삭제
+            <button 
+              onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+              className="w-full rounded-lg bg-red-600 px-4 py-3 text-sm font-medium text-white hover:bg-red-700 transition-colors"
+            >
+              로그아웃
             </button>
           </div>
         </div>
