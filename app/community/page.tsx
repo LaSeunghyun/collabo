@@ -3,12 +3,12 @@
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Search, Plus, User, MessageSquare, Eye, Heart, Calendar } from 'lucide-react';
+import { Search, Plus, User, MessageSquare, Eye, Heart } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
 interface Post {
@@ -49,7 +49,7 @@ function CommunityPageContent() {
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'all');
   const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'latest');
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage] = useState(Number(searchParams.get('page')) || 1);
 
   // 카테고리 로드
   useEffect(() => {
@@ -107,11 +107,6 @@ function CommunityPageContent() {
 
     fetchPosts();
   }, [selectedCategory, sortBy, searchQuery, currentPage]);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setCurrentPage(1);
-  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
