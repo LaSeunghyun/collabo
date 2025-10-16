@@ -1,0 +1,1 @@
+ALTER TYPE "public"."CommunityCategory" ADD VALUE 'GENERAL' BEFORE 'MUSIC';

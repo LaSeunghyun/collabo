@@ -1,0 +1,102 @@
+import { randomUUID } from 'crypto';
+import { SignJWT, jwtVerify } from 'jose';
+import { eq } from 'drizzle-orm';
+import { getDbClient } from '@/lib/db/client';
+import { tokenBlacklist } from '@/lib/db/schema';
+import { userRole } from '@/lib/db/schema';
+
+export interface AccessTokenContext {
+  userId: string;
+  sessionId: string;
+  role: typeof userRole.enumValues[number];
+  permissions: string[];
+  expiresIn: number;
+}
+
+export interface AccessTokenResult {
+  token: string;
+  jti: string;
+  expiresAt: Date;
+}
+
+export interface VerifiedAccessToken {
+  userId: string;
+  sessionId: string;
+  role: typeof userRole.enumValues[number];
+  permissions: string[];
+  jti: string;
+  expiresAt: Date;
+}
+
+const ISSUER = 'collaborium.auth';
+
+const getSecret = () => {
+  const secret = process.env.AUTH_JWT_SECRET ?? process.env.NEXTAUTH_SECRET;
+
+  if (!secret) {
+    throw new Error('JWT secret is not configured');
+  }
+
+  return new TextEncoder().encode(secret);
+};
+
+export const issueAccessToken = async ({
+  userId,
+  sessionId,
+  role,
+  permissions,
+  expiresIn
+}: AccessTokenContext): Promise<AccessTokenResult> => {
+  const jti = randomUUID();
+  const expirationSeconds = Math.floor(Date.now() / 1000) + expiresIn;
+  const token = await new SignJWT({
+    sid: sessionId,
+    role,
+    permissions
+  })
+    .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
+    .setIssuer(ISSUER)
+    .setSubject(userId)
+    .setJti(jti)
+    .setIssuedAt()
+    .setExpirationTime(expirationSeconds)
+    .sign(getSecret());
+
+  return {
+    token,
+    jti,
+    expiresAt: new Date(expirationSeconds * 1000)
+  };
+};
+
+export const verifyAccessToken = async (token: string): Promise<VerifiedAccessToken> => {
+  const { payload } = await jwtVerify(token, getSecret(), { issuer: ISSUER });
+
+  if (!payload.sub || typeof payload.sid !== 'string' || typeof payload.jti !== 'string') {
+    throw new Error('잘못된 형식의 토큰입니다.');
+  }
+
+  const db = await getDbClient();
+  const blacklisted = await (db as any).query.tokenBlacklist.findFirst({
+    where: eq(tokenBlacklist.jti, payload.jti)
+  });
+
+  if (blacklisted) {
+    throw new Error('만료되었거나 폐기된 토큰입니다.');
+  }
+
+  const permissions = Array.isArray(payload.permissions)
+    ? (payload.permissions as string[])
+    : [];
+
+  const expirationSeconds = typeof payload.exp === 'number' ? payload.exp : undefined;
+
+  return {
+    userId: payload.sub,
+    sessionId: payload.sid,
+    role: payload.role as typeof userRole.enumValues[number],
+    permissions,
+    jti: payload.jti,
+    expiresAt: expirationSeconds ? new Date(expirationSeconds * 1000) : new Date()
+  };
+};

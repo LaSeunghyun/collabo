@@ -1,0 +1,235 @@
+{
+  "common": {
+    "loading": "Loading..."
+  },
+  "navigation": {
+    "home": "Home",
+    "explore": "Explore",
+    "launch": "Launch",
+    "community": "Community",
+    "profile": "Profile",
+    "projects": "Projects",
+    "artists": "Artists",
+    "partners": "Partners",
+    "help": "Help",
+    "store": "Store"
+  },
+  "actions": {
+    "login": "Log in",
+    "logout": "Log out",
+    "search": "Search",
+    "favorite": "Favorite",
+    "viewMore": "View more",
+    "viewAll": "View all",
+    "fundNow": "Fund now",
+    "requestQuote": "Request quote"
+  },
+  "sectionHeader": {
+    "viewMoreAria": "View more from the {{title}} section"
+  },
+  "home": {
+    "hero": {
+      "tagline": "Co-create",
+      "title": "We support your story.",
+      "subtitle": "Validate ideas, gather fans, and launch the next project together.",
+      "ctaArtists": "Explore artists",
+      "ctaCommunity": "Visit community",
+      "metrics": {
+        "projects": "Active projects",
+        "community": "Trending posts",
+        "artists": "Artists involved"
+      }
+    },
+    "livePopular": "Live trending",
+    "closingSoon": "Closing soon",
+    "themes": "Themes",
+    "categoryFilter": "Category filters",
+    "tagFilter": "Tags",
+    "sections": {
+      "spotlight": "Collaboration spotlight",
+      "artistNetwork": "Artist network",
+      "communityPulse": "Community pulse",
+      "resources": "Collaboration resources"
+    },
+    "errors": {
+      "projects": "We couldn’t load projects right now."
+    },
+    "empty": {
+      "projects": "There are no projects to show yet.",
+      "community": "No community posts yet — start the first conversation!",
+      "store": "There are no items for sale yet."
+    },
+    "store": {
+      "title": "Store",
+      "items": {
+        "product1": { "title": "Limited tour hoodie" },
+        "product2": { "title": "Premium online class pass" },
+        "product3": { "title": "Artist-signed LP" }
+      }
+    },
+    "liveAma": {
+      "tag": "Live AMA",
+      "title": "This week's live class",
+      "description": "Join an intimate AMA session with the artist. Reserve now to secure the early-bird perks.",
+      "cta": "Reserve a spot",
+      "ctaAria": "Reserve a spot for {{title}}"
+    }
+  },
+  "projects": {
+    "title": "Projects",
+    "overviewTitle": "All projects",
+    "overviewDescription": "Use category, sort and tag filters to explore collaborative experiences built by artists and fans.",
+    "filters": "Filters",
+    "category": "Category",
+    "status": "Status",
+    "sort": "Sort",
+    "closing": "Closing soon",
+    "popular": "Popular",
+    "newest": "Newest"
+  },
+  "community": {
+    "title": "Community hub",
+    "description": "A space to trade collaboration ideas and gather real-time feedback from fellow creatives.",
+    "writePlaceholder": "Share something with the community",
+    "sortRecent": "Recent",
+    "sortPopular": "Popular",
+    "post": "Post",
+    "newPostTitleLabel": "Title",
+    "newPostTitlePlaceholder": "Write a catchy headline",
+    "newPostContentLabel": "Share the story",
+    "postErrorMessage": "We couldn’t publish your post. Please try again.",
+    "loadErrorMessage": "We couldn’t load the community feed right now.",
+    "likesLabel_one": "{{count}} like",
+    "likesLabel_other": "{{count}} likes",
+    "commentsLabel_one": "{{count}} comment",
+    "commentsLabel_other": "{{count}} comments",
+    "commentsSectionTitle": "Comments",
+    "commentLoading": "Loading comments...",
+    "commentLoadErrorMessage": "We couldn’t load comments right now.",
+    "noComments": "Be the first to share your thoughts.",
+    "commentAuthorPlaceholder": "Your name (optional)",
+    "commentPlaceholder": "Add your comment",
+    "commentErrorMessage": "We couldn’t send your comment. Please try again.",
+    "commentSubmitting": "Sending...",
+    "commentSubmit": "Comment",
+    "defaultGuestName": "Guest",
+    "commentLoginPrompt": "Sign in to share your thoughts in the comments.",
+    "commentUserLabel": "Your comment will be posted as {{name}}."
+  },
+  "artist": {
+    "actions": {
+      "follow": "Follow",
+      "following": "Following",
+      "processing": "Updating...",
+      "editProfile": "Edit profile"
+    },
+    "directory": {
+      "tagline": "Artist Network",
+      "title": "Discover collaboration-ready artists",
+      "subtitle": "Explore teams building with their fans and follow the artists you want to work with.",
+      "countLabel": "Featured artists",
+      "countHint": "Updated in real time",
+      "error": "We couldn't load the artist directory.",
+      "empty": "No artists are public yet. Be the first to launch a collaboration!",
+      "projectCount": "{{count}} projects",
+      "followerCount": "{{count}} followers",
+      "viewProfile": "View profile",
+      "retry": "Try again"
+    },
+    "metrics": {
+      "followers": "Followers",
+      "backers": "Total backers",
+      "projects": "Projects"
+    },
+    "tabs": {
+      "overview": "Overview",
+      "projects": "Projects",
+      "updates": "Updates",
+      "community": "Community",
+      "portfolio": "Portfolio"
+    },
+    "profile": {
+      "avatarAlt": "{{name}} profile photo",
+      "emptyBio": "The artist has not added a bio yet.",
+      "emptyBioDetailed": "This artist has not shared an introduction yet. Follow them to stay updated on upcoming projects and announcements.",
+      "joined": "Joined in {{date}}"
+    },
+    "events": {
+      "title": "Linked events",
+      "manageCta": "Manage events",
+      "empty": "No events are linked to this profile yet.",
+      "createCta": "Create an event",
+      "tbd": "Schedule to be announced",
+      "viewDetails": "View details"
+    },
+    "links": {
+      "title": "External links",
+      "manageCta": "Manage links",
+      "empty": "Add official channels, merch stores or socials to help fans discover you.",
+      "addLink": "Add link"
+    },
+    "projects": {
+      "empty": "There are no published projects yet."
+    },
+    "updates": {
+      "empty": "No project updates have been posted yet.",
+      "projectLabel": "Posted for {{title}}"
+    },
+    "portfolio": {
+      "placeholder": "Portfolio content will appear here once the artist shares it.",
+      "editablePlaceholder": "Upload case studies, media kits or past work to curate your public portfolio."
+    }
+  },
+  "partners": {
+    "title": "Partner matching",
+    "submit": "Submit partner",
+    "review": "Review status"
+  },
+  "help": {
+    "title": "Help & FAQ",
+    "description": "Answers to the most common questions when using the service.",
+    "faqs": {
+      "fundingProcess": {
+        "question": "How does funding work?",
+        "answer": "Projects open → fans support → once the goal is reached we settle the payment and deliver rewards. You can rehearse the flow with Stripe test payments."
+      },
+      "partnerReview": {
+        "question": "How long does partner review take?",
+        "answer": "It takes 3–5 business days after submission and we will notify you via email."
+      },
+      "settlementReport": {
+        "question": "Where can I find settlement reports?",
+        "answer": "Go to the Settlement tab on the project detail page to access the reports."
+      }
+    }
+  },
+  "footer": {
+    "brand": {
+      "name": "Collaborium",
+      "description": "A fan-made funding platform where artists and fans grow together."
+    },
+    "sections": {
+      "platform": {
+        "title": "Platform",
+        "links": {
+          "projects": "Projects",
+          "partners": "Partners",
+          "community": "Community"
+        }
+      },
+      "support": {
+        "title": "Support",
+        "links": {
+          "help": "Help center",
+          "partnerJoin": "Become a partner"
+        }
+      },
+      "contact": {
+        "title": "Contact",
+        "email": "contact@collaborium.kr",
+        "address": "Seongsu-ro, Seongdong-gu, Seoul"
+      }
+    },
+    "copyright": "© {{year}} Collaborium. All rights reserved."
+  }
+}

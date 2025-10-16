@@ -1,0 +1,243 @@
+import { NextRequest } from 'next/server';
+
+jest.mock('@/lib/auth/session', () => ({
+  evaluateAuthorization: jest.fn()
+}));
+
+jest.mock('@/lib/auth/guards', () => {
+  const actual = jest.requireActual('@/lib/auth/guards');
+  return {
+    ...actual,
+    requireApiUser: jest.fn()
+  };
+});
+
+jest.mock('@/lib/server/project-updates', () => {
+  const actual = jest.requireActual('@/lib/server/project-updates');
+  return {
+    ...actual,
+    listProjectUpdates: jest.fn(),
+    createProjectUpdate: jest.fn(),
+    updateProjectUpdate: jest.fn(),
+    deleteProjectUpdate: jest.fn()
+  };
+});
+
+const mockPrisma = {
+  project: { findUnique: jest.fn() },
+  userFollow: { findMany: jest.fn() },
+  funding: { findMany: jest.fn() },
+  notification: { createMany: jest.fn() }
+};
+
+jest.mock('@/lib/prisma', () => ({
+  prisma: mockPrisma,
+  default: mockPrisma
+}));
+
+import { GET as getUpdates, POST as createUpdate } from '@/app/api/projects/[id]/updates/route';
+import {
+  DELETE as deleteUpdate,
+  PATCH as patchUpdate
+} from '@/app/api/projects/[id]/updates/[updateId]/route';
+import { AuthorizationError } from '@/lib/auth/guards';
+import { evaluateAuthorization } from '@/lib/auth/session';
+import {
+  createProjectUpdate,
+  deleteProjectUpdate,
+  listProjectUpdates,
+  ProjectUpdateNotFoundError,
+  ProjectUpdateRecord,
+  ProjectUpdateValidationError,
+  updateProjectUpdate
+} from '@/lib/server/project-updates';
+// PostVisibility enum was removed, using string literals instead
+
+const mockRequireApiUser = require('@/lib/auth/guards').requireApiUser as jest.Mock;
+
+const projectUpdatesModule = require('@/lib/server/project-updates') as typeof import('@/lib/server/project-updates');
+
+const mockListProjectUpdates = projectUpdatesModule.listProjectUpdates as jest.MockedFunction<
+  typeof listProjectUpdates
+>;
+const mockCreateProjectUpdate = projectUpdatesModule.createProjectUpdate as jest.MockedFunction<
+  typeof createProjectUpdate
+>;
+const mockUpdateProjectUpdate = projectUpdatesModule.updateProjectUpdate as jest.MockedFunction<
+  typeof updateProjectUpdate
+>;
+const mockDeleteProjectUpdate = projectUpdatesModule.deleteProjectUpdate as jest.MockedFunction<
+  typeof deleteProjectUpdate
+>;
+
+const mockEvaluateAuthorization = evaluateAuthorization as jest.MockedFunction<typeof evaluateAuthorization>;
+
+const mockNotificationCreateMany = mockPrisma.notification.createMany as jest.Mock;
+
+const viewer = { id: 'viewer-1', name: '테스터', email: 'test@example.com', role: 'PARTICIPANT', permissions: [] };
+const ownerUser = { id: 'owner-1', name: '오너', email: 'owner@example.com', role: 'CREATOR', permissions: [] };
+
+describe('Project updates API routes', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockEvaluateAuthorization.mockResolvedValue({ status: 'authorized', session: null, user: viewer });
+    mockRequireApiUser.mockResolvedValue(ownerUser);
+    mockPrisma.project.findUnique.mockResolvedValue({ id: 'project-1', ownerId: 'owner-1', title: '테스트 프로젝트' });
+    mockPrisma.userFollow.findMany.mockResolvedValue([{ followerId: 'fan-1' }]);
+    mockPrisma.funding.findMany.mockResolvedValue([{ userId: 'backer-1' }]);
+    mockNotificationCreateMany.mockResolvedValue({ count: 2 });
+  });
+
+  const sampleUpdate = (): ProjectUpdateRecord => ({
+    id: 'update-1',
+    projectId: 'project-1',
+    title: '새 소식',
+    content: '내용',
+    visibility: 'PUBLIC',
+    attachments: [],
+    milestone: null,
+    createdAt: new Date('2024-01-01T00:00:00.000Z'),
+    updatedAt: new Date('2024-01-01T00:00:00.000Z'),
+    likes: 0,
+    comments: 0,
+    liked: false,
+    author: { id: 'author-1', name: '테스터', avatarUrl: null },
+    canEdit: true
+  });
+
+  it('returns project updates as JSON', async () => {
+    mockListProjectUpdates.mockResolvedValue([sampleUpdate()]);
+
+    const response = await getUpdates(new NextRequest('http://localhost/api/projects/project-1/updates'), {
+      params: { id: 'project-1' }
+    });
+
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(data).toEqual([
+      {
+        ...sampleUpdate(),
+        createdAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: '2024-01-01T00:00:00.000Z'
+      }
+    ]);
+    expect(mockListProjectUpdates).toHaveBeenCalledWith('project-1', viewer);
+  });
+
+  it('returns 404 when the project is not found', async () => {
+    mockListProjectUpdates.mockRejectedValueOnce(new ProjectUpdateNotFoundError('없음'));
+
+    const response = await getUpdates(new NextRequest('http://localhost/api/projects/project-1/updates'), {
+      params: { id: 'project-1' }
+    });
+
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ message: '없음' });
+  });
+
+  it('rejects creating updates when unauthorized', async () => {
+    mockRequireApiUser.mockRejectedValueOnce(new AuthorizationError('인증 필요', 401));
+
+    const response = await createUpdate(
+      new NextRequest('http://localhost/api/projects/project-1/updates', {
+        method: 'POST',
+        body: JSON.stringify({ title: '제목', content: '본문' })
+      }),
+      { params: { id: 'project-1' } }
+    );
+
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ error: '인증 필요' });
+    expect(mockCreateProjectUpdate).not.toHaveBeenCalled();
+  });
+
+  it('creates an update and notifies supporters', async () => {
+    mockCreateProjectUpdate.mockResolvedValue(sampleUpdate());
+
+    const response = await createUpdate(
+      new NextRequest('http://localhost/api/projects/project-1/updates', {
+        method: 'POST',
+        body: JSON.stringify({ title: '제목', content: '본문', visibility: 'PUBLIC' }),
+        headers: { 'Content-Type': 'application/json' }
+      }),
+      { params: { id: 'project-1' } }
+    );
+
+    expect(response.status).toBe(201);
+    expect(mockCreateProjectUpdate).toHaveBeenCalledWith('project-1', {
+      title: '제목',
+      content: '본문',
+      visibility: 'PUBLIC',
+      attachments: undefined,
+      milestoneId: undefined
+    }, ownerUser);
+    expect(mockPrisma.notification.createMany).toHaveBeenCalledWith({
+      data: [
+        {
+          userId: 'fan-1',
+          type: expect.any(String),
+          payload: expect.any(Object)
+        },
+        {
+          userId: 'backer-1',
+          type: expect.any(String),
+          payload: expect.any(Object)
+        }
+      ]
+    });
+  });
+
+  it('returns 400 when project update validation fails', async () => {
+    mockCreateProjectUpdate.mockRejectedValueOnce(new ProjectUpdateValidationError('잘못된 입력'));
+
+    const response = await createUpdate(
+      new NextRequest('http://localhost/api/projects/project-1/updates', {
+        method: 'POST',
+        body: JSON.stringify({ title: '제목', content: '본문' })
+      }),
+      { params: { id: 'project-1' } }
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ message: '잘못된 입력' });
+  });
+
+  it('updates an existing project update', async () => {
+    mockUpdateProjectUpdate.mockResolvedValue(sampleUpdate());
+
+    const response = await patchUpdate(
+      new NextRequest('http://localhost/api/projects/project-1/updates/update-1', {
+        method: 'PATCH',
+        body: JSON.stringify({ title: '수정 제목' }),
+        headers: { 'Content-Type': 'application/json' }
+      }),
+      { params: { id: 'project-1', updateId: 'update-1' } }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockUpdateProjectUpdate).toHaveBeenCalledWith(
+      'project-1',
+      'update-1',
+      {
+        title: '수정 제목',
+        content: undefined,
+        visibility: undefined,
+        attachments: undefined,
+        milestoneId: undefined
+      },
+      ownerUser
+    );
+  });
+
+  it('deletes a project update', async () => {
+    const response = await deleteUpdate(
+      new NextRequest('http://localhost/api/projects/project-1/updates/update-1', {
+        method: 'DELETE'
+      }),
+      { params: { id: 'project-1', updateId: 'update-1' } }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockDeleteProjectUpdate).toHaveBeenCalledWith('project-1', 'update-1', ownerUser);
+  });
+});
