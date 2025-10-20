@@ -13,9 +13,9 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
     "test:regression": "node scripts/run-drizzle-regression.mjs",
-    "db:community:check": "ts-node scripts/test-db-connection.ts",
+    "db:community:check": "tsx scripts/test-db-connection.ts",
     "postinstall": "echo 'Skipping drizzle-kit generate in postinstall'",
-    "create-accounts": "ts-node scripts/create-test-accounts.ts",
+    "create-accounts": "tsx scripts/create-test-accounts.ts",
     "db:drizzle:generate": "drizzle-kit generate",
     "db:drizzle:push": "drizzle-kit push",
     "db:drizzle:introspect": "drizzle-kit introspect",
@@ -106,7 +106,7 @@
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "ts-jest": "^29.2.5",
-    "ts-node": "^10.9.2",
+    "tsx": "^4.7.0",
     "typescript": "^5.6.3"
   }
 }
