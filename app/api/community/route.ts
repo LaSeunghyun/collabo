@@ -380,7 +380,7 @@ export async function GET(request: NextRequest) {
       userName: viewer?.name ?? 'no-name',
       userRole: viewer?.role ?? 'no-role',
       responseTime: `${responseTime}ms`,
-      totalPosts
+      totalPosts: total
     });
 
     try {
