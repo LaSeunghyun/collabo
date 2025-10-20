@@ -279,10 +279,13 @@ export async function GET(request: NextRequest) {
           .where(inArray(postLikes.postId, postIdsArray))
           .groupBy(postLikes.postId),
         
-        // 댓글 수 조회
+        // 댓글 수 조회 (삭제되지 않은 댓글만)
         db.select({ postId: comments.postId, count: count() })
           .from(comments)
-          .where(inArray(comments.postId, postIdsArray))
+          .where(and(
+            inArray(comments.postId, postIdsArray),
+            eq(comments.isDeleted, false)
+          ))
           .groupBy(comments.postId)
       ]);
 
