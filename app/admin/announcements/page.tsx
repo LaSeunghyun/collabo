@@ -5,6 +5,9 @@ import { useTranslation } from 'react-i18next';
 import { AnnouncementComposer } from './_components/announcement-composer';
 import { AnnouncementList } from './_components/announcement-list';
 
+// 동적 렌더링 강제 - 빌드 시 데이터베이스 접근 방지
+export const dynamic = 'force-dynamic';
+
 export default function AdminAnnouncementsPage() {
   const { t } = useTranslation();
 

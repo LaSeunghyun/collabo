@@ -3,6 +3,9 @@ import type { ReactNode } from 'react';
 import { requireUser } from '@/lib/auth/guards';
 import { ROLE_LABELS, UserRole } from '@/types/prisma';
 
+// 동적 렌더링 강제 - 빌드 시 데이터베이스 접근 방지
+export const dynamic = 'force-dynamic';
+
 const navigationAnchors = [
   { href: '/admin', label: '대시보드' },
   { href: '/admin/projects', label: '프로젝트 검수' },

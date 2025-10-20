@@ -3,6 +3,9 @@ import { UserRole } from '@/types/prisma';
 import { requireUser } from '@/lib/auth/guards';
 import { ROLE_LABELS } from '@/lib/auth/permissions';
 
+// 동적 렌더링 강제 - 빌드 시 데이터베이스 접근 방지
+export const dynamic = 'force-dynamic';
+
 export default async function ProjectCreationPage() {
   const { user } = await requireUser({
     roles: [UserRole.CREATOR, UserRole.ADMIN],

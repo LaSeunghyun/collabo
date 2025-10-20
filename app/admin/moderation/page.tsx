@@ -1,5 +1,8 @@
 import { ModerationReportSection } from '../_components/moderation-report-section';
 
+// 동적 렌더링 강제 - 빌드 시 데이터베이스 접근 방지
+export const dynamic = 'force-dynamic';
+
 export default async function AdminModerationPage() {
   return (
     <div className="space-y-6">

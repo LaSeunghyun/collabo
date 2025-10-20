@@ -13,6 +13,9 @@ import { getServerAuthSession } from '@/lib/auth/session';
 import { getPartnerProfileForUser, listPartners } from '@/lib/server/partners';
 import { PARTNER_TYPE_LABELS } from '@/lib/validators/partners';
 
+// 동적 렌더링 강제 - 빌드 시 데이터베이스 접근 방지
+export const dynamic = 'force-dynamic';
+
 const dateFormatter = new Intl.DateTimeFormat('ko-KR', {
   dateStyle: 'medium',
   timeStyle: 'short'
