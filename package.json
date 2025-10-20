@@ -14,7 +14,7 @@
     "test:e2e:debug": "playwright test --debug",
     "test:regression": "node scripts/run-drizzle-regression.mjs",
     "db:community:check": "ts-node scripts/test-db-connection.ts",
-    "postinstall": "drizzle-kit generate",
+    "postinstall": "echo 'Skipping drizzle-kit generate in postinstall'",
     "create-accounts": "ts-node scripts/create-test-accounts.ts",
     "db:drizzle:generate": "drizzle-kit generate",
     "db:drizzle:push": "drizzle-kit push",
