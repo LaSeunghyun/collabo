@@ -20,7 +20,7 @@ export default function CommunityPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-20">
-      <section className="pt-10">
+      <section className="pt-6">
         <CommunityBoard onMetaChange={handleMetaChange} />
       </section>
     </div>

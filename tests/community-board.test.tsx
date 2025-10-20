@@ -146,12 +146,12 @@ describe('CommunityBoard interactions', () => {
     renderComponent();
 
     await screen.findByText('테스트 게시글');
-    await userEvent.click(screen.getByRole('button', { name: '공지' }));
+    await userEvent.click(screen.getByRole('button', { name: '음악' }));
 
     await waitFor(() => {
       expect((global.fetch as jest.Mock).mock.calls.some(([request]) => {
         const url = typeof request === 'string' ? request : request instanceof Request ? request.url : '';
-        return url.includes('/api/community?') && url.includes('category=notice');
+        return url.includes('/api/community?') && url.includes('category=music');
       })).toBe(true);
     });
   });

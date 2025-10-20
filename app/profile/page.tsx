@@ -40,10 +40,10 @@ export default function ProfilePage() {
   if (status === 'loading') {
     return (
       <div className="mx-auto max-w-3xl px-4 pb-20">
-        <header className="pt-6">
+        <div className="pt-6">
           <h1 className="text-3xl font-semibold text-white">내 정보</h1>
           <p className="mt-2 text-sm text-white/60">로딩 중...</p>
-        </header>
+        </div>
       </div>
     );
   }
@@ -51,10 +51,10 @@ export default function ProfilePage() {
   if (status === 'unauthenticated') {
     return (
       <div className="mx-auto max-w-3xl px-4 pb-20">
-        <header className="pt-6">
+        <div className="pt-6">
           <h1 className="text-3xl font-semibold text-white">내 정보</h1>
           <p className="mt-2 text-sm text-white/60">로그인이 필요합니다.</p>
-        </header>
+        </div>
         <section className="mt-8 space-y-3 rounded-3xl border border-white/10 bg-white/5 p-6">
           <p className="text-sm text-white/70">로그인 후 마이페이지를 이용할 수 있습니다.</p>
         </section>
@@ -64,10 +64,10 @@ export default function ProfilePage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 pb-20">
-      <header className="pt-6">
+      <div className="pt-6">
         <h1 className="text-3xl font-semibold text-white">내 정보</h1>
         <p className="mt-2 text-sm text-white/60">로그인 후 팬/크리에이터 권한에 따라 대시보드가 구성됩니다.</p>
-      </header>
+      </div>
 
       {/* 사용자 정보 섹션 */}
       <section className="mt-8 space-y-6 rounded-3xl border border-white/10 bg-white/5 p-6">

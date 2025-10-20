@@ -1,5 +1,5 @@
 ﻿import { cache } from 'react';
-import { eq, and, count } from 'drizzle-orm';
+import { eq, and, count, inArray } from 'drizzle-orm';
 
 import type { SessionUser } from '@/lib/auth/session';
 import { getDb } from '@/lib/db/client';
@@ -277,6 +277,61 @@ export const getArtistProfile = cache(async (artistId: string, viewer?: SessionU
 
 export type GetArtistProfileResult = NonNullable<Awaited<ReturnType<typeof getArtistProfile>>>;
 
+// 홈페이지용 경량 아티스트 조회
+export const listHomeArtists = cache(async (limit = 4): Promise<Pick<ArtistDirectoryEntry, 'id' | 'name' | 'avatarUrl' | 'projectCount' | 'followerCount'>[]> => {
+  try {
+    const db = await getDb();
+    const artists = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        avatarUrl: users.avatarUrl
+      })
+      .from(users)
+      .where(eq(users.role, 'CREATOR'))
+      .orderBy(users.createdAt)
+      .limit(limit);
+
+    if (artists.length === 0) {
+      return [];
+    }
+
+    const artistIds = artists.map(artist => artist.id);
+
+    // 경량화된 카운트 조회
+    const [followerCounts, projectCounts] = await Promise.all([
+      db.select({
+        followingId: userFollows.followingId,
+        count: count()
+      })
+        .from(userFollows)
+        .where(inArray(userFollows.followingId, artistIds))
+        .groupBy(userFollows.followingId),
+      db.select({
+        ownerId: projects.ownerId,
+        count: count()
+      })
+        .from(projects)
+        .where(inArray(projects.ownerId, artistIds))
+        .groupBy(projects.ownerId)
+    ]);
+
+    const followerCountMap = new Map(followerCounts.map(f => [f.followingId, f.count]));
+    const projectCountMap = new Map(projectCounts.map(p => [p.ownerId, p.count]));
+
+    return artists.map(artist => ({
+      id: artist.id,
+      name: artist.name,
+      avatarUrl: artist.avatarUrl,
+      projectCount: projectCountMap.get(artist.id) || 0,
+      followerCount: followerCountMap.get(artist.id) || 0
+    }));
+  } catch (error) {
+    console.error('Failed to fetch home artists:', error);
+    return [];
+  }
+});
+
 export const listFeaturedArtists = cache(async (): Promise<ArtistDirectoryEntry[]> => {
   try {
     const db = await getDb();
@@ -293,24 +348,43 @@ export const listFeaturedArtists = cache(async (): Promise<ArtistDirectoryEntry[
       .orderBy(users.createdAt)
       .limit(12);
 
-    // Get follower and project counts for each artist
-    const artistsWithCounts = await Promise.all(
-      artists.map(async (artist) => {
-        const [followerCountResult, projectCountResult] = await Promise.all([
-          db.select({ count: count() }).from(userFollows).where(eq(userFollows.followingId, artist.id)),
-          db.select({ count: count() }).from(projects).where(eq(projects.ownerId, artist.id))
-        ]);
+    if (artists.length === 0) {
+      return [];
+    }
 
-        return {
-          id: artist.id,
-          name: artist.name,
-          avatarUrl: artist.avatarUrl,
-          bio: artist.bio,
-          followerCount: followerCountResult[0]?.count || 0,
-          projectCount: projectCountResult[0]?.count || 0
-        } satisfies ArtistDirectoryEntry;
+    const artistIds = artists.map(artist => artist.id);
+
+    // 배치 쿼리로 모든 아티스트의 팔로워 수와 프로젝트 수를 한 번에 조회
+    const [followerCounts, projectCounts] = await Promise.all([
+      db.select({
+        followingId: userFollows.followingId,
+        count: count()
       })
-    );
+        .from(userFollows)
+        .where(inArray(userFollows.followingId, artistIds))
+        .groupBy(userFollows.followingId),
+      db.select({
+        ownerId: projects.ownerId,
+        count: count()
+      })
+        .from(projects)
+        .where(inArray(projects.ownerId, artistIds))
+        .groupBy(projects.ownerId)
+    ]);
+
+    // Map으로 변환하여 빠른 조회 가능
+    const followerCountMap = new Map(followerCounts.map(f => [f.followingId, f.count]));
+    const projectCountMap = new Map(projectCounts.map(p => [p.ownerId, p.count]));
+
+    // 아티스트 데이터와 카운트 결합
+    const artistsWithCounts = artists.map(artist => ({
+      id: artist.id,
+      name: artist.name,
+      avatarUrl: artist.avatarUrl,
+      bio: artist.bio,
+      followerCount: followerCountMap.get(artist.id) || 0,
+      projectCount: projectCountMap.get(artist.id) || 0
+    } satisfies ArtistDirectoryEntry));
 
     return artistsWithCounts;
   } catch (error) {

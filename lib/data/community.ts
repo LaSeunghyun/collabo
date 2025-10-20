@@ -44,5 +44,25 @@ export interface CommunityFeedResponse {
     search?: string | null;
     authorId?: string | null;
     projectId?: string | null;
+    page?: number;
+    totalPages?: number;
+    hasNextPage?: boolean;
+    hasPrevPage?: boolean;
+  };
+}
+
+// 홈페이지용 경량 커뮤니티 포스트
+export interface HomeCommunityPost {
+  id: string;
+  title: string;
+  content: string;
+  likes: number;
+  comments: number;
+  category: string;
+  createdAt: string;
+  author: {
+    id: string;
+    name: string;
+    avatarUrl?: string | null;
   };
 }

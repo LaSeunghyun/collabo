@@ -3,14 +3,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { InfiniteData, QueryKey } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { QueryKey } from '@tanstack/react-query';
 import { ArrowRight, Heart, MessageCircle, Search, Sparkles, UserCircle2, Eye } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { signIn, useSession } from 'next-auth/react';
 import clsx from 'clsx';
 
 import type { CommunityFeedResponse, CommunityPost } from '@/lib/data/community';
+import { Pagination, PaginationInfo } from '@/components/ui/pagination';
 
 const CATEGORY_OPTIONS = [
   'all',
@@ -23,7 +24,7 @@ const CATEGORY_OPTIONS = [
 
 const SORT_OPTIONS = ['recent', 'popular', 'trending'] as const;
 
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 10;
 
 interface CommunityBoardProps {
   projectId?: string;
@@ -53,11 +54,12 @@ function useCommunityFeed(params: {
   sort: 'recent' | 'popular' | 'trending';
   categories: string[];
   search: string;
+  page: number;
 }) {
-  const { projectId, authorId, sort, categories, search } = params;
+  const { projectId, authorId, sort, categories, search, page } = params;
   const effectiveCategories = categories.length ? categories : ['all'];
 
-  return useInfiniteQuery<CommunityFeedResponse>({
+  return useQuery<CommunityFeedResponse>({
     queryKey: [
       'community',
       {
@@ -65,13 +67,15 @@ function useCommunityFeed(params: {
         authorId: authorId ?? null,
         sort,
         categories: effectiveCategories.sort(), // 정렬하여 안정성 확보
-        search
+        search,
+        page
       }
     ],
-    queryFn: async ({ pageParam }) => {
+    queryFn: async () => {
       const query = new URLSearchParams();
       query.set('sort', sort);
       query.set('limit', String(PAGE_SIZE));
+      query.set('page', String(page));
 
       if (projectId) {
         query.set('projectId', projectId);
@@ -94,10 +98,6 @@ function useCommunityFeed(params: {
         query.set('search', search);
       }
 
-      if (typeof pageParam === 'string' && pageParam.length > 0) {
-        query.set('cursor', pageParam);
-      }
-
       const res = await fetch(`/api/community?${query.toString()}`);
       if (!res.ok) {
         throw new Error('Failed to load community posts');
@@ -112,8 +112,6 @@ function useCommunityFeed(params: {
         }))
       } satisfies CommunityFeedResponse;
     },
-    getNextPageParam: (lastPage) => lastPage.meta.nextCursor,
-    initialPageParam: undefined,
     staleTime: 30_000,
     gcTime: 5 * 60_000
   });
@@ -139,6 +137,7 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
   const [sort, setSort] = useState<(typeof SORT_OPTIONS)[number]>('recent');
   const [selectedCategories, setSelectedCategories] = useState<string[]>(['all']);
   const [searchValue, setSearchValue] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const debouncedSearch = useDebouncedValue(searchValue, 250);
 
   const effectiveCategories = useMemo(() => {
@@ -173,14 +172,15 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
     authorId,
     sort,
     categories: categoriesForQuery,
-    search: debouncedSearch
-  }), [projectId, authorId, sort, categoriesForQuery, debouncedSearch]);
+    search: debouncedSearch,
+    page: currentPage
+  }), [projectId, authorId, sort, categoriesForQuery, debouncedSearch, currentPage]);
 
-  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useCommunityFeed(feedParams);
+  const { data, isLoading, isError } = useCommunityFeed(feedParams);
 
-  const firstPage = useMemo(() => data?.pages[0], [data?.pages]);
-  const totalCount = firstPage?.meta.total ?? 0;
-  const metaPinned = firstPage?.pinned ?? [];
+  const totalCount = data?.meta.total ?? 0;
+  const metaPinned = data?.pinned ?? [];
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   const handleMetaChange = useCallback((meta: {
     pinned: CommunityPost[];
@@ -193,47 +193,25 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
   }, [onMetaChange]);
 
   useEffect(() => {
-    if (!firstPage) {
+    if (!data) {
       return;
     }
 
     handleMetaChange({
-      pinned: firstPage.pinned,
-      popular: firstPage.popular,
-      total: firstPage.meta.total
+      pinned: data.pinned,
+      popular: data.popular,
+      total: data.meta.total
     });
-  }, [firstPage, handleMetaChange]);
+  }, [data, handleMetaChange]);
 
-  const posts = useMemo(
-    () => data?.pages.flatMap((page) => page.posts) ?? [],
-    [data?.pages]
-  );
+  const posts = data?.posts ?? [];
 
-  const loadMoreRef = useRef<HTMLDivElement | null>(null);
-
+  // 페이지 변경 시 첫 페이지로 리셋
   useEffect(() => {
-    if (!loadMoreRef.current) {
-      return;
-    }
+    setCurrentPage(1);
+  }, [sort, selectedCategories, debouncedSearch]);
 
-    const observer = new IntersectionObserver((entries) => {
-      const entry = entries[0];
-      if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
-        fetchNextPage().catch(() => {
-          // handled by React Query error states
-        });
-      }
-    });
-
-    const node = loadMoreRef.current;
-    observer.observe(node);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
-
-  const toggleLikeMutation = useMutation<CommunityPost, Error, { postId: string; like: boolean }, { previous?: InfiniteData<CommunityFeedResponse>; queryKey: QueryKey }>({
+  const toggleLikeMutation = useMutation<CommunityPost, Error, { postId: string; like: boolean }, { previous?: CommunityFeedResponse; queryKey: QueryKey }>({
     mutationFn: async ({ postId, like }) => {
       const res = await fetch(`/api/community/${postId}`, {
         method: 'PATCH',
@@ -255,35 +233,33 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
           authorId: authorId ?? null,
           sort,
           categories: categoriesForQuery.sort(), // 정렬하여 안정성 확보
-          search: debouncedSearch
+          search: debouncedSearch,
+          page: currentPage
         }
       ];
 
       await queryClient.cancelQueries({ queryKey });
-      const previous = queryClient.getQueryData<InfiniteData<CommunityFeedResponse>>(queryKey);
+      const previous = queryClient.getQueryData<CommunityFeedResponse>(queryKey);
 
-      queryClient.setQueryData<InfiniteData<CommunityFeedResponse>>(queryKey, (current) => {
+      queryClient.setQueryData<CommunityFeedResponse>(queryKey, (current) => {
         if (!current) {
           return current;
         }
 
         return {
           ...current,
-          pages: current.pages.map((page) => ({
-            ...page,
-            posts: page.posts.map((post) => {
-              if (post.id !== postId) {
-                return post;
-              }
+          posts: current.posts.map((post) => {
+            if (post.id !== postId) {
+              return post;
+            }
 
-              const delta = like ? 1 : -1;
-              return {
-                ...post,
-                liked: like,
-                likes: Math.max(0, post.likes + delta)
-              };
-            })
-          }))
+            const delta = like ? 1 : -1;
+            return {
+              ...post,
+              liked: like,
+              likes: Math.max(0, post.likes + delta)
+            };
+          })
         };
       });
 
@@ -300,13 +276,14 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
       queryClient.invalidateQueries({
         queryKey: [
           'community',
-          {
-            projectId: projectId ?? null,
-            authorId: authorId ?? null,
-            sort,
-            categories: categoriesForQuery.sort(), // 정렬하여 안정성 확보
-            search: debouncedSearch
-          }
+        {
+          projectId: projectId ?? null,
+          authorId: authorId ?? null,
+          sort,
+          categories: categoriesForQuery.sort(), // 정렬하여 안정성 확보
+          search: debouncedSearch,
+          page: currentPage
+        }
         ]
       });
     }
@@ -478,20 +455,24 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
         ))}
       </div>
 
-      <div ref={loadMoreRef} className="h-1" />
-
-      {hasNextPage ? (
-        <div className="flex justify-center">
-          <button
-            type="button"
-            onClick={() => fetchNextPage()}
-            disabled={isFetchingNextPage}
-            className="rounded-full border border-white/10 px-6 py-2 text-sm text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isFetchingNextPage ? t('common.loading') : t('community.loadMore')}
-          </button>
+      {/* 페이지네이션 */}
+      {totalPages > 1 && (
+        <div className="mt-8 space-y-4">
+          <div className="flex items-center justify-between">
+            <PaginationInfo
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalCount}
+              itemsPerPage={PAGE_SIZE}
+            />
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          </div>
         </div>
-      ) : null}
+      )}
     </section>
   );
 }

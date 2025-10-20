@@ -6,6 +6,7 @@ const config: Config = {
       displayName: 'unit',
       testEnvironment: 'node',
       testMatch: ['<rootDir>/tests/**/*.test.ts', '<rootDir>/__tests__/**/*.test.ts'],
+      setupFiles: ['<rootDir>/jest.setup-env.ts'],
       setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
       moduleNameMapper: {
         '^@/(.*)$': '<rootDir>/$1',
@@ -23,6 +24,7 @@ const config: Config = {
       displayName: 'react',
       testEnvironment: 'jsdom',
       testMatch: ['<rootDir>/tests/**/*.test.tsx', '<rootDir>/__tests__/**/*.test.tsx'],
+      setupFiles: ['<rootDir>/jest.setup-env.ts'],
       setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
       moduleNameMapper: {
         '^@/(.*)$': '<rootDir>/$1',

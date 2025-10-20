@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "./ui/button";
-import { Card, CardContent } from "./ui/card";
+import { Card } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
@@ -9,16 +9,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { 
   MessageCircle, 
   Heart, 
-  Share2, 
   Plus,
   Search,
-  Clock,
-  Eye,
   PinIcon,
   Flame,
-  User,
-  Calendar,
-  TrendingUp,
   HelpCircle,
   FileText,
   Users,

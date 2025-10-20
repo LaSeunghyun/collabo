@@ -11,8 +11,15 @@ const resolveApiUrl = (path: string) => {
   return path;
 };
 
-export const fetchProjects = async (): Promise<ProjectSummary[]> => {
-  const res = await fetch(resolveApiUrl('/api/projects'), {
+export const fetchProjects = async (options?: { limit?: number; category?: string; status?: string }): Promise<ProjectSummary[]> => {
+  const params = new URLSearchParams();
+  if (options?.limit) params.append('limit', options.limit.toString());
+  if (options?.category) params.append('category', options.category);
+  if (options?.status) params.append('status', options.status);
+
+  const url = `/api/projects${params.toString() ? `?${params.toString()}` : ''}`;
+  
+  const res = await fetch(resolveApiUrl(url), {
     cache: 'no-store'
   });
 

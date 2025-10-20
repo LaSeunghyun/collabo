@@ -7,8 +7,7 @@ import {
   Activity,
   Flag,
   CheckCircle,
-  Clock,
-  AlertTriangle
+  Clock
 } from "lucide-react";
 
 // Mock admin data

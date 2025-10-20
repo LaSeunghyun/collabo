@@ -1,17 +1,9 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
-// import type { Prisma } from '@prisma/client'; // TODO: Drizzle로 전환 필요
-// import {
-//   FundingStatus,
-//   PaymentProvider,
-//   ProjectStatus,
-//   type Funding
-// } from '@/types/prisma'; // TODO: Drizzle로 전환 필요
 import Stripe from 'stripe';
-
-// import { prisma } from '@/lib/prisma'; // TODO: Drizzle로 전환 필요
 import { createSettlementIfTargetReached } from '@/lib/server/funding-settlement';
 import { buildApiError } from '@/lib/server/error-handling';
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
+import { getProjectSummaryById } from '@/lib/server/projects';
 
 interface FundingCreatePayload {
   projectId: string;
@@ -282,13 +274,13 @@ export async function POST(request: NextRequest) {
     return buildError('프로젝트 정보가 누락되었습니다.');
   }
 
-  // TODO: Drizzle로 전환 필요
-  const project = { id: projectId, status: 'LIVE', title: 'Sample Project' };
+  // 실제 프로젝트 조회
+  const project = await getProjectSummaryById(projectId);
   if (!project) {
     return buildError('해당 프로젝트를 찾을 수 없습니다.', 404);
   }
 
-  if (!['LIVE', 'EXECUTING'].includes(project.status as any)) { // TODO: Drizzle로 전환 필요
+  if (!['LIVE', 'EXECUTING'].includes(project.status)) {
     return buildError('현재 상태에서는 결제를 진행할 수 없습니다.', 409);
   }
 

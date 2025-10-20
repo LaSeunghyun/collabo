@@ -118,3 +118,9 @@ export const moderationStatusEnum = pgEnum('ModerationStatus', [
   'ACTION_TAKEN',
   'DISMISSED',
 ]);
+
+export const postStatusEnum = pgEnum('PostStatus', [
+  'DRAFT',
+  'PUBLISHED',
+  'ARCHIVED',
+]);

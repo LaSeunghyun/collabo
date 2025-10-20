@@ -91,6 +91,19 @@ git push origin main
 1. `NEXTAUTH_SECRET`이 설정되어 있는지 확인
 2. `NEXTAUTH_URL`이 올바른 도메인인지 확인
 
+### JWT 복호화 오류
+**증상**: `[next-auth][error][JWT_SESSION_ERROR] decryption operation failed`
+
+**원인**: `NEXTAUTH_SECRET` 환경 변수가 Vercel에 설정되지 않았거나 잘못된 값
+
+**해결 방법**:
+1. Vercel 대시보드에서 `NEXTAUTH_SECRET` 환경 변수 확인
+2. 새로운 시크릿 생성: `openssl rand -base64 32`
+3. 모든 환경(Production, Preview, Development)에 동일한 값 설정
+4. 재배포 실행
+
+**상세 가이드**: [Vercel 환경 변수 설정 가이드](docs/vercel-env-setup.md)
+
 ## 📞 지원
 
 문제가 발생하면 다음을 확인하세요:

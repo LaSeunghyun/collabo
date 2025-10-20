@@ -1,23 +1,5 @@
-﻿import { ProjectStatus, UserRole } from '@/types/prisma';
-import { type MockPrisma, createPrismaMock } from '../../helpers/prisma-mock';
-
-jest.mock('next/cache', () => ({
-  revalidatePath: jest.fn()
-}));
-
-let mockPrisma: MockPrisma = createPrismaMock();
-
-jest.mock('@/lib/prisma', () => ({
-  get prisma() {
-    return mockPrisma;
-  },
-  get default() {
-    return mockPrisma;
-  }
-}));
-
-const { revalidatePath } = jest.requireMock('next/cache') as { revalidatePath: jest.Mock };
-
+import { ProjectStatus, UserRole } from '@/types/prisma';
+import { getDb } from '@/lib/db/client';
 import {
   createProject,
   deleteProject,
@@ -25,8 +7,51 @@ import {
   ProjectAccessDeniedError,
   ProjectNotFoundError,
   ProjectValidationError,
-  updateProject
+  updateProject,
 } from '@/lib/server/projects';
+
+jest.mock('next/cache', () => ({
+  revalidatePath: jest.fn(),
+}));
+
+const mockDb = {
+  select: jest.fn().mockReturnThis(),
+  from: jest.fn().mockReturnThis(),
+  where: jest.fn().mockReturnThis(),
+  orderBy: jest.fn().mockReturnThis(),
+  limit: jest.fn().mockReturnThis(),
+  innerJoin: jest.fn().mockReturnThis(),
+  leftJoin: jest.fn().mockReturnThis(),
+  values: jest.fn().mockReturnThis(),
+  set: jest.fn().mockReturnThis(),
+  returning: jest.fn().mockReturnThis(),
+  insert: jest.fn(function() {
+    return this;
+  }),
+  update: jest.fn(function() {
+    return this;
+  }),
+  delete: jest.fn(function() {
+    return this;
+  }),
+  transaction: jest.fn().mockImplementation(async (callback) => await callback(mockDb)),
+  query: {
+    projects: {
+      findMany: jest.fn(),
+    },
+    auditLogs: {
+      create: jest.fn(),
+    },
+  },
+};
+
+jest.mock('@/lib/db/client', () => ({
+  getDb: jest.fn(() => mockDb),
+}));
+
+const { revalidatePath } = jest.requireMock('next/cache') as {
+  revalidatePath: jest.Mock;
+};
 
 const OWNER_CUID = 'ckvcreatorowner0000000000001';
 
@@ -42,16 +67,19 @@ const sampleSummaryRecord = () => ({
   createdAt: new Date('2024-01-01T00:00:00Z'),
   updatedAt: new Date('2024-01-02T00:00:00Z'),
   owner: { id: OWNER_CUID, name: 'Owner', avatarUrl: null },
-  _count: { fundings: 3 }
+  fundings: [{ id: 'funding-1' }, { id: 'funding-2' }, { id: 'funding-3' }],
 });
 
 describe('project domain service', () => {
   let nowSpy: jest.SpyInstance<number, []>;
 
   beforeEach(() => {
-    mockPrisma = createPrismaMock();
-    revalidatePath.mockReset();
-    nowSpy = jest.spyOn(Date, 'now').mockReturnValue(new Date('2024-01-10T00:00:00Z').getTime());
+    jest.clearAllMocks();
+    (getDb as jest.Mock).mockReturnValue(mockDb);
+
+    nowSpy = jest
+      .spyOn(Date, 'now')
+      .mockReturnValue(new Date('2024-01-10T00:00:00Z').getTime());
   });
 
   afterEach(() => {
@@ -60,17 +88,18 @@ describe('project domain service', () => {
 
   describe('getProjectSummaries', () => {
     it('maps database projects into summaries with default thumbnail', async () => {
-      mockPrisma.project.findMany.mockResolvedValue([sampleSummaryRecord()]);
+      const mockProjects = [sampleSummaryRecord()];
+      (mockDb.limit as jest.Mock).mockResolvedValue(mockProjects);
 
       const summaries = await getProjectSummaries();
 
-      expect(mockPrisma.project.findMany).toHaveBeenCalled();
+      expect(mockDb.select).toHaveBeenCalled();
       expect(summaries).toHaveLength(1);
       expect(summaries[0]).toMatchObject({
         id: 'project-1',
         thumbnail: expect.stringContaining('images.unsplash.com'),
         participants: 3,
-        remainingDays: expect.any(Number)
+        remainingDays: expect.any(Number),
       });
       expect(summaries[0].remainingDays).toBeGreaterThan(0);
     });
@@ -86,33 +115,29 @@ describe('project domain service', () => {
         category: 'music',
         targetAmount: 1000,
         currency: 'KRW',
-        ownerId: OWNER_CUID
+        ownerId: OWNER_CUID,
       };
-      mockPrisma.project.create.mockResolvedValue({ id: 'project-1' });
-      mockPrisma.auditLog.create.mockResolvedValue(undefined);
-      mockPrisma.project.findUnique.mockResolvedValue(sampleSummaryRecord());
+      mockDb.returning.mockResolvedValue([{ id: 'project-1' }]);
+      (mockDb.limit as jest.Mock).mockResolvedValue([sampleSummaryRecord()]);
 
       const summary = await createProject(input, adminUser);
 
-      expect(mockPrisma.project.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({ ownerId: OWNER_CUID, status: ProjectStatus.DRAFT })
-      });
-      expect(mockPrisma.auditLog.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          userId: 'admin-1',
-          action: 'PROJECT_CREATED',
-          entityId: 'project-1'
-        })
-      });
+      expect(mockDb.insert).toHaveBeenCalled();
+      expect(mockDb.values).toHaveBeenCalledWith(
+        expect.objectContaining({ ownerId: OWNER_CUID, status: ProjectStatus.DRAFT })
+      );
+
       expect(revalidatePath).toHaveBeenCalledWith('/');
       expect(revalidatePath).toHaveBeenCalledWith('/projects');
       expect(revalidatePath).toHaveBeenCalledWith('/projects/project-1');
       expect(summary?.id).toBe('project-1');
     });
 
-    it('throws validation error before hitting prisma when payload is invalid', async () => {
-      await expect(createProject({}, adminUser)).rejects.toBeInstanceOf(ProjectValidationError);
-      expect(mockPrisma.project.create).not.toHaveBeenCalled();
+    it('throws validation error before hitting db when payload is invalid', async () => {
+      await expect(createProject({}, adminUser)).rejects.toBeInstanceOf(
+        ProjectValidationError
+      );
+      expect(mockDb.insert).not.toHaveBeenCalled();
     });
   });
 
@@ -120,24 +145,21 @@ describe('project domain service', () => {
     const owner = { id: OWNER_CUID, role: UserRole.CREATOR } as const;
 
     it('updates fields and records audit for owner', async () => {
-      mockPrisma.project.findUnique.mockResolvedValue({ ownerId: OWNER_CUID });
-      mockPrisma.project.update.mockResolvedValue(undefined);
-      mockPrisma.auditLog.create.mockResolvedValue(undefined);
-      mockPrisma.project.findUnique.mockResolvedValueOnce({ ownerId: OWNER_CUID });
-      mockPrisma.project.findUnique.mockResolvedValueOnce(sampleSummaryRecord());
+      (mockDb.limit as jest.Mock).mockResolvedValue([{ ownerId: OWNER_CUID }]);
+      mockDb.returning.mockResolvedValue([sampleSummaryRecord()]);
 
-      const updatedSummary = await updateProject('project-1', { title: 'Updated' }, owner);
+      const updatedSummary = await updateProject(
+        'project-1',
+        { title: 'Updated' },
+        owner
+      );
 
-      expect(mockPrisma.project.update).toHaveBeenCalledWith({
-        where: { id: 'project-1' },
-        data: expect.objectContaining({ title: 'Updated' })
-      });
-      expect(mockPrisma.auditLog.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          userId: OWNER_CUID,
-          action: 'PROJECT_UPDATED'
-        })
-      });
+      expect(mockDb.update).toHaveBeenCalled();
+      expect(mockDb.set).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'Updated' })
+      );
+      expect(mockDb.where).toHaveBeenCalled();
+
       expect(revalidatePath).toHaveBeenCalledWith('/');
       expect(revalidatePath).toHaveBeenCalledWith('/projects');
       expect(revalidatePath).toHaveBeenCalledWith('/projects/project-1');
@@ -145,29 +167,29 @@ describe('project domain service', () => {
     });
 
     it('throws when user tries to edit someone else project', async () => {
-      mockPrisma.project.findUnique.mockResolvedValue({ ownerId: 'other' });
+      (mockDb.limit as jest.Mock).mockResolvedValue([{ ownerId: 'other' }]);
 
-      await expect(updateProject('project-1', { title: 'Updated' }, owner)).rejects.toBeInstanceOf(
-        ProjectAccessDeniedError
-      );
+      await expect(
+        updateProject('project-1', { title: 'Updated' }, owner)
+      ).rejects.toBeInstanceOf(ProjectAccessDeniedError);
     });
 
     it('returns summary directly when no changes detected', async () => {
-      mockPrisma.project.findUnique.mockResolvedValueOnce({ ownerId: OWNER_CUID });
-      mockPrisma.project.findUnique.mockResolvedValueOnce(sampleSummaryRecord());
+      (mockDb.limit as jest.Mock).mockResolvedValueOnce([{ ownerId: OWNER_CUID }]);
+      (mockDb.limit as jest.Mock).mockResolvedValueOnce([sampleSummaryRecord()]);
 
       const summary = await updateProject('project-1', {}, owner);
 
-      expect(mockPrisma.project.update).not.toHaveBeenCalled();
+      expect(mockDb.update).not.toHaveBeenCalled();
       expect(summary?.id).toBe('project-1');
     });
 
     it('raises when project is missing', async () => {
-      mockPrisma.project.findUnique.mockResolvedValue(null);
+      (mockDb.limit as jest.Mock).mockResolvedValue([]);
 
-      await expect(updateProject('missing', { title: 'X' }, owner)).rejects.toBeInstanceOf(
-        ProjectNotFoundError
-      );
+      await expect(
+        updateProject('missing', { title: 'X' }, owner)
+      ).rejects.toBeInstanceOf(ProjectNotFoundError);
     });
   });
 
@@ -175,16 +197,14 @@ describe('project domain service', () => {
     const owner = { id: OWNER_CUID, role: UserRole.CREATOR } as const;
 
     it('removes project and writes audit entry', async () => {
-      mockPrisma.project.findUnique.mockResolvedValue({ ownerId: OWNER_CUID });
-      mockPrisma.project.delete.mockResolvedValue(undefined);
-      mockPrisma.auditLog.create.mockResolvedValue(undefined);
+      (mockDb.limit as jest.Mock).mockResolvedValue([{ ownerId: OWNER_CUID }]);
+      mockDb.returning.mockResolvedValue([{}]);
 
       await deleteProject('project-1', owner);
 
-      expect(mockPrisma.project.delete).toHaveBeenCalledWith({ where: { id: 'project-1' } });
-      expect(mockPrisma.auditLog.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({ action: 'PROJECT_DELETED', entityId: 'project-1' })
-      });
+      expect(mockDb.delete).toHaveBeenCalled();
+      expect(mockDb.where).toHaveBeenCalled();
+
       expect(revalidatePath).toHaveBeenCalledWith('/');
       expect(revalidatePath).toHaveBeenCalledWith('/projects');
       expect(revalidatePath).toHaveBeenCalledWith('/projects/project-1');

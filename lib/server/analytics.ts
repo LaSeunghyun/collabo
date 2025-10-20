@@ -60,16 +60,28 @@ export const recordVisit = async ({
   }
 
   try {
-    const { user } = await evaluateAuthorization(
-      {},
-      authorization ? { authorization } : undefined
-    );
+    let userId: string | null = null;
+    
+    // 인증 시도 (실패해도 방문 로그는 기록)
+    try {
+      const { user } = await evaluateAuthorization(
+        {},
+        authorization ? { authorization } : undefined
+      );
+      userId = user?.id ?? null;
+    } catch (authError) {
+      // 인증 실패는 로그만 남기고 계속 진행
+      console.warn('Failed to authenticate user for visit log:', {
+        error: authError instanceof Error ? authError.message : String(authError),
+        sessionId: normalizedSessionId
+      });
+    }
 
     const db = await getDbClient();
     await db.insert(visitLogs).values({
       id: randomUUID(),
       sessionId: normalizedSessionId,
-      userId: user?.id ?? null,
+      userId,
       ipHash: hashIp(ipAddress),
       occurredAt: new Date().toISOString()
     });

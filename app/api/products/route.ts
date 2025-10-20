@@ -26,47 +26,54 @@ export async function GET(request: NextRequest) {
       conditions.push(eq(products.type, type as any));
     }
 
-    // 상품 목록 조회
+    // 상품 목록과 개수를 한 번에 조회 (최적화)
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-    let productsQuery = db
-      .select({
-        id: products.id,
-        projectId: products.projectId,
-        name: products.name,
-        type: products.type,
-        price: products.price,
-        currency: products.currency,
-        inventory: products.inventory,
-        images: products.images,
-        isActive: products.isActive,
-        createdAt: products.createdAt,
-        updatedAt: products.updatedAt,
-        project: {
-          id: projects.id,
-          title: projects.title,
-          status: projects.status
+    // 메인 쿼리와 카운트 쿼리를 병렬로 실행
+    const [productsList, totalResult] = await Promise.all([
+      // 상품 목록 조회
+      (async () => {
+        let productsQuery = db
+          .select({
+            id: products.id,
+            projectId: products.projectId,
+            name: products.name,
+            type: products.type,
+            price: products.price,
+            currency: products.currency,
+            inventory: products.inventory,
+            images: products.images,
+            isActive: products.isActive,
+            createdAt: products.createdAt,
+            updatedAt: products.updatedAt,
+            project: {
+              id: projects.id,
+              title: projects.title,
+              status: projects.status
+            }
+          })
+          .from(products)
+          .innerJoin(projects, eq(products.projectId, projects.id));
+
+        if (whereClause) {
+          productsQuery = productsQuery.where(whereClause);
         }
-      })
-      .from(products)
-      .innerJoin(projects, eq(products.projectId, projects.id));
 
-    if (whereClause) {
-      productsQuery = productsQuery.where(whereClause);
-    }
-
-    const productsList = await productsQuery
-      .orderBy(desc(products.createdAt))
-      .limit(limit)
-      .offset(offset);
-
-    // 전체 개수 조회
-    let countQuery = db.select({ count: count() }).from(products);
-    if (whereClause) {
-      countQuery = countQuery.where(whereClause);
-    }
-
-    const totalResult = await countQuery;
+        return productsQuery
+          .orderBy(desc(products.createdAt))
+          .limit(limit)
+          .offset(offset);
+      })(),
+      
+      // 전체 개수 조회
+      (async () => {
+        let countQuery = db.select({ count: count() }).from(products);
+        if (whereClause) {
+          countQuery = countQuery.where(whereClause);
+        }
+        return countQuery;
+      })()
+    ]);
     
     const total = totalResult[0]?.count || 0;
 

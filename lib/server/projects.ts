@@ -192,6 +192,89 @@ export const getProjectSummaries = async (options?: ProjectSummaryOptions) => {
   );
 };
 
+// 홈페이지용 경량 프로젝트 조회 (필수 필드만)
+export const getHomeProjectSummaries = async (options?: { take?: number; statuses?: string[] }) => {
+  const cacheKey = `home-projects-${JSON.stringify(options || {})}`;
+
+  return withCache(
+    cacheKey,
+    async () => {
+      const db = await getDb();
+      const conditions = [];
+
+      if (options?.statuses?.length) {
+        conditions.push(inArray(projects.status, options.statuses as any));
+      }
+
+      const limit = options?.take && options.take > 0 ? options.take : 10;
+
+      const query = db
+        .select({
+          id: projects.id,
+          title: projects.title,
+          category: projects.category,
+          thumbnail: projects.thumbnail,
+          targetAmount: projects.targetAmount,
+          currentAmount: projects.currentAmount,
+          status: projects.status,
+          createdAt: projects.createdAt,
+          owner: {
+            id: users.id,
+            name: users.name
+          }
+        })
+        .from(projects)
+        .innerJoin(users, eq(projects.ownerId, users.id))
+        .orderBy(desc(projects.createdAt))
+        .limit(limit);
+
+      const finalQuery = conditions.length > 0 ? query.where(and(...conditions)) : query;
+      const projectsData = await finalQuery;
+
+      // 펀딩 수만 조회 (경량화)
+      const projectIds = projectsData.map(p => p.id);
+      const fundingCounts = projectIds.length > 0
+        ? await db
+          .select({
+            projectId: fundings.projectId,
+            count: count()
+          })
+          .from(fundings)
+          .where(inArray(fundings.projectId, projectIds))
+          .groupBy(fundings.projectId)
+        : [];
+
+      const fundingCountMap = new Map(
+        fundingCounts.map(f => [f.projectId, f.count])
+      );
+
+      return projectsData.map(project => {
+        const endDate = new Date(project.createdAt);
+        endDate.setDate(endDate.getDate() + CAMPAIGN_DURATION_DAYS);
+        const remainingMs = endDate.getTime() - Date.now();
+        const remainingDays = Math.max(0, Math.ceil(remainingMs / (1000 * 60 * 60 * 24)));
+
+        return {
+          id: project.id,
+          title: project.title,
+          category: project.category,
+          thumbnail: project.thumbnail ?? DEFAULT_THUMBNAIL,
+          targetAmount: project.targetAmount,
+          currentAmount: project.currentAmount,
+          status: project.status,
+          participants: fundingCountMap.get(project.id) || 0,
+          remainingDays,
+          owner: {
+            id: project.owner.id,
+            name: project.owner.name
+          }
+        };
+      });
+    },
+    CACHE_TTL.SHORT // 더 짧은 캐시 (1분)
+  );
+};
+
 export const getProjectsPendingReview = async (limit = 5) =>
   getProjectSummaries({ statuses: ['REVIEWING'], take: limit });
 
@@ -201,6 +284,7 @@ export const getProjectSummaryById = async (id: string) => {
   return withCache(
     cacheKey,
     async () => {
+      const db = await getDb();
       const projectData = await db
         .select({
           id: projects.id,
@@ -433,6 +517,7 @@ export const createProject = async (rawInput: unknown, user: SessionUser) => {
 };
 
 export const updateProject = async (id: string, rawInput: unknown, user: SessionUser) => {
+  const db = await getDb();
   const input = parseUpdateInput(rawInput);
 
   const projectData = await db
@@ -454,7 +539,6 @@ export const updateProject = async (id: string, rawInput: unknown, user: Session
     return getProjectSummaryById(id);
   }
 
-  const db = await getDb();
   await db.transaction(async (tx) => {
     // Update project
     await tx.update(projects)
@@ -486,6 +570,7 @@ export const updateProject = async (id: string, rawInput: unknown, user: Session
 };
 
 export const deleteProject = async (id: string, user: SessionUser) => {
+  const db = await getDb();
   const projectData = await db
     .select({ ownerId: projects.ownerId })
     .from(projects)
@@ -499,7 +584,6 @@ export const deleteProject = async (id: string, user: SessionUser) => {
   const project = projectData[0];
   assertProjectOwnership(project.ownerId, user);
 
-  const db = await getDb();
   await db.transaction(async (tx) => {
     // Delete project
     await tx.delete(projects).where(eq(projects.id, id));

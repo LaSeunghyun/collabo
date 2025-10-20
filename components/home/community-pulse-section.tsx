@@ -4,11 +4,11 @@ import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 
 import { SectionHeader } from '@/components/ui/headers/section-header';
-import type { CommunityPost } from '@/lib/data/community';
+import type { CommunityPost, HomeCommunityPost } from '@/lib/data/community';
 
 interface CommunityPulseSectionProps {
-  featuredPost?: CommunityPost;
-  highlightedPosts: CommunityPost[];
+  featuredPost?: CommunityPost | HomeCommunityPost;
+  highlightedPosts: (CommunityPost | HomeCommunityPost)[];
   hasPosts: boolean;
 }
 

@@ -123,6 +123,7 @@ const buildPostResponse = async (postId: string, viewerId?: string | null) => {
       dislikes: postWithCounts._count?.dislikes || 0,
       comments: postWithCounts._count?.comments || 0,
       reports,
+      views: 0, // 추가
       projectId: postWithCounts.projectId ?? undefined,
       createdAt: postWithCounts.createdAt || new Date().toISOString(),
       liked,

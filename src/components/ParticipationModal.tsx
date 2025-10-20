@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
@@ -337,7 +337,7 @@ export function ParticipationModal({ isOpen, onClose, project }: ParticipationMo
                   </span>
                   <span style={{ fontSize: 'var(--text-body-l)', color: 'var(--text-secondary)' }}>
                     {participationType === "reward" 
-                      ? (selectedRewardOption?.amount! * 0.05).toLocaleString() 
+                      ? ((selectedRewardOption?.amount ?? 0) * 0.05).toLocaleString() 
                       : (revenueAmount * 0.05).toLocaleString()}원
                   </span>
                 </div>
@@ -348,7 +348,7 @@ export function ParticipationModal({ isOpen, onClose, project }: ParticipationMo
                   </span>
                   <span style={{ fontSize: 'var(--text-h3)', fontWeight: 'bold', color: 'var(--text-primary)' }}>
                     {participationType === "reward" 
-                      ? (selectedRewardOption?.amount! * 1.05).toLocaleString() 
+                      ? ((selectedRewardOption?.amount ?? 0) * 1.05).toLocaleString() 
                       : (revenueAmount * 1.05).toLocaleString()}원
                   </span>
                 </div>
@@ -376,7 +376,7 @@ export function ParticipationModal({ isOpen, onClose, project }: ParticipationMo
             >
               <span className="hidden sm:inline">
                 {participationType === "reward" 
-                  ? (selectedRewardOption?.amount! * 1.05).toLocaleString() 
+                  ? ((selectedRewardOption?.amount ?? 0) * 1.05).toLocaleString() 
                   : (revenueAmount * 1.05).toLocaleString()}원 결제하기
               </span>
               <span className="sm:hidden">

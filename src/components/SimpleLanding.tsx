@@ -1,12 +1,11 @@
 import { Button } from "./ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Card, CardContent, CardHeader } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { ProjectCard } from "./ProjectCard";
 import { 
   ArrowRight, 
   Users, 
-  Star,
   MessageCircle,
   Heart,
   TrendingUp,

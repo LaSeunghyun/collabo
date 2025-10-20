@@ -1,4 +1,4 @@
-﻿jest.mock('react', () => {
+jest.mock('react', () => {
   const actual = jest.requireActual('react');
   return {
     ...actual,
@@ -8,13 +8,7 @@
 
 import { UserRole } from '@/types/prisma';
 import { getArtistProfile, listFeaturedArtists } from '@/lib/server/artists';
-import { getDbClient } from '@/lib/db/client';
-import { eq, and, count } from 'drizzle-orm';
-
-// Drizzle 클라이언트 모킹
-jest.mock('@/lib/db/client', () => ({
-  getDbClient: jest.fn()
-}));
+import * as client from '@/lib/db/client';
 
 jest.mock('@/lib/server/projects', () => ({
   getProjectSummaries: jest.fn()
@@ -23,17 +17,13 @@ jest.mock('@/lib/server/projects', () => ({
 const mockDb = {
   select: jest.fn().mockReturnThis(),
   from: jest.fn().mockReturnThis(),
-  where: jest.fn().mockReturnThis(),
+  where: jest.fn(),
   orderBy: jest.fn().mockReturnThis(),
   limit: jest.fn().mockReturnThis(),
   leftJoin: jest.fn().mockReturnThis(),
   innerJoin: jest.fn().mockReturnThis(),
-  eq,
-  and,
-  count
 };
 
-const mockGetDbClient = getDbClient as jest.MockedFunction<typeof getDbClient>;
 const { getProjectSummaries } = jest.requireMock('@/lib/server/projects') as {
   getProjectSummaries: jest.Mock;
 };
@@ -56,13 +46,13 @@ const artistRecord = {
 describe('artist domain service', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGetDbClient.mockResolvedValue(mockDb as any);
+    jest.spyOn(client, 'getDb').mockResolvedValue(mockDb as any);
     getProjectSummaries.mockReset();
   });
 
   describe('getArtistProfile', () => {
     it('returns null when artist does not exist', async () => {
-      mockDb.select.mockResolvedValue([]);
+      (mockDb.limit as jest.Mock).mockResolvedValue([]);
 
       const result = await getArtistProfile('missing');
 
@@ -71,8 +61,8 @@ describe('artist domain service', () => {
 
     it('resolves composite profile with stats, updates, and follow state', async () => {
       // Mock artist data
-      mockDb.select
-        .mockResolvedValueOnce([artistRecord]) // artist query
+      (mockDb.limit as jest.Mock).mockResolvedValueOnce([artistRecord]); // artist query
+      (mockDb.where as jest.Mock)
         .mockResolvedValueOnce([{ count: 12 }]) // follower count
         .mockResolvedValueOnce([{ count: 3 }]) // project count
         .mockResolvedValueOnce([{ userId: 'backer-1' }, { userId: 'backer-2' }]) // backers
@@ -134,8 +124,8 @@ describe('artist domain service', () => {
         }
       ];
 
-      mockDb.select
-        .mockResolvedValueOnce(artists) // artists query
+      (mockDb.limit as jest.Mock).mockResolvedValue(artists);
+      (mockDb.where as jest.Mock)
         .mockResolvedValueOnce([{ count: 2 }]) // follower count for artist-1
         .mockResolvedValueOnce([{ count: 1 }]); // project count for artist-1
 
@@ -155,7 +145,7 @@ describe('artist domain service', () => {
 
     it('returns empty array when database throws', async () => {
       const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
-      mockDb.select.mockRejectedValue(new Error('db error'));
+      (mockDb.limit as jest.Mock).mockRejectedValue(new Error('db error'));
 
       const result = await listFeaturedArtists();
 

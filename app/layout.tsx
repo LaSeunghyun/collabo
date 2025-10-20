@@ -11,7 +11,12 @@ import { Providers } from '@/app/providers';
 
 export const metadata: Metadata = {
   title: 'Collaborium – Artist Collaboration Platform',
-  description: '팬과 아티스트가 함께 만들어가는 펀딩 · 커뮤니티 플랫폼'
+  description: '팬과 아티스트가 함께 만들어가는 펀딩 · 커뮤니티 플랫폼',
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

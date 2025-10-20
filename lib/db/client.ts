@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 
 import { normalizeServerlessConnectionString } from '@/lib/db/connection-string';
 import * as schema from '@/lib/db/schema';
+import { DB_CONFIG } from '@/lib/constants/app-config';
 
 // 서버 사이드에서만 postgres 모듈을 동적으로 import
 const getPostgres = async () => {
@@ -40,9 +41,9 @@ const createServerlessInstance = async (connectionString: string): Promise<Drizz
   try {
     const postgres = await getPostgres();
     const client = postgres(connectionString, {
-      max: 1,
-      idle_timeout: 20,
-      connect_timeout: 10,
+      max: DB_CONFIG.CONNECTION_LIMIT,
+      idle_timeout: DB_CONFIG.IDLE_TIMEOUT,
+      connect_timeout: DB_CONFIG.CONNECT_TIMEOUT,
     });
     const db = drizzle(client, {
       schema,

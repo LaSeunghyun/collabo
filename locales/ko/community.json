@@ -1,6 +1,7 @@
 {
   "filters": {
     "all": "전체",
+    "general": "공통",
     "music": "음악",
     "art": "미술",
     "literature": "문학",

@@ -17,53 +17,47 @@ export default function SignInPage() {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    console.log('🔐 [FRONTEND] 로그인 시도 시작:', { email, hasPassword: !!password, rememberMe });
     setIsLoading(true);
     setError('');
 
     try {
-      const loginResponse = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          email,
-          password,
-          rememberMe,
-          client: 'web'
-        })
-      });
-
-      if (!loginResponse.ok) {
-        const payload = await loginResponse.json().catch(() => ({ error: '로그인에 실패했습니다.' }));
-        setError(payload.error ?? '로그인에 실패했습니다.');
-        return;
-      }
-
+      console.log('📤 [FRONTEND] NextAuth signIn 호출 시작');
       const result = await signIn('credentials', {
         email,
         password,
         redirect: false
       });
 
+      console.log('📥 [FRONTEND] NextAuth signIn 결과:', result);
+
       if (result?.error) {
+        console.log('❌ [FRONTEND] NextAuth signIn 오류:', result.error);
         setError('이메일 또는 비밀번호가 올바르지 않습니다.');
         return;
       }
 
+      console.log('💾 [FRONTEND] 세션 저장소에 키 저장');
       if (typeof window !== 'undefined') {
         window.sessionStorage.setItem(SESSION_PERSISTENCE_KEY, SESSION_PERSISTENCE_SEED);
       }
 
+      console.log('🔍 [FRONTEND] 세션 확인 중');
       const session = await getSession();
+      console.log('📋 [FRONTEND] 세션 정보:', { hasSession: !!session, userId: session?.user?.id });
+      
       if (session) {
+        console.log('✅ [FRONTEND] 로그인 성공, 홈페이지로 리다이렉트');
         router.push('/');
+      } else {
+        console.log('❌ [FRONTEND] 세션 없음, 로그인 실패');
+        setError('세션 생성에 실패했습니다.');
       }
     } catch (error) {
-      console.error(error);
+      console.log('❌ [FRONTEND] 로그인 처리 중 오류:', error);
       setError('로그인 중 오류가 발생했습니다.');
     } finally {
+      console.log('🏁 [FRONTEND] 로그인 처리 완료');
       setIsLoading(false);
     }
   };

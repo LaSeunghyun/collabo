@@ -1,8 +1,10 @@
-// import { SettlementPayoutStatus, type SettlementPayoutStatusType } from '@/types/prisma'; // TODO: Drizzle로 전환 필요
+import { settlementPayoutStatus } from '@/drizzle/schema';
+
+type SettlementPayoutStatusType = typeof settlementPayoutStatus.enumValues[number];
 
 import { getSettlementsPendingPayout } from '@/lib/server/settlement-queries';
 
-const statusLabels: Record<string, string> = {
+const statusLabels: Record<SettlementPayoutStatusType, string> = {
   'PENDING': '대기중',
   'IN_PROGRESS': '진행중',
   'PAID': '완료'

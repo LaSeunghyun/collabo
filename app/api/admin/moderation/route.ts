@@ -5,7 +5,7 @@ import {
   getReportedPostDetails,
   updateModerationStatus
 } from '@/lib/server/moderation';
-import { moderationStatusEnum, userRoleEnum } from '@/lib/db/schema';
+import { moderationStatusEnum } from '@/lib/db/schema';
 
 export async function GET(request: NextRequest) {
   try {

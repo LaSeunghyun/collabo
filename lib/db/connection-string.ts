@@ -1,3 +1,5 @@
+import { DB_CONFIG } from '@/lib/constants/app-config';
+
 export const normalizeServerlessConnectionString = (databaseUrl: string) => {
   const isDataProxy = databaseUrl.startsWith('prisma://');
 
@@ -22,10 +24,10 @@ export const normalizeServerlessConnectionString = (databaseUrl: string) => {
     };
 
     ensureParam('pgbouncer', 'true', url.searchParams.get('pgbouncer') !== 'true');
-    ensureParam('connection_limit', '1');
-    ensureParam('pool_timeout', '0');
-    ensureParam('connect_timeout', '30');
-    ensureParam('statement_timeout', '30000');
+    ensureParam('connection_limit', String(DB_CONFIG.CONNECTION_LIMIT));
+    ensureParam('pool_timeout', String(DB_CONFIG.POOL_TIMEOUT));
+    ensureParam('connect_timeout', String(DB_CONFIG.CONNECT_TIMEOUT));
+    ensureParam('statement_timeout', String(DB_CONFIG.STATEMENT_TIMEOUT));
 
     return url.toString();
   } catch (error) {

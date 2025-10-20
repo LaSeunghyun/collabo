@@ -1,8 +1,10 @@
-// import { PartnerType, type PartnerTypeType } from '@/types/prisma'; // TODO: Drizzle로 전환 필요
+import { partnerType } from '@/drizzle/schema';
+
+type PartnerTypeType = typeof partnerType.enumValues[number];
 
 import { getPartnersAwaitingApproval } from '@/lib/server/partners';
 
-const partnerTypeLabels: Record<string, string> = {
+const partnerTypeLabels: Record<PartnerTypeType, string> = {
   'STUDIO': '스튜디오',
   'VENUE': '공연장',
   'PRODUCTION': '제작사',

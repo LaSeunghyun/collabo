@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { recordVisit } from '@/lib/server/analytics';
+import { logPageVisit } from '@/lib/server/activity-logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,11 +13,27 @@ export async function POST(request: NextRequest) {
 
     const forwardedFor = request.headers.get('x-forwarded-for');
     const ipAddress = forwardedFor?.split(',')[0]?.trim() ?? request.headers.get('x-real-ip') ?? null;
+    const userAgent = request.headers.get('user-agent') ?? null;
+    const path = body.path || 'unknown';
 
     try {
       await recordVisit({
         sessionId: body.sessionId,
         ipAddress
+      });
+
+      // 페이지 방문 활동 로깅
+      await logPageVisit(path, {
+        sessionId: body.sessionId,
+        ipAddress,
+        userAgent,
+        path: '/api/analytics/visit',
+        method: 'POST',
+        statusCode: 201,
+        metadata: {
+          referrer: request.headers.get('referer'),
+          timestamp: new Date().toISOString()
+        }
       });
     } catch (error) {
       console.warn('Failed to record visit analytics:', {

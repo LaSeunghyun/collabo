@@ -6,10 +6,13 @@ import { orders, orderItems, products, orderStatusEnum } from '@/lib/db/schema';
 import { getDb } from '@/lib/db/client';
 import { requireApiUser } from '@/lib/auth/guards';
 import { GuardRequirement } from '@/lib/auth/session';
+import { withCache, CACHE_TTL, CACHE_KEYS } from '@/lib/utils/cache';
+import { measureApiTime } from '@/lib/utils/performance';
 
 export async function GET(request: NextRequest) {
-  try {
-    const user = await requireApiUser(request as NextRequest & GuardRequirement);
+  return measureApiTime('orders-api', async () => {
+    try {
+      const user = await requireApiUser(request as NextRequest & GuardRequirement);
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') as string | null;
     const page = parseInt(searchParams.get('page') || '1');
@@ -46,33 +49,41 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .offset(offset);
 
-    // 각 주문의 아이템들 조회
-    const ordersWithItems = await Promise.all(
-      ordersList.map(async (order) => {
-        const items = await db
-          .select({
-            id: orderItems.id,
-            productId: orderItems.productId,
-            quantity: orderItems.quantity,
-            unitPrice: orderItems.unitPrice,
-            totalPrice: orderItems.totalPrice,
-            product: {
-              id: products.id,
-              name: products.name,
-              type: products.type,
-              images: products.images
-            }
-          })
-          .from(orderItems)
-          .innerJoin(products, eq(orderItems.productId, products.id))
-          .where(eq(orderItems.orderId, order.id));
-
-        return {
-          ...order,
-          items
-        };
+    // 모든 주문의 아이템들을 한 번에 조회 (N+1 문제 해결)
+    const orderIds = ordersList.map(order => order.id);
+    const allOrderItems = orderIds.length > 0 ? await db
+      .select({
+        orderId: orderItems.orderId,
+        id: orderItems.id,
+        productId: orderItems.productId,
+        quantity: orderItems.quantity,
+        unitPrice: orderItems.unitPrice,
+        totalPrice: orderItems.totalPrice,
+        product: {
+          id: products.id,
+          name: products.name,
+          type: products.type,
+          images: products.images
+        }
       })
-    );
+      .from(orderItems)
+      .innerJoin(products, eq(orderItems.productId, products.id))
+      .where(inArray(orderItems.orderId, orderIds)) : [];
+
+    // 주문별로 아이템 그룹화
+    const itemsByOrderId = new Map<string, typeof allOrderItems>();
+    allOrderItems.forEach(item => {
+      if (!itemsByOrderId.has(item.orderId)) {
+        itemsByOrderId.set(item.orderId, []);
+      }
+      itemsByOrderId.get(item.orderId)!.push(item);
+    });
+
+    // 주문과 아이템 결합
+    const ordersWithItems = ordersList.map(order => ({
+      ...order,
+      items: itemsByOrderId.get(order.id) || []
+    }));
 
     // 전체 개수 조회
     const totalResult = await db
@@ -82,22 +93,23 @@ export async function GET(request: NextRequest) {
 
     const total = totalResult[0]?.count || 0;
 
-    return NextResponse.json({
-      orders: ordersWithItems,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit)
-      }
-    });
-  } catch (error) {
-    console.error('Failed to fetch orders:', error);
-    return NextResponse.json(
-      { message: 'Failed to fetch orders' },
-      { status: 500 }
-    );
-  }
+      return NextResponse.json({
+        orders: ordersWithItems,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit)
+        }
+      });
+    } catch (error) {
+      console.error('Failed to fetch orders:', error);
+      return NextResponse.json(
+        { message: 'Failed to fetch orders' },
+        { status: 500 }
+      );
+    }
+  });
 }
 
 export async function POST(request: NextRequest) {

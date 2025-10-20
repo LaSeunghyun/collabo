@@ -1,6 +1,4 @@
-'use client';
-
-import { useQuery } from '@tanstack/react-query';
+import { Suspense } from 'react';
 
 import { ArtistNetworkSection } from '@/components/home/artist-network-section';
 import { CommunityPulseSection } from '@/components/home/community-pulse-section';
@@ -8,54 +6,91 @@ import { HeroSection } from '@/components/home/hero-section';
 import { ProjectSpotlightSection } from '@/components/home/project-spotlight-section';
 import { ResourcesSection } from '@/components/home/resources-section';
 import { StoreSection } from '@/components/home/store-section';
-import { fetchProjects } from '@/lib/api/projects';
-import { fetchStoreItems } from '@/lib/api/store';
-import type { CommunityFeedResponse } from '@/lib/data/community';
-import type { HomeArtistSummary } from '@/types/home';
+import { getHomeProjectSummaries } from '@/lib/server/projects';
+import { listHomeArtists } from '@/lib/server/artists';
+import { getHomeCommunityPosts } from '@/lib/server/community';
+import { getStoreItems } from '@/lib/server/store';
+import type { HomeCommunityPost } from '@/lib/data/community';
 
-interface ArtistListResponse {
-  artists: HomeArtistSummary[];
+// 로딩 스켈레톤 컴포넌트들
+function ProjectSpotlightSkeleton() {
+  return (
+    <section className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+      <div className="space-y-6">
+        <div className="h-8 w-48 bg-white/10 rounded animate-pulse" />
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-80 bg-white/5 rounded-3xl animate-pulse" />
+          ))}
+        </div>
+      </div>
+      <div className="h-80 bg-white/5 rounded-3xl animate-pulse" />
+    </section>
+  );
 }
 
-export default function HomePage() {
-  const { data: storeItems = [], isLoading: storeLoading } = useQuery({
-    queryKey: ['store-items'],
-    queryFn: fetchStoreItems,
-    staleTime: 1000 * 60 * 5
-  });
+function ArtistNetworkSkeleton() {
+  return (
+    <section>
+      <div className="h-8 w-48 bg-white/10 rounded animate-pulse mb-6" />
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="h-32 bg-white/5 rounded-3xl animate-pulse" />
+        ))}
+      </div>
+    </section>
+  );
+}
 
-  const { data: projects = [], isLoading, isError, refetch } = useQuery({
-    queryKey: ['projects'],
-    queryFn: fetchProjects,
-    staleTime: 1000 * 60
-  });
+function CommunityPulseSkeleton() {
+  return (
+    <section>
+      <div className="h-8 w-48 bg-white/10 rounded animate-pulse mb-6" />
+      <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+        <div className="h-64 bg-white/5 rounded-3xl animate-pulse" />
+        <div className="space-y-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-20 bg-white/5 rounded-3xl animate-pulse" />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
 
-  const { data: artistsResponse } = useQuery<ArtistListResponse>({
-    queryKey: ['artists', 'home'],
-    queryFn: async () => {
-      const res = await fetch('/api/artists?limit=4');
-      if (!res.ok) {
-        throw new Error('Failed to load artists');
-      }
-      return (await res.json()) as ArtistListResponse;
-    },
-    staleTime: 60_000
-  });
+function StoreSkeleton() {
+  return (
+    <section>
+      <div className="h-8 w-48 bg-white/10 rounded animate-pulse mb-6" />
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="h-80 bg-white/5 rounded-3xl animate-pulse" />
+        ))}
+      </div>
+    </section>
+  );
+}
 
-  const { data: communityResponse } = useQuery<CommunityFeedResponse>({
-    queryKey: ['community', 'home'],
-    queryFn: async () => {
-      const res = await fetch('/api/community?sort=trending&limit=5');
-      if (!res.ok) {
-        throw new Error('Failed to load community');
-      }
-      return (await res.json()) as CommunityFeedResponse;
-    },
-    staleTime: 15_000
-  });
+// 서버에서 초기 데이터를 병렬로 fetch
+async function getHomeData() {
+  const [projects, artists, communityPosts, storeItems] = await Promise.all([
+    getHomeProjectSummaries({ take: 10, statuses: ['LIVE'] }),
+    listHomeArtists(4),
+    getHomeCommunityPosts(5),
+    getStoreItems()
+  ]);
 
-  const artists = artistsResponse?.artists ?? [];
-  const communityPosts = communityResponse?.posts ?? [];
+  return {
+    projects,
+    artists,
+    communityPosts,
+    storeItems
+  };
+}
+
+export default async function HomePage() {
+  const { projects, artists, communityPosts, storeItems } = await getHomeData();
+  
   const [featuredPost, ...highlightedPosts] = communityPosts;
 
   return (
@@ -66,24 +101,30 @@ export default function HomePage() {
         artistsCount={artists.length}
       />
 
-      <ProjectSpotlightSection
-        projects={projects}
-        isLoading={isLoading}
-        isError={isError}
-        onRetry={refetch}
-      />
+      <Suspense fallback={<ProjectSpotlightSkeleton />}>
+        <ProjectSpotlightSection
+          projects={projects}
+          isLoading={false}
+        />
+      </Suspense>
 
-      <ArtistNetworkSection artists={artists} />
+      <Suspense fallback={<ArtistNetworkSkeleton />}>
+        <ArtistNetworkSection artists={artists} />
+      </Suspense>
 
-      <CommunityPulseSection
-        featuredPost={featuredPost}
-        highlightedPosts={highlightedPosts}
-        hasPosts={communityPosts.length > 0}
-      />
+      <Suspense fallback={<CommunityPulseSkeleton />}>
+        <CommunityPulseSection
+          featuredPost={featuredPost}
+          highlightedPosts={highlightedPosts}
+          hasPosts={communityPosts.length > 0}
+        />
+      </Suspense>
 
       <ResourcesSection />
 
-      <StoreSection items={storeItems} isLoading={storeLoading} />
+      <Suspense fallback={<StoreSkeleton />}>
+        <StoreSection items={storeItems} isLoading={false} />
+      </Suspense>
     </div>
   );
 }

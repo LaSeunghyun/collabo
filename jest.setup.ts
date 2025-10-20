@@ -20,6 +20,7 @@ globalThis.__prismaMocks = mockPrisma;
 jest.mock('@/lib/db/client', () => ({
   db: mockPrisma,
   getDbClient: () => mockPrisma,
+  getDb: () => mockPrisma,
   isDrizzleAvailable: () => true,
   closeDb: jest.fn()
 }));

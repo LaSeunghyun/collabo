@@ -3,8 +3,7 @@ import type { Session } from 'next-auth';
 import { eq } from 'drizzle-orm';
 
 import { getDbClient } from '@/lib/db/client';
-import { authSessions, userPermission } from '@/lib/db/schema';
-import { userRole } from '@/lib/db/schema';
+import { authSessions, userPermissions, userRoleEnum } from '@/lib/db/schema';
 
 import { verifyAccessToken } from './access-token';
 import { authOptions } from './options';
@@ -14,12 +13,12 @@ export interface SessionUser {
   id: string;
   name?: string | null;
   email?: string | null;
-  role: typeof userRole.enumValues[number];
+  role: typeof userRoleEnum.enumValues[number];
   permissions: string[];
 }
 
 export type GuardRequirement = {
-  roles?: typeof userRole.enumValues[number][];
+  roles?: typeof userRoleEnum.enumValues[number][];
   permissions?: string[];
 };
 
@@ -125,11 +124,11 @@ const evaluateBearerToken = async (
     }
 
     const explicitPermissions = session.user.permissions
-      .filter((entry: any): entry is typeof userPermission.$inferSelect & { permission: { key: string } } =>
+      .filter((entry: any): entry is typeof userPermissions.$inferSelect & { permission: { key: string } } =>
         Boolean(entry.permission?.key)
       )
       .map((entry: any) => entry.permission.key);
-    const role = session.user.role as typeof userRole.enumValues[number];
+    const role = session.user.role as typeof userRoleEnum.enumValues[number];
     const permissions = deriveEffectivePermissions(role, explicitPermissions);
 
     if (requirements.roles && !requirements.roles.includes(role)) {
@@ -173,15 +172,60 @@ export const evaluateAuthorization = async (
   requirements: GuardRequirement = {},
   context?: AuthorizationContext
 ): Promise<AuthorizationResult> => {
+  // 프로덕션에서는 로깅 제거
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔍 [AUTH] evaluateAuthorization 시작:', {
+      hasRequirements: Object.keys(requirements).length > 0,
+      requirements,
+      hasContext: !!context,
+      contextKeys: context ? Object.keys(context) : []
+    });
+  }
+
   const bearerResult = await evaluateBearerToken(requirements, context);
 
   if (bearerResult) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔑 [AUTH] Bearer 토큰으로 인증됨');
+    }
     return bearerResult;
   }
 
-  const session = await getServerAuthSession();
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔍 [AUTH] NextAuth 세션 조회 시작');
+  }
+  
+  let session: Session | null = null;
+  try {
+    session = await getServerAuthSession();
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📋 [AUTH] NextAuth 세션 조회 결과:', {
+        hasSession: !!session,
+        hasUser: !!session?.user,
+        hasUserId: !!session?.user?.id,
+        userId: session?.user?.id,
+        userEmail: session?.user?.email,
+        userRole: session?.user?.role
+      });
+    }
+  } catch (sessionError) {
+    // NextAuth 세션 에러는 로깅하고 UNAUTHENTICATED 반환
+    console.error('Failed to retrieve NextAuth session:', {
+      error: sessionError instanceof Error ? sessionError.message : String(sessionError),
+      errorName: sessionError instanceof Error ? sessionError.name : 'Unknown'
+    });
+    
+    return {
+      status: AuthorizationStatus.UNAUTHENTICATED,
+      session: null,
+      user: null
+    };
+  }
 
   if (!session?.user?.id) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('❌ [AUTH] 세션 또는 사용자 ID 없음 - UNAUTHENTICATED');
+    }
     return {
       status: AuthorizationStatus.UNAUTHENTICATED,
       session,
@@ -189,12 +233,23 @@ export const evaluateAuthorization = async (
     };
   }
 
-  const role = normalizeRole(session.user.role) as typeof userRole.enumValues[number];
+  const role = normalizeRole(session.user.role) as typeof userRoleEnum.enumValues[number];
   const permissions = Array.isArray(session.user.permissions)
     ? session.user.permissions
     : [];
 
+  if (process.env.NODE_ENV === 'development') {
+    console.log('✅ [AUTH] 세션 사용자 정보:', {
+      id: session.user.id,
+      role,
+      permissionsCount: permissions.length
+    });
+  }
+
   if (requirements.roles && !requirements.roles.includes(role)) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('⛔ [AUTH] 역할 불일치 - FORBIDDEN');
+    }
     return {
       status: AuthorizationStatus.FORBIDDEN,
       session,
@@ -203,6 +258,9 @@ export const evaluateAuthorization = async (
   }
 
   if (requirements.permissions && !hasAllPermissions(permissions, requirements.permissions)) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('⛔ [AUTH] 권한 불일치 - FORBIDDEN');
+    }
     return {
       status: AuthorizationStatus.FORBIDDEN,
       session,
@@ -210,6 +268,9 @@ export const evaluateAuthorization = async (
     };
   }
 
+  if (process.env.NODE_ENV === 'development') {
+    console.log('✅ [AUTH] 인증 성공 - AUTHORIZED');
+  }
   return {
     status: AuthorizationStatus.AUTHORIZED,
     session,

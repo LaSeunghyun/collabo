@@ -35,7 +35,7 @@ export default function ArtistsDirectoryPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-20">
-      <header className="pt-10">
+      <div className="pt-6">
         <div className="rounded-3xl border border-white/10 bg-white/5 p-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-3">
@@ -53,7 +53,7 @@ export default function ArtistsDirectoryPage() {
             </div>
           </div>
         </div>
-      </header>
+      </div>
 
       <section className="mt-10">
         {isLoading ? (

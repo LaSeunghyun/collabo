@@ -4,7 +4,6 @@ import { eq } from 'drizzle-orm';
 
 import { getDb } from '@/lib/db/client';
 import { permission, userPermission, users } from '@/lib/db/schema';
-import { userRole } from '@/lib/db/schema';
 
 type UserRecord = typeof users.$inferSelect;
 type UserPermissionRecord = typeof userPermission.$inferSelect;

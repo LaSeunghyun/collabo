@@ -3,7 +3,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { X, EyeOff, XCircle } from 'lucide-react';
 import Image from 'next/image';
-// import { ModerationStatus } from '@/types/prisma'; // TODO: Drizzle로 전환 필요
+import { moderationStatus } from '@/drizzle/schema';
+
+type ModerationStatusValue = typeof moderationStatus.enumValues[number];
 
 interface Post {
   id: string;
@@ -24,7 +26,7 @@ interface Post {
 interface Report {
   id: string;
   reason: string | null;
-  status: string;
+  status: ModerationStatusValue;
   createdAt: Date;
   reporter: {
     id: string;

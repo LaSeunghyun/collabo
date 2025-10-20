@@ -30,11 +30,11 @@ export function ProjectStoryTab({ project }: ProjectStoryTabProps) {
         <CardContent>
           <div className="prose max-w-none">
             <p style={{ fontSize: 'var(--text-body-l)', lineHeight: 'var(--line-height-body-l)', color: 'var(--text-primary)' }}>
-              안녕하세요, 인디 밴드 '라이트닝'입니다. 
+              안녕하세요, 인디 밴드 &apos;라이트닝&apos;입니다. 
             </p>
             <p style={{ fontSize: 'var(--text-body-l)', lineHeight: 'var(--line-height-body-l)', color: 'var(--text-primary)', marginTop: 'var(--space-16)' }}>
               저희는 5년간 함께 음악을 만들어온 4인조 밴드로, 드디어 첫 정규앨범을 제작하게 되었습니다. 
-              이번 앨범은 '도시 속 청춘의 이야기'를 주제로, 현대 사회를 살아가는 젊은이들의 고민과 꿈을 담았습니다.
+              이번 앨범은 &apos;도시 속 청춘의 이야기&apos;를 주제로, 현대 사회를 살아가는 젊은이들의 고민과 꿈을 담았습니다.
             </p>
             <p style={{ fontSize: 'var(--text-body-l)', lineHeight: 'var(--line-height-body-l)', color: 'var(--text-primary)', marginTop: 'var(--space-16)' }}>
               앨범 제작 과정을 투명하게 공개하며, 팬 여러분과 함께 만들어가고 싶습니다. 

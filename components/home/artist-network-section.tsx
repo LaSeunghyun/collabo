@@ -8,7 +8,7 @@ import { SectionHeader } from '@/components/ui/headers/section-header';
 import type { HomeArtistSummary } from '@/types/home';
 
 interface ArtistNetworkSectionProps {
-  artists: HomeArtistSummary[];
+  artists: HomeArtistSummary[] | Pick<HomeArtistSummary, 'id' | 'name' | 'avatarUrl' | 'projectCount' | 'followerCount'>[];
 }
 
 export function ArtistNetworkSection({ artists }: ArtistNetworkSectionProps) {

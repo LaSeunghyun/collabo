@@ -1,12 +1,7 @@
-﻿import { getSettlementsPendingPayout } from '@/lib/server/settlement-queries';
-import { getDbClient } from '@/lib/db/client';
-import { settlement, project } from '@/lib/db/schema';
+import { getSettlementsPendingPayout } from '@/lib/server/settlement-queries';
+import { getDb } from '@/lib/db/client';
+import { settlement, projects } from '@/lib/db/schema';
 import { eq, inArray, desc } from 'drizzle-orm';
-
-// Drizzle 클라이언트 모킹
-jest.mock('@/lib/db/client', () => ({
-  getDbClient: jest.fn()
-}));
 
 const mockDb = {
   select: jest.fn().mockReturnThis(),
@@ -15,17 +10,16 @@ const mockDb = {
   orderBy: jest.fn().mockReturnThis(),
   limit: jest.fn().mockReturnThis(),
   innerJoin: jest.fn().mockReturnThis(),
-  eq,
-  inArray,
-  desc
 };
 
-const mockGetDbClient = getDbClient as jest.MockedFunction<typeof getDbClient>;
+jest.mock('@/lib/db/client', () => ({
+  getDb: jest.fn(() => mockDb),
+}));
 
 describe('settlement queries', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGetDbClient.mockResolvedValue(mockDb as any);
+    (getDb as jest.Mock).mockReturnValue(mockDb);
   });
 
   it('lists settlements awaiting payout with project summary', async () => {
@@ -42,13 +36,13 @@ describe('settlement queries', () => {
       }
     ];
 
-    mockDb.select.mockResolvedValue(mockSettlements);
+    (mockDb.limit as jest.Mock).mockResolvedValue(mockSettlements);
 
     const result = await getSettlementsPendingPayout(10);
 
     expect(mockDb.select).toHaveBeenCalled();
     expect(mockDb.from).toHaveBeenCalledWith(settlement);
-    expect(mockDb.innerJoin).toHaveBeenCalledWith(project, eq(settlement.projectId, project.id));
+    expect(mockDb.innerJoin).toHaveBeenCalledWith(projects, eq(settlement.projectId, projects.id));
     expect(mockDb.where).toHaveBeenCalledWith(inArray(settlement.payoutStatus, ['PENDING', 'IN_PROGRESS']));
     expect(mockDb.orderBy).toHaveBeenCalledWith(desc(settlement.updatedAt));
     expect(mockDb.limit).toHaveBeenCalledWith(10);

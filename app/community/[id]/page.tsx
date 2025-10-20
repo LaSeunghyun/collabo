@@ -48,13 +48,26 @@ export default function CommunityPostDetailPage() {
   const { data: session, status } = useSession();
   const isAuthenticated = Boolean(session?.user);
 
+  const { data: post, isLoading, isError } = useCommunityPost(postId);
+  const { data: comments = [], isLoading: commentsLoading } = useCommunityComments(postId);
+
   // 세션 상태 디버깅
   useEffect(() => {
     console.log('Session status:', { status, isAuthenticated });
   }, [status, isAuthenticated]);
 
-  const { data: post, isLoading, isError } = useCommunityPost(postId);
-  const { data: comments = [], isLoading: commentsLoading } = useCommunityComments(postId);
+  // 클라이언트 전용 날짜 포맷팅으로 hydration mismatch 방지
+  useEffect(() => {
+    if (post?.createdAt) {
+      const date = new Date(post.createdAt);
+      setFormattedDate(date.toLocaleString('ko-KR', {
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }));
+    }
+  }, [post?.createdAt]);
 
   // 싫어요 상태는 서버에서 관리하므로 로컬 상태 제거
   const [reportOpen, setReportOpen] = useState(false);
@@ -71,6 +84,9 @@ export default function CommunityPostDetailPage() {
 
   const commentInputRef = useRef<HTMLTextAreaElement | null>(null);
   const [commentValue, setCommentValue] = useState('');
+  
+  // 클라이언트 전용 날짜 포맷팅으로 hydration mismatch 방지
+  const [formattedDate, setFormattedDate] = useState<string>('');
 
   const redirectToSignIn = () => {
     const callbackUrl = typeof window !== 'undefined' ? window.location.href : undefined;
@@ -379,6 +395,7 @@ export default function CommunityPostDetailPage() {
     );
   }
 
+
   if (isError || !post) {
     return (
       <div className="mx-auto max-w-4xl px-4 pb-20">
@@ -401,21 +418,6 @@ export default function CommunityPostDetailPage() {
   const commentLabel = t('community.commentsLabel_other', { count: comments.length });
   const authorName = post.author?.name ?? t('community.defaultGuestName');
   // const categoryLabel = t(`community.filters.${post.category}`);
-
-  // 클라이언트 전용 날짜 포맷팅으로 hydration mismatch 방지
-  const [formattedDate, setFormattedDate] = useState<string>('');
-
-  useEffect(() => {
-    if (post?.createdAt) {
-      const date = new Date(post.createdAt);
-      setFormattedDate(date.toLocaleString('ko-KR', {
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      }));
-    }
-  }, [post?.createdAt]);
 
   return (
     <div className="mx-auto max-w-4xl px-4 pb-24">

@@ -56,12 +56,12 @@ describe('error handling utilities', () => {
     });
   });
 
-  it('falls back to internal error for unknown issues', async () => {
+  it('falls back to validation error for unknown issues', async () => {
     const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
 
     await expect(readJson(handleFundingSettlementError(new Error('boom')))).resolves.toMatchObject({
-      status: 500,
-      body: { code: 'INTERNAL_ERROR' }
+      status: 400,
+      body: { code: 'VALIDATION_ERROR' }
     });
     errorSpy.mockRestore();
   });

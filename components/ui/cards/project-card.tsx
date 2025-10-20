@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { Heart, Users as UsersIcon, Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -22,11 +23,20 @@ export function ProjectCard({ project }: ProjectCardProps) {
   const progress = Math.min(100, Math.round((project.currentAmount / project.targetAmount) * 100));
 
   return (
-    <article className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/5">
+    <Link 
+      href={`/projects/${project.id}`}
+      className="group relative block overflow-hidden rounded-3xl border border-white/10 bg-white/5 transition hover:border-white/20"
+      aria-label={`${project.title} 프로젝트 상세 보기`}
+    >
       <button
         type="button"
         aria-label={t('actions.favorite') ?? 'Favorite'}
         className="absolute right-3 top-3 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full bg-neutral-950/80 text-white/70 backdrop-blur transition hover:text-primary"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          // TODO: 즐겨찾기 기능 구현
+        }}
       >
         <Heart className="h-5 w-5" />
       </button>
@@ -65,6 +75,6 @@ export function ProjectCard({ project }: ProjectCardProps) {
           </div>
         </div>
       </div>
-    </article>
+    </Link>
   );
 }

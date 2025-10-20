@@ -19,6 +19,9 @@
     "db:drizzle:generate": "drizzle-kit generate",
     "db:drizzle:push": "drizzle-kit push",
     "db:drizzle:introspect": "drizzle-kit introspect",
+    "db:verify-migrations": "node scripts/verify-migrations.mjs",
+    "db:check-schema": "npx drizzle-kit check",
+    "test:smoke": "jest tests/smoke/",
     "vercel-build": "node scripts/build-with-drizzle.mjs"
   },
   "dependencies": {

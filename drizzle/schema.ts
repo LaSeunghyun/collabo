@@ -12,6 +12,7 @@ export const partnerMatchStatus = pgEnum("PartnerMatchStatus", ['REQUESTED', 'AC
 export const partnerType = pgEnum("PartnerType", ['STUDIO', 'VENUE', 'PRODUCTION', 'MERCHANDISE', 'OTHER'])
 export const paymentProvider = pgEnum("PaymentProvider", ['STRIPE', 'TOSS', 'PAYPAL', 'MANUAL'])
 export const postType = pgEnum("PostType", ['UPDATE', 'DISCUSSION', 'AMA'])
+export const postStatus = pgEnum("PostStatus", ['DRAFT', 'PUBLISHED', 'ARCHIVED'])
 export const productType = pgEnum("ProductType", ['PHYSICAL', 'DIGITAL'])
 export const projectStatus = pgEnum("ProjectStatus", ['DRAFT', 'REVIEWING', 'LIVE', 'SUCCESSFUL', 'FAILED', 'EXECUTING', 'COMPLETED'])
 export const settlementPayoutStatus = pgEnum("SettlementPayoutStatus", ['PENDING', 'IN_PROGRESS', 'PAID'])
@@ -125,6 +126,7 @@ export const post = pgTable("Post", {
 	title: text().notNull(),
 	content: text().notNull(),
 	type: postType().default('UPDATE').notNull(),
+	status: postStatus().default('DRAFT').notNull(),
 	excerpt: text(),
 	tags: text().array().default(["RAY"]).notNull(),
 	category: communityCategory().default('GENERAL').notNull(),

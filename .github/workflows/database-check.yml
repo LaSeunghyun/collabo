@@ -1,0 +1,71 @@
+name: Database Schema Check
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'lib/db/**'
+      - 'drizzle/**'
+      - 'types/database.ts'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'lib/db/**'
+      - 'drizzle/**'
+      - 'types/database.ts'
+
+jobs:
+  database-check:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Setup environment variables
+      run: |
+        echo "DRIZZLE_DATABASE_URL=postgres://postgres:postgres@localhost:5432/test_db" >> .env.local
+        echo "DATABASE_URL=postgres://postgres:postgres@localhost:5432/test_db" >> .env.local
+
+    - name: Generate Drizzle client
+      run: npm run db:drizzle:generate
+
+    - name: Apply migrations
+      run: npm run db:drizzle:push
+
+    - name: Verify migrations
+      run: npm run db:verify-migrations
+
+    - name: Check schema drift
+      run: npm run db:check-schema
+
+    - name: Run smoke tests
+      run: npm run test:smoke
+
+    - name: Run type check
+      run: npx tsc --noEmit
+
+    - name: Run linting
+      run: npm run lint

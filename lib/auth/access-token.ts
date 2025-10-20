@@ -2,13 +2,12 @@ import { randomUUID } from 'crypto';
 import { SignJWT, jwtVerify } from 'jose';
 import { eq } from 'drizzle-orm';
 import { getDbClient } from '@/lib/db/client';
-import { tokenBlacklist } from '@/lib/db/schema';
-import { userRole } from '@/lib/db/schema';
+import { tokenBlacklist, userRoleEnum } from '@/lib/db/schema';
 
 export interface AccessTokenContext {
   userId: string;
   sessionId: string;
-  role: typeof userRole.enumValues[number];
+  role: typeof userRoleEnum.enumValues[number];
   permissions: string[];
   expiresIn: number;
 }
@@ -22,7 +21,7 @@ export interface AccessTokenResult {
 export interface VerifiedAccessToken {
   userId: string;
   sessionId: string;
-  role: typeof userRole.enumValues[number];
+  role: typeof userRoleEnum.enumValues[number];
   permissions: string[];
   jti: string;
   expiresAt: Date;
@@ -34,7 +33,18 @@ const getSecret = () => {
   const secret = process.env.AUTH_JWT_SECRET ?? process.env.NEXTAUTH_SECRET;
 
   if (!secret) {
-    throw new Error('JWT secret is not configured');
+    throw new Error(
+      'JWT secret is not configured. ' +
+      'Please set NEXTAUTH_SECRET or AUTH_JWT_SECRET environment variable. ' +
+      'See docs/vercel-env-setup.md for setup instructions.'
+    );
+  }
+
+  if (secret.length < 32) {
+    console.warn(
+      '⚠️ JWT secret is too short. ' +
+      'Use at least 32 characters for production security.'
+    );
   }
 
   return new TextEncoder().encode(secret);
@@ -94,7 +104,7 @@ export const verifyAccessToken = async (token: string): Promise<VerifiedAccessTo
   return {
     userId: payload.sub,
     sessionId: payload.sid,
-    role: payload.role as typeof userRole.enumValues[number],
+    role: payload.role as typeof userRoleEnum.enumValues[number],
     permissions,
     jti: payload.jti,
     expiresAt: expirationSeconds ? new Date(expirationSeconds * 1000) : new Date()

@@ -1,19 +1,19 @@
-﻿jest.mock('@/lib/server/settlements', () => ({
+jest.mock('@/lib/server/settlements', () => ({
   calculateSettlementBreakdown: jest.fn()
 }));
 
+import { getDb } from '@/lib/db/client';
+import * as fundingSettlement from '@/lib/server/funding-settlement';
+
 // Drizzle 클라이언트 모킹
 jest.mock('@/lib/db/client', () => ({
-  getDbClient: jest.fn()
+  getDb: jest.fn()
 }));
-
-import { getDbClient } from '@/lib/db/client';
-import { eq, and, desc } from 'drizzle-orm';
 
 const mockDb = {
   select: jest.fn().mockReturnThis(),
   from: jest.fn().mockReturnThis(),
-  where: jest.fn().mockReturnThis(),
+  where: jest.fn(),
   orderBy: jest.fn().mockReturnThis(),
   limit: jest.fn().mockReturnThis(),
   insert: jest.fn().mockReturnThis(),
@@ -21,29 +21,25 @@ const mockDb = {
   returning: jest.fn().mockReturnThis(),
   update: jest.fn().mockReturnThis(),
   set: jest.fn().mockReturnThis(),
-  eq,
-  and,
-  desc
+  transaction: jest.fn().mockImplementation(async (callback) => await callback(mockDb)),
 };
 
-const mockGetDbClient = getDbClient as jest.MockedFunction<typeof getDbClient>;
+const mockGetDb = getDb as jest.MockedFunction<typeof getDb>;
 
 const { calculateSettlementBreakdown } = jest.requireMock('@/lib/server/settlements') as {
   calculateSettlementBreakdown: jest.Mock;
 };
 
-import * as fundingSettlement from '@/lib/server/funding-settlement';
-
 describe('funding settlement domain', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGetDbClient.mockResolvedValue(mockDb as any);
+    mockGetDb.mockResolvedValue(mockDb as any);
     calculateSettlementBreakdown.mockReset();
   });
 
   describe('createSettlementIfTargetReached', () => {
     it('returns null when target amount is not reached', async () => {
-      mockDb.select.mockResolvedValue([{
+      (mockDb.limit as jest.Mock).mockResolvedValue([{
         id: 'project-1',
         targetAmount: 100000,
         currentAmount: 50000,
@@ -79,9 +75,9 @@ describe('funding settlement domain', () => {
         updatedAt: '2024-01-01T00:00:00Z'
       };
 
-      mockDb.select
+      (mockDb.limit as jest.Mock)
         .mockResolvedValueOnce([mockProject]) // project query
-        .mockResolvedValueOnce([{ count: 0 }]); // existing settlement check
+        .mockResolvedValueOnce([]); // existing settlement check
 
       calculateSettlementBreakdown.mockReturnValue({
         totalRaised: 100000,
@@ -95,11 +91,7 @@ describe('funding settlement domain', () => {
         collaborators: []
       });
 
-      mockDb.insert.mockReturnValue({
-        values: jest.fn().mockReturnValue({
-          returning: jest.fn().mockResolvedValue([mockSettlement])
-        })
-      });
+      (mockDb.returning as jest.Mock).mockResolvedValue([mockSettlement]);
 
       const result = await fundingSettlement.createSettlementIfTargetReached('project-1');
 
@@ -115,7 +107,7 @@ describe('funding settlement domain', () => {
         payoutStatus: 'PENDING'
       };
 
-      mockDb.select
+      (mockDb.limit as jest.Mock)
         .mockResolvedValueOnce([{
           id: 'project-1',
           targetAmount: 100000,
@@ -132,7 +124,7 @@ describe('funding settlement domain', () => {
 
   describe('validateFundingSettlementConsistency', () => {
     it('validates settlement consistency', async () => {
-      mockDb.select.mockResolvedValue([{
+      (mockDb.limit as jest.Mock).mockResolvedValue([{
         id: 'settlement-1',
         projectId: 'project-1',
         totalRaised: 100000
@@ -144,7 +136,7 @@ describe('funding settlement domain', () => {
     });
 
     it('handles validation errors', async () => {
-      mockDb.select.mockRejectedValue(new Error('Validation error'));
+      (mockDb.limit as jest.Mock).mockRejectedValue(new Error('Validation error'));
 
       await expect(
         fundingSettlement.validateFundingSettlementConsistency('project-1')

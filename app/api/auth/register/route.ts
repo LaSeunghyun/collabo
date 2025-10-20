@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { hash } from 'bcryptjs';
 
 import { createParticipantUser, findUserByEmail } from '@/lib/auth/user';
+import { logUserSignup } from '@/lib/server/activity-logger';
 
 export async function POST(request: NextRequest) {
     try {
@@ -41,6 +42,24 @@ export async function POST(request: NextRequest) {
             name,
             email,
             passwordHash: hashedPassword,
+        });
+
+        // 회원가입 활동 로깅
+        const forwardedFor = request.headers.get('x-forwarded-for');
+        const ipAddress = forwardedFor?.split(',')[0]?.trim() ?? request.headers.get('x-real-ip') ?? null;
+        const userAgent = request.headers.get('user-agent') ?? null;
+
+        await logUserSignup(user.id, {
+            ipAddress,
+            userAgent,
+            path: '/api/auth/register',
+            method: 'POST',
+            statusCode: 200,
+            metadata: {
+                email,
+                name,
+                registrationMethod: 'credentials'
+            }
         });
 
         return NextResponse.json({

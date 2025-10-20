@@ -22,6 +22,7 @@ import {
   partnerMatchStatusEnum,
   partnerTypeEnum,
   paymentProviderEnum,
+  postStatusEnum,
   postTypeEnum,
   productTypeEnum,
   projectStatusEnum,
@@ -235,6 +236,48 @@ export const authDevices = pgTable(
   }),
 );
 
+export const announcements = pgTable(
+  'Announcement',
+  {
+    id: text('id').notNull().primaryKey(),
+    title: text('title').notNull(),
+    content: text('content').notNull(),
+    category: text('category').notNull().default('general'),
+    isPinned: boolean('isPinned').notNull().default(false),
+    publishedAt: timestamp('publishedAt', { mode: 'string' }),
+    authorId: text('authorId')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
+    createdAt: timestamp('createdAt', { mode: 'string' }).defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt', { mode: 'string' }).defaultNow().notNull(),
+  },
+  (table) => ({
+    publishedAtIdx: index('Announcement_publishedAt_idx').on(table.publishedAt),
+    categoryIdx: index('Announcement_category_idx').on(table.category),
+    isPinnedIdx: index('Announcement_isPinned_idx').on(table.isPinned),
+  }),
+);
+
+export const announcementReads = pgTable(
+  'AnnouncementRead',
+  {
+    id: text('id').notNull().primaryKey(),
+    announcementId: text('announcementId')
+      .notNull()
+      .references(() => announcements.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+    userId: text('userId')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+    readAt: timestamp('readAt', { mode: 'string' }).defaultNow().notNull(),
+  },
+  (table) => ({
+    announcementUserUnique: uniqueIndex('AnnouncementRead_announcementId_userId_key').on(
+      table.announcementId,
+      table.userId,
+    ),
+  }),
+);
+
 export const authSessions = pgTable(
   'AuthSession',
   {
@@ -442,6 +485,7 @@ export const posts = pgTable(
     title: text('title').notNull(),
     content: text('content').notNull(),
     type: postTypeEnum('type').notNull().default('UPDATE'),
+    status: postStatusEnum('status').notNull().default('DRAFT'),
     visibility: text('visibility').default('PUBLIC'),
     attachments: jsonb('attachments'),
     milestoneId: text('milestoneId').references(() => projectMilestones.id, {

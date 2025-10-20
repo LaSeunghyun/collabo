@@ -1,4 +1,4 @@
-﻿import { jest } from '@jest/globals';
+import { jest } from '@jest/globals';
 
 jest.mock('@/lib/db/client', () => ({
   getDbClient: jest.fn()
@@ -11,7 +11,6 @@ jest.mock('@/lib/auth/session', () => ({
 import { getAnalyticsOverview, recordVisit } from '@/lib/server/analytics';
 import { getDbClient } from '@/lib/db/client';
 import { evaluateAuthorization } from '@/lib/auth/session';
-import { eq, and, desc, count, sql } from 'drizzle-orm';
 
 const mockDb = {
   insert: jest.fn().mockReturnThis(),
@@ -20,13 +19,6 @@ const mockDb = {
   select: jest.fn().mockReturnThis(),
   from: jest.fn().mockReturnThis(),
   where: jest.fn().mockReturnThis(),
-  orderBy: jest.fn().mockReturnThis(),
-  limit: jest.fn().mockReturnThis(),
-  eq,
-  and,
-  desc,
-  count,
-  sql
 };
 
 const mockGetDbClient = getDbClient as jest.MockedFunction<typeof getDbClient>;
@@ -48,11 +40,7 @@ describe('analytics server utilities', () => {
         occurredAt: new Date('2024-01-01T00:00:00Z')
       };
 
-      mockDb.insert.mockReturnValue({
-        values: jest.fn().mockReturnValue({
-          returning: jest.fn().mockResolvedValue([mockVisit])
-        })
-      });
+      (mockDb.returning as jest.Mock).mockResolvedValue([mockVisit]);
 
       const result = await recordVisit({
         sessionId: 'session-1',
@@ -75,11 +63,7 @@ describe('analytics server utilities', () => {
         occurredAt: new Date('2024-01-01T00:00:00Z')
       };
 
-      mockDb.insert.mockReturnValue({
-        values: jest.fn().mockReturnValue({
-          returning: jest.fn().mockResolvedValue([mockVisit])
-        })
-      });
+      (mockDb.returning as jest.Mock).mockResolvedValue([mockVisit]);
 
       const result = await recordVisit({
         sessionId: 'session-1',
@@ -94,43 +78,42 @@ describe('analytics server utilities', () => {
   describe('getAnalyticsOverview', () => {
     it('returns analytics overview data', async () => {
       const mockData = {
-        totalVisits: 100,
-        uniqueUsers: 50,
-        totalUsers: 200,
-        recentVisits: [
+        visitLogs: [
           {
-            id: 'visit-1',
-            occurredAt: new Date('2024-01-01T00:00:00Z'),
-            user: { id: 'user-1', name: 'Test User' }
+            occurredAt: '2024-01-01T00:00:00Z',
+            sessionId: 'session-1',
+            userId: 'user-1'
+          }
+        ],
+        recentUsers: [
+          {
+            createdAt: '2024-01-01T00:00:00Z'
           }
         ]
       };
 
-      mockDb.select
-        .mockResolvedValueOnce([{ count: 100 }]) // total visits
-        .mockResolvedValueOnce([{ count: 50 }]) // unique users
-        .mockResolvedValueOnce([{ count: 200 }]) // total users
-        .mockResolvedValueOnce(mockData.recentVisits); // recent visits
+      (mockDb.where as jest.Mock).mockResolvedValueOnce(mockData.visitLogs).mockResolvedValueOnce(mockData.recentUsers);
 
       const result = await getAnalyticsOverview();
 
-      expect(result).toEqual(mockData);
+      expect(result.totalVisits).toBe(1);
+      expect(result.uniqueSessions).toBe(1);
+      expect(result.uniqueUsers).toBe(1);
     });
 
     it('handles empty data gracefully', async () => {
-      mockDb.select
-        .mockResolvedValueOnce([{ count: 0 }])
-        .mockResolvedValueOnce([{ count: 0 }])
-        .mockResolvedValueOnce([{ count: 0 }])
-        .mockResolvedValueOnce([]);
+      (mockDb.where as jest.Mock).mockResolvedValue([]);
 
       const result = await getAnalyticsOverview();
 
       expect(result).toEqual({
+        timestamp: expect.any(String),
         totalVisits: 0,
+        uniqueSessions: 0,
         uniqueUsers: 0,
-        totalUsers: 0,
-        recentVisits: []
+        activeUsers: 0,
+        dailyVisits: [],
+        signupTrend: []
       });
     });
   });

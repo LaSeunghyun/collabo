@@ -1,15 +1,18 @@
-// import { moderationStatusEnum, moderationTargetTypeEnum } from '@/lib/db/schema'; // TODO: Drizzle로 전환 필요
+import { moderationStatus, moderationTargetType } from '@/drizzle/schema';
+
+type ModerationStatusValue = typeof moderationStatus.enumValues[number];
+type ModerationTargetTypeValue = typeof moderationTargetType.enumValues[number];
 import { getModerationStats, getOpenModerationReports } from '@/lib/server/moderation';
 import Link from 'next/link';
 
-const statusLabels: Record<string, string> = {
+const statusLabels: Record<ModerationStatusValue, string> = {
   'PENDING': '대기중',
   'REVIEWING': '검토중',
   'ACTION_TAKEN': '조치완료',
   'DISMISSED': '기각됨'
 };
 
-const targetLabels: Record<string, string> = {
+const targetLabels: Record<ModerationTargetTypeValue, string> = {
   'POST': '게시글',
   'COMMENT': '댓글'
 };

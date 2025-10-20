@@ -1,17 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-// import { ModerationStatus, ModerationTargetType, type ModerationStatusValue, type ModerationTargetTypeValue } from '@/types/prisma'; // TODO: Drizzle로 전환 필요
+import { moderationStatus, moderationTargetType } from '@/drizzle/schema';
 import { ReportDetailModal } from './report-detail-modal';
 
-const statusLabels: Record<string, string> = {
+type ModerationStatusValue = typeof moderationStatus.enumValues[number];
+type ModerationTargetTypeValue = typeof moderationTargetType.enumValues[number];
+
+const statusLabels: Record<ModerationStatusValue, string> = {
   'PENDING': '대기중',
   'REVIEWING': '검토중',
   'ACTION_TAKEN': '조치완료',
   'DISMISSED': '기각됨'
 };
 
-const targetLabels: Record<string, string> = {
+const targetLabels: Record<ModerationTargetTypeValue, string> = {
   'POST': '게시글',
   'COMMENT': '댓글'
 };

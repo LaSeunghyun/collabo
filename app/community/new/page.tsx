@@ -3,26 +3,20 @@
 import { ChangeEvent, FormEvent, useMemo, useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Loader2, Paperclip } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession, signIn } from 'next-auth/react';
 import clsx from 'clsx';
 
 import type { CommunityPost } from '@/lib/data/community';
-
-const CATEGORY_OPTIONS = [
-  'music',
-  'art',
-  'literature',
-  'performance',
-  'photo'
-] as const;
+import { fetchCategories } from '@/lib/api/categories';
+import { CACHE_TTL } from '@/lib/constants/app-config';
 
 interface NewPostFormValues {
   title: string;
   content: string;
-  category: (typeof CATEGORY_OPTIONS)[number];
+  category: string;
   attachments: File[];
 }
 
@@ -32,12 +26,39 @@ function CommunityNewPostForm() {
   const searchParams = useSearchParams();
   const searchParamsString = searchParams.toString();
   const { status } = useSession();
+  
+  // 카테고리 데이터 가져오기
+  const { data: categories = [], isLoading: categoriesLoading, error: categoriesError } = useQuery({
+    queryKey: ['categories'],
+    queryFn: fetchCategories,
+    staleTime: CACHE_TTL.REACT_QUERY.CATEGORIES,
+    retry: 3,
+    retryDelay: 1000
+  });
+
+  // 카테고리 로딩 상태 디버깅
+  useEffect(() => {
+    console.log('🔍 [CATEGORIES] 상태 변경:', {
+      isLoading: categoriesLoading,
+      hasError: !!categoriesError,
+      categoriesCount: categories.length,
+      categories: categories.map(c => ({ id: c.id, label: c.label }))
+    });
+  }, [categoriesLoading, categoriesError, categories]);
+  
   const [formValues, setFormValues] = useState<NewPostFormValues>({
     title: '',
     content: '',
-    category: 'music',
+    category: '',
     attachments: []
   });
+  
+  // 카테고리가 로드되면 첫 번째 카테고리를 기본값으로 설정
+  useEffect(() => {
+    if (categories.length > 0 && !formValues.category) {
+      setFormValues(prev => ({ ...prev, category: categories[0].id }));
+    }
+  }, [categories, formValues.category]);
   const [error, setError] = useState<string | null>(null);
   const [isRedirecting, setIsRedirecting] = useState(false);
 
@@ -62,8 +83,10 @@ function CommunityNewPostForm() {
   }, [status, searchParamsString, isRedirecting]);
 
   const isValid = useMemo(() => {
-    return formValues.title.trim().length > 0 && formValues.content.trim().length > 0;
-  }, [formValues.content, formValues.title]);
+    return formValues.title.trim().length > 0 && 
+           formValues.content.trim().length > 0 && 
+           formValues.category.length > 0;
+  }, [formValues.content, formValues.title, formValues.category]);
 
   const createPostMutation = useMutation({
     mutationFn: async (values: NewPostFormValues) => {
@@ -81,6 +104,7 @@ function CommunityNewPostForm() {
       const res = await fetch('/api/community', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(body)
       });
 
@@ -92,8 +116,17 @@ function CommunityNewPostForm() {
       return (await res.json()) as CommunityPost;
     },
     onSuccess: (post) => {
-      setFormValues({ title: '', content: '', category: 'music', attachments: [] });
-      router.push(`/community/${post.id}`);
+      // 폼 초기화
+      setFormValues({ title: '', content: '', category: '', attachments: [] });
+      
+      // 즉시 리다이렉트 (로딩 상태 없이)
+      if (typeof window !== 'undefined') {
+        // 브라우저 히스토리를 직접 조작하여 더 빠른 네비게이션
+        window.location.href = `/community/${post.id}`;
+      } else if (router) {
+        // 서버 사이드에서는 router.push 사용
+        router.push(`/community/${post.id}`);
+      }
     },
     onError: (error: Error) => {
       console.error('Failed to create post:', error);
@@ -189,7 +222,7 @@ function CommunityNewPostForm() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 pb-20">
-      <div className="pt-10">
+      <div className="pt-6">
         <Link
           href="/community"
           className="inline-flex items-center gap-2 text-sm text-white/60 transition hover:text-white"
@@ -204,24 +237,48 @@ function CommunityNewPostForm() {
 
         {/* 카테고리 탭 */}
         <div className="mt-4 flex flex-wrap gap-2">
-          {CATEGORY_OPTIONS.map((option) => {
-            const isActive = formValues.category === option;
-            return (
+          {categoriesLoading ? (
+            <div className="flex flex-wrap gap-2">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="h-8 w-20 animate-pulse rounded-full bg-white/10" />
+              ))}
+            </div>
+          ) : categoriesError ? (
+            <div className="flex items-center gap-2 text-sm text-red-400">
+              <span>⚠️</span>
+              <span>카테고리를 불러올 수 없습니다. 페이지를 새로고침해주세요.</span>
               <button
-                key={option}
-                type="button"
-                onClick={() => setFormValues((prev) => ({ ...prev, category: option }))}
-                className={clsx(
-                  'rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-widest transition focus:outline-none focus:ring-2 focus:ring-primary/60 focus:ring-offset-0',
-                  isActive
-                    ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
-                    : 'bg-white/5 text-white/60 hover:bg-white/10'
-                )}
+                onClick={() => window.location.reload()}
+                className="text-primary hover:underline"
               >
-                {t(`community.filters.${option}`)}
+                새로고침
               </button>
-            );
-          })}
+            </div>
+          ) : categories.length === 0 ? (
+            <div className="text-sm text-yellow-400">
+              ⚠️ 사용 가능한 카테고리가 없습니다.
+            </div>
+          ) : (
+            categories.map((category) => {
+              const isActive = formValues.category === category.id;
+              return (
+                <button
+                  key={category.id}
+                  type="button"
+                  onClick={() => setFormValues((prev) => ({ ...prev, category: category.id }))}
+                  className={clsx(
+                    'rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-widest transition focus:outline-none focus:ring-2 focus:ring-primary/60 focus:ring-offset-0',
+                    isActive
+                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+                      : 'bg-white/5 text-white/60 hover:bg-white/10'
+                  )}
+                >
+                  {category.icon && <span className="mr-1 text-sm not-italic">{category.icon}</span>}
+                  {category.label}
+                </button>
+              );
+            })
+          )}
         </div>
       </div>
 
@@ -303,7 +360,7 @@ function CommunityNewPostForm() {
             {createPostMutation.isPending ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                {t('community.newPost.submitting')}
+                게시글 작성 중...
               </>
             ) : (
               t('community.newPost.submit')

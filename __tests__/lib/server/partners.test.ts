@@ -1,14 +1,8 @@
-﻿import { createPartnerProfile, PartnerAccessDeniedError, updatePartnerProfile } from '@/lib/server/partners';
-import { getDbClient } from '@/lib/db/client';
-import { eq, and, or, like, desc, count, inArray, not } from 'drizzle-orm';
+import { createPartnerProfile, PartnerAccessDeniedError, updatePartnerProfile, PartnerValidationError } from '@/lib/server/partners';
+import { getDb } from '@/lib/db/client';
 
 jest.mock('next/cache', () => ({
   revalidatePath: jest.fn()
-}));
-
-// Drizzle 클라이언트 모킹
-jest.mock('@/lib/db/client', () => ({
-  getDbClient: jest.fn()
 }));
 
 const mockDb = {
@@ -17,47 +11,43 @@ const mockDb = {
   where: jest.fn().mockReturnThis(),
   orderBy: jest.fn().mockReturnThis(),
   limit: jest.fn().mockReturnThis(),
-  offset: jest.fn().mockReturnThis(),
+  innerJoin: jest.fn().mockReturnThis(),
   leftJoin: jest.fn().mockReturnThis(),
-  insert: jest.fn().mockReturnThis(),
   values: jest.fn().mockReturnThis(),
-  returning: jest.fn().mockReturnThis(),
-  update: jest.fn().mockReturnThis(),
   set: jest.fn().mockReturnThis(),
-  eq,
-  and,
-  or,
-  like,
-  desc,
-  count,
-  inArray,
-  not
+  returning: jest.fn().mockReturnThis(),
+  insert: jest.fn(function() {
+    return this;
+  }),
+  update: jest.fn(function() {
+    return this;
+  }),
+  delete: jest.fn(function() {
+    return this;
+  }),
+  transaction: jest.fn().mockImplementation(async (callback) => await callback(mockDb)),
+  query: {
+    partners: {
+      findFirst: jest.fn(),
+    },
+    users: {
+      findFirst: jest.fn(),
+    },
+  },
 };
 
-const mockGetDbClient = getDbClient as jest.MockedFunction<typeof getDbClient>;
+jest.mock('@/lib/db/client', () => ({
+  getDb: jest.fn(() => mockDb),
+}));
+
 const { revalidatePath } = jest.requireMock('next/cache') as { revalidatePath: jest.Mock };
 
 const OWNER_CUID = 'ckv8n6x9g000001l4bdr4q0d4';
 
-// const partnerSummaryRecord = () => ({
-//   id: 'partner-1',
-//   name: 'Studio',
-//   type: 'STUDIO',
-//   verified: true,
-//   description: 'desc',
-//   location: 'Seoul',
-//   portfolioUrl: 'https://portfolio.test',
-//   contactInfo: 'contact@test.co',
-//   matchCount: 2,
-//   user: { id: OWNER_CUID, name: 'Creator', avatarUrl: null, role: 'PARTNER' },
-//   createdAt: '2024-01-01T00:00:00Z',
-//   updatedAt: '2024-01-02T00:00:00Z'
-// });
-
 describe('partner domain service', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGetDbClient.mockResolvedValue(mockDb as any);
+    (getDb as jest.Mock).mockReturnValue(mockDb);
     revalidatePath.mockReset();
   });
 
@@ -94,11 +84,10 @@ describe('partner domain service', () => {
         updatedAt: '2024-01-01T00:00:00Z'
       };
 
-      mockDb.insert.mockReturnValue({
-        values: jest.fn().mockReturnValue({
-          returning: jest.fn().mockResolvedValue([mockCreatedPartner])
-        })
-      });
+      (mockDb.limit as jest.Mock).mockResolvedValueOnce([{ id: OWNER_CUID, role: 'CREATOR' }])
+      .mockResolvedValueOnce([]);
+      mockDb.returning.mockResolvedValue([mockCreatedPartner]);
+      (mockDb.limit as jest.Mock).mockResolvedValue([mockCreatedPartner]);
 
       const result = await createPartnerProfile(payload, adminUser);
 
@@ -130,7 +119,7 @@ describe('partner domain service', () => {
 
       await expect(
         createPartnerProfile(invalidPayload as any, adminUser)
-      ).rejects.toThrow();
+      ).rejects.toBeInstanceOf(PartnerValidationError);
     });
   });
 
@@ -159,14 +148,8 @@ describe('partner domain service', () => {
         updatedAt: '2024-01-02T00:00:00Z'
       };
 
-      mockDb.select.mockResolvedValue([{ id: 'partner-1', userId: OWNER_CUID }]);
-      mockDb.update.mockReturnValue({
-        set: jest.fn().mockReturnValue({
-          where: jest.fn().mockReturnValue({
-            returning: jest.fn().mockResolvedValue([mockUpdatedPartner])
-          })
-        })
-      });
+      (mockDb.limit as jest.Mock).mockResolvedValue([{ id: 'partner-1', userId: OWNER_CUID, user: { id: OWNER_CUID } }]);
+      mockDb.returning.mockResolvedValue([mockUpdatedPartner]);
 
       const result = await updatePartnerProfile('partner-1', payload, adminUser);
 
@@ -177,7 +160,7 @@ describe('partner domain service', () => {
     });
 
     it('throws when partner not found', async () => {
-      mockDb.select.mockResolvedValue([]);
+      (mockDb.limit as jest.Mock).mockResolvedValue([]);
 
       const payload = {
         name: 'Updated Studio'
@@ -192,6 +175,7 @@ describe('partner domain service', () => {
       const payload = {
         name: 'Updated Studio'
       };
+      (mockDb.limit as jest.Mock).mockResolvedValue([{ id: 'partner-1', userId: 'another-user', user: { id: 'another-user' } }]);
 
       await expect(
         updatePartnerProfile('partner-1', payload, { id: 'user-1', role: 'PARTICIPANT' } as any)

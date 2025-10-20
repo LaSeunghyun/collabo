@@ -2,12 +2,46 @@ import { NextRequest, NextResponse } from 'next/server';
 import { UserRole } from '@/types/prisma';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
-import { createProject, ProjectValidationError } from '@/lib/server/projects';
+import { createProject, ProjectValidationError, getProjectSummaries } from '@/lib/server/projects';
 
-export async function GET() {
+// 캐싱 설정
+export const revalidate = 60; // 1분마다 재검증
+
+export async function GET(request: NextRequest) {
   try {
-    // 간단한 기본 응답으로 시작
-    return NextResponse.json([]);
+    const { searchParams } = new URL(request.url);
+    const category = searchParams.get('category');
+    const status = searchParams.get('status');
+    const limit = Number.parseInt(searchParams.get('limit') ?? '10', 10);
+
+    // 필터 옵션 구성
+    const options: any = {
+      take: Math.min(limit, 50) // 최대 50개로 제한
+    };
+
+    if (category && category !== 'all') {
+      // 카테고리 필터링은 getProjectSummaries에서 직접 처리하지 않으므로
+      // 여기서는 모든 프로젝트를 가져온 후 필터링
+    }
+
+    if (status) {
+      options.statuses = [status];
+    }
+
+    // 실제 DB에서 프로젝트 조회
+    const projects = await getProjectSummaries(options);
+
+    // 카테고리 필터링 (DB에서 직접 필터링이 어려운 경우)
+    const filteredProjects = category && category !== 'all' 
+      ? projects.filter(project => project.category === category)
+      : projects;
+
+    return NextResponse.json(filteredProjects, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+        'X-Cache-Status': 'HIT'
+      }
+    });
   } catch (error) {
     console.error('Failed to load projects', error);
 

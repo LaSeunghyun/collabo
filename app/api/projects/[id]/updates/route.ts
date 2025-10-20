@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-// import {
-//   FundingStatus,
-//   NotificationType,
-//   UserRole
-// } from '@/types/prisma'; // TODO: Drizzle로 전환 필요
+import { eq, and } from 'drizzle-orm';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import { evaluateAuthorization } from '@/lib/auth/session';
-// import { prisma } from '@/lib/prisma'; // TODO: Drizzle로 전환 필요
 import {
   createProjectUpdate,
   listProjectUpdates,
@@ -16,6 +11,8 @@ import {
   ProjectUpdateRecord,
   ProjectUpdateValidationError
 } from '@/lib/server/project-updates';
+import { getDb } from '@/lib/db/client';
+import { project, userFollow, funding, notification } from '@/drizzle/schema';
 
 const serializeUpdate = (update: ProjectUpdateRecord) => ({
   ...update,
@@ -28,41 +25,69 @@ const createSupporterNotification = async (
   update: ProjectUpdateRecord,
   actorId: string
 ) => {
-  // TODO: Drizzle로 전환 필요
-  const project = { id: projectId, ownerId: actorId, title: 'Sample Project' };
+  const db = await getDb();
+  
+  // 프로젝트 정보 조회
+  const [projectData] = await db
+    .select({
+      id: project.id,
+      title: project.title,
+      ownerId: project.ownerId
+    })
+    .from(project)
+    .where(eq(project.id, projectId))
+    .limit(1);
 
-  if (!project) {
+  if (!projectData) {
     return;
   }
 
-  // TODO: Drizzle로 전환 필요
-  const [followers, backers] = [[], []];
+  // 팔로워 목록 조회 (프로젝트 소유자를 팔로우하는 사용자들)
+  const followers = await db
+    .select({
+      followerId: userFollow.followerId
+    })
+    .from(userFollow)
+    .where(eq(userFollow.followingId, projectData.ownerId));
+
+  // 후원자 목록 조회 (해당 프로젝트에 후원한 사용자들)
+  const backers = await db
+    .select({
+      userId: funding.userId
+    })
+    .from(funding)
+    .where(and(
+      eq(funding.projectId, projectId),
+      eq(funding.paymentStatus, 'SUCCEEDED')
+    ));
 
   const recipients = new Set<string>();
   followers.forEach(({ followerId }) => recipients.add(followerId));
   backers.forEach(({ userId }) => recipients.add(userId));
-  recipients.delete(actorId);
+  recipients.delete(actorId); // 작성자는 제외
 
   if (!recipients.size) {
     return;
   }
 
-  // const payload = {
-  //   type: 'PROJECT_UPDATE',
-  //   projectId: project.id,
-  //   projectTitle: project.title,
-  //   postId: update.id,
-  //   title: update.title
-  // } satisfies Record<string, unknown>;
+  const payload = {
+    type: 'PROJECT_UPDATE',
+    projectId: projectData.id,
+    projectTitle: projectData.title,
+    postId: update.id,
+    title: update.title
+  } satisfies Record<string, unknown>;
 
-  // TODO: Drizzle로 전환 필요
-  // await prisma.notification.createMany({
-  //   data: Array.from(recipients).map((userId) => ({
-  //     userId,
-  //     type: 'SYSTEM',
-  //     payload
-  //   }))
-  // });
+  // 알림 일괄 생성
+  await db.insert(notification).values(
+    Array.from(recipients).map((userId) => ({
+      id: crypto.randomUUID(),
+      userId,
+      type: 'SYSTEM',
+      payload,
+      read: false
+    }))
+  );
 };
 
 export async function GET(
@@ -109,6 +134,7 @@ export async function POST(
     const input = {
       title: String(body.title ?? ''),
       content: String(body.content ?? ''),
+      visibility: body.visibility ? String(body.visibility) : undefined,
       attachments: Array.isArray(body.attachments) ? body.attachments : undefined,
       milestoneId: hasMilestoneField
         ? body.milestoneId === null

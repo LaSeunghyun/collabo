@@ -98,9 +98,9 @@ function VisitLogger() {
   return null;
 }
 
-export function Providers({ children }: { children: ReactNode }) {
-  const i18next = initI18n();
+const i18next = initI18n();
 
+export function Providers({ children }: { children: ReactNode }) {
   useEffect(() => {
     document.documentElement.lang = i18next.language;
   }, [i18next.language]);

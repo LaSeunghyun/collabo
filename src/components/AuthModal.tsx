@@ -10,12 +10,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
-import { Badge } from "./ui/badge";
 import { 
   User, 
   Mail, 
   Lock, 
-  Phone,
   Music,
   Users,
   Building,

@@ -8,6 +8,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **데이터베이스 스키마 체계화**
+  - PostStatus enum 추가 (DRAFT, PUBLISHED, ARCHIVED)
+  - Post 테이블에 status 필드 추가
+  - Announcement 테이블 마이그레이션 적용
+  - 마이그레이션 파일 명명 규칙 표준화
+
+- **타입 안전성 강화**
+  - `types/database.ts`에 모든 테이블 타입 정의
+  - Drizzle 스키마에서 자동 타입 추출
+  - 쿼리 빌더 래퍼 함수 (`lib/db/queries/`)
+  - 엄격한 TypeScript 타입 체크
+
+- **서버/클라이언트 아키텍처 명확화**
+  - 서버 전용 코드: `lib/server/`, `lib/db/queries/`
+  - 클라이언트 전용 코드: `lib/api/`
+  - 공유 타입: `types/database.ts`
+  - Store API 서버/클라이언트 분리
+
+- **테스트 및 검증 자동화**
+  - 스모크 테스트 (`tests/smoke/database.test.ts`)
+  - 마이그레이션 검증 스크립트 (`scripts/verify-migrations.mjs`)
+  - CI/CD 파이프라인에 DB 체크 추가
+  - 스키마 드리프트 감지
+
+- **개발자 도구 및 문서**
+  - 데이터베이스 스키마 변경 가이드
+  - PR 체크리스트 및 DoD 정의
+  - 마이그레이션 검증 명령어 추가
+  - 정기 건강 검진 프로세스
+
+### Fixed
+- Announcement 테이블 누락 오류 해결
+- Post status 필드 누락으로 인한 쿼리 오류 해결
+- Store API 상대 URL 문제 해결
+- 마이그레이션 파일 중복 번호 문제 해결
+
+### Changed
+- `lib/server/community.ts`: 쿼리 빌더 래퍼 함수 사용
+- `lib/server/announcements.ts`: 쿼리 빌더 래퍼 함수 사용
+- `app/page.tsx`: 서버 사이드 Store 로직 사용
+- 마이그레이션 파일명을 설명적으로 변경
+
+### Added
 - **구조화된 로깅 시스템** (`lib/utils/logger.ts`)
   - 컨텍스트 정보를 포함한 에러 로깅
   - API 요청/응답 로깅
