@@ -2,7 +2,7 @@
 import { gte } from 'drizzle-orm';
 
 import { getDbClient } from '@/lib/db/client';
-import { visitLogs, users } from '@/lib/db/schema';
+import { visitLogs, users, posts } from '@/lib/db/schema';
 import { evaluateAuthorization } from '@/lib/auth/session';
 
 export const VISIT_LOOKBACK_DAYS = 30;
@@ -21,6 +21,8 @@ export interface AnalyticsOverview {
   uniqueSessions: number;
   uniqueUsers: number;
   activeUsers: number;
+  recentSignups: number;        // 최근 7일 회원가입 수
+  recentPosts: number;           // 최근 7일 게시글 작성 수
   dailyVisits: Array<{
     date: string;
     visits: number;
@@ -30,6 +32,14 @@ export interface AnalyticsOverview {
   signupTrend: Array<{
     date: string;
     signups: number;
+  }>;
+  dailySignups: Array<{          // 일별 회원가입 (차트용)
+    date: string;
+    signups: number;
+  }>;
+  dailyPosts: Array<{            // 일별 게시글 작성 (차트용)
+    date: string;
+    posts: number;
   }>;
 }
 
@@ -125,8 +135,11 @@ export const getAnalyticsOverview = async (): Promise<AnalyticsOverview> => {
   const activeSince = new Date(now);
   activeSince.setDate(activeSince.getDate() - ACTIVE_USER_WINDOW_DAYS);
 
+  const recentPostsSince = new Date(now);
+  recentPostsSince.setDate(recentPostsSince.getDate() - 7);
+
   const db = await getDbClient();
-  const [visitLogsData, recentUsersData] = await Promise.all([
+  const [visitLogsData, recentUsersData, recentPostsData] = await Promise.all([
     db.select({
       occurredAt: visitLogs.occurredAt,
       sessionId: visitLogs.sessionId,
@@ -134,7 +147,10 @@ export const getAnalyticsOverview = async (): Promise<AnalyticsOverview> => {
     }).from(visitLogs).where(gte(visitLogs.occurredAt, visitSince.toISOString())),
     db.select({
       createdAt: users.createdAt
-    }).from(users).where(gte(users.createdAt, signupSince.toISOString()))
+    }).from(users).where(gte(users.createdAt, signupSince.toISOString())),
+    db.select({
+      createdAt: posts.createdAt
+    }).from(posts).where(gte(posts.createdAt, recentPostsSince.toISOString()))
   ]);
 
   const totalVisits = visitLogsData.length;
@@ -189,13 +205,36 @@ export const getAnalyticsOverview = async (): Promise<AnalyticsOverview> => {
     a.date < b.date ? -1 : a.date > b.date ? 1 : 0
   );
 
+  // 일별 게시글 집계
+  const postBuckets = new Map<string, number>();
+  for (const post of recentPostsData) {
+    const dateKey = todayKey(new Date(post.createdAt));
+    postBuckets.set(dateKey, (postBuckets.get(dateKey) || 0) + 1);
+  }
+
+  const dailyPosts = Array.from(postBuckets.entries())
+    .map(([date, posts]) => ({ date, posts }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  // 최근 7일 회원가입 합계
+  const recentSignups = signupTrend
+    .filter(s => new Date(s.date) >= recentPostsSince)
+    .reduce((sum, s) => sum + s.signups, 0);
+
+  // 최근 7일 게시글 작성 수
+  const recentPosts = recentPostsData.length;
+
   return {
     timestamp: now.toISOString(),
     totalVisits,
     uniqueSessions: uniqueSessionSet.size,
     uniqueUsers: uniqueUserSet.size,
     activeUsers: activeUserSet.size,
+    recentSignups,
+    recentPosts,
     dailyVisits,
-    signupTrend
+    signupTrend,
+    dailySignups: signupTrend,
+    dailyPosts
   };
 };

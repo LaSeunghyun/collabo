@@ -232,6 +232,8 @@
         "uniqueSessions": "유니크 세션",
         "uniqueUsers": "방문 유저",
         "activeUsers": "활성 유저",
+        "newSignups": "신규 회원가입",
+        "newPosts": "게시글 작성",
         "recentDays": "최근 {{days}}일",
         "sessionBased": "세션 ID 기준",
         "accountBased": "계정 기준",

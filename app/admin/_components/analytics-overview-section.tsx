@@ -49,7 +49,7 @@ export function AnalyticsOverviewSection({ overview }: AnalyticsOverviewSectionP
         </span>
       </header>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
           <p className="text-xs uppercase tracking-[0.3em] text-white/50">{t('admin.analytics.metrics.totalVisits')}</p>
           <p className="mt-2 text-2xl font-semibold text-white">
@@ -58,11 +58,18 @@ export function AnalyticsOverviewSection({ overview }: AnalyticsOverviewSectionP
           <p className="mt-1 text-xs text-white/50">{t('admin.analytics.metrics.recentDays', { days: VISIT_LOOKBACK_DAYS })}</p>
         </div>
         <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-          <p className="text-xs uppercase tracking-[0.3em] text-white/50">{t('admin.analytics.metrics.uniqueSessions')}</p>
+          <p className="text-xs uppercase tracking-[0.3em] text-white/50">{t('admin.analytics.metrics.newSignups')}</p>
           <p className="mt-2 text-2xl font-semibold text-white">
-            {numberFormatter.format(overview.uniqueSessions)}
+            {numberFormatter.format(overview.recentSignups)}
           </p>
-          <p className="mt-1 text-xs text-white/50">{t('admin.analytics.metrics.sessionBased')}</p>
+          <p className="mt-1 text-xs text-white/50">{t('admin.analytics.metrics.last7Days')}</p>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+          <p className="text-xs uppercase tracking-[0.3em] text-white/50">{t('admin.analytics.metrics.newPosts')}</p>
+          <p className="mt-2 text-2xl font-semibold text-white">
+            {numberFormatter.format(overview.recentPosts)}
+          </p>
+          <p className="mt-1 text-xs text-white/50">{t('admin.analytics.metrics.last7Days')}</p>
         </div>
         <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
           <p className="text-xs uppercase tracking-[0.3em] text-white/50">{t('admin.analytics.metrics.uniqueUsers')}</p>
