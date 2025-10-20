@@ -8,7 +8,7 @@ import { ResourcesSection } from '@/components/home/resources-section';
 import { StoreSection } from '@/components/home/store-section';
 import { getHomeProjectSummaries } from '@/lib/server/projects';
 import { listHomeArtists } from '@/lib/server/artists';
-import { getHomeCommunityPosts } from '@/lib/server/community';
+import { getCommunityPostCount, getHomeCommunityPosts } from '@/lib/server/community';
 import { getStoreItems } from '@/lib/server/store';
 import type { HomeCommunityPost } from '@/lib/data/community';
 
@@ -73,10 +73,11 @@ function StoreSkeleton() {
 
 // 서버에서 초기 데이터를 병렬로 fetch
 async function getHomeData() {
-  const [projects, artists, communityPosts, storeItems] = await Promise.all([
+  const [projects, artists, communityPosts, communityPostCount, storeItems] = await Promise.all([
     getHomeProjectSummaries({ take: 10, statuses: ['LIVE'] }),
     listHomeArtists(4),
     getHomeCommunityPosts(5),
+    getCommunityPostCount(),
     getStoreItems()
   ]);
 
@@ -84,12 +85,13 @@ async function getHomeData() {
     projects,
     artists,
     communityPosts,
+    communityPostCount,
     storeItems
   };
 }
 
 export default async function HomePage() {
-  const { projects, artists, communityPosts, storeItems } = await getHomeData();
+  const { projects, artists, communityPosts, communityPostCount, storeItems } = await getHomeData();
   
   const [featuredPost, ...highlightedPosts] = communityPosts;
 
@@ -97,7 +99,7 @@ export default async function HomePage() {
     <div className="mx-auto flex max-w-7xl flex-col gap-16 px-4 pb-20">
       <HeroSection
         projectsCount={projects.length}
-        communityCount={communityPosts.length}
+        communityCount={communityPostCount}
         artistsCount={artists.length}
       />
 

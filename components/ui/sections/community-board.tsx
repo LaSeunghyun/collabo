@@ -506,8 +506,9 @@ function CommunityPostCard({
   }, [post.createdAt]);
 
   return (
-    <article className="group border-b border-white/10 py-4 transition hover:bg-white/5">
-      <div className="flex items-start justify-between gap-4">
+    <div className="group -mx-6 px-6 transition hover:bg-white/5">
+      <article className="border-b border-white/10 py-4">
+        <div className="flex items-start justify-between gap-4">
         {/* 좌측: 카테고리 + 제목 + 내용 */}
         <div className="flex-1 space-y-2">
           {/* 카테고리 + 배지 */}
@@ -558,8 +559,9 @@ function CommunityPostCard({
             <span>{post.views || 0}</span>
           </div>
         </div>
-      </div>
-    </article>
+        </div>
+      </article>
+    </div>
   );
 }
 

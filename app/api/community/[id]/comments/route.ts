@@ -11,7 +11,7 @@ function formatComment(comment: {
   id: string;
   postId: string;
   content: string;
-  createdAt: Date;
+  createdAt: Date | string;
   author?: { name: string | null } | null;
 }) {
   return {
@@ -19,7 +19,9 @@ function formatComment(comment: {
     postId: comment.postId,
     content: comment.content,
     authorName: comment.author?.name ?? 'Guest',
-    createdAt: comment.createdAt.toISOString()
+    createdAt: (comment.createdAt instanceof Date)
+      ? comment.createdAt.toISOString()
+      : new Date(comment.createdAt).toISOString()
   };
 }
 
@@ -54,7 +56,7 @@ export async function GET(
         }
       })
       .from(comments)
-      .innerJoin(users, eq(comments.authorId, users.id))
+      .leftJoin(users, eq(comments.authorId, users.id))
       .where(and(
         eq(comments.postId, id),
         eq(comments.isDeleted, false)
