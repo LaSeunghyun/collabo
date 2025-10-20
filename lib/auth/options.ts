@@ -92,18 +92,22 @@ export const authOptions: NextAuthOptions = {
           // 로그인 활동 로깅 (비동기로 처리하여 응답 지연 방지)
           setImmediate(async () => {
             try {
-              await logUserLogin(usersRecord.id, {
-                ipAddress: null, // NextAuth에서는 IP 주소를 직접 접근할 수 없음
-                userAgent: null, // NextAuth에서는 User-Agent를 직접 접근할 수 없음
-                path: '/api/auth/signin',
-                method: 'POST',
-                statusCode: 200,
-                metadata: {
-                  email: usersRecord.email,
-                  loginMethod: 'credentials',
-                  role: usersRecord.role
+              await logUserLogin(
+                usersRecord.id,
+                usersRecord.email,
+                usersRecord.name || 'Unknown User',
+                usersRecord.role as string,
+                {
+                  ipAddress: null, // NextAuth에서는 IP 주소를 직접 접근할 수 없음
+                  userAgent: null, // NextAuth에서는 User-Agent를 직접 접근할 수 없음
+                  path: '/api/auth/signin',
+                  method: 'POST',
+                  statusCode: 200,
+                  metadata: {
+                    loginMethod: 'credentials'
+                  }
                 }
-              });
+              );
             } catch (error) {
               console.warn('Failed to log login activity:', error);
             }

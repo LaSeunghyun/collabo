@@ -49,15 +49,13 @@ export async function POST(request: NextRequest) {
         const ipAddress = forwardedFor?.split(',')[0]?.trim() ?? request.headers.get('x-real-ip') ?? null;
         const userAgent = request.headers.get('user-agent') ?? null;
 
-        await logUserSignup(user.id, {
+        await logUserSignup(user.id, user.email, user.name, {
             ipAddress,
             userAgent,
             path: '/api/auth/register',
             method: 'POST',
             statusCode: 200,
             metadata: {
-                email,
-                name,
                 registrationMethod: 'credentials'
             }
         });

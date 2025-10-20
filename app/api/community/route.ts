@@ -375,6 +375,9 @@ export async function GET(request: NextRequest) {
 
     await logApiCall('/api/community', 'GET', 200, responseTime, {
       userId: viewer?.id ?? null,
+      userEmail: viewer?.email ?? null,
+      userName: viewer?.name ?? null,
+      userRole: viewer?.role ?? null,
       ipAddress,
       userAgent,
       path: '/api/community',
@@ -547,19 +550,26 @@ export async function POST(request: NextRequest) {
       const ipAddress = forwardedFor?.split(',')[0]?.trim() ?? request.headers.get('x-real-ip') ?? null;
       const userAgent = request.headers.get('user-agent') ?? null;
 
-      await logPostCreate(post.id, sessionUser.id, {
-        ipAddress,
-        userAgent,
-        path: '/api/community',
-        method: 'POST',
-        statusCode: 201,
-        metadata: {
-          title: title.substring(0, 100),
-          category,
-          projectId: projectId || null,
-          contentLength: content.length
+      await logPostCreate(
+        post.id, 
+        sessionUser.id, 
+        sessionUser.email || 'unknown@example.com',
+        sessionUser.name || 'Unknown User',
+        sessionUser.role,
+        title,
+        {
+          ipAddress,
+          userAgent,
+          path: '/api/community',
+          method: 'POST',
+          statusCode: 201,
+          metadata: {
+            category,
+            projectId: projectId || null,
+            contentLength: content.length
+          }
         }
-      });
+      );
 
       const created = mapPostToResponse(post);
 

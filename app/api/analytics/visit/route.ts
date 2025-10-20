@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { recordVisit } from '@/lib/server/analytics';
 import { logPageVisit } from '@/lib/server/activity-logger';
+import { getServerAuthSession } from '@/lib/auth/session';
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,8 +23,16 @@ export async function POST(request: NextRequest) {
         ipAddress
       });
 
+      // 현재 세션에서 사용자 정보 가져오기
+      const session = await getServerAuthSession();
+      const user = session?.user;
+
       // 페이지 방문 활동 로깅
       await logPageVisit(path, {
+        userId: user?.id ?? null,
+        userEmail: user?.email ?? null,
+        userName: user?.name ?? null,
+        userRole: (user as any)?.role ?? null,
         sessionId: body.sessionId,
         ipAddress,
         userAgent,

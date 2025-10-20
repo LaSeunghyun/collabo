@@ -32,6 +32,9 @@ export type ActivityType =
 
 export interface ActivityContext {
   userId?: string | null;
+  userEmail?: string | null;
+  userName?: string | null;
+  userRole?: string | null;
   sessionId?: string;
   ipAddress?: string | null;
   userAgent?: string | null;
@@ -57,6 +60,19 @@ export async function logActivity(data: ActivityData): Promise<void> {
   try {
     const db = await getDbClient();
     
+    // 사용자 식별 정보 구성
+    const userInfo = data.context.userId ? {
+      userId: data.context.userId,
+      userEmail: data.context.userEmail,
+      userName: data.context.userName,
+      userRole: data.context.userRole
+    } : {
+      userId: null,
+      userEmail: null,
+      userName: null,
+      userRole: null
+    };
+
     await db.insert(auditLogs).values({
       id: randomUUID(),
       userId: data.context.userId,
@@ -70,6 +86,7 @@ export async function logActivity(data: ActivityData): Promise<void> {
         statusCode: data.context.statusCode,
         responseTime: data.context.responseTime,
         sessionId: data.context.sessionId,
+        userInfo,
         ...data.context.metadata
       },
       ipAddress: data.context.ipAddress,
@@ -83,11 +100,16 @@ export async function logActivity(data: ActivityData): Promise<void> {
 
     // 콘솔 로그 출력 (개발 환경에서만)
     if (process.env.NODE_ENV === 'development') {
+      const userDisplay = data.context.userId 
+        ? `${data.context.userName || 'Unknown'} (${data.context.userEmail || data.context.userId}) [${data.context.userRole || 'Unknown Role'}]`
+        : 'Anonymous User';
+      
       console.log(`📝 [ACTIVITY] ${data.activity}: ${data.description}`, {
-        userId: data.context.userId,
+        user: userDisplay,
         entity: data.entity,
         entityId: data.entityId,
-        path: data.context.path
+        path: data.context.path,
+        sessionId: data.context.sessionId
       });
     }
   } catch (error) {
@@ -103,14 +125,23 @@ export async function logActivity(data: ActivityData): Promise<void> {
  */
 export async function logUserLogin(
   userId: string,
-  context: Omit<ActivityContext, 'userId'>
+  userEmail: string,
+  userName: string,
+  userRole: string,
+  context: Omit<ActivityContext, 'userId' | 'userEmail' | 'userName' | 'userRole'>
 ): Promise<void> {
   await logActivity({
     activity: 'user.login',
     entity: 'user',
     entityId: userId,
-    description: `사용자 로그인: ${userId}`,
-    context: { ...context, userId }
+    description: `${userName} (${userEmail}) 로그인 - ${userRole} 역할`,
+    context: { 
+      ...context, 
+      userId, 
+      userEmail, 
+      userName, 
+      userRole 
+    }
   });
 }
 
@@ -119,14 +150,22 @@ export async function logUserLogin(
  */
 export async function logUserSignup(
   userId: string,
-  context: Omit<ActivityContext, 'userId'>
+  userEmail: string,
+  userName: string,
+  context: Omit<ActivityContext, 'userId' | 'userEmail' | 'userName'>
 ): Promise<void> {
   await logActivity({
     activity: 'user.signup',
     entity: 'user',
     entityId: userId,
-    description: `새 사용자 회원가입: ${userId}`,
-    context: { ...context, userId }
+    description: `새 사용자 회원가입: ${userName} (${userEmail})`,
+    context: { 
+      ...context, 
+      userId, 
+      userEmail, 
+      userName,
+      userRole: 'PARTICIPANT' // 기본 역할
+    }
   });
 }
 
@@ -135,14 +174,23 @@ export async function logUserSignup(
  */
 export async function logUserLogout(
   userId: string,
-  context: Omit<ActivityContext, 'userId'>
+  userEmail: string,
+  userName: string,
+  userRole: string,
+  context: Omit<ActivityContext, 'userId' | 'userEmail' | 'userName' | 'userRole'>
 ): Promise<void> {
   await logActivity({
     activity: 'user.logout',
     entity: 'user',
     entityId: userId,
-    description: `사용자 로그아웃: ${userId}`,
-    context: { ...context, userId }
+    description: `${userName} (${userEmail}) 로그아웃 - ${userRole} 역할`,
+    context: { 
+      ...context, 
+      userId, 
+      userEmail, 
+      userName, 
+      userRole 
+    }
   });
 }
 
@@ -152,14 +200,24 @@ export async function logUserLogout(
 export async function logPostCreate(
   postId: string,
   userId: string,
-  context: Omit<ActivityContext, 'userId'>
+  userEmail: string,
+  userName: string,
+  userRole: string,
+  postTitle: string,
+  context: Omit<ActivityContext, 'userId' | 'userEmail' | 'userName' | 'userRole'>
 ): Promise<void> {
   await logActivity({
     activity: 'post.create',
     entity: 'post',
     entityId: postId,
-    description: `게시글 작성: ${postId}`,
-    context: { ...context, userId }
+    description: `${userName} (${userEmail}) 게시글 작성: "${postTitle}"`,
+    context: { 
+      ...context, 
+      userId, 
+      userEmail, 
+      userName, 
+      userRole 
+    }
   });
 }
 
@@ -187,11 +245,15 @@ export async function logPageVisit(
   path: string,
   context: ActivityContext
 ): Promise<void> {
+  const userDisplay = context.userId 
+    ? `${context.userName || 'Unknown'} (${context.userEmail || context.userId}) [${context.userRole || 'Unknown Role'}]`
+    : 'Anonymous User';
+  
   await logActivity({
     activity: 'page.visit',
     entity: 'page',
     entityId: path,
-    description: `페이지 방문: ${path}`,
+    description: `${userDisplay} 페이지 방문: ${path}`,
     context
   });
 }
@@ -206,11 +268,15 @@ export async function logApiCall(
   responseTime: number,
   context: ActivityContext
 ): Promise<void> {
+  const userDisplay = context.userId 
+    ? `${context.userName || 'Unknown'} (${context.userEmail || context.userId}) [${context.userRole || 'Unknown Role'}]`
+    : 'Anonymous User';
+  
   await logActivity({
     activity: 'api.call',
     entity: 'api',
     entityId: endpoint,
-    description: `API 호출: ${method} ${endpoint} (${statusCode})`,
+    description: `${userDisplay} API 호출: ${method} ${endpoint} (${statusCode})`,
     context: {
       ...context,
       method,

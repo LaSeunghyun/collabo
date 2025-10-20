@@ -40,7 +40,8 @@ export async function POST(req: NextRequest) {
     const ipAddress = forwardedFor?.split(',')[0]?.trim() ?? req.headers.get('x-real-ip') ?? null;
     const userAgent = req.headers.get('user-agent') ?? null;
 
-    await logUserLogout(userId, {
+    // 사용자 정보는 토큰에서 가져올 수 없으므로 기본값 사용
+    await logUserLogout(userId, 'unknown@example.com', 'Unknown User', 'Unknown Role', {
       ipAddress,
       userAgent,
       path: '/api/auth/logout',
