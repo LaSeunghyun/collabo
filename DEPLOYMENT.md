@@ -20,12 +20,20 @@ Vercel 대시보드에서 다음 환경변수들을 설정하세요:
 
 ### 필수 환경변수
 ```
-DATABASE_URL=postgresql://postgres.tsdnwdwcwnqygyepojaq:YGRA5XVPxEf95v26@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres
-NEXTAUTH_SECRET=your-secret-key-here
-NEXTAUTH_URL=https://your-app.vercel.app
-NEXT_PUBLIC_SUPABASE_URL=https://tsdnwdwcwnqygyepojaq.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzZG53ZHdjd25xeWd5ZXBvamFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3MTUyMzksImV4cCI6MjA3NDI5MTIzOX0.3MtQ-LHueC_MAy8g9FmzghcKdOHknu-EtRsnbIvdzlQ
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzZG53ZHdjd25xeWd5ZXBvamFxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1ODcxNTIzOSwiZXhwIjoyMDc0MjkxMjM5fQ.YjSQaiK1UnQ_EWgdkdu3FVd4niwMi0X2F6WPFQ3xjck
+# Database
+DATABASE_URL="postgresql://postgres.tsdnwdwcwnqygyepojaq:V7mgCwC7zV4IciHn@aws-1-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1"
+DIRECT_URL="postgresql://postgres.tsdnwdwcwnqygyepojaq:V7mgCwC7zV4IciHn@aws-1-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1"
+
+# NextAuth
+NEXTAUTH_SECRET="M9xWXgY3O+wgaxZQZpJGuXurRymDbzt3ntvEu03fehE="
+# Local Development: http://localhost:3000
+# Production (Vercel): https://your-domain.vercel.app (auto-detected)
+NEXTAUTH_URL="https://artist-funding-platform-khqrxkhy2-laseunghyuns-projects.vercel.app"
+
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL="https://tsdnwdwcwnqygyepojaq.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzZG53ZHdjd25xeWd5ZXBvamFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3MTUyMzksImV4cCI6MjA3NDI5MTIzOX0.3MtQ-LHueC_MAy8g9FmzghcKdOHknu-EtRsnbIvdzlQ"
+SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzZG53ZHdjd25xeWd5ZXBvamFxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1ODcxNTIzOSwiZXhwIjoyMDc0MjkxMjM5fQ.YjSQaiK1UnQ_EWgdkdu3FVd4niwMi0X2F6WPFQ3xjck"
 ```
 
 ### 선택적 환경변수 (OAuth)
