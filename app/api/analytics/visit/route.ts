@@ -27,23 +27,38 @@ export async function POST(request: NextRequest) {
       const session = await getServerAuthSession();
       const user = session?.user;
 
-      // 페이지 방문 활동 로깅
-      await logPageVisit(path, {
-        userId: user?.id ?? null,
-        userEmail: user?.email ?? null,
-        userName: user?.name ?? null,
-        userRole: (user as any)?.role ?? null,
+      // 간단한 로깅 먼저 테스트
+      console.log('🔍 [VISIT API] 페이지 방문 기록:', {
+        path,
+        userId: user?.id ?? 'anonymous',
+        userEmail: user?.email ?? 'no-email',
+        userName: user?.name ?? 'no-name',
+        userRole: (user as any)?.role ?? 'no-role',
         sessionId: body.sessionId,
-        ipAddress,
-        userAgent,
-        path: '/api/analytics/visit',
-        method: 'POST',
-        statusCode: 201,
-        metadata: {
-          referrer: request.headers.get('referer'),
-          timestamp: new Date().toISOString()
-        }
+        ipAddress: ipAddress ? `${ipAddress.substring(0, 8)}...` : 'no-ip'
       });
+
+      try {
+        // 페이지 방문 활동 로깅
+        await logPageVisit(path, {
+          userId: user?.id ?? null,
+          userEmail: user?.email ?? null,
+          userName: user?.name ?? null,
+          userRole: (user as any)?.role ?? null,
+          sessionId: body.sessionId,
+          ipAddress,
+          userAgent,
+          path: '/api/analytics/visit',
+          method: 'POST',
+          statusCode: 201,
+          metadata: {
+            referrer: request.headers.get('referer'),
+            timestamp: new Date().toISOString()
+          }
+        });
+      } catch (logError) {
+        console.error('❌ [VISIT API] 로깅 실패:', logError);
+      }
     } catch (error) {
       console.warn('Failed to record visit analytics:', {
         error: error instanceof Error ? error.message : String(error),

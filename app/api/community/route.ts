@@ -373,25 +373,39 @@ export async function GET(request: NextRequest) {
     const ipAddress = forwardedFor?.split(',')[0]?.trim() ?? request.headers.get('x-real-ip') ?? null;
     const userAgent = request.headers.get('user-agent') ?? null;
 
-    await logApiCall('/api/community', 'GET', 200, responseTime, {
-      userId: viewer?.id ?? null,
-      userEmail: viewer?.email ?? null,
-      userName: viewer?.name ?? null,
-      userRole: viewer?.role ?? null,
-      ipAddress,
-      userAgent,
-      path: '/api/community',
-      metadata: {
-        sort,
-        limit,
-        page,
-        projectId,
-        authorId,
-        search,
-        categories: normalizedCategories,
-        totalPosts: total
-      }
+    // 간단한 로깅 먼저 테스트
+    console.log('🔍 [COMMUNITY API] GET 요청 처리 완료:', {
+      userId: viewer?.id ?? 'anonymous',
+      userEmail: viewer?.email ?? 'no-email',
+      userName: viewer?.name ?? 'no-name',
+      userRole: viewer?.role ?? 'no-role',
+      responseTime: `${responseTime}ms`,
+      totalPosts
     });
+
+    try {
+      await logApiCall('/api/community', 'GET', 200, responseTime, {
+        userId: viewer?.id ?? null,
+        userEmail: viewer?.email ?? null,
+        userName: viewer?.name ?? null,
+        userRole: viewer?.role ?? null,
+        ipAddress,
+        userAgent,
+        path: '/api/community',
+        metadata: {
+          sort,
+          limit,
+          page,
+          projectId,
+          authorId,
+          search,
+          categories: normalizedCategories,
+          totalPosts: total
+        }
+      });
+    } catch (logError) {
+      console.error('❌ [COMMUNITY API] 로깅 실패:', logError);
+    }
 
     return NextResponse.json(response, {
       headers: {

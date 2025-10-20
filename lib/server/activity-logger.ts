@@ -98,20 +98,18 @@ export async function logActivity(data: ActivityData): Promise<void> {
       }
     });
 
-    // 콘솔 로그 출력 (개발 환경에서만)
-    if (process.env.NODE_ENV === 'development') {
-      const userDisplay = data.context.userId 
-        ? `${data.context.userName || 'Unknown'} (${data.context.userEmail || data.context.userId}) [${data.context.userRole || 'Unknown Role'}]`
-        : 'Anonymous User';
-      
-      console.log(`📝 [ACTIVITY] ${data.activity}: ${data.description}`, {
-        user: userDisplay,
-        entity: data.entity,
-        entityId: data.entityId,
-        path: data.context.path,
-        sessionId: data.context.sessionId
-      });
-    }
+    // 콘솔 로그 출력 (모든 환경에서)
+    const userDisplay = data.context.userId 
+      ? `${data.context.userName || 'Unknown'} (${data.context.userEmail || data.context.userId}) [${data.context.userRole || 'Unknown Role'}]`
+      : 'Anonymous User';
+    
+    console.log(`📝 [ACTIVITY] ${data.activity}: ${data.description}`, {
+      user: userDisplay,
+      entity: data.entity,
+      entityId: data.entityId,
+      path: data.context.path,
+      sessionId: data.context.sessionId
+    });
   } catch (error) {
     console.error('Failed to log activity:', {
       activity: data.activity,
