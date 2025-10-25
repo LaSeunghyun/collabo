@@ -1,8 +1,9 @@
 ﻿'use client';
 
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { getAnalyticsOverview, VISIT_LOOKBACK_DAYS } from '@/lib/server/analytics';
+import { getAnalyticsOverview, VISIT_LOOKBACK_DAYS, UserInfo } from '@/lib/server/analytics';
 
 const numberFormatter = new Intl.NumberFormat('en-US');
 
@@ -14,6 +15,47 @@ const formatDateLabel = (iso: string) => {
   } catch {
     return iso;
   }
+};
+
+// 유저 목록을 표시하는 컴포넌트
+const UserListTooltip = ({ userList }: { userList: UserInfo[] }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  if (userList.length === 0) {
+    return <span className="text-white/70">유저 없음</span>;
+  }
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="text-white/70 hover:text-white transition-colors cursor-pointer"
+      >
+        유저 {userList.length}
+      </button>
+      {isOpen && (
+        <div className="absolute top-full left-0 mt-2 w-64 bg-white/10 border border-white/20 rounded-lg p-3 z-10 backdrop-blur-sm">
+          <div className="space-y-1 max-h-32 overflow-y-auto">
+            {userList.map((user, index) => (
+              <div key={index} className="text-xs text-white/80">
+                {user.type === 'registered' ? (
+                  <span className="text-green-400">{user.email}</span>
+                ) : (
+                  <span className="text-yellow-400">익명 유저 {user.displayNumber}</span>
+                )}
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={() => setIsOpen(false)}
+            className="absolute top-1 right-1 text-white/50 hover:text-white/80 text-xs"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+    </div>
+  );
 };
 
 interface AnalyticsOverviewSectionProps {
@@ -108,7 +150,7 @@ export function AnalyticsOverviewSection({ overview }: AnalyticsOverviewSectionP
                   <div className="flex items-center justify-between text-white/70">
                     <span>방문 {numberFormatter.format(day.visits)}</span>
                     <span>세션 {numberFormatter.format(day.uniqueSessions)}</span>
-                    <span>유저 {numberFormatter.format(day.uniqueUsers)}</span>
+                    <UserListTooltip userList={day.userList} />
                   </div>
                 </li>
               ))

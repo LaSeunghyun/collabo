@@ -15,6 +15,20 @@ interface VisitRecordInput {
   authorization?: string | null;
 }
 
+// 유저 정보 타입 정의
+export interface RegisteredUser {
+  type: 'registered';
+  email: string;
+}
+
+export interface AnonymousUser {
+  type: 'anonymous';
+  sessionId: string;
+  displayNumber: number;
+}
+
+export type UserInfo = RegisteredUser | AnonymousUser;
+
 export interface AnalyticsOverview {
   timestamp: string;
   totalVisits: number;
@@ -28,6 +42,7 @@ export interface AnalyticsOverview {
     visits: number;
     uniqueSessions: number;
     uniqueUsers: number;
+    userList: UserInfo[];  // 해당 날짜 방문한 유저 목록
   }>;
   signupTrend: Array<{
     date: string;
@@ -106,6 +121,7 @@ type VisitBucket = {
   visits: number;
   uniqueSessions: Set<string>;
   uniqueUsers: Set<string>;
+  userList: UserInfo[];
 };
 
 type SignupBucket = {
@@ -153,11 +169,24 @@ export const getAnalyticsOverview = async (): Promise<AnalyticsOverview> => {
     }).from(posts).where(gte(posts.createdAt, recentPostsSince.toISOString()))
   ]);
 
+  // 유저 이메일 정보를 가져오기 위한 추가 쿼리
+  const userIds = [...new Set(visitLogsData.filter(log => log.userId).map(log => log.userId!))];
+  const userEmails = userIds.length > 0 
+    ? await db.select({
+        id: users.id,
+        email: users.email
+      }).from(users).where(sql`${users.id} = ANY(${userIds})`)
+    : [];
+  
+  const userEmailMap = new Map(userEmails.map(user => [user.id, user.email]));
+
   const totalVisits = visitLogsData.length;
   const uniqueSessionSet = new Set<string>();
   const uniqueUserSet = new Set<string>();
 
   const dailyBuckets = new Map<string, VisitBucket>();
+  const sessionToAnonymousNumber = new Map<string, number>();
+  let anonymousCounter = 1;
 
   for (const log of visitLogsData) {
     const dateKey = todayKey(new Date(log.occurredAt));
@@ -165,7 +194,8 @@ export const getAnalyticsOverview = async (): Promise<AnalyticsOverview> => {
       date: dateKey,
       visits: 0,
       uniqueSessions: new Set<string>(),
-      uniqueUsers: new Set<string>()
+      uniqueUsers: new Set<string>(),
+      userList: []
     }));
 
     bucket.visits += 1;
@@ -175,6 +205,26 @@ export const getAnalyticsOverview = async (): Promise<AnalyticsOverview> => {
     if (log.userId) {
       bucket.uniqueUsers.add(log.userId);
       uniqueUserSet.add(log.userId);
+      
+      // 로그인 유저 정보 추가
+      const email = userEmailMap.get(log.userId);
+      if (email) {
+        bucket.userList.push({
+          type: 'registered',
+          email: email
+        });
+      }
+    } else {
+      // 익명 유저 처리
+      if (!sessionToAnonymousNumber.has(log.sessionId)) {
+        sessionToAnonymousNumber.set(log.sessionId, anonymousCounter++);
+      }
+      
+      bucket.userList.push({
+        type: 'anonymous',
+        sessionId: log.sessionId,
+        displayNumber: sessionToAnonymousNumber.get(log.sessionId)!
+      });
     }
   }
 
@@ -190,7 +240,8 @@ export const getAnalyticsOverview = async (): Promise<AnalyticsOverview> => {
       date: bucket.date,
       visits: bucket.visits,
       uniqueSessions: bucket.uniqueSessions.size,
-      uniqueUsers: bucket.uniqueUsers.size
+      uniqueUsers: bucket.uniqueUsers.size,
+      userList: bucket.userList
     }))
     .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
 
