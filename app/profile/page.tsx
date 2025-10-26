@@ -29,7 +29,7 @@ export default function ProfilePage() {
           setUserProfile(data);
         })
         .catch(err => {
-          console.error('Failed to fetch user profile:', err);
+          // Failed to fetch user profile - removed console.error for production
         })
         .finally(() => {
           setIsLoadingProfile(false);

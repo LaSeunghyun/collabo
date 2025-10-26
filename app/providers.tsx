@@ -91,7 +91,7 @@ function VisitLogger() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sessionId, path: pathname })
     }).catch((error) => {
-      console.warn('Failed to log analytics visit', error);
+      // Analytics visit logging failed - silently ignore
     });
   }, [pathname]);
 

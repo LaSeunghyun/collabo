@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 
 export default function Error({
@@ -10,16 +10,15 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const loggedRef = useRef(false);
+
   useEffect(() => {
-    // 에러를 로깅 서비스에 전송
-    console.error('Application error:', {
-      message: error.message,
-      stack: error.stack,
-      digest: error.digest,
-      timestamp: new Date().toISOString(),
-      userAgent: navigator.userAgent,
-      url: window.location.href
-    });
+    // 중복 로그 방지
+    if (loggedRef.current) return;
+    loggedRef.current = true;
+
+    // 에러는 서버 로그에만 기록 (프론트엔드 콘솔 로그 제거)
+    // 필요시 서버 API로 에러 로그 전송 가능
   }, [error]);
 
   return (
@@ -56,6 +55,11 @@ export default function Error({
               {error.stack && `\n\n${error.stack}`}
             </pre>
           </details>
+        )}
+        {process.env.NODE_ENV === 'production' && error.digest && (
+          <div className="mt-4 text-xs text-white/50">
+            에러 ID: {error.digest}
+          </div>
         )}
       </div>
     </div>

@@ -58,7 +58,7 @@ export async function PartnerApprovalSection() {
       </section>
     );
   } catch (error) {
-    console.error('Failed to load partners awaiting approval', error);
+    // Failed to load partners awaiting approval - removed console.error for production
     return (
       <section
         id="partner-approvals"

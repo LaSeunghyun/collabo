@@ -10,7 +10,23 @@ import { SettlementQueueSection } from './_components/settlement-queue-section';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminDashboardPage() {
-  const overview = await getAnalyticsOverview();
+  let overview;
+
+  try {
+    overview = await getAnalyticsOverview();
+  } catch (error) {
+    // 데이터베이스 연결 실패 시 빈 데이터로 fallback
+    console.error('Failed to load analytics overview:', error);
+    overview = {
+      timestamp: new Date().toISOString(),
+      totalVisits: 0,
+      uniqueSessions: 0,
+      uniqueUsers: 0,
+      activeUsers: 0,
+      dailyVisits: [],
+      signupTrend: []
+    };
+  }
 
   return (
     <div className="space-y-10">

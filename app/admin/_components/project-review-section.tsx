@@ -51,7 +51,7 @@ export async function ProjectReviewSection() {
       </section>
     );
   } catch (error) {
-    console.error('Failed to load projects pending review', error);
+    // Failed to load projects pending review - removed console.error for production
     return (
       <section
         id="project-review"

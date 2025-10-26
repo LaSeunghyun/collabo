@@ -62,7 +62,7 @@ export async function SettlementQueueSection() {
       </section>
     );
   } catch (error) {
-    console.error('Failed to load settlement queue', error);
+    // Failed to load settlement queue - removed console.error for production
     return (
       <section
         id="settlements"

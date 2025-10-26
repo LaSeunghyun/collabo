@@ -37,7 +37,7 @@ export function FollowButton({ artistId, initialIsFollowing, isAuthenticated, on
         onFollowerChange(json.followerCount);
       }
     } catch (error) {
-      console.error('Failed to toggle follow state', error);
+      // Failed to toggle follow state - removed console.error for production
     } finally {
       setIsSubmitting(false);
     }
@@ -51,11 +51,10 @@ export function FollowButton({ artistId, initialIsFollowing, isAuthenticated, on
       onClick={handleToggle}
       disabled={isSubmitting}
       aria-pressed={isFollowing}
-      className={`inline-flex items-center gap-2 rounded-full border px-5 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-60 ${
-        isFollowing
+      className={`inline-flex items-center gap-2 rounded-full border px-5 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-60 ${isFollowing
           ? 'border-white/40 bg-white/10 text-white hover:bg-white/20'
           : 'border-primary bg-primary text-primary-foreground hover:bg-primary/90'
-      }`}
+        }`}
     >
       {isSubmitting ? t('artist.actions.processing') : label}
     </button>

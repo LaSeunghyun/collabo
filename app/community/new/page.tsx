@@ -129,7 +129,7 @@ function CommunityNewPostForm() {
       }
     },
     onError: (error: Error) => {
-      console.error('Failed to create post:', error);
+      // Failed to create post - removed console.error for production
       setError(error.message || t('community.postErrorMessage') || '게시글 작성에 실패했습니다.');
     }
   });

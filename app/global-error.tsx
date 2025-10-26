@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 export default function GlobalError({
   error,
@@ -8,16 +8,15 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const loggedRef = useRef(false);
+
   useEffect(() => {
-    // 글로벌 에러를 로깅 서비스에 전송
-    console.error('Global application error:', {
-      message: error.message,
-      stack: error.stack,
-      digest: error.digest,
-      timestamp: new Date().toISOString(),
-      userAgent: typeof window !== 'undefined' ? navigator.userAgent : 'Server',
-      url: typeof window !== 'undefined' ? window.location.href : 'Server'
-    });
+    // 중복 로그 방지
+    if (loggedRef.current) return;
+    loggedRef.current = true;
+
+    // 글로벌 에러는 서버 로그에만 기록 (프론트엔드 콘솔 로그 제거)
+    // 필요시 서버 API로 에러 로그 전송 가능
   }, [error]);
 
   return (
