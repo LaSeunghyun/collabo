@@ -1,5 +1,5 @@
 ﻿import { createHash, randomUUID } from 'crypto';
-import { gte, sql } from 'drizzle-orm';
+import { gte, sql, inArray } from 'drizzle-orm';
 
 import { getDbClient } from '@/lib/db/client';
 import { visitLogs, users, posts } from '@/lib/db/schema';
@@ -175,7 +175,7 @@ export const getAnalyticsOverview = async (): Promise<AnalyticsOverview> => {
     ? await db.select({
         id: users.id,
         email: users.email
-      }).from(users).where(sql`${users.id} = ANY(${userIds})`)
+      }).from(users).where(inArray(users.id, userIds))
     : [];
   
   const userEmailMap = new Map(userEmails.map(user => [user.id, user.email]));
@@ -183,6 +183,9 @@ export const getAnalyticsOverview = async (): Promise<AnalyticsOverview> => {
   const totalVisits = visitLogsData.length;
   const uniqueSessionSet = new Set<string>();
   const uniqueUserSet = new Set<string>();
+  
+  // 세션별 userId 추적 (중복 카운트 방지)
+  const sessionToUser = new Map<string, string | null>();
 
   const dailyBuckets = new Map<string, VisitBucket>();
   const sessionToAnonymousNumber = new Map<string, number>();
@@ -199,8 +202,20 @@ export const getAnalyticsOverview = async (): Promise<AnalyticsOverview> => {
     }));
 
     bucket.visits += 1;
-    bucket.uniqueSessions.add(log.sessionId);
-    uniqueSessionSet.add(log.sessionId);
+    
+    // 세션이 처음 나타날 때만 카운트 (중복 방지)
+    if (!uniqueSessionSet.has(log.sessionId)) {
+      uniqueSessionSet.add(log.sessionId);
+      bucket.uniqueSessions.add(log.sessionId);
+    }
+    
+    // userId 추적 (나중에 로그인한 경우를 위해)
+    const prevUserId = sessionToUser.get(log.sessionId);
+    if (log.userId) {
+      sessionToUser.set(log.sessionId, log.userId);
+    } else if (prevUserId === undefined) {
+      sessionToUser.set(log.sessionId, null);
+    }
 
     if (log.userId) {
       bucket.uniqueUsers.add(log.userId);
@@ -281,8 +296,8 @@ export const getAnalyticsOverview = async (): Promise<AnalyticsOverview> => {
     uniqueSessions: uniqueSessionSet.size,
     uniqueUsers: uniqueUserSet.size,
     activeUsers: activeUserSet.size,
-    recentSignups,
-    recentPosts,
+    recentSignups: Number(recentSignups) || 0,
+    recentPosts: Number(recentPosts) || 0,
     dailyVisits,
     signupTrend,
     dailySignups: signupTrend,
