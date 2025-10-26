@@ -260,7 +260,7 @@ export const getAnalyticsOverview = async (): Promise<AnalyticsOverview> => {
       uniqueUsers: bucket.uniqueUsers.size,
       userList: bucket.userList
     }))
-    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+    .sort((a, b) => (a.date > b.date ? -1 : a.date < b.date ? 1 : 0)); // 최신 날짜순 정렬
 
   const signupBuckets = new Map<string, SignupBucket>();
   for (const user of recentUsersData) {
@@ -270,7 +270,7 @@ export const getAnalyticsOverview = async (): Promise<AnalyticsOverview> => {
   }
 
   const signupTrend = Array.from(signupBuckets.values()).sort((a, b) =>
-    a.date < b.date ? -1 : a.date > b.date ? 1 : 0
+    a.date > b.date ? -1 : a.date < b.date ? 1 : 0 // 최신 날짜순 정렬
   );
 
   // 일별 게시글 집계
@@ -282,7 +282,7 @@ export const getAnalyticsOverview = async (): Promise<AnalyticsOverview> => {
 
   const dailyPosts = Array.from(postBuckets.entries())
     .map(([date, posts]) => ({ date, posts }))
-    .sort((a, b) => a.date.localeCompare(b.date));
+    .sort((a, b) => b.date.localeCompare(a.date)); // 최신 날짜순 정렬
 
   // 최근 7일 회원가입 합계
   const recentSignups = signupTrend
