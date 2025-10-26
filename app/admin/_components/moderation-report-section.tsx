@@ -139,7 +139,7 @@ export async function ModerationReportSection() {
     </section>
   );
   } catch (error) {
-    console.error('신고 목록 로드 실패:', error);
+    // 신고 목록 로드 실패 - 프로덕션용 콘솔 로그 제거
     return (
       <section
         id="moderation"
