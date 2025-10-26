@@ -34,14 +34,20 @@ const UserListTooltip = ({ userList }: { userList: UserInfo[] }) => {
         유저 {userList.length}
       </button>
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 w-64 bg-white/10 border border-white/20 rounded-lg p-3 z-10 backdrop-blur-sm">
-          <div className="space-y-1 max-h-32 overflow-y-auto">
+        <div className="absolute top-full left-0 mt-2 w-80 bg-white/10 border border-white/20 rounded-lg p-3 z-10 backdrop-blur-sm">
+          <div className="space-y-2 max-h-64 overflow-y-auto">
             {userList.map((user, index) => (
               <div key={index} className="text-xs text-white/80">
                 {user.type === 'registered' ? (
-                  <span className="text-green-400">{user.email}</span>
+                  <div>
+                    <div className="text-green-400 font-medium">{user.email}</div>
+                    <div className="text-white/50 mt-0.5">ID: {user.userId.slice(0, 20)}...</div>
+                  </div>
                 ) : (
-                  <span className="text-yellow-400">익명 유저 {user.displayNumber}</span>
+                  <div>
+                    <div className="text-yellow-400">익명 유저 {user.displayNumber}</div>
+                    <div className="text-white/50 mt-0.5">세션: {user.sessionId.slice(0, 20)}...</div>
+                  </div>
                 )}
               </div>
             ))}
@@ -147,9 +153,10 @@ export function AnalyticsOverviewSection({ overview }: AnalyticsOverviewSectionP
                   className="grid grid-cols-[80px_1fr] items-center gap-3 rounded-xl border border-white/10 bg-white/[0.06] p-3"
                 >
                   <span className="font-semibold text-white">{formatDateLabel(day.date)}</span>
-                  <div className="flex items-center justify-between text-white/70">
+                  <div className="flex items-center justify-between text-white/70 text-xs">
                     <span>방문 {numberFormatter.format(day.visits)}</span>
                     <span>세션 {numberFormatter.format(day.uniqueSessions)}</span>
+                    <span>유저 {numberFormatter.format(day.uniqueUsers)}</span>
                     <UserListTooltip userList={day.userList} />
                   </div>
                 </li>

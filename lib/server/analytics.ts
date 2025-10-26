@@ -18,6 +18,7 @@ interface VisitRecordInput {
 // 유저 정보 타입 정의
 export interface RegisteredUser {
   type: 'registered';
+  userId: string;
   email: string;
 }
 
@@ -226,6 +227,7 @@ export const getAnalyticsOverview = async (): Promise<AnalyticsOverview> => {
       if (email) {
         bucket.userList.push({
           type: 'registered',
+          userId: log.userId,
           email: email
         });
       }
