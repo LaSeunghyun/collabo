@@ -39,12 +39,7 @@ export const getCommunityPostCount = cache(async (): Promise<number> => {
       .select({ value: sql<number>`count(*)` })
       .from(posts)
       .where(
-        and(
-          eq(posts.status, 'PUBLISHED'),
-          // 공개 여부 컬럼이 존재할 시 PUBLIC만 포함. nullable 대비 isNotNull로 가드 후 비교
-          // visibility가 없거나 null이어도 포함되도록 조건을 완화하려면 아래 줄을 제거하세요.
-          eq(posts.visibility, 'PUBLIC')
-        )
+        eq(posts.visibility, 'PUBLIC')
       );
 
     return Number(row?.value ?? 0);

@@ -8,7 +8,6 @@ import { ArrowLeft, Flag, Heart, Loader2, MessageCircle, MinusCircle, UserCircle
 import { useTranslation } from 'react-i18next';
 import { signIn, useSession } from 'next-auth/react';
 import clsx from 'clsx';
-
 import type { CommunityComment, CommunityFeedResponse, CommunityPost } from '@/lib/data/community';
 
 function useCommunityPost(postId: string) {

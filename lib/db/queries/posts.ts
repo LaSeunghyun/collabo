@@ -14,7 +14,6 @@ export async function getPublishedPosts(limit: number = 10): Promise<PostWithAut
       title: posts.title,
       content: posts.content,
       type: posts.type,
-      status: posts.status,
       visibility: posts.visibility,
       attachments: posts.attachments,
       milestoneId: posts.milestoneId,
@@ -44,7 +43,7 @@ export async function getPublishedPosts(limit: number = 10): Promise<PostWithAut
     })
     .from(posts)
     .innerJoin(users, eq(posts.authorId, users.id))
-    .where(eq(posts.status, 'PUBLISHED'))
+    .where(eq(posts.visibility, 'PUBLIC'))
     .orderBy(desc(posts.createdAt))
     .limit(limit);
 
@@ -92,7 +91,6 @@ export async function getTrendingPosts(limit: number = 5): Promise<PostWithAutho
       title: posts.title,
       content: posts.content,
       type: posts.type,
-      status: posts.status,
       visibility: posts.visibility,
       attachments: posts.attachments,
       milestoneId: posts.milestoneId,
@@ -124,7 +122,6 @@ export async function getTrendingPosts(limit: number = 5): Promise<PostWithAutho
     .innerJoin(users, eq(posts.authorId, users.id))
     .where(
       and(
-        eq(posts.status, 'PUBLISHED'),
         lte(posts.createdAt, now.toISOString()),
         lte(posts.createdAt, threeDaysAgo.toISOString())
       )
@@ -186,7 +183,6 @@ export async function getPostById(id: string): Promise<PostWithAuthor | null> {
       title: posts.title,
       content: posts.content,
       type: posts.type,
-      status: posts.status,
       visibility: posts.visibility,
       attachments: posts.attachments,
       milestoneId: posts.milestoneId,

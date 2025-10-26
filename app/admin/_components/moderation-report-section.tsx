@@ -2,7 +2,7 @@ import { moderationStatus, moderationTargetType } from '@/drizzle/schema';
 
 type ModerationStatusValue = typeof moderationStatus.enumValues[number];
 type ModerationTargetTypeValue = typeof moderationTargetType.enumValues[number];
-import { getModerationStats, getOpenModerationReports } from '@/lib/server/moderation';
+import { getModerationStats, getOpenModerationReports, ModerationReportSummary } from '@/lib/server/moderation';
 import Link from 'next/link';
 
 const statusLabels: Record<ModerationStatusValue, string> = {
@@ -17,7 +17,7 @@ const targetLabels: Record<ModerationTargetTypeValue, string> = {
   'COMMENT': '댓글'
 };
 
-const getTargetLabel = (type: string) => targetLabels[type];
+const getTargetLabel = (type: ModerationTargetTypeValue) => targetLabels[type];
 
 const dateFormatter = new Intl.DateTimeFormat('ko-KR', {
   dateStyle: 'medium',
@@ -102,17 +102,17 @@ export async function ModerationReportSection() {
         <h3 className="text-sm font-semibold text-white mb-4">최근 신고</h3>
         {reports.length > 0 ? (
           <ul className="space-y-3">
-            {reports.map((report: any) => (
+            {reports.map((report: ModerationReportSummary) => (
               <li
                 key={report.id}
                 className="flex items-start justify-between rounded-xl border border-white/5 bg-white/5 px-4 py-3"
               >
                 <div className="pr-4 flex-1">
                   <p className="text-sm font-medium text-white">
-                    {getTargetLabel(report.targetType)} #{report.targetId}
+                    {getTargetLabel(report.targetType as ModerationTargetTypeValue)} #{report.targetId}
                   </p>
                   <p className="mt-1 text-xs text-white/60">
-                    제출일 {dateFormatter.format(report.createdAt)}
+                    제출일 {dateFormatter.format(new Date(report.createdAt))}
                     {report.reporter ? (
                       <span className="whitespace-nowrap">
                         {' | 신고자 '}
@@ -125,7 +125,7 @@ export async function ModerationReportSection() {
                   ) : null}
                 </div>
                 <span className="shrink-0 rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-white/80">
-                  {statusLabels[report.status]}
+                  {statusLabels[report.status as ModerationStatusValue]}
                 </span>
               </li>
             ))}
