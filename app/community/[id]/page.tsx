@@ -50,7 +50,7 @@ export default function CommunityPostDetailPage() {
 
   // 세션 상태 디버깅
   useEffect(() => {
-    console.log('Session status:', { status, isAuthenticated });
+    // Session status monitoring - removed console.log for production
   }, [status, isAuthenticated]);
 
   const { data: post, isLoading, isError } = useCommunityPost(postId);
@@ -226,7 +226,7 @@ export default function CommunityPostDetailPage() {
 
   const reportMutation = useMutation({
     mutationFn: async ({ reporterId, reason }: { reporterId: string; reason: string }) => {
-      console.log('Sending report request:', { reporterId, reason, postId });
+      // Sending report request - removed console.log for production
 
       const res = await fetch(`/api/community/${postId}/report`, {
         method: 'POST',
@@ -234,11 +234,11 @@ export default function CommunityPostDetailPage() {
         body: JSON.stringify({ reporterId, reason })
       });
 
-      console.log('Report response status:', res.status);
+      // Report response status - removed console.log for production
 
       if (!res.ok) {
         const payload = await res.json().catch(() => null);
-        console.log('Report error payload:', payload);
+        // Report error payload - removed console.log for production
         const message = resolveReportErrorMessage(payload?.message);
         const error = new Error(message);
         (error as any).details = payload?.details;
@@ -253,7 +253,7 @@ export default function CommunityPostDetailPage() {
       void queryClient.invalidateQueries({ queryKey: ['community', 'detail', postId] });
     },
     onError: (error) => {
-      console.error('Failed to submit report', error);
+      // Failed to submit report - removed console.error for production
       const message =
         error instanceof Error
           ? resolveReportErrorMessage(error.message)
@@ -292,14 +292,10 @@ export default function CommunityPostDetailPage() {
       return;
     }
 
-    console.log('Report submit attempt:', {
-      isAuthenticated,
-      userId: session?.user?.id,
-      session: session
-    });
+    // Report submit attempt - removed console.log for production
 
     if (!isAuthenticated || !session?.user?.id) {
-      console.log('Authentication check failed:', { isAuthenticated, userId: session?.user?.id });
+      // Authentication check failed - removed console.log for production
       setReportError(t('community.detail.reportAuthRequired'));
       redirectToSignIn();
       return;
@@ -307,7 +303,7 @@ export default function CommunityPostDetailPage() {
 
     // 사용자 ID 유효성 검사
     if (typeof session.user.id !== 'string' || session.user.id.trim() === '') {
-      console.log('Invalid user ID:', session.user.id);
+      // Invalid user ID - removed console.log for production
       setReportError(t('community.detail.reportUserNotFound'));
       return;
     }

@@ -62,7 +62,7 @@ export function ReportDetailModal({
         setReports(data.reports);
       }
     } catch (error) {
-      console.error('Failed to fetch post details:', error);
+      // Failed to fetch post details - removed console.error for production
     } finally {
       setLoading(false);
     }
@@ -94,10 +94,10 @@ export function ReportDetailModal({
         onStatusUpdate();
         onClose();
       } else {
-        console.error('Failed to update status');
+        // Failed to update status - removed console.error for production
       }
     } catch (error) {
-      console.error('Failed to update status:', error);
+      // Failed to update status - removed console.error for production
     } finally {
       setProcessing(false);
       setSelectedReportId(null);

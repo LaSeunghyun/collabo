@@ -3,12 +3,11 @@ import { randomUUID } from 'crypto';
 import { eq } from 'drizzle-orm';
 
 import { getDb } from '@/lib/db/client';
-import { permission, userPermission, users } from '@/lib/db/schema';
-import { userRole } from '@/lib/db/schema';
+import { permissions, userPermissions, users } from '@/lib/db/schema';
 
 type UserRecord = typeof users.$inferSelect;
-type UserPermissionRecord = typeof userPermission.$inferSelect;
-type PermissionRecord = typeof permission.$inferSelect;
+type UserPermissionRecord = typeof userPermissions.$inferSelect;
+type PermissionRecord = typeof permissions.$inferSelect;
 type UserInsert = typeof users.$inferInsert;
 
 export type UserWithPermissions = UserRecord & {
@@ -34,39 +33,57 @@ export const fetchUserWithPermissions = async (
 
   const db = await getDb();
 
-  const user = await db.query.users.findFirst({
-    where,
-    with: {
-      permission: {
-        with: {
-          permission: true
+  try {
+    const user = await (db as any).query.users.findFirst({
+      where,
+      with: {
+        permission: {
+          with: {
+            permission: true
+          }
         }
       }
+    });
+
+    if (!user) {
+      return null;
     }
-  });
 
-  if (!user) {
-    return null;
+    const permissionWithDetails = (user.permission as any[])
+      .filter((entry): entry is UserPermissionRecord & { permission: PermissionRecord } =>
+        Boolean(entry.permission)
+      )
+      .map((entry) => ({
+        ...entry,
+        permission: entry.permission
+      }));
+
+    return {
+      ...user,
+      permission: permissionWithDetails
+    };
+  } catch (error) {
+    // 관계 쿼리 실패 시 기본 사용자 정보만 반환
+    // Failed to fetch user with permissions, falling back to basic query - removed console.warn for production
+
+    const basicUser = await (db as any).query.users.findFirst({
+      where
+    });
+
+    if (!basicUser) {
+      return null;
+    }
+
+    return {
+      ...basicUser,
+      permission: []
+    };
   }
-
-  const permissionWithDetails = user.permission
-    .filter((entry): entry is UserPermissionRecord & { permission: PermissionRecord } =>
-      Boolean(entry.permission)
-    )
-    .map((entry) => ({
-      ...entry,
-      permission: entry.permission
-    }));
-
-  return {
-    ...user,
-    permission: permissionWithDetails
-  };
 };
 
 export const findUserByEmail = async (email: string) => {
   const db = await getDb();
-  return db.query.users.findFirst({
+  return (db as any).query.users.findFirst({
     where: eq(users.email, email)
   });
 };

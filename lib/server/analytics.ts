@@ -103,87 +103,102 @@ const ensureDayBucket = <T extends { date: string }>(
 };
 
 export const getAnalyticsOverview = async (): Promise<AnalyticsOverview> => {
-  const now = new Date();
-  const visitSince = new Date(now);
-  visitSince.setDate(visitSince.getDate() - VISIT_LOOKBACK_DAYS);
+  try {
+    const now = new Date();
+    const visitSince = new Date(now);
+    visitSince.setDate(visitSince.getDate() - VISIT_LOOKBACK_DAYS);
 
-  const signupSince = new Date(now);
-  signupSince.setDate(signupSince.getDate() - SIGNUP_LOOKBACK_DAYS);
+    const signupSince = new Date(now);
+    signupSince.setDate(signupSince.getDate() - SIGNUP_LOOKBACK_DAYS);
 
-  const activeSince = new Date(now);
-  activeSince.setDate(activeSince.getDate() - ACTIVE_USER_WINDOW_DAYS);
+    const activeSince = new Date(now);
+    activeSince.setDate(activeSince.getDate() - ACTIVE_USER_WINDOW_DAYS);
 
-  const db = await getDbClient();
-  const [visitLogsData, recentUsersData] = await Promise.all([
-    db.select({
-      occurredAt: visitLogs.occurredAt,
-      sessionId: visitLogs.sessionId,
-      userId: visitLogs.userId
-    }).from(visitLogs).where(gte(visitLogs.occurredAt, visitSince.toISOString())),
-    db.select({
-      createdAt: users.createdAt
-    }).from(users).where(gte(users.createdAt, signupSince.toISOString()))
-  ]);
+    const db = await getDbClient();
+    const [visitLogsData, recentUsersData] = await Promise.all([
+      db.select({
+        occurredAt: visitLogs.occurredAt,
+        sessionId: visitLogs.sessionId,
+        userId: visitLogs.userId
+      }).from(visitLogs).where(gte(visitLogs.occurredAt, visitSince.toISOString())),
+      db.select({
+        createdAt: users.createdAt
+      }).from(users).where(gte(users.createdAt, signupSince.toISOString()))
+    ]);
 
-  const totalVisits = visitLogsData.length;
-  const uniqueSessionSet = new Set<string>();
-  const uniqueUserSet = new Set<string>();
+    const totalVisits = visitLogsData.length;
+    const uniqueSessionSet = new Set<string>();
+    const uniqueUserSet = new Set<string>();
 
-  const dailyBuckets = new Map<string, VisitBucket>();
+    const dailyBuckets = new Map<string, VisitBucket>();
 
-  for (const log of visitLogsData) {
-    const dateKey = todayKey(new Date(log.occurredAt));
-    const bucket = ensureDayBucket(dailyBuckets, dateKey, () => ({
-      date: dateKey,
-      visits: 0,
-      uniqueSessions: new Set<string>(),
-      uniqueUsers: new Set<string>()
-    }));
+    for (const log of visitLogsData) {
+      const dateKey = todayKey(new Date(log.occurredAt));
+      const bucket = ensureDayBucket(dailyBuckets, dateKey, () => ({
+        date: dateKey,
+        visits: 0,
+        uniqueSessions: new Set<string>(),
+        uniqueUsers: new Set<string>()
+      }));
 
-    bucket.visits += 1;
-    bucket.uniqueSessions.add(log.sessionId);
-    uniqueSessionSet.add(log.sessionId);
+      bucket.visits += 1;
+      bucket.uniqueSessions.add(log.sessionId);
+      uniqueSessionSet.add(log.sessionId);
 
-    if (log.userId) {
-      bucket.uniqueUsers.add(log.userId);
-      uniqueUserSet.add(log.userId);
+      if (log.userId) {
+        bucket.uniqueUsers.add(log.userId);
+        uniqueUserSet.add(log.userId);
+      }
     }
-  }
 
-  const activeUserSet = new Set<string>();
-  for (const log of visitLogsData) {
-    if (log.userId && new Date(log.occurredAt) >= activeSince) {
-      activeUserSet.add(log.userId);
+    const activeUserSet = new Set<string>();
+    for (const log of visitLogsData) {
+      if (log.userId && new Date(log.occurredAt) >= activeSince) {
+        activeUserSet.add(log.userId);
+      }
     }
+
+    const dailyVisits = Array.from(dailyBuckets.values())
+      .map((bucket) => ({
+        date: bucket.date,
+        visits: bucket.visits,
+        uniqueSessions: bucket.uniqueSessions.size,
+        uniqueUsers: bucket.uniqueUsers.size
+      }))
+      .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+
+    const signupBuckets = new Map<string, SignupBucket>();
+    for (const user of recentUsersData) {
+      const dateKey = todayKey(new Date(user.createdAt));
+      const bucket = ensureDayBucket(signupBuckets, dateKey, () => ({ date: dateKey, signups: 0 }));
+      bucket.signups += 1;
+    }
+
+    const signupTrend = Array.from(signupBuckets.values()).sort((a, b) =>
+      a.date < b.date ? -1 : a.date > b.date ? 1 : 0
+    );
+
+    return {
+      timestamp: now.toISOString(),
+      totalVisits,
+      uniqueSessions: uniqueSessionSet.size,
+      uniqueUsers: uniqueUserSet.size,
+      activeUsers: activeUserSet.size,
+      dailyVisits,
+      signupTrend
+    };
+  } catch (error) {
+    // 데이터베이스 연결 실패 시 기본값 반환
+    console.error('Failed to get analytics overview:', error);
+    const now = new Date();
+    return {
+      timestamp: now.toISOString(),
+      totalVisits: 0,
+      uniqueSessions: 0,
+      uniqueUsers: 0,
+      activeUsers: 0,
+      dailyVisits: [],
+      signupTrend: []
+    };
   }
-
-  const dailyVisits = Array.from(dailyBuckets.values())
-    .map((bucket) => ({
-      date: bucket.date,
-      visits: bucket.visits,
-      uniqueSessions: bucket.uniqueSessions.size,
-      uniqueUsers: bucket.uniqueUsers.size
-    }))
-    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
-
-  const signupBuckets = new Map<string, SignupBucket>();
-  for (const user of recentUsersData) {
-    const dateKey = todayKey(new Date(user.createdAt));
-    const bucket = ensureDayBucket(signupBuckets, dateKey, () => ({ date: dateKey, signups: 0 }));
-    bucket.signups += 1;
-  }
-
-  const signupTrend = Array.from(signupBuckets.values()).sort((a, b) =>
-    a.date < b.date ? -1 : a.date > b.date ? 1 : 0
-  );
-
-  return {
-    timestamp: now.toISOString(),
-    totalVisits,
-    uniqueSessions: uniqueSessionSet.size,
-    uniqueUsers: uniqueUserSet.size,
-    activeUsers: activeUserSet.size,
-    dailyVisits,
-    signupTrend
-  };
 };

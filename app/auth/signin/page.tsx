@@ -61,7 +61,7 @@ export default function SignInPage() {
         router.push('/');
       }
     } catch (error) {
-      console.error(error);
+      // Login error - removed console.error for production
       setError('로그인 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
