@@ -11,6 +11,7 @@ const navigationAnchors = [
   { href: '/admin', label: '대시보드' },
   { href: '/admin/projects', label: '프로젝트 검수' },
   { href: '/admin/partners', label: '파트너 승인' },
+  { href: '/admin/users', label: '유저 관리' },
   { href: '/admin/reports', label: '신고 관리' },
   { href: '/admin/settlements', label: '정산 관리' }
 ];
