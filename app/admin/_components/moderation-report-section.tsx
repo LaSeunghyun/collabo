@@ -19,10 +19,20 @@ const targetLabels: Record<ModerationTargetTypeValue, string> = {
 
 const getTargetLabel = (type: ModerationTargetTypeValue) => targetLabels[type];
 
-const dateFormatter = new Intl.DateTimeFormat('ko-KR', {
-  dateStyle: 'medium',
-  timeStyle: 'short'
-});
+const formatDate = (date: Date | string) => {
+  try {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(dateObj.getTime())) {
+      return new Date().toLocaleString('ko-KR');
+    }
+    return new Intl.DateTimeFormat('ko-KR', {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    }).format(dateObj);
+  } catch {
+    return new Date().toLocaleString('ko-KR');
+  }
+};
 
 export async function ModerationReportSection() {
   try {
@@ -112,7 +122,7 @@ export async function ModerationReportSection() {
                     {getTargetLabel(report.targetType as ModerationTargetTypeValue)} #{report.targetId}
                   </p>
                   <p className="mt-1 text-xs text-white/60">
-                    제출일 {dateFormatter.format(new Date(report.createdAt))}
+                    제출일 {formatDate(report.createdAt)}
                     {report.reporter ? (
                       <span className="whitespace-nowrap">
                         {' | 신고자 '}

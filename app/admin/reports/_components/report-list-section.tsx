@@ -59,11 +59,20 @@ export function ReportListSection({ reports }: ReportListSectionProps) {
     return true;
   });
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('ko-KR', {
-      dateStyle: 'medium',
-      timeStyle: 'short'
-    }).format(date);
+  const formatDate = (date: Date | string) => {
+    if (typeof window === 'undefined') return date.toString();
+    try {
+      const dateObj = typeof date === 'string' ? new Date(date) : date;
+      if (isNaN(dateObj.getTime())) {
+        return date.toString();
+      }
+      return new Intl.DateTimeFormat('ko-KR', {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+      }).format(dateObj);
+    } catch {
+      return date.toString();
+    }
   };
 
   const handleViewDetails = (postId: string) => {
