@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { ProjectCard } from '@/components/ui/cards/project-card';
@@ -20,6 +20,10 @@ export function ProjectFilterPanel() {
     queryFn: fetchProjects,
     staleTime: 1000 * 60
   });
+
+  const handleRefetch = useCallback(() => {
+    void refetch();
+  }, [refetch]);
 
   const filtered = useMemo(() => {
     let items = [...data];
@@ -65,7 +69,7 @@ export function ProjectFilterPanel() {
         <p>프로젝트 목록을 불러오는 중 문제가 발생했습니다.</p>
         <button
           type="button"
-          onClick={() => refetch()}
+          onClick={handleRefetch}
           className="mt-4 inline-flex items-center rounded-full border border-red-400/40 px-4 py-2 text-xs font-semibold text-red-100 transition hover:border-red-300/60 hover:text-red-50"
         >
           다시 시도

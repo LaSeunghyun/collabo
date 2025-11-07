@@ -1,11 +1,21 @@
+import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 
-import { FundingDialog } from '@/components/ui/dialogs/funding-dialog';
-import { ProjectDetailTabs } from '@/components/ui/sections/project-detail-tabs';
 import { getServerAuthSession } from '@/lib/auth/session';
 import { getProjectSummaryById } from '@/lib/server/projects';
 import { UserRole } from '@/types/prisma';
+
+// 대형 컴포넌트들을 동적 import로 코드 스플리팅
+const FundingDialog = dynamic(
+  () => import('@/components/ui/dialogs/funding-dialog').then(mod => ({ default: mod.FundingDialog })),
+  { ssr: true }
+);
+
+const ProjectDetailTabs = dynamic(
+  () => import('@/components/ui/sections/project-detail-tabs').then(mod => ({ default: mod.ProjectDetailTabs })),
+  { ssr: true }
+);
 
 interface ProjectPageProps {
   params: { id: string };

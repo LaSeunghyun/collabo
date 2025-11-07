@@ -1,10 +1,20 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useTranslation } from 'react-i18next';
 
-import { CategoryFilter } from '@/components/ui/sections/category-filter';
-import { ProjectFilterPanel } from '@/components/ui/sections/project-filter-panel';
 import { SectionHeader } from '@/components/ui/headers/section-header';
+
+// 대형 컴포넌트들을 동적 import로 코드 스플리팅
+const CategoryFilter = dynamic(
+  () => import('@/components/ui/sections/category-filter').then(mod => ({ default: mod.CategoryFilter })),
+  { ssr: true }
+);
+
+const ProjectFilterPanel = dynamic(
+  () => import('@/components/ui/sections/project-filter-panel').then(mod => ({ default: mod.ProjectFilterPanel })),
+  { ssr: true }
+);
 
 export default function ProjectsPage() {
   const { t } = useTranslation();

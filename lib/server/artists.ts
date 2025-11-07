@@ -3,6 +3,7 @@ import { eq, and, count, inArray } from 'drizzle-orm';
 
 import type { SessionUser } from '@/lib/auth/session';
 import { getDb } from '@/lib/db/client';
+import { Logger } from '@/lib/utils/logger';
 import { 
   users, 
   posts, 
@@ -127,7 +128,10 @@ const fetchArtistEvents = async (artistId: string): Promise<ArtistEventSummary[]
       url: null
     } satisfies ArtistEventSummary));
   } catch (error) {
-    console.warn('Failed to fetch artist events:', error);
+    Logger.warn('Failed to fetch artist events', {
+      operation: 'fetch_artist_events',
+      artistId
+    });
     return [];
   }
 };
@@ -163,7 +167,10 @@ const fetchArtistUpdates = async (artistId: string): Promise<ArtistProjectUpdate
       projectTitle: update.projectTitle ?? null
     } satisfies ArtistProjectUpdate));
   } catch (error) {
-    console.warn('Failed to fetch artist updates:', error);
+    Logger.warn('Failed to fetch artist updates', {
+      operation: 'fetch_artist_updates',
+      artistId
+    });
     return [];
   }
 };
@@ -193,7 +200,10 @@ const fetchArtistStats = async (artistId: string) => {
       totalBackers
     };
   } catch (error) {
-    console.warn('Failed to fetch artist stats:', error);
+    Logger.warn('Failed to fetch artist stats', {
+      operation: 'fetch_artist_stats',
+      artistId
+    });
     return {
       followerCount: 0,
       projectCount: 0,
@@ -220,7 +230,11 @@ const fetchIsFollowing = async (artistId: string, viewer?: SessionUser | null) =
 
     return Boolean(follow[0]);
   } catch (error) {
-    console.warn('Failed to check follow status:', error);
+    Logger.warn('Failed to check follow status', {
+      operation: 'check_follow_status',
+      artistId,
+      viewerId: viewer?.id
+    });
     return false;
   }
 };
@@ -270,7 +284,11 @@ export const getArtistProfile = cache(async (artistId: string, viewer?: SessionU
       createdAt: artist.createdAt
     } satisfies ArtistProfile;
   } catch (error) {
-    console.error('Failed to get artist profile:', error);
+    Logger.errorOccurred(
+      error instanceof Error ? error : new Error('Failed to get artist profile'),
+      'getArtistProfile',
+      { operation: 'get_artist_profile', artistId }
+    );
     return null;
   }
 });
@@ -327,7 +345,11 @@ export const listHomeArtists = cache(async (limit = 4): Promise<Pick<ArtistDirec
       followerCount: followerCountMap.get(artist.id) || 0
     }));
   } catch (error) {
-    console.error('Failed to fetch home artists:', error);
+    Logger.errorOccurred(
+      error instanceof Error ? error : new Error('Failed to fetch home artists'),
+      'listHomeArtists',
+      { operation: 'fetch_home_artists', limit }
+    );
     return [];
   }
 });
@@ -388,7 +410,11 @@ export const listFeaturedArtists = cache(async (): Promise<ArtistDirectoryEntry[
 
     return artistsWithCounts;
   } catch (error) {
-    console.error('Failed to fetch artist directory.', error);
+    Logger.errorOccurred(
+      error instanceof Error ? error : new Error('Failed to fetch artist directory'),
+      'listFeaturedArtists',
+      { operation: 'fetch_artist_directory' }
+    );
     return [];
   }
 });

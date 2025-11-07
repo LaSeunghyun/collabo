@@ -4,6 +4,11 @@ import {
   type AnnouncementCategory
 } from '@/lib/constants/announcements';
 import { getAnnouncements as getAnnouncementsQuery, markAnnouncementAsRead as markAsRead } from '@/lib/db/queries/announcements';
+import { withCache, CACHE_TTL } from '@/lib/utils/cache';
+import { Logger } from '@/lib/utils/logger';
+import { getDb } from '@/lib/db/client';
+import { announcements, users } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
 
 export interface AnnouncementListItem {
   id: string;
@@ -74,15 +79,34 @@ export async function getAnnouncements({
   category?: string | null;
   includeScheduled?: boolean;
 }): Promise<{ announcements: AnnouncementListItem[]; unreadCount: number }> {
-  try {
-    return await getAnnouncementsQuery({ userId, category, includeScheduled });
-  } catch (error) {
-    console.error('Failed to get announcements:', error);
+  const cacheKey = `announcements-${userId || 'anonymous'}-${category || 'all'}-${includeScheduled}`;
+  
+  return withCache(
+    cacheKey,
+    async () => {
+      return await getAnnouncementsQuery({ userId, category, includeScheduled });
+    },
+    CACHE_TTL.SHORT // 1분 캐시
+  ).catch((error) => {
+    const logContext: { operation: string; userId?: string; category?: string } = {
+      operation: 'get_announcements'
+    };
+    if (userId) {
+      logContext.userId = userId;
+    }
+    if (category && typeof category === 'string') {
+      logContext.category = category;
+    }
+    Logger.errorOccurred(
+      error instanceof Error ? error : new Error('Failed to get announcements'),
+      'getAnnouncements',
+      logContext
+    );
     return {
       announcements: [],
       unreadCount: 0
     };
-  }
+  });
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -200,10 +224,14 @@ export async function createAnnouncement(
 
     return {
       ...mapped,
-      updatedAt: announcement.updatedAt
+      updatedAt: new Date(announcement.updatedAt)
     };
   } catch (error) {
-    console.error('Failed to create announcement:', error);
+    Logger.errorOccurred(
+      error instanceof Error ? error : new Error('Failed to create announcement'),
+      'createAnnouncement',
+      { operation: 'create_announcement', authorId }
+    );
     throw new Error('공지사항 생성에 실패했습니다.');
   }
 }

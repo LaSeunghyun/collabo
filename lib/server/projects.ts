@@ -3,29 +3,9 @@ import { eq, and, inArray, desc, count } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 
 import { withCache, CACHE_KEYS, CACHE_TTL, invalidateCache } from '@/lib/utils/cache';
+import type { ProjectSummary } from '@/types/api';
 
-export interface ProjectSummary {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  thumbnail: string;
-  targetAmount: number;
-  currentAmount: number;
-  status: string;
-  createdAt: Date;
-  updatedAt: Date;
-  owner: {
-    id: string;
-    name: string;
-    avatarUrl: string | null;
-  };
-  _count: {
-    fundings: number;
-  };
-  participants: number;
-  remainingDays: number;
-}
+export type { ProjectSummary };
 import { ZodError } from 'zod';
 
 import type { SessionUser } from '@/lib/auth/session';

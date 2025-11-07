@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
+import { Logger } from '@/lib/utils/logger';
 import { eq, and, count, desc } from 'drizzle-orm';
 
 import { products, projects, productTypeEnum } from '@/lib/db/schema';
@@ -33,7 +34,7 @@ export async function GET(request: NextRequest) {
     const [productsList, totalResult] = await Promise.all([
       // 상품 목록 조회
       (async () => {
-        let productsQuery = db
+        const productsQuery = db
           .select({
             id: products.id,
             projectId: products.projectId,
@@ -55,11 +56,11 @@ export async function GET(request: NextRequest) {
           .from(products)
           .innerJoin(projects, eq(products.projectId, projects.id));
 
-        if (whereClause) {
-          productsQuery = productsQuery.where(whereClause);
-        }
+        const finalQuery = whereClause 
+          ? productsQuery.where(whereClause)
+          : productsQuery;
 
-        return productsQuery
+        return finalQuery
           .orderBy(desc(products.createdAt))
           .limit(limit)
           .offset(offset);
@@ -67,11 +68,10 @@ export async function GET(request: NextRequest) {
       
       // 전체 개수 조회
       (async () => {
-        let countQuery = db.select({ count: count() }).from(products);
-        if (whereClause) {
-          countQuery = countQuery.where(whereClause);
-        }
-        return countQuery;
+        const baseQuery = db.select({ count: count() }).from(products);
+        return whereClause 
+          ? baseQuery.where(whereClause)
+          : baseQuery;
       })()
     ]);
     
@@ -87,7 +87,11 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('Failed to fetch products:', error);
+    Logger.errorOccurred(
+      error instanceof Error ? error : new Error('Failed to fetch products'),
+      'GET /api/products',
+      { operation: 'fetch_products' }
+    );
     return NextResponse.json(
       { message: 'Failed to fetch products' },
       { status: 500 }

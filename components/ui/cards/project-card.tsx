@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Heart, Users as UsersIcon, Clock } from 'lucide-react';
@@ -18,7 +19,7 @@ const categoryColor: Record<string, string> = {
   tech: 'bg-category-tech/20 text-category-tech'
 };
 
-export function ProjectCard({ project }: ProjectCardProps) {
+function ProjectCardComponent({ project }: ProjectCardProps) {
   const { t } = useTranslation();
   const progress = Math.min(100, Math.round((project.currentAmount / project.targetAmount) * 100));
 
@@ -78,3 +79,6 @@ export function ProjectCard({ project }: ProjectCardProps) {
     </Link>
   );
 }
+
+// React.memo로 메모이제이션하여 불필요한 리렌더링 방지
+export const ProjectCard = memo(ProjectCardComponent);

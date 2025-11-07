@@ -1,7 +1,8 @@
 'use client';
 
+import { memo } from 'react';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -16,7 +17,7 @@ interface ProjectSpotlightSectionProps {
   onRetry?: () => void;
 }
 
-export function ProjectSpotlightSection({ projects, isLoading, isError, onRetry }: ProjectSpotlightSectionProps) {
+export const ProjectSpotlightSection = memo(function ProjectSpotlightSection({ projects, isLoading, isError, onRetry }: ProjectSpotlightSectionProps) {
   const { t } = useTranslation();
   const popularProjects = useMemo(() => {
     return [...projects].sort((a, b) => b.participants - a.participants).slice(0, 10); // 10개로 증가
@@ -40,7 +41,7 @@ export function ProjectSpotlightSection({ projects, isLoading, isError, onRetry 
       <LiveAmaCard />
     </section>
   );
-}
+});
 
 interface ProjectSliderProps {
   projects: ProjectSummary[];
@@ -57,13 +58,13 @@ function ProjectSlider({ projects, isLoading, isError, onRetry }: ProjectSliderP
   const maxIndex = Math.max(0, projects.length - itemsToShow);
   const currentProjects = projects.slice(currentIndex, currentIndex + itemsToShow);
 
-  const goToPrevious = () => {
-    setCurrentIndex(Math.max(0, currentIndex - 1));
-  };
+  const goToPrevious = useCallback(() => {
+    setCurrentIndex((prev) => Math.max(0, prev - 1));
+  }, []);
 
-  const goToNext = () => {
-    setCurrentIndex(Math.min(maxIndex, currentIndex + 1));
-  };
+  const goToNext = useCallback(() => {
+    setCurrentIndex((prev) => Math.min(maxIndex, prev + 1));
+  }, [maxIndex]);
 
   if (isLoading) {
     return (

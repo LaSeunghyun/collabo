@@ -1,4 +1,4 @@
-﻿import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 // Prisma 타입 제거됨 - Drizzle로 전환
 
 export interface ApiError {

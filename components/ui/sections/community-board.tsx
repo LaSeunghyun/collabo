@@ -149,8 +149,9 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
   const categoriesForQuery = useMemo(() => {
     return effectiveCategories.includes('all') ? ['all'] : effectiveCategories;
   }, [effectiveCategories]);
-  // 글쓰기 버튼 클릭 핸들러
-  const handleCreatePost = () => {
+  
+  // 글쓰기 버튼 클릭 핸들러 - useCallback으로 메모이제이션
+  const handleCreatePost = useCallback(() => {
     if (!session) {
       // 로그인되지 않은 경우 로그인 페이지로 리다이렉트
       signIn(undefined, { callbackUrl: '/community/new' });
@@ -165,7 +166,7 @@ export function CommunityBoard({ projectId, authorId, readOnly = false, onMetaCh
     if (typeof window !== 'undefined') {
       window.location.assign('/community/new');
     }
-  };
+  }, [session, router]);
 
   const feedParams = useMemo(() => ({
     projectId,

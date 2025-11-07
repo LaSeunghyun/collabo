@@ -1,11 +1,36 @@
 import { Suspense } from 'react';
+import dynamic from 'next/dynamic';
 
-import { ArtistNetworkSection } from '@/components/home/artist-network-section';
-import { CommunityPulseSection } from '@/components/home/community-pulse-section';
-import { HeroSection } from '@/components/home/hero-section';
-import { ProjectSpotlightSection } from '@/components/home/project-spotlight-section';
-import { ResourcesSection } from '@/components/home/resources-section';
-import { StoreSection } from '@/components/home/store-section';
+// 대형 컴포넌트들을 동적 import로 코드 스플리팅
+const ArtistNetworkSection = dynamic(
+  () => import('@/components/home/artist-network-section').then(mod => ({ default: mod.ArtistNetworkSection })),
+  { ssr: true }
+);
+
+const CommunityPulseSection = dynamic(
+  () => import('@/components/home/community-pulse-section').then(mod => ({ default: mod.CommunityPulseSection })),
+  { ssr: true }
+);
+
+const HeroSection = dynamic(
+  () => import('@/components/home/hero-section').then(mod => ({ default: mod.HeroSection })),
+  { ssr: true }
+);
+
+const ProjectSpotlightSection = dynamic(
+  () => import('@/components/home/project-spotlight-section').then(mod => ({ default: mod.ProjectSpotlightSection })),
+  { ssr: true }
+);
+
+const ResourcesSection = dynamic(
+  () => import('@/components/home/resources-section').then(mod => ({ default: mod.ResourcesSection })),
+  { ssr: true }
+);
+
+const StoreSection = dynamic(
+  () => import('@/components/home/store-section').then(mod => ({ default: mod.StoreSection })),
+  { ssr: true }
+);
 import { getHomeProjectSummaries } from '@/lib/server/projects';
 import { listHomeArtists } from '@/lib/server/artists';
 import { getCommunityPostCount, getHomeCommunityPosts } from '@/lib/server/community';

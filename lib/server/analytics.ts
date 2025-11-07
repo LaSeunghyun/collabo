@@ -1,5 +1,5 @@
 ﻿import { createHash, randomUUID } from 'crypto';
-import { gte, sql, inArray } from 'drizzle-orm';
+import { gte, inArray } from 'drizzle-orm';
 
 import { getDbClient } from '@/lib/db/client';
 import { visitLogs, users, posts } from '@/lib/db/schema';

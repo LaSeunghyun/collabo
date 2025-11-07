@@ -3,6 +3,7 @@ import { UserRole } from '@/types/prisma';
 
 import { handleAuthorizationError, requireApiUser } from '@/lib/auth/guards';
 import { createProject, ProjectValidationError, getProjectSummaries } from '@/lib/server/projects';
+import { Logger } from '@/lib/utils/logger';
 
 // 캐싱 설정
 export const revalidate = 60; // 1분마다 재검증
@@ -43,7 +44,11 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('Failed to load projects', error);
+    Logger.errorOccurred(
+      error instanceof Error ? error : new Error('Unknown error'),
+      'GET /api/projects',
+      { operation: 'fetch_projects' }
+    );
 
     // 더 자세한 에러 정보 제공
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -89,7 +94,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.error('Failed to create project', error);
+    Logger.errorOccurred(
+      error instanceof Error ? error : new Error('Unknown error'),
+      'POST /api/projects',
+      { operation: 'create_project', userId: user.id }
+    );
     return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
   }
 }

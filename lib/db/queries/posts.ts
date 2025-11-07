@@ -29,16 +29,7 @@ export async function getPublishedPosts(limit: number = 10): Promise<PostWithAut
       author: {
         id: users.id,
         name: users.name,
-        email: users.email,
-        role: users.role,
-        passwordHash: users.passwordHash,
-        avatarUrl: users.avatarUrl,
-        language: users.language,
-        timezone: users.timezone,
-        bio: users.bio,
-        socialLinks: users.socialLinks,
-        createdAt: users.createdAt,
-        updatedAt: users.updatedAt
+        avatarUrl: users.avatarUrl
       }
     })
     .from(posts)
@@ -106,16 +97,7 @@ export async function getTrendingPosts(limit: number = 5): Promise<PostWithAutho
       author: {
         id: users.id,
         name: users.name,
-        email: users.email,
-        role: users.role,
-        passwordHash: users.passwordHash,
-        avatarUrl: users.avatarUrl,
-        language: users.language,
-        timezone: users.timezone,
-        bio: users.bio,
-        socialLinks: users.socialLinks,
-        createdAt: users.createdAt,
-        updatedAt: users.updatedAt
+        avatarUrl: users.avatarUrl
       }
     })
     .from(posts)
@@ -198,16 +180,7 @@ export async function getPostById(id: string): Promise<PostWithAuthor | null> {
       author: {
         id: users.id,
         name: users.name,
-        email: users.email,
-        role: users.role,
-        passwordHash: users.passwordHash,
-        avatarUrl: users.avatarUrl,
-        language: users.language,
-        timezone: users.timezone,
-        bio: users.bio,
-        socialLinks: users.socialLinks,
-        createdAt: users.createdAt,
-        updatedAt: users.updatedAt
+        avatarUrl: users.avatarUrl
       }
     })
     .from(posts)

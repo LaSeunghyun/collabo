@@ -1,9 +1,15 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useCallback, useState } from 'react';
 
-import { CommunityBoard } from '@/components/ui/sections/community-board';
 import type { CommunityPost } from '@/lib/data/community';
+
+// 대형 컴포넌트를 동적 import로 코드 스플리팅
+const CommunityBoard = dynamic(
+  () => import('@/components/ui/sections/community-board').then(mod => ({ default: mod.CommunityBoard })),
+  { ssr: true }
+);
 
 interface FeedHighlights {
   pinned: CommunityPost[];

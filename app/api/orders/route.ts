@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Logger } from '@/lib/utils/logger';
 import { eq, and, count, desc, inArray } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 
@@ -103,7 +104,11 @@ export async function GET(request: NextRequest) {
         }
       });
     } catch (error) {
-      console.error('Failed to fetch orders:', error);
+      Logger.errorOccurred(
+        error instanceof Error ? error : new Error('Failed to fetch orders'),
+        'GET /api/orders',
+        { operation: 'fetch_orders' }
+      );
       return NextResponse.json(
         { message: 'Failed to fetch orders' },
         { status: 500 }

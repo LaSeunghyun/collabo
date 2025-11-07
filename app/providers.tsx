@@ -3,11 +3,12 @@
 import { ReactNode, useEffect, useLayoutEffect } from 'react';
 import { I18nextProvider } from 'react-i18next';
 import { ThemeProvider } from 'next-themes';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { SessionProvider, useSession } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 
 import { initI18n } from '@/lib/i18n';
+import { getQueryClient } from '@/lib/api/query-client';
 import {
   ANALYTICS_SESSION_KEY,
   ANALYTICS_THROTTLE_PREFIX,
@@ -16,8 +17,6 @@ import {
   SESSION_PERSISTENCE_PENDING_SIGN_OUT,
   SESSION_PERSISTENCE_SEED
 } from '@/lib/auth/session-persistence';
-
-const queryClient = new QueryClient();
 
 function SessionPersistenceManager() {
   const { status } = useSession();
@@ -101,6 +100,9 @@ function VisitLogger() {
 const i18next = initI18n();
 
 export function Providers({ children }: { children: ReactNode }) {
+  // 싱글톤 QueryClient 인스턴스 사용
+  const queryClient = getQueryClient();
+
   useEffect(() => {
     document.documentElement.lang = i18next.language;
   }, [i18next.language]);

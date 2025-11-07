@@ -11,6 +11,7 @@ import { evaluateAuthorization } from '@/lib/auth/session';
 
 import type { CommunityFeedResponse } from '@/lib/data/community';
 import { logPostCreate, logPostView, logApiCall } from '@/lib/server/activity-logger';
+import { Logger } from '@/lib/utils/logger';
 
 // 캐싱 설정
 export const revalidate = 30; // 30초마다 재검증
@@ -377,7 +378,7 @@ export async function GET(request: NextRequest) {
     const userAgent = request.headers.get('user-agent') ?? null;
 
     // 간단한 로깅 먼저 테스트
-    console.log('🔍 [COMMUNITY API] GET 요청 처리 완료:', {
+    Logger.debug('GET /api/community - 요청 처리 완료', {
       userId: viewer?.id ?? 'anonymous',
       userEmail: viewer?.email ?? 'no-email',
       userName: viewer?.name ?? 'no-name',
@@ -407,7 +408,11 @@ export async function GET(request: NextRequest) {
         }
       });
     } catch (logError) {
-      console.error('❌ [COMMUNITY API] 로깅 실패:', logError);
+      Logger.errorOccurred(
+        logError instanceof Error ? logError : new Error('Logging failed'),
+        'GET /api/community',
+        { operation: 'activity_logging' }
+      );
     }
 
     return NextResponse.json(response, {
@@ -417,12 +422,14 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('Failed to fetch posts from database:', {
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      url: request.url,
-      timestamp: new Date().toISOString()
-    });
+    Logger.errorOccurred(
+      error instanceof Error ? error : new Error('Failed to fetch posts'),
+      'GET /api/community',
+      {
+        operation: 'fetch_posts',
+        url: request.url
+      }
+    );
 
     const { searchParams } = new URL(request.url);
     const sortParam = searchParams.get('sort');
@@ -462,9 +469,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    console.log('📝 [COMMUNITY POST] 게시글 작성 요청:', {
+    Logger.info('POST /api/community - 게시글 작성 요청', {
+      operation: 'create_post_request',
       title: body.title?.substring(0, 50) + '...',
-      content: body.content?.substring(0, 50) + '...',
       category: body.category,
       hasProjectId: !!body.projectId
     });
@@ -475,19 +482,32 @@ export async function POST(request: NextRequest) {
     const category = parseCategory(body.category ?? null) ?? 'GENERAL';
 
     if (!title || !content) {
-      console.log('❌ [COMMUNITY POST] 검증 실패: 제목 또는 내용 누락');
+      Logger.warn('POST /api/community - 검증 실패', {
+        operation: 'validation_failed',
+        reason: '제목 또는 내용 누락'
+      });
       return NextResponse.json({ message: 'Title and content are required.' }, { status: 400 });
     }
 
-    console.log('🔐 [COMMUNITY POST] 인증 확인 시작');
+    Logger.debug('POST /api/community - 인증 확인 시작', {
+      operation: 'auth_check_start'
+    });
     const authContext = { headers: request.headers };
     
     let sessionUser: SessionUser;
     try {
       sessionUser = await requireApiUser({}, authContext);
-      console.log('✅ [COMMUNITY POST] 인증 성공:', { userId: sessionUser.id, userRole: sessionUser.role });
+      Logger.debug('POST /api/community - 인증 성공', {
+        operation: 'auth_success',
+        userId: sessionUser.id,
+        userRole: sessionUser.role
+      });
     } catch (error) {
-      console.error('❌ [COMMUNITY POST] 인증 실패:', error);
+      Logger.errorOccurred(
+        error instanceof Error ? error : new Error('Authentication failed'),
+        'POST /api/community',
+        { operation: 'auth_failed' }
+      );
       const response = handleAuthorizationError(error);
       if (response) {
         return response;
@@ -497,7 +517,8 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      console.log('Creating post with data:', {
+      Logger.debug('POST /api/community - 게시글 생성 시작', {
+        operation: 'create_post',
         title: title.substring(0, 50) + '...',
         category,
         authorId: sessionUser.id,
@@ -560,7 +581,11 @@ export async function POST(request: NextRequest) {
         _count: { likes: 0, dislikes: 0, comments: 0 }
       };
 
-      console.log('Post created successfully:', { postId: post.id });
+      Logger.info('POST /api/community - 게시글 생성 성공', {
+        operation: 'post_created',
+        postId: post.id,
+        userId: sessionUser.id
+      });
       
       // 게시글 작성 활동 로깅
       const forwardedFor = request.headers.get('x-forwarded-for');
@@ -592,14 +617,22 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json(created, { status: 201 });
     } catch (error) {
-      console.error('Failed to create post in database:', error);
+      Logger.errorOccurred(
+        error instanceof Error ? error : new Error('Failed to create post'),
+        'POST /api/community',
+        { operation: 'create_post_db_error', userId: sessionUser.id }
+      );
       return NextResponse.json({
         message: 'Unable to create community post.',
         error: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : undefined
       }, { status: 500 });
     }
   } catch (error) {
-    console.error('Unexpected error in POST /api/community:', error);
+    Logger.errorOccurred(
+      error instanceof Error ? error : new Error('Unexpected error'),
+      'POST /api/community',
+      { operation: 'unexpected_error' }
+    );
     return NextResponse.json({
       message: 'Invalid request format.',
       error: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : undefined

@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
@@ -11,7 +12,7 @@ interface ArtistNetworkSectionProps {
   artists: HomeArtistSummary[] | Pick<HomeArtistSummary, 'id' | 'name' | 'avatarUrl' | 'projectCount' | 'followerCount'>[];
 }
 
-export function ArtistNetworkSection({ artists }: ArtistNetworkSectionProps) {
+export const ArtistNetworkSection = memo(function ArtistNetworkSection({ artists }: ArtistNetworkSectionProps) {
   const { t } = useTranslation();
   const hasArtists = artists.length > 0;
 
@@ -27,7 +28,7 @@ export function ArtistNetworkSection({ artists }: ArtistNetworkSectionProps) {
       </div>
     </section>
   );
-}
+});
 
 interface ArtistGridProps {
   artists: HomeArtistSummary[];

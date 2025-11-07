@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 
@@ -12,7 +13,7 @@ interface CommunityPulseSectionProps {
   hasPosts: boolean;
 }
 
-export function CommunityPulseSection({ featuredPost, highlightedPosts, hasPosts }: CommunityPulseSectionProps) {
+export const CommunityPulseSection = memo(function CommunityPulseSection({ featuredPost, highlightedPosts, hasPosts }: CommunityPulseSectionProps) {
   const { t } = useTranslation();
 
   return (
@@ -31,7 +32,7 @@ export function CommunityPulseSection({ featuredPost, highlightedPosts, hasPosts
       )}
     </section>
   );
-}
+});
 
 interface CommunityFeedProps {
   featuredPost?: CommunityPost;
