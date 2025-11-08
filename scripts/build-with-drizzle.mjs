@@ -38,10 +38,17 @@ if (!hasDatabaseUrl) {
   console.log('[build] Database URL:', sanitizedUrl);
 
   if (isDrizzle) {
-    const shouldSkipPush = process.env.SKIP_DRIZZLE_PUSH === '1' || process.env.DATABASE_URL?.includes('test:test@localhost');
+    // 프로덕션 환경에서는 drizzle-kit push 대신 마이그레이션 파일을 직접 적용
+    const isProduction = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+    const shouldSkipPush = process.env.SKIP_DRIZZLE_PUSH === '1' 
+      || process.env.DATABASE_URL?.includes('test:test@localhost');
     
     if (shouldSkipPush) {
-      console.log('[build] Skipping drizzle-kit push (SKIP_DRIZZLE_PUSH is set or not localhost)');
+      console.log('[build] Skipping drizzle-kit push (SKIP_DRIZZLE_PUSH is set or localhost)');
+    } else if (isProduction) {
+      // 프로덕션에서는 마이그레이션 파일을 직접 적용 (대화형 확인 없이)
+      console.log('[build] Production environment detected. Applying migrations...');
+      tryRun('npx', ['drizzle-kit', 'push', '--force']);
     } else {
       console.log('[build] Running drizzle-kit push...');
       tryRun('npx', ['drizzle-kit', 'push']);
@@ -68,5 +75,5 @@ if (isDrizzle) {
 }
 
 console.log('[build] Building Next.js application...');
-run('next', ['build']);
+run('npx', ['next', 'build']);
 console.log('[build] Next.js build completed successfully');
